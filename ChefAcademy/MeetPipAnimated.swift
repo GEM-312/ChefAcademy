@@ -4,7 +4,8 @@ import SwiftUI
 struct MeetPipAnimatedView: View {
     @ObservedObject var avatarModel: AvatarModel
     @ObservedObject var onboardingManager: OnboardingManager
-    
+    @Environment(\.horizontalSizeClass) var sizeClass
+
     @State private var showPip = false
     @State private var showDialogue = false
     @State private var currentDialogueIndex = 0
@@ -33,10 +34,10 @@ struct MeetPipAnimatedView: View {
                 VideoPlayerWithFallback(
                     videoName: "pip_waving",
                     fallbackImage: "pip_waving",
-                    size: 220,
+                    size: AdaptiveCardSize.pipOnboarding(for: sizeClass),
                     circular: true,
                     borderColor: Color.AppTheme.sage,
-                    borderWidth: 3
+                    borderWidth: AdaptiveCardSize.pipBorderWidth(for: sizeClass)
                 )
                 .scaleEffect(showPip ? 1 : 0.3)
                 .opacity(showPip ? 1 : 0)
@@ -161,6 +162,7 @@ struct MeetPipAnimatedView: View {
 struct ReadyToStartAnimatedView: View {
     @ObservedObject var avatarModel: AvatarModel
     let onComplete: () -> Void
+    @Environment(\.horizontalSizeClass) var sizeClass
 
     @State private var showContent = false
     @State private var showPip = false
@@ -211,9 +213,10 @@ struct ReadyToStartAnimatedView: View {
                         VideoPlayerWithFallback(
                             videoName: "pip_waving",
                             fallbackImage: "pip_waving",
-                            size: 220,
+                            size: AdaptiveCardSize.pipOnboarding(for: sizeClass),
                             circular: true,
-                            borderColor: Color.AppTheme.sage
+                            borderColor: Color.AppTheme.sage,
+                            borderWidth: AdaptiveCardSize.pipBorderWidth(for: sizeClass)
                         )
                         .scaleEffect(showPip ? 1 : 0.5)
                         .opacity(showPip ? 1 : 0)

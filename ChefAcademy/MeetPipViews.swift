@@ -94,6 +94,7 @@ struct NameAvatarView: View {
 struct MeetPipView: View {
     @ObservedObject var avatarModel: AvatarModel
     @ObservedObject var onboardingManager: OnboardingManager
+    @Environment(\.horizontalSizeClass) var sizeClass
 
     @State private var showPip = false
     @State private var showDialogue = false
@@ -122,10 +123,10 @@ struct MeetPipView: View {
                     VideoPlayerWithFallback(
                         videoName: "pip_waving",
                         fallbackImage: "pip_waving",
-                        size: 220,
+                        size: AdaptiveCardSize.pipOnboarding(for: sizeClass),
                         circular: true,
                         borderColor: Color.AppTheme.sage,
-                        borderWidth: 5
+                        borderWidth: AdaptiveCardSize.pipBorderWidth(for: sizeClass)
                     )
                     .scaleEffect(showPip ? 1 : 0.3)
                     .opacity(showPip ? 1 : 0)
@@ -255,6 +256,7 @@ struct Triangle: Shape {
 struct ReadyToStartView: View {
     @ObservedObject var avatarModel: AvatarModel
     let onComplete: () -> Void
+    @Environment(\.horizontalSizeClass) var sizeClass
 
     @State private var showContent = false
     @State private var showConfetti = false
@@ -290,25 +292,28 @@ struct ReadyToStartView: View {
                 .offset(y: showContent ? 0 : 20)
 
                 // Avatar with Pip Video
-                HStack(spacing: -20) {
+                HStack(spacing: sizeClass == .compact ? -20 : -30) {
                     // User's Avatar
                     ZStack {
                         Circle()
                             .fill(Color.AppTheme.parchment)
-                            .frame(width: 120, height: 120)
+                            .frame(
+                                width: sizeClass == .compact ? 120 : 180,
+                                height: sizeClass == .compact ? 120 : 180
+                            )
 
                         AvatarPreviewView(avatarModel: avatarModel)
-                            .scaleEffect(0.5)
+                            .scaleEffect(sizeClass == .compact ? 0.5 : 0.7)
                     }
 
                     // Pip Video Animation
                     VideoPlayerWithFallback(
                         videoName: "pip_waving",
                         fallbackImage: "pip_waving",
-                        size: 100,
+                        size: AdaptiveCardSize.pipReadyScreen(for: sizeClass),
                         circular: true,
                         borderColor: Color.AppTheme.sage,
-                        borderWidth: 3
+                        borderWidth: AdaptiveCardSize.pipBorderWidth(for: sizeClass)
                     )
                 }
                 .scaleEffect(showContent ? 1 : 0.5)

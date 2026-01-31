@@ -157,9 +157,24 @@ struct AdaptiveCardSize {
         sizeClass == .compact ? 50 : 70
     }
 
-    /// Pip video size for message cards
+    /// Pip video size for message cards (home screen)
     static func pipMessage(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
-        sizeClass == .compact ? 70 : 90
+        sizeClass == .compact ? 70 : 140
+    }
+
+    /// Pip size for onboarding/welcome screens (large)
+    static func pipOnboarding(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 220 : 320
+    }
+
+    /// Pip size for "ready to start" screen (medium)
+    static func pipReadyScreen(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 100 : 160
+    }
+
+    /// Pip border width
+    static func pipBorderWidth(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 3 : 5
     }
 }
 

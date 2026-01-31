@@ -100,21 +100,26 @@ struct OnboardingView: View {
 struct WelcomeView: View {
     @ObservedObject var onboardingManager: OnboardingManager
     @State private var showContent = false
+    @Environment(\.horizontalSizeClass) var sizeClass
 
     var body: some View {
         VStack(spacing: AppSpacing.xl) {
             Spacer()
 
-            // Pip Video Animation - Large and welcoming!
+            // Pip Static Image - Neutral pose for welcome
             VStack(spacing: AppSpacing.sm) {
-                VideoPlayerWithFallback(
-                    videoName: "pip_waving",
-                    fallbackImage: "pip_waving",
-                    size: 220,
-                    circular: true,
-                    borderColor: Color.AppTheme.sage,
-                    borderWidth: 5
-                )
+                Image("pip_neutral")
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(
+                        width: AdaptiveCardSize.pipOnboarding(for: sizeClass),
+                        height: AdaptiveCardSize.pipOnboarding(for: sizeClass)
+                    )
+                    .clipShape(Circle())
+                    .overlay(
+                        Circle()
+                            .stroke(Color.AppTheme.sage, lineWidth: AdaptiveCardSize.pipBorderWidth(for: sizeClass))
+                    )
 
                 Text("Pip")
                     .font(.AppTheme.headline)
