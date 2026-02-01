@@ -195,6 +195,71 @@ Consistent spacing creates visual harmony throughout the app.
 
 ---
 
+### AI Image Generation (Leonardo.ai)
+
+Use these prompts with **Leonardo.ai** to generate images matching Pip's style.
+
+#### Leonardo Settings
+
+| Setting | Value |
+|---------|-------|
+| **Model** | Leonardo Phoenix |
+| **Alchemy** | ON |
+| **Style Reference** | Upload Pip image (pip_neutral or pip_waving) |
+| **Style Strength** | 0.75 - 0.80 |
+
+#### Negative Prompt (use for all)
+```
+realistic, 3d, photograph, dark, scary, detailed, complex, medical diagram, red blood
+```
+
+#### Base Style Prompt
+Add this to all prompts for consistency:
+```
+soft pencil sketch on cream paper, children's book illustration,
+gentle sepia shading, whimsical friendly character, hand-drawn feel,
+minimal details, cozy warm tones, subtle pink blush accents
+```
+
+#### Body Buddy Organ Prompts
+
+**Stomach:**
+```
+cute friendly cartoon stomach character, soft pencil sketch on cream paper,
+children's book illustration, gentle sepia shading, whimsical happy face,
+hand-drawn feel, minimal details, warm cozy style
+```
+
+**Heart:**
+```
+adorable cartoon heart organ with friendly face, soft pencil sketch,
+cream paper background, gentle sepia and pink tones, children's book style,
+whimsical character, hand-drawn minimal illustration
+```
+
+**Brain:**
+```
+cute friendly cartoon brain character, soft pencil sketch on cream paper,
+gentle sepia shading, children's educational illustration, whimsical face,
+hand-drawn cozy style, minimal simple details
+```
+
+**Intestines:**
+```
+friendly cartoon intestines character, cute happy face, soft pencil sketch,
+cream paper background, sepia tones, children's book illustration style,
+whimsical minimal hand-drawn
+```
+
+**Lungs:**
+```
+adorable cartoon lungs pair with friendly faces, soft pencil sketch,
+cream background, gentle sepia shading, children's book whimsical style,
+hand-drawn minimal cozy illustration
+```
+
+---
+
 ## Tech Stack
 
 - **Language:** Swift 5.9
