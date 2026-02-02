@@ -323,25 +323,83 @@ struct ExampleView: View {
 
 ### ✅ Complete:
 - AppTheme.swift (colors, fonts, spacing)
-- Onboarding flow (5 screens)
+- AdaptiveLayout.swift (iPhone/iPad responsive helpers)
+- Onboarding flow (5 screens) - connected to HomeView
 - Avatar creator (becomes Body Buddy)
+- AvatarModel with UserDefaults persistence for name
 - Meet Pip dialogue sequence
 - PipAnimations.swift (6 poses, circle mask, bounce)
-- RecipeData.swift (11 savory breakfast recipes)
 - Pip character images (6 poses from Midjourney)
+- **MainTabView** with 5 tabs (Home, Garden, Recipes, Play, Profile)
+- **HomeView** with greeting, streak card, Pip message, quick actions, recipe preview
+- **RecipeListView** with category filtering (All, Breakfast, Lunch, Dinner, Snacks)
+- RecipeCardView with images, difficulty badges, cook time
+- Recipe illustrations (Rainbow Veggie Wrap, Sunny Pancakes, Garden Pasta)
+- Navigation from Home → other tabs via quick action buttons
+- README.md with full style guide and Leonardo.ai prompts
 
 ### 🚧 In Progress:
 - GameState.swift (central manager)
 - GardenModel.swift
-- New tab structure
+- GardenView (placeholder exists, needs full implementation)
 
 ### ❌ Not Started:
-- Hub screen
-- Garden view with plots
-- Mini-games
+- Vegetable illustrations (folder created: Assets.xcassets/Vegetables/)
+- Garden plots with planting/watering/harvesting
+- Mini-games (Chop, Mix, Pour, etc.)
 - Body Adventure animation
 - Quest system UI
 - Badges UI
+- Profile view
+
+---
+
+## Next Session: Garden View + Vegetables
+
+### Tomorrow's Tasks:
+1. **Upload vegetable illustrations** to Assets.xcassets/Vegetables/
+   - Suggested vegetables: carrot, tomato, lettuce, cucumber, bell pepper, spinach
+   - Use Leonardo.ai with style reference from Pip images
+
+2. **Build GardenView** with:
+   - Grid of 6-9 garden plots
+   - PlotView component (empty, planted, growing, ready states)
+   - Tap to plant seeds (show seed selection sheet)
+   - Visual growth progress indicator
+   - Harvest animation when ready
+
+3. **GardenModel** data structure:
+   - VegetableType enum with growth times, yields, costs
+   - GardenPlot struct with state management
+   - Integration with GameState for coins/inventory
+
+### Leonardo.ai Prompt for Vegetables:
+```
+cute [vegetable name] illustration, soft pencil sketch on cream paper,
+children's book style, gentle sepia shading, whimsical friendly,
+hand-drawn feel, minimal details, cozy warm tones
+```
+Negative: realistic, 3d, photograph, dark, scary, detailed, complex
+
+---
+
+## Development Notes
+
+### Testing Onboarding
+In ChefAcademyApp.swift there's a flag:
+```swift
+private let resetOnboarding = true  // Set to false after testing
+```
+Set to `true` to reset and test onboarding flow again.
+
+### Key File Locations:
+- Main app: `ChefAcademyApp.swift`
+- Home screen: `ChefAcademyApp.swift` (HomeView struct)
+- Recipes: `RecipeCardExample.swift`
+- Onboarding: `OnboardingView.swift`
+- Avatar/User data: `AvatarModel.swift`
+- Theme: `AppTheme.swift`
+- Adaptive layout: `AdaptiveLayout.swift`
 
 ---
 
@@ -390,4 +448,4 @@ When asked to build something:
 
 ---
 
-*Last Updated: January 27, 2026*
+*Last Updated: February 1, 2026*
