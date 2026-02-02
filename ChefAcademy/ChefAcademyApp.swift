@@ -20,6 +20,16 @@ struct ChefAcademyApp: App {
     // Set to true to test Pip images, false for normal app flow
     private let showPipTest = false
 
+    // TEMPORARY: Set to true to reset onboarding for testing, then set back to false
+    private let resetOnboarding = true
+
+    init() {
+        if resetOnboarding {
+            UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
+            UserDefaults.standard.removeObject(forKey: "userName")
+        }
+    }
+
     var body: some Scene {
         WindowGroup {
             if showPipTest {
@@ -32,8 +42,11 @@ struct ChefAcademyApp: App {
                     // Any view can access it with @EnvironmentObject var gameState: GameState
                     .environmentObject(gameState)
             } else {
-                OnboardingView(isOnboardingComplete: $hasCompletedOnboarding)
-                    .environmentObject(gameState)
+                OnboardingView(
+                    avatarModel: avatarModel,
+                    isOnboardingComplete: $hasCompletedOnboarding
+                )
+                .environmentObject(gameState)
             }
         }
     }
@@ -67,7 +80,7 @@ struct MainTabView: View {
             Group {
                 switch selectedTab {
                 case .home:
-                    HomeView(avatarModel: avatarModel)
+                    HomeView(avatarModel: avatarModel, selectedTab: $selectedTab)
                 case .garden:
                     GardenView() // Our new garden!
                 case .recipes:
@@ -90,178 +103,163 @@ struct MainTabView: View {
 // MARK: - Custom Tab Bar
 struct CustomTabBar: View {
     @Binding var selectedTab: MainTabView.Tab
-    
+
     var body: some View {
-        HStack {
-            ForEach(MainTabView.Tab.allCases, id: \.self) { tab in
-                Button(action: {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        selectedTab = tab
+        VStack(spacing: 0) {
+            HStack {
+                ForEach(MainTabView.Tab.allCases, id: \.self) { tab in
+                    Button(action: {
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            selectedTab = tab
+                        }
+                    }) {
+                        VStack(spacing: 4) {
+                            Image(systemName: tab.icon)
+                                .font(.system(size: 22))
+                            Text(tab.rawValue)
+                                .font(.AppTheme.caption)
+                        }
+                        .foregroundColor(selectedTab == tab ? Color.AppTheme.goldenWheat : Color.AppTheme.lightSepia)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, AppSpacing.sm)
                     }
-                }) {
-                    VStack(spacing: 4) {
-                        Image(systemName: tab.icon)
-                            .font(.system(size: 22))
-                        Text(tab.rawValue)
-                            .font(.AppTheme.caption)
-                    }
-                    .foregroundColor(selectedTab == tab ? Color.AppTheme.goldenWheat : Color.AppTheme.lightSepia)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, AppSpacing.sm)
                 }
             }
+            .padding(.horizontal, AppSpacing.sm)
+            .padding(.top, AppSpacing.sm)
         }
-        .padding(.horizontal, AppSpacing.sm)
-        .padding(.top, AppSpacing.sm)
-        .padding(.bottom, AppSpacing.lg)
         .background(
             Color.AppTheme.warmCream
                 .shadow(color: Color.AppTheme.sepia.opacity(0.1), radius: 10, x: 0, y: -5)
+                .ignoresSafeArea(.container, edges: .bottom)
         )
     }
 }
 
-// MARK: - Home View (iPad Responsive)
+// MARK: - Home View (Simple Layout for iPhone)
 struct HomeView: View {
     @ObservedObject var avatarModel: AvatarModel
+    @Binding var selectedTab: MainTabView.Tab
     @EnvironmentObject var gameState: GameState
-    @Environment(\.horizontalSizeClass) var sizeClass
 
     var body: some View {
-        NavigationView {
-            GeometryReader { geometry in
-                let isCompact = sizeClass == .compact
-                let maxContentWidth: CGFloat = 700
-                let contentWidth = isCompact ? geometry.size.width : min(geometry.size.width - 64, maxContentWidth)
-                let horizontalPadding = max((geometry.size.width - contentWidth) / 2, 0)
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: AppSpacing.lg) {
 
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: isCompact ? AppSpacing.lg : AppSpacing.xl) {
+                // Header with greeting and coins
+                HStack(alignment: .center, spacing: AppSpacing.sm) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(greetingMessage)
+                            .font(.AppTheme.headline)
+                            .foregroundColor(Color.AppTheme.sepia)
+                            .lineLimit(1)
 
-                        // Header with greeting and COINS!
-                        HStack(alignment: .center, spacing: AppSpacing.md) {
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(greetingMessage)
-                                    .font(isCompact ? .AppTheme.headline : .AppTheme.title3)
-                                    .foregroundColor(Color.AppTheme.sepia)
-                                    .fixedSize(horizontal: true, vertical: false)
+                        Text("Chef \(avatarModel.name.isEmpty ? "Little Chef" : avatarModel.name)!")
+                            .font(.AppTheme.title)
+                            .foregroundColor(Color.AppTheme.darkBrown)
+                            .lineLimit(1)
+                    }
+                    .layoutPriority(1)
 
-                                Text("Chef \(avatarModel.name.isEmpty ? "Little Chef" : avatarModel.name)!")
-                                    .font(isCompact ? .AppTheme.title : .AppTheme.largeTitle)
-                                    .foregroundColor(Color.AppTheme.darkBrown)
-                                    .fixedSize(horizontal: true, vertical: false)
-                            }
+                    Spacer()
 
-                            Spacer()
+                    // Coin display
+                    HStack(spacing: 4) {
+                        Image(systemName: "circle.fill")
+                            .foregroundColor(Color.AppTheme.goldenWheat)
+                            .font(.system(size: 14))
+                        Text("\(gameState.coins)")
+                            .font(.AppTheme.subheadline)
+                            .foregroundColor(Color.AppTheme.darkBrown)
+                    }
+                    .padding(.horizontal, AppSpacing.xs)
+                    .padding(.vertical, AppSpacing.xs)
+                    .background(Color.AppTheme.warmCream)
+                    .cornerRadius(16)
 
-                            // Coin display
-                            HStack(spacing: 4) {
-                                Image(systemName: "circle.fill")
-                                    .foregroundColor(Color.AppTheme.goldenWheat)
-                                Text("\(gameState.coins)")
-                                    .font(isCompact ? .AppTheme.headline : .AppTheme.title3)
-                                    .foregroundColor(Color.AppTheme.darkBrown)
-                            }
-                            .padding(.horizontal, AppSpacing.sm)
-                            .padding(.vertical, AppSpacing.xs)
-                            .background(Color.AppTheme.warmCream)
-                            .cornerRadius(20)
+                    // Avatar
+                    ZStack {
+                        Circle()
+                            .fill(Color.AppTheme.parchment)
+                            .frame(width: 44, height: 44)
+                        AvatarPreviewView(avatarModel: avatarModel)
+                            .scaleEffect(0.18)
+                    }
+                }
+                .padding(.horizontal, AppSpacing.md)
 
-                            // Avatar mini preview
-                            ZStack {
-                                Circle()
-                                    .fill(Color.AppTheme.parchment)
-                                    .frame(
-                                        width: isCompact ? 50 : 70,
-                                        height: isCompact ? 50 : 70
-                                    )
+                // Streak Card
+                StreakCard(streak: avatarModel.currentStreak)
+                    .padding(.horizontal, AppSpacing.md)
 
-                                AvatarPreviewView(avatarModel: avatarModel)
-                                    .scaleEffect(isCompact ? 0.2 : 0.28)
-                            }
+                // Pip's Message
+                PipMessageCard(
+                    message: "Welcome back! Ready to cook something delicious today?",
+                    avatarModel: avatarModel
+                )
+                .padding(.horizontal, AppSpacing.md)
+
+                // Quick Actions
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    Text("What would you like to do?")
+                        .font(.AppTheme.headline)
+                        .foregroundColor(Color.AppTheme.darkBrown)
+                        .padding(.horizontal, AppSpacing.md)
+
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: AppSpacing.md) {
+                            QuickActionCard(icon: "🌱", title: "Visit Garden", color: Color.AppTheme.sage, action: { selectedTab = .garden })
+                            QuickActionCard(icon: "🍳", title: "Cook Recipe", color: Color.AppTheme.goldenWheat, action: { selectedTab = .recipes })
+                            QuickActionCard(icon: "🎮", title: "Play & Learn", color: Color.AppTheme.terracotta, action: { selectedTab = .play })
+                            QuickActionCard(icon: "🏆", title: "My Badges", color: Color.AppTheme.sage, action: { selectedTab = .profile })
                         }
-                        .padding(.horizontal, horizontalPadding + AppSpacing.md)
+                        .padding(.horizontal, AppSpacing.md)
+                    }
+                }
 
-                        // Streak Card
-                        StreakCard(streak: avatarModel.currentStreak)
-                            .padding(.horizontal, horizontalPadding + AppSpacing.md)
-
-                        // Pip's Message
-                        PipMessageCard(
-                            message: "Welcome back! Ready to cook something delicious today?",
-                            avatarModel: avatarModel
-                        )
-                        .padding(.horizontal, horizontalPadding + AppSpacing.md)
-
-                        // Quick Actions
-                        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                            Text("What would you like to do?")
-                                .font(isCompact ? .AppTheme.headline : .AppTheme.title3)
-                                .foregroundColor(Color.AppTheme.darkBrown)
-                                .padding(.horizontal, horizontalPadding + AppSpacing.md)
-
-                            if isCompact {
-                                // iPhone: Horizontal scroll
-                                ScrollView(.horizontal, showsIndicators: false) {
-                                    HStack(spacing: AppSpacing.md) {
-                                        QuickActionCard(icon: "🌱", title: "Visit Garden", color: Color.AppTheme.sage)
-                                        QuickActionCard(icon: "🍳", title: "Cook Recipe", color: Color.AppTheme.goldenWheat)
-                                        QuickActionCard(icon: "🎮", title: "Play & Learn", color: Color.AppTheme.terracotta)
-                                        QuickActionCard(icon: "🏆", title: "My Badges", color: Color.AppTheme.sage)
-                                    }
-                                    .padding(.horizontal, horizontalPadding + AppSpacing.md)
-                                }
-                            } else {
-                                // iPad: Grid showing all 4
-                                LazyVGrid(
-                                    columns: [
-                                        GridItem(.flexible(), spacing: AppSpacing.lg),
-                                        GridItem(.flexible(), spacing: AppSpacing.lg),
-                                        GridItem(.flexible(), spacing: AppSpacing.lg),
-                                        GridItem(.flexible(), spacing: AppSpacing.lg)
-                                    ],
-                                    spacing: AppSpacing.lg
-                                ) {
-                                    QuickActionCard(icon: "🌱", title: "Visit Garden", color: Color.AppTheme.sage, isLarge: true)
-                                    QuickActionCard(icon: "🍳", title: "Cook Recipe", color: Color.AppTheme.goldenWheat, isLarge: true)
-                                    QuickActionCard(icon: "🎮", title: "Play & Learn", color: Color.AppTheme.terracotta, isLarge: true)
-                                    QuickActionCard(icon: "🏆", title: "My Badges", color: Color.AppTheme.sage, isLarge: true)
-                                }
-                                .padding(.horizontal, horizontalPadding + AppSpacing.md)
-                            }
-                        }
-
-                        // Today's Recipe
-                        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                            Text("Today's Recipe")
-                                .font(isCompact ? .AppTheme.headline : .AppTheme.title3)
-                                .foregroundColor(Color.AppTheme.darkBrown)
-
-                            RecipeCardView(
-                                recipe: Recipe(
-                                    title: "Rainbow Veggie Wrap",
-                                    description: "A colorful, crunchy wrap packed with fresh vegetables and hummus",
-                                    imageName: "rainbow-wrap",
-                                    cookTime: 15,
-                                    difficulty: .easy,
-                                    servings: 2,
-                                    needsAdultHelp: false,
-                                    nutritionFacts: ["Vitamin A", "Fiber", "Protein"]
-                                )
-                            )
-                        }
-                        .padding(.horizontal, horizontalPadding + AppSpacing.md)
+                // Today's Recipe
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                    HStack {
+                        Text("Today's Recipe")
+                            .font(.AppTheme.headline)
+                            .foregroundColor(Color.AppTheme.darkBrown)
 
                         Spacer()
-                            .frame(height: 100)
+
+                        Button(action: { selectedTab = .recipes }) {
+                            HStack(spacing: 4) {
+                                Text("See All")
+                                    .font(.AppTheme.subheadline)
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 12))
+                            }
+                            .foregroundColor(Color.AppTheme.goldenWheat)
+                        }
                     }
-                    .padding(.top, AppSpacing.md)
+
+                    RecipeCardView(
+                        recipe: Recipe(
+                            title: "Rainbow Veggie Wrap",
+                            description: "A colorful, crunchy wrap packed with fresh vegetables and hummus",
+                            imageName: "recipe_wrap_rainbow_veggie",
+                            category: .lunch,
+                            cookTime: 15,
+                            difficulty: .easy,
+                            servings: 2,
+                            needsAdultHelp: false,
+                            nutritionFacts: ["Vitamin A", "Fiber", "Protein"]
+                        )
+                    )
+                    .onTapGesture { selectedTab = .recipes }
                 }
-                .background(Color.AppTheme.cream)
+                .padding(.horizontal, AppSpacing.md)
+
+                // Bottom spacing for tab bar
+                Spacer().frame(height: 100)
             }
-            .navigationBarHidden(true)
+            .padding(.top, AppSpacing.md)
         }
-        .navigationViewStyle(.stack) // Prevents sidebar on iPad
+        .background(Color.AppTheme.cream)
     }
 
     var greetingMessage: String {
@@ -341,37 +339,41 @@ struct PipMessageCard: View {
     }
 }
 
-// MARK: - Quick Action Card (iPad Responsive)
+// MARK: - Quick Action Card (iPad Responsive) - Now a Button!
 struct QuickActionCard: View {
     let icon: String
     let title: String
     let color: Color
     var isLarge: Bool = false  // For iPad
+    var action: (() -> Void)? = nil  // Optional tap action
 
     var body: some View {
-        VStack(spacing: isLarge ? AppSpacing.md : AppSpacing.sm) {
-            ZStack {
-                Circle()
-                    .fill(color.opacity(0.2))
-                    .frame(
-                        width: isLarge ? 80 : 60,
-                        height: isLarge ? 80 : 60
-                    )
+        Button(action: { action?() }) {
+            VStack(spacing: isLarge ? AppSpacing.md : AppSpacing.sm) {
+                ZStack {
+                    Circle()
+                        .fill(color.opacity(0.2))
+                        .frame(
+                            width: isLarge ? 80 : 60,
+                            height: isLarge ? 80 : 60
+                        )
 
-                Text(icon)
-                    .font(.system(size: isLarge ? 40 : 30))
+                    Text(icon)
+                        .font(.system(size: isLarge ? 40 : 30))
+                }
+
+                Text(title)
+                    .font(isLarge ? .AppTheme.body : .AppTheme.caption)
+                    .foregroundColor(Color.AppTheme.darkBrown)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-
-            Text(title)
-                .font(isLarge ? .AppTheme.body : .AppTheme.caption)
-                .foregroundColor(Color.AppTheme.darkBrown)
-                .multilineTextAlignment(.center)
-                .fixedSize(horizontal: false, vertical: true)
+            .frame(width: isLarge ? 120 : 90)
+            .padding(isLarge ? AppSpacing.md : AppSpacing.sm)
+            .background(Color.AppTheme.warmCream)
+            .cornerRadius(AppSpacing.cardCornerRadius)
         }
-        .frame(width: isLarge ? 120 : 90)
-        .padding(isLarge ? AppSpacing.md : AppSpacing.sm)
-        .background(Color.AppTheme.warmCream)
-        .cornerRadius(AppSpacing.cardCornerRadius)
+        .buttonStyle(.plain)
     }
 }
 

@@ -1,16 +1,51 @@
 import SwiftUI
 
+// MARK: - Recipe Category
+enum RecipeCategory: String, CaseIterable {
+    case all = "All"
+    case breakfast = "Breakfast"
+    case lunch = "Lunch"
+    case dinner = "Dinner"
+    case snacks = "Snacks"
+
+    var icon: String {
+        switch self {
+        case .all: return "square.grid.2x2"
+        case .breakfast: return "sun.max"
+        case .lunch: return "takeoutbag.and.cup.and.straw"
+        case .dinner: return "moon.stars"
+        case .snacks: return "carrot"
+        }
+    }
+}
+
 // MARK: - Recipe Model
 struct Recipe: Identifiable {
     let id = UUID()
     let title: String
     let description: String
     let imageName: String
+    let imageYOffset: CGFloat // Adjust image vertical position (negative = up)
+    let category: RecipeCategory // Recipe category for filtering
     let cookTime: Int // in minutes
     let difficulty: DifficultyBadge.Level
     let servings: Int
     let needsAdultHelp: Bool
     let nutritionFacts: [String]
+
+    // Default initializer with offset = 0
+    init(title: String, description: String, imageName: String, imageYOffset: CGFloat = 0, category: RecipeCategory = .lunch, cookTime: Int, difficulty: DifficultyBadge.Level, servings: Int, needsAdultHelp: Bool, nutritionFacts: [String]) {
+        self.title = title
+        self.description = description
+        self.imageName = imageName
+        self.imageYOffset = imageYOffset
+        self.category = category
+        self.cookTime = cookTime
+        self.difficulty = difficulty
+        self.servings = servings
+        self.needsAdultHelp = needsAdultHelp
+        self.nutritionFacts = nutritionFacts
+    }
 }
 
 // MARK: - Recipe Card View
@@ -19,22 +54,15 @@ struct RecipeCardView: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Image Area (placeholder for Midjourney illustrations)
+            // Image Area - Recipe illustration
             ZStack(alignment: .topTrailing) {
-                // Placeholder - replace with Image(recipe.imageName)
-                Rectangle()
-                    .fill(Color.AppTheme.parchment)
+                // Recipe image from Assets
+                Image(recipe.imageName)
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
                     .frame(height: 160)
-                    .overlay(
-                        VStack {
-                            Image(systemName: "fork.knife")
-                                .font(.system(size: 40))
-                                .foregroundColor(Color.AppTheme.lightSepia)
-                            Text("Illustration Here")
-                                .font(.AppTheme.caption)
-                                .foregroundColor(Color.AppTheme.lightSepia)
-                        }
-                    )
+                    .offset(y: recipe.imageYOffset)  // Adjust image position
+                    .clipped()
                 
                 // Adult help indicator
                 if recipe.needsAdultHelp {
@@ -104,11 +132,13 @@ struct RecipeCardView: View {
 
 // MARK: - Recipe List View
 struct RecipeListView: View {
+    // All recipes with their categories
     let recipes: [Recipe] = [
         Recipe(
             title: "Rainbow Veggie Wrap",
             description: "A colorful, crunchy wrap packed with fresh vegetables and hummus",
-            imageName: "rainbow-wrap",
+            imageName: "recipe_wrap_rainbow_veggie",
+            category: .lunch,  // This is a lunch recipe
             cookTime: 15,
             difficulty: .easy,
             servings: 2,
@@ -118,7 +148,9 @@ struct RecipeListView: View {
         Recipe(
             title: "Sunny Pancakes",
             description: "Fluffy whole wheat pancakes with fresh berries",
-            imageName: "pancakes",
+            imageName: "recipe_pancakes_sunny1",
+            imageYOffset: -30,
+            category: .breakfast,  // This is a breakfast recipe
             cookTime: 25,
             difficulty: .medium,
             servings: 4,
@@ -128,7 +160,8 @@ struct RecipeListView: View {
         Recipe(
             title: "Garden Pasta",
             description: "Pasta with fresh tomatoes, basil, and hidden veggie sauce",
-            imageName: "garden-pasta",
+            imageName: "recipe_pasta_garden",
+            category: .dinner,  // This is a dinner recipe
             cookTime: 30,
             difficulty: .medium,
             servings: 4,
@@ -136,7 +169,18 @@ struct RecipeListView: View {
             nutritionFacts: ["Vitamin C", "Fiber", "Iron"]
         )
     ]
-    
+
+    // Track which category is selected
+    @State private var selectedCategory: RecipeCategory = .all
+
+    // Filter recipes based on selected category
+    var filteredRecipes: [Recipe] {
+        if selectedCategory == .all {
+            return recipes
+        }
+        return recipes.filter { $0.category == selectedCategory }
+    }
+
     var body: some View {
         NavigationView {
             ScrollView {
@@ -152,7 +196,7 @@ struct RecipeListView: View {
                                 .foregroundColor(Color.AppTheme.darkBrown)
                         }
                         Spacer()
-                        
+
                         // Profile/Avatar placeholder
                         Circle()
                             .fill(Color.AppTheme.parchment)
@@ -164,60 +208,76 @@ struct RecipeListView: View {
                     }
                     .padding(.horizontal, AppSpacing.md)
                     .padding(.top, AppSpacing.md)
-                    
+
                     // Category Pills
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: AppSpacing.sm) {
-                            CategoryPill(title: "All", icon: "square.grid.2x2", isSelected: true)
-                            CategoryPill(title: "Breakfast", icon: "sun.max", isSelected: false)
-                            CategoryPill(title: "Lunch", icon: "takeoutbag.and.cup.and.straw", isSelected: false)
-                            CategoryPill(title: "Dinner", icon: "moon.stars", isSelected: false)
-                            CategoryPill(title: "Snacks", icon: "carrot", isSelected: false)
+                            ForEach(RecipeCategory.allCases, id: \.self) { category in
+                                CategoryPill(
+                                    title: category.rawValue,
+                                    icon: category.icon,
+                                    isSelected: selectedCategory == category,
+                                    action: {
+                                        withAnimation(.easeInOut(duration: 0.2)) {
+                                            selectedCategory = category
+                                        }
+                                    }
+                                )
+                            }
                         }
                         .padding(.horizontal, AppSpacing.md)
                     }
-                    
-                    // Recipe Cards
+
+                    // Recipe Cards - Shows filtered recipes
                     VStack(spacing: AppSpacing.md) {
-                        ForEach(recipes) { recipe in
+                        ForEach(filteredRecipes) { recipe in
                             RecipeCardView(recipe: recipe)
+                                .transition(.opacity.combined(with: .scale(scale: 0.95)))
                         }
                     }
                     .padding(.horizontal, AppSpacing.md)
-                    .padding(.bottom, AppSpacing.xl)
+                    .padding(.bottom, 100)  // Space for tab bar
+                    .animation(.easeInOut(duration: 0.3), value: selectedCategory)
                 }
             }
             .background(Color.AppTheme.cream)
             .navigationBarHidden(true)
         }
+        .navigationViewStyle(.stack)
     }
 }
 
-// MARK: - Category Pill
+// MARK: - Category Pill (Button for reliable tapping)
 struct CategoryPill: View {
     let title: String
     let icon: String
     let isSelected: Bool
-    
+    let action: () -> Void
+
     var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(.system(size: 14))
-            Text(title)
-                .font(.AppTheme.subheadline)
+        Button(action: action) {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 14))
+                Text(title)
+                    .font(.AppTheme.subheadline)
+            }
+            .foregroundColor(isSelected ? Color.AppTheme.cream : Color.AppTheme.darkBrown)
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.vertical, AppSpacing.sm)
+            .background(isSelected ? Color.AppTheme.goldenWheat : Color.AppTheme.parchment)
+            .cornerRadius(20)
         }
-        .foregroundColor(isSelected ? Color.AppTheme.cream : Color.AppTheme.darkBrown)
-        .padding(.horizontal, AppSpacing.md)
-        .padding(.vertical, AppSpacing.sm)
-        .background(isSelected ? Color.AppTheme.goldenWheat : Color.AppTheme.parchment)
-        .cornerRadius(20)
+        .buttonStyle(.plain)
     }
 }
 
 // MARK: - Preview
 #Preview {
     RecipeListView()
-}//
+}
+
+//
 //  RecipeCardExample.swift
 //  ChefAcademy
 //

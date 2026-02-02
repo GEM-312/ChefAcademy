@@ -10,28 +10,39 @@ import Combine
 
 // MARK: - Avatar Model
 class AvatarModel: ObservableObject {
-    @Published var name: String = ""
+    // User's name - persisted to UserDefaults
+    @Published var name: String {
+        didSet {
+            UserDefaults.standard.set(name, forKey: "userName")
+        }
+    }
+
     @Published var skinTone: SkinTone = .medium
     @Published var hairStyle: HairStyle = .short
     @Published var hairColor: HairColor = .brown
     @Published var outfit: Outfit = .apronRed
-    
+
     // Stats (will be affected by nutrition later)
     @Published var energyLevel: Double = 100
     @Published var happinessLevel: Double = 100
-    
+
     // Nutrition status for body parts
     @Published var eyesHealth: Double = 50      // Vitamin A
     @Published var muscleHealth: Double = 50    // Protein
     @Published var boneHealth: Double = 50      // Calcium
     @Published var brainHealth: Double = 50     // Omega-3
     @Published var energyHealth: Double = 50    // Carbs
-    
+
     // Streaks & Progress
     @Published var currentStreak: Int = 0
     @Published var totalDaysVisited: Int = 0
     @Published var recipesCompleted: Int = 0
     @Published var badges: [Badge] = []
+
+    // Initialize with saved values from UserDefaults
+    init() {
+        self.name = UserDefaults.standard.string(forKey: "userName") ?? ""
+    }
 }
 
 // MARK: - Customization Options

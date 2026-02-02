@@ -51,7 +51,7 @@ class OnboardingManager: ObservableObject {
 // MARK: - Main Onboarding View
 struct OnboardingView: View {
     @StateObject private var onboardingManager = OnboardingManager()
-    @StateObject private var avatarModel = AvatarModel()
+    @ObservedObject var avatarModel: AvatarModel  // Passed from App, not created here
     @Binding var isOnboardingComplete: Bool
     
     var body: some View {
@@ -181,5 +181,8 @@ struct WelcomeView: View {
 
 // MARK: - Preview
 #Preview {
-    OnboardingView(isOnboardingComplete: .constant(false))
+    OnboardingView(
+        avatarModel: AvatarModel(),
+        isOnboardingComplete: .constant(false)
+    )
 }

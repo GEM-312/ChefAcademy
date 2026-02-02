@@ -193,7 +193,8 @@ struct HomeAnimatedView: View {
                 recipe: Recipe(
                     title: "Rainbow Veggie Wrap",
                     description: "A colorful, crunchy wrap packed with fresh vegetables and hummus",
-                    imageName: "rainbow-wrap",
+                    imageName: "recipe_wrap_rainbow_veggie",
+                    category: .lunch,
                     cookTime: 15,
                     difficulty: .easy,
                     servings: 2,
