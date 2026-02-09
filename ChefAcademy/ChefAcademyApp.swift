@@ -59,16 +59,16 @@ struct MainTabView: View {
     enum Tab: String, CaseIterable {
         case home = "Home"
         case garden = "Garden"
+        case farm = "Farm"
         case recipes = "Recipes"
-        case play = "Play"
         case profile = "Me"
-        
+
         var icon: String {
             switch self {
             case .home: return "house.fill"
             case .garden: return "leaf.fill"
+            case .farm: return "cart.fill"
             case .recipes: return "book.fill"
-            case .play: return "gamecontroller.fill"
             case .profile: return "person.fill"
             }
         }
@@ -82,11 +82,11 @@ struct MainTabView: View {
                 case .home:
                     HomeView(avatarModel: avatarModel, selectedTab: $selectedTab)
                 case .garden:
-                    GardenView() // Our new garden!
+                    GardenView() // Our garden!
+                case .farm:
+                    FarmShopView() // Farm shop for pantry items!
                 case .recipes:
                     RecipeListView()
-                case .play:
-                    PlaceholderView(title: "🎮 Learn & Play", subtitle: "Coming soon!")
                 case .profile:
                     PlaceholderView(title: "👤 My Profile", subtitle: "Coming soon!")
                 }
@@ -146,44 +146,84 @@ struct HomeView: View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: AppSpacing.lg) {
 
-                // Header with greeting and coins
-                HStack(alignment: .center, spacing: AppSpacing.sm) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(greetingMessage)
-                            .font(.AppTheme.headline)
-                            .foregroundColor(Color.AppTheme.sepia)
-                            .lineLimit(1)
+                // Header: Row 1 = greeting + avatar, Row 2 = stats
+                VStack(alignment: .leading, spacing: AppSpacing.sm) {
 
-                        Text("Chef \(avatarModel.name.isEmpty ? "Little Chef" : avatarModel.name)!")
-                            .font(.AppTheme.title)
-                            .foregroundColor(Color.AppTheme.darkBrown)
-                            .lineLimit(1)
+                    // Row 1: Greeting text + Avatar on the right
+                    HStack {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(greetingMessage)
+                                .font(.AppTheme.headline)
+                                .foregroundColor(Color.AppTheme.sepia)
+
+                            Text("Chef \(avatarModel.name.isEmpty ? "Little Chef" : avatarModel.name)!")
+                                .font(.AppTheme.title)
+                                .foregroundColor(Color.AppTheme.darkBrown)
+                        }
+
+                        Spacer()
+
+                        // Avatar - clipped to fixed frame
+                        ZStack {
+                            Circle()
+                                .fill(Color.AppTheme.parchment)
+                                .frame(width: 96, height: 96)
+                            AvatarPreviewView(avatarModel: avatarModel)
+                                .scaleEffect(0.36)
+                                .frame(width: 96, height: 96)
+                                .clipped()
+                        }
+                        .frame(width: 96, height: 96)
                     }
-                    .layoutPriority(1)
 
-                    Spacer()
+                    // Row 2: Level + Coins + XP chips
+                    HStack(spacing: AppSpacing.xs) {
+                        // Level chip
+                        Label {
+                            Text("Lv. \(gameState.playerLevel)")
+                                .font(.AppTheme.caption)
+                                .foregroundColor(Color.AppTheme.darkBrown)
+                        } icon: {
+                            Image(systemName: "star.fill")
+                                .foregroundColor(Color.AppTheme.goldenWheat)
+                                .font(.system(size: 11))
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color.AppTheme.warmCream)
+                        .cornerRadius(14)
 
-                    // Coin display
-                    HStack(spacing: 4) {
-                        Image(systemName: "circle.fill")
-                            .foregroundColor(Color.AppTheme.goldenWheat)
-                            .font(.system(size: 14))
-                        Text("\(gameState.coins)")
-                            .font(.AppTheme.subheadline)
-                            .foregroundColor(Color.AppTheme.darkBrown)
-                    }
-                    .padding(.horizontal, AppSpacing.xs)
-                    .padding(.vertical, AppSpacing.xs)
-                    .background(Color.AppTheme.warmCream)
-                    .cornerRadius(16)
+                        // Coins chip
+                        Label {
+                            Text("\(gameState.coins)")
+                                .font(.AppTheme.caption)
+                                .foregroundColor(Color.AppTheme.darkBrown)
+                        } icon: {
+                            Image(systemName: "circle.fill")
+                                .foregroundColor(Color.AppTheme.goldenWheat)
+                                .font(.system(size: 11))
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color.AppTheme.warmCream)
+                        .cornerRadius(14)
 
-                    // Avatar
-                    ZStack {
-                        Circle()
-                            .fill(Color.AppTheme.parchment)
-                            .frame(width: 44, height: 44)
-                        AvatarPreviewView(avatarModel: avatarModel)
-                            .scaleEffect(0.18)
+                        // XP chip
+                        Label {
+                            Text("\(gameState.xp) XP")
+                                .font(.AppTheme.caption)
+                                .foregroundColor(Color.AppTheme.darkBrown)
+                        } icon: {
+                            Image(systemName: "bolt.fill")
+                                .foregroundColor(Color.AppTheme.sage)
+                                .font(.system(size: 11))
+                        }
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(Color.AppTheme.warmCream)
+                        .cornerRadius(14)
+
+                        Spacer()
                     }
                 }
                 .padding(.horizontal, AppSpacing.md)
@@ -209,8 +249,8 @@ struct HomeView: View {
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: AppSpacing.md) {
                             QuickActionCard(icon: "🌱", title: "Visit Garden", color: Color.AppTheme.sage, action: { selectedTab = .garden })
+                            QuickActionCard(icon: "🛒", title: "Farm Shop", color: Color.AppTheme.terracotta, action: { selectedTab = .farm })
                             QuickActionCard(icon: "🍳", title: "Cook Recipe", color: Color.AppTheme.goldenWheat, action: { selectedTab = .recipes })
-                            QuickActionCard(icon: "🎮", title: "Play & Learn", color: Color.AppTheme.terracotta, action: { selectedTab = .play })
                             QuickActionCard(icon: "🏆", title: "My Badges", color: Color.AppTheme.sage, action: { selectedTab = .profile })
                         }
                         .padding(.horizontal, AppSpacing.md)

@@ -72,15 +72,18 @@ struct HomeAnimatedView: View {
                 Text(greetingMessage)
                     .font(sizeClass == .compact ? .AppTheme.headline : .AppTheme.title3)
                     .foregroundColor(Color.AppTheme.sepia)
-                    .fixedSize(horizontal: true, vertical: false) // Prevent wrapping
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.75)
 
                 Text("Chef \(avatarModel.name.isEmpty ? "Little Chef" : avatarModel.name)!")
                     .font(sizeClass == .compact ? .AppTheme.title : .AppTheme.largeTitle)
                     .foregroundColor(Color.AppTheme.darkBrown)
-                    .fixedSize(horizontal: true, vertical: false) // Prevent wrapping
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.65)
             }
+            .layoutPriority(1)
 
-            Spacer()
+            Spacer(minLength: AppSpacing.xs)
 
             // Avatar mini preview - larger on iPad
             ZStack {
@@ -94,6 +97,7 @@ struct HomeAnimatedView: View {
                 AvatarPreviewView(avatarModel: avatarModel)
                     .scaleEffect(sizeClass == .compact ? 0.2 : 0.28)
             }
+            .fixedSize()
         }
     }
 

@@ -47,6 +47,13 @@ class GameState: ObservableObject {
     @Published var gardenPlots: [GardenPlot] = GardenPlot.createStarterPlots()
 
     // ============================================
+    // FARM SHOP — Pantry Inventory
+    // ============================================
+
+    /// Items bought from the farm shop (eggs, chicken, butter, etc.)
+    @Published var pantryInventory: [PantryStock] = PantryStock.starterPantry
+
+    // ============================================
     // RECIPE PROGRESS
     // ============================================
 
@@ -138,6 +145,74 @@ class GameState: ObservableObject {
         }
         return true
     }
+
+    // ============================================
+    // PANTRY HELPERS
+    // ============================================
+
+    /// Buy a pantry item from the farm shop
+    func buyPantryItem(_ item: PantryItem, quantity: Int = 1) -> Bool {
+        let totalCost = item.shopPrice * quantity
+        guard spendCoins(totalCost) else { return false }
+
+        if let index = pantryInventory.firstIndex(where: { $0.item == item }) {
+            pantryInventory[index].quantity += quantity
+        } else {
+            pantryInventory.append(PantryStock(item: item, quantity: quantity))
+        }
+
+        // Award XP for shopping!
+        addXP(3 * quantity)
+        return true
+    }
+
+    /// Check if player has a pantry item in stock
+    func hasPantryItem(_ item: PantryItem, quantity: Int = 1) -> Bool {
+        guard let stock = pantryInventory.first(where: { $0.item == item }) else {
+            return false
+        }
+        return stock.quantity >= quantity
+    }
+
+    /// Use a pantry item (for cooking)
+    func usePantryItem(_ item: PantryItem, quantity: Int = 1) -> Bool {
+        guard let index = pantryInventory.firstIndex(where: { $0.item == item }),
+              pantryInventory[index].quantity >= quantity else {
+            return false
+        }
+        pantryInventory[index].quantity -= quantity
+        if pantryInventory[index].quantity <= 0 {
+            pantryInventory.remove(at: index)
+        }
+        return true
+    }
+
+    /// Get quantity of a pantry item
+    func pantryQuantity(for item: PantryItem) -> Int {
+        pantryInventory.first(where: { $0.item == item })?.quantity ?? 0
+    }
+}
+
+// MARK: - Pantry Stock
+/// Tracks how many of each pantry item the player owns
+
+struct PantryStock: Identifiable, Equatable {
+    var id: String { item.rawValue }
+    let item: PantryItem
+    var quantity: Int
+
+    static func == (lhs: PantryStock, rhs: PantryStock) -> Bool {
+        lhs.item == rhs.item && lhs.quantity == rhs.quantity
+    }
+
+    /// New players start with some basic pantry items!
+    static let starterPantry: [PantryStock] = [
+        PantryStock(item: .salt, quantity: 10),
+        PantryStock(item: .pepper, quantity: 10),
+        PantryStock(item: .butter, quantity: 3),
+        PantryStock(item: .eggs, quantity: 6),
+        PantryStock(item: .oliveOil, quantity: 2),
+    ]
 }
 
 // MARK: - Seed Model
@@ -155,7 +230,12 @@ struct Seed: Identifiable, Equatable {
     static let starterSeeds: [Seed] = [
         Seed(vegetableType: .lettuce, quantity: 5),
         Seed(vegetableType: .carrot, quantity: 3),
-        Seed(vegetableType: .tomato, quantity: 3)
+        Seed(vegetableType: .tomato, quantity: 3),
+        Seed(vegetableType: .cucumber, quantity: 2),
+        Seed(vegetableType: .broccoli, quantity: 2),
+        Seed(vegetableType: .zucchini, quantity: 2),
+        Seed(vegetableType: .onion, quantity: 2),
+        Seed(vegetableType: .pumpkin, quantity: 1)
     ]
 }
 
@@ -163,6 +243,7 @@ struct Seed: Identifiable, Equatable {
 //
 // All the vegetables you can grow in your garden!
 // Each one has different growth times, costs, and nutrients.
+// Now uses custom illustration assets instead of emojis.
 //
 
 enum VegetableType: String, CaseIterable, Identifiable {
@@ -170,10 +251,10 @@ enum VegetableType: String, CaseIterable, Identifiable {
     case carrot
     case tomato
     case cucumber
-    case bellPepperRed
-    case bellPepperYellow
-    case spinach
-    case avocado
+    case broccoli
+    case zucchini
+    case onion
+    case pumpkin
 
     var id: String { rawValue }
 
@@ -184,38 +265,52 @@ enum VegetableType: String, CaseIterable, Identifiable {
         case .carrot: return "Carrot"
         case .tomato: return "Tomato"
         case .cucumber: return "Cucumber"
-        case .bellPepperRed: return "Red Pepper"
-        case .bellPepperYellow: return "Yellow Pepper"
-        case .spinach: return "Spinach"
-        case .avocado: return "Avocado"
+        case .broccoli: return "Broccoli"
+        case .zucchini: return "Zucchini"
+        case .onion: return "Onion"
+        case .pumpkin: return "Pumpkin"
         }
     }
 
-    /// Emoji for quick display
+    /// Asset image name (matches Assets.xcassets/Vegetables/)
+    var imageName: String {
+        switch self {
+        case .lettuce: return "lettuce_veggie"
+        case .carrot: return "carrot_veggie"
+        case .tomato: return "tomato_veggie"
+        case .cucumber: return "cucumber_veggie"
+        case .broccoli: return "broccoli_veggie"
+        case .zucchini: return "zuccini_veggie"
+        case .onion: return "onion_veggie"
+        case .pumpkin: return "pumpkin_veggie"
+        }
+    }
+
+    /// Emoji fallback for quick display
     var emoji: String {
         switch self {
         case .lettuce: return "🥬"
         case .carrot: return "🥕"
         case .tomato: return "🍅"
         case .cucumber: return "🥒"
-        case .bellPepperRed: return "🫑"
-        case .bellPepperYellow: return "🫑"
-        case .spinach: return "🥬"
-        case .avocado: return "🥑"
+        case .broccoli: return "🥦"
+        case .zucchini: return "🥒"
+        case .onion: return "🧅"
+        case .pumpkin: return "🎃"
         }
     }
 
     /// How long to grow (in seconds) - short for testing!
     var growthTime: TimeInterval {
         switch self {
-        case .lettuce: return 30      // 30 seconds (fast for testing)
-        case .carrot: return 60       // 1 minute
-        case .tomato: return 90       // 1.5 minutes
-        case .cucumber: return 60
-        case .bellPepperRed: return 120
-        case .bellPepperYellow: return 120
-        case .spinach: return 45
-        case .avocado: return 180     // 3 minutes (slowest)
+        case .lettuce: return 30       // 30 seconds (fast for testing)
+        case .carrot: return 60        // 1 minute
+        case .tomato: return 90        // 1.5 minutes
+        case .cucumber: return 60      // 1 minute
+        case .broccoli: return 120     // 2 minutes
+        case .zucchini: return 75      // 1.25 minutes
+        case .onion: return 90         // 1.5 minutes
+        case .pumpkin: return 180      // 3 minutes (slowest)
         }
     }
 
@@ -226,10 +321,10 @@ enum VegetableType: String, CaseIterable, Identifiable {
         case .carrot: return 3
         case .tomato: return 4
         case .cucumber: return 2
-        case .bellPepperRed: return 2
-        case .bellPepperYellow: return 2
-        case .spinach: return 3
-        case .avocado: return 1
+        case .broccoli: return 2
+        case .zucchini: return 3
+        case .onion: return 3
+        case .pumpkin: return 1
         }
     }
 
@@ -240,10 +335,10 @@ enum VegetableType: String, CaseIterable, Identifiable {
         case .carrot: return 10
         case .tomato: return 15
         case .cucumber: return 10
-        case .bellPepperRed: return 20
-        case .bellPepperYellow: return 20
-        case .spinach: return 10
-        case .avocado: return 30
+        case .broccoli: return 20
+        case .zucchini: return 12
+        case .onion: return 8
+        case .pumpkin: return 30
         }
     }
 
@@ -254,10 +349,10 @@ enum VegetableType: String, CaseIterable, Identifiable {
         case .carrot: return 5
         case .tomato: return 8
         case .cucumber: return 5
-        case .bellPepperRed: return 12
-        case .bellPepperYellow: return 12
-        case .spinach: return 6
-        case .avocado: return 20
+        case .broccoli: return 12
+        case .zucchini: return 7
+        case .onion: return 4
+        case .pumpkin: return 20
         }
     }
 
@@ -268,10 +363,10 @@ enum VegetableType: String, CaseIterable, Identifiable {
         case .carrot: return [.vitaminA, .fiber]
         case .tomato: return [.vitaminC, .antioxidants]
         case .cucumber: return [.hydration, .vitaminK]
-        case .bellPepperRed: return [.vitaminC, .vitaminA]
-        case .bellPepperYellow: return [.vitaminC, .vitaminB6]
-        case .spinach: return [.iron, .vitaminK, .calcium]
-        case .avocado: return [.healthyFats, .potassium, .fiber]
+        case .broccoli: return [.vitaminC, .vitaminK, .fiber]
+        case .zucchini: return [.vitaminB6, .potassium]
+        case .onion: return [.vitaminC, .antioxidants]
+        case .pumpkin: return [.vitaminA, .fiber, .potassium]
         }
     }
 }
@@ -448,6 +543,14 @@ extension GameState {
         state.harvestedIngredients = [
             HarvestedIngredient(type: .carrot, quantity: 5),
             HarvestedIngredient(type: .tomato, quantity: 3)
+        ]
+        state.pantryInventory = [
+            PantryStock(item: .salt, quantity: 10),
+            PantryStock(item: .pepper, quantity: 10),
+            PantryStock(item: .butter, quantity: 3),
+            PantryStock(item: .eggs, quantity: 6),
+            PantryStock(item: .oliveOil, quantity: 2),
+            PantryStock(item: .cheese, quantity: 2),
         ]
         return state
     }

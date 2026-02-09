@@ -4,6 +4,7 @@
 //
 //  A bottom sheet where players select which seed to plant.
 //  This is called a "modal" - it temporarily takes over the screen.
+//  Now responsive for both iPhone and iPad!
 //
 
 import SwiftUI
@@ -19,61 +20,73 @@ struct PlantingSheet: View {
     // Which plot we're planting in
     let plotIndex: Int
 
-    // @Binding creates a TWO-WAY connection to the parent's @State
-    // When we set isPresented = false, the parent's showingPlantingSheet
-    // also becomes false, and the sheet closes!
-    @Binding var isPresented: Bool
+    // Closure to dismiss the sheet
+    let onDismiss: () -> Void
 
     // Access the game state to get seeds and update the plot
     @EnvironmentObject var gameState: GameState
 
+    // Detect iPhone vs iPad
+    @Environment(\.horizontalSizeClass) var sizeClass
+
     // Track which seed the player has selected
     @State private var selectedSeed: Seed?
 
+    // Adaptive sizes
+    private var isIPad: Bool { sizeClass != .compact }
+    private var seedImageSize: CGFloat { isIPad ? 120 : 80 }
+    private var gridSpacing: CGFloat { isIPad ? 24 : 16 }
+    private var gridColumns: Int { isIPad ? 4 : 3 }
+    private var titleFont: Font { isIPad ? .AppTheme.largeTitle : .AppTheme.title }
+    private var bodyFont: Font { isIPad ? .AppTheme.title3 : .AppTheme.body }
+
     var body: some View {
         NavigationView {
-            VStack(spacing: AppSpacing.lg) {
+            ScrollView {
+                VStack(spacing: isIPad ? AppSpacing.xl : AppSpacing.lg) {
 
-                // MARK: - Header
-                VStack(spacing: AppSpacing.xs) {
-                    Text("Choose a Seed")
-                        .font(.AppTheme.title)
-                        .foregroundColor(Color.AppTheme.darkBrown)
+                    // MARK: - Header
+                    VStack(spacing: AppSpacing.xs) {
+                        Text("Choose a Seed")
+                            .font(titleFont)
+                            .foregroundColor(Color.AppTheme.darkBrown)
 
-                    Text("Select what to plant in plot \(plotIndex + 1)")
-                        .font(.AppTheme.body)
-                        .foregroundColor(Color.AppTheme.sepia)
+                        Text("Select what to plant in plot \(plotIndex + 1)")
+                            .font(bodyFont)
+                            .foregroundColor(Color.AppTheme.sepia)
+                    }
+                    .padding(.top, isIPad ? AppSpacing.xl : AppSpacing.lg)
+
+                    // MARK: - Seed Options
+                    if gameState.seeds.isEmpty {
+                        noSeedsView
+                    } else {
+                        seedGridView
+                    }
+
+                    // MARK: - Plant Button
+                    if let seed = selectedSeed, seed.quantity > 0 {
+                        plantButton(for: seed)
+                    }
+
+                    Spacer(minLength: 40)
                 }
-                .padding(.top, AppSpacing.lg)
-
-                // MARK: - Seed Options
-                if gameState.seeds.isEmpty {
-                    noSeedsView
-                } else {
-                    seedGridView
-                }
-
-                Spacer()
-
-                // MARK: - Plant Button
-                if let seed = selectedSeed, seed.quantity > 0 {
-                    plantButton(for: seed)
-                }
+                .padding(.horizontal, isIPad ? AppSpacing.xl : AppSpacing.md)
             }
-            .padding(.horizontal, AppSpacing.md)
             .background(Color.AppTheme.cream)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") {
-                        isPresented = false
+                        onDismiss()
                     }
+                    .font(isIPad ? .AppTheme.headline : .AppTheme.body)
                     .foregroundColor(Color.AppTheme.sepia)
                 }
             }
         }
-        // This sets the sheet height to about half the screen
-        .presentationDetents([.medium, .large])
+        // iPad gets a larger sheet
+        .presentationDetents(isIPad ? [.large] : [.medium, .large])
         .presentationDragIndicator(.visible)
     }
 
@@ -82,18 +95,18 @@ struct PlantingSheet: View {
     var noSeedsView: some View {
         VStack(spacing: AppSpacing.md) {
             Text("🌱")
-                .font(.system(size: 60))
+                .font(.system(size: isIPad ? 80 : 60))
 
             Text("No seeds available!")
-                .font(.AppTheme.headline)
+                .font(isIPad ? .AppTheme.title2 : .AppTheme.headline)
                 .foregroundColor(Color.AppTheme.darkBrown)
 
             Text("Visit the shop to buy seeds.")
-                .font(.AppTheme.body)
+                .font(bodyFont)
                 .foregroundColor(Color.AppTheme.sepia)
         }
         .frame(maxWidth: .infinity)
-        .padding(AppSpacing.xl)
+        .padding(isIPad ? AppSpacing.xxl : AppSpacing.xl)
         .background(Color.AppTheme.warmCream)
         .cornerRadius(AppSpacing.cardCornerRadius)
     }
@@ -102,17 +115,15 @@ struct PlantingSheet: View {
 
     var seedGridView: some View {
         LazyVGrid(
-            columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible()),
-                GridItem(.flexible())
-            ],
-            spacing: AppSpacing.md
+            columns: Array(repeating: GridItem(.flexible(), spacing: gridSpacing), count: gridColumns),
+            spacing: gridSpacing
         ) {
             ForEach(gameState.seeds) { seed in
                 SeedOptionCard(
                     seed: seed,
                     isSelected: selectedSeed?.vegetableType == seed.vegetableType,
+                    imageSize: seedImageSize,
+                    isIPad: isIPad,
                     onSelect: {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                             selectedSeed = seed
@@ -129,16 +140,14 @@ struct PlantingSheet: View {
         Button(action: {
             plantSeed(seed)
         }) {
-            HStack {
-                Text(seed.vegetableType.emoji)
-                Text("Plant \(seed.vegetableType.displayName)")
-                    .fontWeight(.semibold)
-            }
-            .foregroundColor(Color.AppTheme.cream)
-            .frame(maxWidth: .infinity)
-            .padding()
-            .background(Color.AppTheme.sage)
-            .cornerRadius(AppSpacing.cardCornerRadius)
+            Text("Plant \(seed.vegetableType.displayName)")
+                .font(isIPad ? .AppTheme.title3 : .AppTheme.headline)
+                .fontWeight(.semibold)
+                .foregroundColor(Color.AppTheme.cream)
+                .frame(maxWidth: isIPad ? 400 : .infinity)
+                .padding(isIPad ? AppSpacing.lg : AppSpacing.md)
+                .background(Color.AppTheme.sage)
+                .cornerRadius(AppSpacing.cardCornerRadius)
         }
         .padding(.bottom, AppSpacing.lg)
     }
@@ -160,54 +169,60 @@ struct PlantingSheet: View {
         gameState.gardenPlots[plotIndex].plant(seed.vegetableType)
 
         // Close the sheet
-        isPresented = false
+        onDismiss()
     }
 }
 
 // MARK: - Seed Option Card
 //
 // A tappable card showing one type of seed
+// Now adaptive for iPhone/iPad
 //
 
 struct SeedOptionCard: View {
     let seed: Seed
     let isSelected: Bool
+    var imageSize: CGFloat = 80
+    var isIPad: Bool = false
     let onSelect: () -> Void
 
     var body: some View {
         Button(action: onSelect) {
-            VStack(spacing: AppSpacing.xs) {
-                // Seed emoji
-                Text(seed.vegetableType.emoji)
-                    .font(.system(size: 32))
+            VStack(spacing: isIPad ? AppSpacing.sm : AppSpacing.xs) {
+                // Vegetable illustration
+                Image(seed.vegetableType.imageName)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: imageSize, height: imageSize)
+                    .opacity(0.8)
 
                 // Vegetable name
                 Text(seed.vegetableType.displayName)
-                    .font(.AppTheme.caption)
+                    .font(isIPad ? .AppTheme.headline : .AppTheme.caption)
                     .foregroundColor(Color.AppTheme.darkBrown)
                     .lineLimit(1)
 
                 // Quantity
                 Text("x\(seed.quantity)")
-                    .font(.AppTheme.caption)
+                    .font(isIPad ? .AppTheme.body : .AppTheme.caption)
                     .foregroundColor(Color.AppTheme.sepia)
 
                 // Growth time
                 HStack(spacing: 2) {
                     Image(systemName: "clock")
-                        .font(.system(size: 10))
+                        .font(.system(size: isIPad ? 14 : 10))
                     Text(growthTimeText)
-                        .font(.system(size: 10))
+                        .font(.system(size: isIPad ? 14 : 10))
                 }
                 .foregroundColor(Color.AppTheme.lightSepia)
             }
             .frame(maxWidth: .infinity)
-            .padding(AppSpacing.sm)
+            .padding(isIPad ? AppSpacing.md : AppSpacing.sm)
             .background(isSelected ? Color.AppTheme.sage.opacity(0.2) : Color.AppTheme.warmCream)
-            .cornerRadius(12)
+            .cornerRadius(isIPad ? 16 : 12)
             .overlay(
-                RoundedRectangle(cornerRadius: 12)
-                    .stroke(isSelected ? Color.AppTheme.sage : Color.clear, lineWidth: 2)
+                RoundedRectangle(cornerRadius: isIPad ? 16 : 12)
+                    .stroke(isSelected ? Color.AppTheme.sage : Color.clear, lineWidth: isIPad ? 3 : 2)
             )
         }
         .buttonStyle(.plain)
@@ -228,6 +243,6 @@ struct SeedOptionCard: View {
 // MARK: - Preview
 
 #Preview {
-    PlantingSheet(plotIndex: 0, isPresented: .constant(true))
+    PlantingSheet(plotIndex: 0, onDismiss: {})
         .environmentObject(GameState.preview)
 }
