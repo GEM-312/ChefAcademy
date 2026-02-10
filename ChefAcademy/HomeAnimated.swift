@@ -144,9 +144,9 @@ struct HomeAnimatedView: View {
 
     @ViewBuilder
     var quickActionCards: some View {
-        QuickActionCardAnimated(
-            icon: "🌱",
+        QuickActionCardWithImage(
             title: "Visit Garden",
+            imageName: "bg_garden",
             color: Color.AppTheme.sage,
             sizeClass: sizeClass
         ) {
@@ -154,9 +154,9 @@ struct HomeAnimatedView: View {
             pipMessage = "Let's see what's growing in the garden!"
         }
 
-        QuickActionCardAnimated(
-            icon: "🍳",
+        QuickActionCardWithImage(
             title: "Cook Recipe",
+            imageName: "bg_kitchen",
             color: Color.AppTheme.goldenWheat,
             sizeClass: sizeClass
         ) {
@@ -373,6 +373,52 @@ struct QuickActionCardAnimated: View {
             .background(Color.AppTheme.warmCream)
             .cornerRadius(AppSpacing.cardCornerRadius)
             .scaleEffect(isPressed ? 0.95 : 1.0)
+        }
+        .buttonStyle(BouncyButtonStyle())
+    }
+}
+
+// MARK: - Quick Action Card with Background Image (iPad Responsive)
+
+struct QuickActionCardWithImage: View {
+    let title: String
+    let imageName: String
+    let color: Color
+    var sizeClass: UserInterfaceSizeClass? = .compact
+    let action: () -> Void
+
+    var body: some View {
+        let isCompact = sizeClass == .compact
+        let cardWidth = AdaptiveCardSize.quickAction(for: sizeClass)
+        let iconSize = AdaptiveCardSize.quickActionIcon(for: sizeClass)
+
+        Button(action: action) {
+            VStack(spacing: isCompact ? AppSpacing.sm : AppSpacing.md) {
+                ZStack {
+                    Circle()
+                        .fill(color.opacity(0.15))
+                        .frame(width: iconSize, height: iconSize)
+
+                    Image(imageName)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(
+                            width: iconSize - 10,
+                            height: iconSize - 10
+                        )
+                        .clipShape(Circle())
+                }
+
+                Text(title)
+                    .font(isCompact ? .AppTheme.caption : .AppTheme.body)
+                    .foregroundColor(Color.AppTheme.darkBrown)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(width: cardWidth)
+            .padding(isCompact ? AppSpacing.sm : AppSpacing.md)
+            .background(Color.AppTheme.warmCream)
+            .cornerRadius(AppSpacing.cardCornerRadius)
         }
         .buttonStyle(BouncyButtonStyle())
     }

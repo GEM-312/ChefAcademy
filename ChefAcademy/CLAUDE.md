@@ -330,56 +330,78 @@ struct ExampleView: View {
 - Meet Pip dialogue sequence
 - PipAnimations.swift (6 poses, circle mask, bounce)
 - Pip character images (6 poses from Midjourney)
-- **MainTabView** with 5 tabs (Home, Garden, Recipes, Play, Profile)
-- **HomeView** with greeting, streak card, Pip message, quick actions, recipe preview
+- **MainTabView** with 6 tabs (Home, Garden, Kitchen, Farm, Recipes, Me)
+- **HomeView** with greeting, streak card, Pip message, quick actions with bg images, recipe preview
+- **HomeAnimated.swift** with QuickActionCardWithImage using bg_garden/bg_kitchen images
 - **RecipeListView** with category filtering (All, Breakfast, Lunch, Dinner, Snacks)
 - RecipeCardView with images, difficulty badges, cook time
 - Recipe illustrations (Rainbow Veggie Wrap, Sunny Pancakes, Garden Pasta)
 - Navigation from Home → other tabs via quick action buttons
 - README.md with full style guide and Leonardo.ai prompts
+- **GardenView** — interactive map (bg_garden) with 5 draggable plot spots + draggable Pip for harvesting
+- **KitchenView** — interactive cooking scene map (bg_kitchen) with Counter, Stove, Pantry, Pip spots
+- **SceneEditor.swift** — Theatre.js-style drag-to-position tool for map items (developer-only via #if DEBUG)
+- **FarmShopView** — grid shop for buying pantry items with coins
+- **GameState.swift** — central manager with coins, seeds, 5 garden plots, harvested ingredients, pantry inventory (starts empty)
+- Garden → Kitchen navigation: "Let's Cook!" button after harvest switches to Kitchen tab
+- Kitchen counter badge shows real counts (garden veggies + pantry items from Farm Shop)
+- Vegetable illustrations (8 veggies: broccoli, carrot, cucumber, lettuce, onion, pumpkin, tomato, zucchini)
+- 13 garden recipes in GardenRecipes.all with gardenIngredients + pantryIngredients
 
 ### 🚧 In Progress:
-- GameState.swift (central manager)
-- GardenModel.swift
-- GardenView (placeholder exists, needs full implementation)
+- Cooking session flow (selecting recipe in Kitchen → mini-game sequence)
+- Mini-games (ChopMiniGame exists as template)
 
 ### ❌ Not Started:
-- Vegetable illustrations (folder created: Assets.xcassets/Vegetables/)
-- Garden plots with planting/watering/harvesting
-- Mini-games (Chop, Mix, Pour, etc.)
-- Body Adventure animation
+- CookingSessionView (mini-game sequence manager)
+- More mini-games (Crack, Mix, Pour, Flip, Heat)
+- Body Adventure animation (FoodJourneyView)
 - Quest system UI
 - Badges UI
 - Profile view
 
 ---
 
-## Next Session: Garden View + Vegetables
+## Key Architecture Notes
 
-### Tomorrow's Tasks:
-1. **Upload vegetable illustrations** to Assets.xcassets/Vegetables/
-   - Suggested vegetables: carrot, tomato, lettuce, cucumber, bell pepper, spinach
-   - Use Leonardo.ai with style reference from Pip images
+### Tab Structure (6 tabs)
+| Tab | Icon | View | Purpose |
+|-----|------|------|---------|
+| Home | house.fill | HomeView / HomeAnimatedView | Main hub, quick actions |
+| Garden | leaf.fill | GardenView | Plant & harvest veggies (interactive map) |
+| Kitchen | fork.knife | KitchenView | Cook recipes with Pip (interactive map) |
+| Farm | cart.fill | FarmShopView | Buy pantry items with coins |
+| Recipes | book.fill | RecipeListView | Browse all recipes |
+| Me | person.fill | PlaceholderView | Profile (coming soon) |
 
-2. **Build GardenView** with:
-   - Grid of 6-9 garden plots
-   - PlotView component (empty, planted, growing, ready states)
-   - Tap to plant seeds (show seed selection sheet)
-   - Visual growth progress indicator
-   - Harvest animation when ready
-
-3. **GardenModel** data structure:
-   - VegetableType enum with growth times, yields, costs
-   - GardenPlot struct with state management
-   - Integration with GameState for coins/inventory
-
-### Leonardo.ai Prompt for Vegetables:
+### Interactive Map Pattern
+Both GardenView and KitchenView use the same pattern:
+```swift
+Image("bg_xxx").resizable().aspectRatio(contentMode: .fit)
+    .overlay(GeometryReader { geo in
+        // Items positioned with .position(x: w * percent, y: h * percent)
+    })
 ```
-cute [vegetable name] illustration, soft pencil sketch on cream paper,
-children's book style, gentle sepia shading, whimsical friendly,
-hand-drawn feel, minimal details, cozy warm tones
-```
-Negative: realistic, 3d, photograph, dark, scary, detailed, complex
+
+### Scene Editor (Developer Tool)
+- `SceneEditor.swift` — drag items on map to position them visually
+- Toggle via pencil icon (only in `#if DEBUG` builds)
+- Prints coordinates to console for easy copying to code
+- Works on any map-based view (Garden, Kitchen, future scenes)
+
+### Data Flow
+- `pantryInventory` starts **empty** — player buys items from Farm Shop
+- `harvestedIngredients` starts **empty** — player harvests from Garden
+- Garden plots: 5 plots (expandable via Scene Editor + gardenSceneItems array)
+- Recipe model: `gardenIngredients: [VegetableType]` and `pantryIngredients: [PantryItem]` are flat enum arrays
+- Kitchen counter shows combined count of garden veggies + pantry items
+
+### Next Tasks
+1. Build CookingSessionView — mini-game sequence when player taps "Cook!" in Kitchen
+2. More mini-games (Crack, Mix, Pour, Flip, Heat) following ChopMiniGame pattern
+3. Body Adventure / FoodJourneyView
+4. Quest system and Badges UI
+5. Profile view
 
 ---
 
@@ -393,13 +415,19 @@ private let resetOnboarding = true  // Set to false after testing
 Set to `true` to reset and test onboarding flow again.
 
 ### Key File Locations:
-- Main app: `ChefAcademyApp.swift`
-- Home screen: `ChefAcademyApp.swift` (HomeView struct)
-- Recipes: `RecipeCardExample.swift`
+- Main app + tabs + HomeView: `ChefAcademyApp.swift`
+- Animated home: `HomeAnimated.swift`
+- Garden (interactive map): `GardenView.swift`
+- Kitchen (interactive map): `KitchenView.swift`
+- Scene Editor (dev tool): `SceneEditor.swift`
+- Farm Shop: `FarmShopView.swift`
+- Recipes + models: `RecipeCardExample.swift`
+- Game state: `GameState.swift`
 - Onboarding: `OnboardingView.swift`
 - Avatar/User data: `AvatarModel.swift`
 - Theme: `AppTheme.swift`
 - Adaptive layout: `AdaptiveLayout.swift`
+- Mini-game template: `ChopMiniGame.swift`
 
 ---
 
@@ -448,4 +476,4 @@ When asked to build something:
 
 ---
 
-*Last Updated: February 1, 2026*
+*Last Updated: February 9, 2026*

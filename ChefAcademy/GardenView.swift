@@ -238,6 +238,9 @@ struct GardenView: View {
     @EnvironmentObject var gameState: GameState
     @Environment(\.horizontalSizeClass) var sizeClass
 
+    // Tab navigation binding — so we can switch to Kitchen after harvest
+    @Binding var selectedTab: MainTabView.Tab
+
     // Adaptive: detect iPad
     private var isIPad: Bool { sizeClass != .compact }
 
@@ -246,6 +249,21 @@ struct GardenView: View {
     @State private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     @State private var suggestedRecipe: Recipe?
     @State private var showRecipeSuggestion = false
+
+    // ==========================================
+    // SCENE EDITOR: Set to true to drag plot positions!
+    // Drag handles around, then copy printed values to code.
+    // ==========================================
+    @State private var editMode = false
+
+    @State private var gardenSceneItems: [SceneItem] = [
+        SceneItem(id: "plot0", label: "Plot 0", icon: "🌱", xPercent: 0.45, yPercent: 0.66),
+        SceneItem(id: "plot1", label: "Plot 1", icon: "🌱", xPercent: 0.79, yPercent: 0.63),
+        SceneItem(id: "plot2", label: "Plot 2", icon: "🌱", xPercent: 0.32, yPercent: 0.78),
+        SceneItem(id: "plot3", label: "Plot 3", icon: "🌱", xPercent: 0.73, yPercent: 0.78),
+        SceneItem(id: "plot4", label: "Plot 4", icon: "🌱", xPercent: 0.82, yPercent: 0.88),
+        SceneItem(id: "pip", label: "Pip Idle", icon: "🦔", xPercent: 0.50, yPercent: 0.90),
+    ]
 
     var body: some View {
         NavigationView {
@@ -295,7 +313,7 @@ struct GardenView: View {
         // Recipe suggestion popup after harvest
         .alert("Recipe Unlocked! 🍳", isPresented: $showRecipeSuggestion) {
             Button("Let's Cook!") {
-                // TODO: Navigate to kitchen with this recipe
+                selectedTab = .kitchen
             }
             Button("Later", role: .cancel) { }
         } message: {
@@ -321,6 +339,19 @@ struct GardenView: View {
 
             Spacer()
 
+            // Edit mode toggle (Scene Editor - only visible in debug/dev builds)
+            #if DEBUG
+            Button {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                    editMode.toggle()
+                }
+            } label: {
+                Image(systemName: editMode ? "pencil.circle.fill" : "pencil.circle")
+                    .font(.system(size: isIPad ? 24 : 20))
+                    .foregroundColor(editMode ? .red : Color.AppTheme.lightSepia)
+            }
+            #endif
+
             // Coin display
             HStack(spacing: 6) {
                 Image(systemName: "circle.fill")
@@ -338,6 +369,15 @@ struct GardenView: View {
         .padding(.horizontal, isIPad ? AppSpacing.lg : AppSpacing.md)
     }
 
+    // MARK: - Helper: get scene item position by ID
+
+    func plotPos(for id: String, w: CGFloat, h: CGFloat) -> CGPoint {
+        guard let item = gardenSceneItems.first(where: { $0.id == id }) else {
+            return CGPoint(x: w * 0.5, y: h * 0.5)
+        }
+        return CGPoint(x: w * item.xPercent, y: h * item.yPercent)
+    }
+
     // MARK: - Garden Map Section
 
     func gardenMapSection(screenWidth: CGFloat) -> some View {
@@ -352,40 +392,60 @@ struct GardenView: View {
                     let w = mapGeo.size.width
                     let h = mapGeo.size.height
 
-                    // Plot positions — defined once so both plots and Pip use the same coords!
-                    let plotPos: [CGPoint] = [
-                        CGPoint(x: w * 0.28, y: h * 0.55),   // Plot 0: upper-left
-                        CGPoint(x: w * 0.72, y: h * 0.55),   // Plot 1: upper-right
-                        CGPoint(x: w * 0.25, y: h * 0.78),   // Plot 2: lower-left
-                        CGPoint(x: w * 0.70, y: h * 0.78),   // Plot 3: lower-right
-                    ]
+                    if editMode {
+                        // ==========================================
+                        // EDIT MODE: Drag plot handles to reposition!
+                        // ==========================================
+                        SceneEditorOverlay(
+                            mapWidth: w,
+                            mapHeight: h,
+                            items: $gardenSceneItems,
+                            editMode: true
+                        )
+                    } else {
+                        // ==========================================
+                        // PLAY MODE: Normal garden with plots
+                        // Positions come from gardenSceneItems
+                        // ==========================================
 
-                    // Plot spots (the garden patches)
-                    gardenPlotSpot(index: 0)
-                        .position(plotPos[0])
+                        // Plot positions from scene items
+                        let plotPositions: [CGPoint] = [
+                            plotPos(for: "plot0", w: w, h: h),
+                            plotPos(for: "plot1", w: w, h: h),
+                            plotPos(for: "plot2", w: w, h: h),
+                            plotPos(for: "plot3", w: w, h: h),
+                            plotPos(for: "plot4", w: w, h: h),
+                        ]
 
-                    gardenPlotSpot(index: 1)
-                        .position(plotPos[1])
+                        // Plot spots (the garden patches)
+                        gardenPlotSpot(index: 0)
+                            .position(plotPositions[0])
 
-                    gardenPlotSpot(index: 2)
-                        .position(plotPos[2])
+                        gardenPlotSpot(index: 1)
+                            .position(plotPositions[1])
 
-                    gardenPlotSpot(index: 3)
-                        .position(plotPos[3])
+                        gardenPlotSpot(index: 2)
+                            .position(plotPositions[2])
 
-                    // Draggable Pip — appears once something is planted!
-                    // Player drags Pip over ready plots to harvest them.
-                    DraggablePipView(
-                        mapWidth: w,
-                        mapHeight: h,
-                        isVisible: gameState.gardenPlots.contains(where: { $0.state != .empty }),
-                        isIPad: isIPad,
-                        plotPositions: plotPos,
-                        readyPlotIndices: gameState.gardenPlots.indices.filter { gameState.gardenPlots[$0].state == .ready },
-                        onHarvestPlot: { index in
-                            harvestPlot(index: index)
-                        }
-                    )
+                        gardenPlotSpot(index: 3)
+                            .position(plotPositions[3])
+
+                        gardenPlotSpot(index: 4)
+                            .position(plotPositions[4])
+
+                        // Draggable Pip — appears once something is planted!
+                        DraggablePipView(
+                            mapWidth: w,
+                            mapHeight: h,
+                            isVisible: gameState.gardenPlots.contains(where: { $0.state != .empty }),
+                            isIPad: isIPad,
+                            plotPositions: plotPositions,
+                            readyPlotIndices: gameState.gardenPlots.indices.filter { gameState.gardenPlots[$0].state == .ready },
+                            onHarvestPlot: { index in
+                                harvestPlot(index: index)
+                            }
+                        )
+                    }
                 }
             )
     }
@@ -669,6 +729,6 @@ struct IngredientBadge: View {
 // MARK: - Preview
 
 #Preview {
-    GardenView()
+    GardenView(selectedTab: .constant(.garden))
         .environmentObject(GameState.preview)
 }

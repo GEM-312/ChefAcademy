@@ -51,7 +51,8 @@ class GameState: ObservableObject {
     // ============================================
 
     /// Items bought from the farm shop (eggs, chicken, butter, etc.)
-    @Published var pantryInventory: [PantryStock] = PantryStock.starterPantry
+    /// Starts empty — player buys items from the Farm Shop!
+    @Published var pantryInventory: [PantryStock] = []
 
     // ============================================
     // RECIPE PROGRESS
@@ -442,9 +443,9 @@ struct GardenPlot: Identifiable {
         growthProgress >= 1.0
     }
 
-    /// Create the starter 2x2 grid of plots
+    /// Create the starter garden plots (5 plots)
     static func createStarterPlots() -> [GardenPlot] {
-        return (0..<4).map { GardenPlot(id: $0) }
+        return (0..<5).map { GardenPlot(id: $0) }
     }
 
     /// Plant a seed in this plot

@@ -59,6 +59,7 @@ struct MainTabView: View {
     enum Tab: String, CaseIterable {
         case home = "Home"
         case garden = "Garden"
+        case kitchen = "Kitchen"
         case farm = "Farm"
         case recipes = "Recipes"
         case profile = "Me"
@@ -67,6 +68,7 @@ struct MainTabView: View {
             switch self {
             case .home: return "house.fill"
             case .garden: return "leaf.fill"
+            case .kitchen: return "fork.knife"
             case .farm: return "cart.fill"
             case .recipes: return "book.fill"
             case .profile: return "person.fill"
@@ -82,11 +84,13 @@ struct MainTabView: View {
                 case .home:
                     HomeView(avatarModel: avatarModel, selectedTab: $selectedTab)
                 case .garden:
-                    GardenView() // Our garden!
+                    GardenView(selectedTab: $selectedTab) // Our garden!
+                case .kitchen:
+                    KitchenView() // Pip's Kitchen - cook recipes!
                 case .farm:
                     FarmShopView() // Farm shop for pantry items!
                 case .recipes:
-                    RecipeListView()
+                    RecipeListView() // Browse all recipes
                 case .profile:
                     PlaceholderView(title: "👤 My Profile", subtitle: "Coming soon!")
                 }
@@ -248,9 +252,9 @@ struct HomeView: View {
 
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: AppSpacing.md) {
-                            QuickActionCard(icon: "🌱", title: "Visit Garden", color: Color.AppTheme.sage, action: { selectedTab = .garden })
+                            QuickActionCardWithBg(title: "Visit Garden", imageName: "bg_garden", color: Color.AppTheme.sage, action: { selectedTab = .garden })
+                            QuickActionCardWithBg(title: "Cook Recipe", imageName: "bg_kitchen", color: Color.AppTheme.goldenWheat, action: { selectedTab = .kitchen })
                             QuickActionCard(icon: "🛒", title: "Farm Shop", color: Color.AppTheme.terracotta, action: { selectedTab = .farm })
-                            QuickActionCard(icon: "🍳", title: "Cook Recipe", color: Color.AppTheme.goldenWheat, action: { selectedTab = .recipes })
                             QuickActionCard(icon: "🏆", title: "My Badges", color: Color.AppTheme.sage, action: { selectedTab = .profile })
                         }
                         .padding(.horizontal, AppSpacing.md)
@@ -400,6 +404,50 @@ struct QuickActionCard: View {
 
                     Text(icon)
                         .font(.system(size: isLarge ? 40 : 30))
+                }
+
+                Text(title)
+                    .font(isLarge ? .AppTheme.body : .AppTheme.caption)
+                    .foregroundColor(Color.AppTheme.darkBrown)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(width: isLarge ? 120 : 90)
+            .padding(isLarge ? AppSpacing.md : AppSpacing.sm)
+            .background(Color.AppTheme.warmCream)
+            .cornerRadius(AppSpacing.cardCornerRadius)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Quick Action Card with Background Image
+struct QuickActionCardWithBg: View {
+    let title: String
+    let imageName: String
+    let color: Color
+    var isLarge: Bool = false
+    var action: (() -> Void)? = nil
+
+    var body: some View {
+        Button(action: { action?() }) {
+            VStack(spacing: isLarge ? AppSpacing.md : AppSpacing.sm) {
+                ZStack {
+                    Circle()
+                        .fill(color.opacity(0.15))
+                        .frame(
+                            width: isLarge ? 80 : 60,
+                            height: isLarge ? 80 : 60
+                        )
+
+                    Image(imageName)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(
+                            width: isLarge ? 70 : 50,
+                            height: isLarge ? 70 : 50
+                        )
+                        .clipShape(Circle())
                 }
 
                 Text(title)
