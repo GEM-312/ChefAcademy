@@ -192,15 +192,19 @@ struct ChopMiniGame: View {
         HStack(spacing: 4) {
             // Show chopped pieces based on progress
             ForEach(0..<min(chopCount, targetChops), id: \.self) { _ in
-                Text(vegetable.emoji)
-                    .font(.system(size: 30))
+                Image(vegetable.imageName)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 30, height: 30)
                     .opacity(0.6)
             }
 
             // Remaining whole vegetable (if not all chopped)
             if chopCount < targetChops {
-                Text(vegetable.emoji)
-                    .font(.system(size: 50))
+                Image(vegetable.imageName)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 50, height: 50)
                     .scaleEffect(justChopped ? 0.8 : 1.0)
                     .animation(.spring(response: 0.2, dampingFraction: 0.5), value: justChopped)
             }

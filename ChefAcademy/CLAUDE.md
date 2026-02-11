@@ -240,9 +240,26 @@ enum VegetableType: String, CaseIterable {
 }
 ```
 
-### Recipe (Already exists in RecipeData.swift)
-- Has ingredients, steps, difficulty
-- Each step links to a mini-game type
+### Recipe (in RecipeCardExample.swift)
+```swift
+struct Recipe: Identifiable {
+    let id: String
+    let title: String
+    let description: String
+    let imageName: String
+    let category: RecipeCategory  // .breakfast, .lunch, .dinner, .snacks
+    let cookTime: Int
+    let difficulty: DifficultyBadge.Level
+    let servings: Int
+    let needsAdultHelp: Bool
+    let nutritionFacts: [String]
+    let gardenIngredients: [VegetableType]
+    let pantryIngredients: [PantryItem]
+    let glucoseTip: String       // Kid-friendly nutrition tip
+    let steps: [String]          // Kid-friendly cooking instructions
+}
+```
+- 17 total recipes (3 breakfast, 5 lunch, 4 dinner, 5 snacks)
 - Star rating based on mini-game performance
 
 ---
@@ -334,9 +351,11 @@ struct ExampleView: View {
 - **HomeView** with greeting, streak card, Pip message, quick actions with bg images, recipe preview
 - **HomeAnimated.swift** with QuickActionCardWithImage using bg_garden/bg_kitchen images
 - **RecipeListView** with category filtering (All, Breakfast, Lunch, Dinner, Snacks)
-- RecipeCardView with images, difficulty badges, cook time
+- RecipeCardView — clean cards with image, title, description, difficulty/time/servings (no glucose tip or ingredient status)
+- **RecipeDetailView.swift** — full-screen cookbook page via `.fullScreenCover(item:)` with hero image, Pip's Tip, ingredients, numbered cooking steps, nutrition pills, "Let's Cook!" button
 - Recipe illustrations (Rainbow Veggie Wrap, Sunny Pancakes, Garden Pasta)
 - Navigation from Home → other tabs via quick action buttons
+- Tapping any recipe card opens RecipeDetailView; "Let's Cook!" navigates to Kitchen tab
 - README.md with full style guide and Leonardo.ai prompts
 - **GardenView** — interactive map (bg_garden) with 5 draggable plot spots + draggable Pip for harvesting
 - **KitchenView** — interactive cooking scene map (bg_kitchen) with Counter, Stove, Pantry, Pip spots
@@ -346,7 +365,9 @@ struct ExampleView: View {
 - Garden → Kitchen navigation: "Let's Cook!" button after harvest switches to Kitchen tab
 - Kitchen counter badge shows real counts (garden veggies + pantry items from Farm Shop)
 - Vegetable illustrations (8 veggies: broccoli, carrot, cucumber, lettuce, onion, pumpkin, tomato, zucchini)
-- 13 garden recipes in GardenRecipes.all with gardenIngredients + pantryIngredients
+- 17 garden recipes in GardenRecipes.all with gardenIngredients, pantryIngredients, glucoseTip, and cooking steps
+- Glucose Goddess integration: all recipes have kid-friendly nutrition tips, zero starch-centered meals
+- Vegetable images used throughout (RecipeDetailView, ChopMiniGame, GardenView, PlotView) — emojis only for pantry items
 
 ### 🚧 In Progress:
 - Cooking session flow (selecting recipe in Kitchen → mini-game sequence)
@@ -422,6 +443,7 @@ Set to `true` to reset and test onboarding flow again.
 - Scene Editor (dev tool): `SceneEditor.swift`
 - Farm Shop: `FarmShopView.swift`
 - Recipes + models: `RecipeCardExample.swift`
+- Recipe detail (cookbook page): `RecipeDetailView.swift`
 - Game state: `GameState.swift`
 - Onboarding: `OnboardingView.swift`
 - Avatar/User data: `AvatarModel.swift`

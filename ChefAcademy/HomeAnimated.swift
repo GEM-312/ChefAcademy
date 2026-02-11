@@ -5,6 +5,7 @@ struct HomeAnimatedView: View {
     @ObservedObject var avatarModel: AvatarModel
     @State private var pipPose: PipPose = .waving
     @State private var pipMessage = "Welcome back! Ready to cook something delicious today?"
+    @State private var selectedRecipe: Recipe? = nil
 
     // Detect device size class
     @Environment(\.horizontalSizeClass) var sizeClass
@@ -62,6 +63,9 @@ struct HomeAnimatedView: View {
         }
         // IMPORTANT: Force stack navigation on iPad (prevents sidebar layout)
         .navigationViewStyle(.stack)
+        .fullScreenCover(item: $selectedRecipe) { recipe in
+            RecipeDetailView(recipe: recipe)
+        }
     }
 
     // MARK: - Header Section
@@ -188,24 +192,14 @@ struct HomeAnimatedView: View {
     // MARK: - Today's Recipe Section
 
     var todaysRecipeSection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+        let todaysRecipe = GardenRecipes.all.first(where: { $0.id == "chicken-veggie-platter" }) ?? GardenRecipes.all[0]
+        return VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text("Today's Recipe")
                 .font(sizeClass == .compact ? .AppTheme.headline : .AppTheme.title3)
                 .foregroundColor(Color.AppTheme.darkBrown)
 
-            RecipeCardView(
-                recipe: Recipe(
-                    title: "Rainbow Veggie Wrap",
-                    description: "A colorful, crunchy wrap packed with fresh vegetables and hummus",
-                    imageName: "recipe_wrap_rainbow_veggie",
-                    category: .lunch,
-                    cookTime: 15,
-                    difficulty: .easy,
-                    servings: 2,
-                    needsAdultHelp: false,
-                    nutritionFacts: ["Vitamin A", "Fiber", "Protein"]
-                )
-            )
+            RecipeCardView(recipe: todaysRecipe)
+                .onTapGesture { selectedRecipe = todaysRecipe }
         }
     }
 

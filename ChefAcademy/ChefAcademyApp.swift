@@ -90,7 +90,7 @@ struct MainTabView: View {
                 case .farm:
                     FarmShopView() // Farm shop for pantry items!
                 case .recipes:
-                    RecipeListView() // Browse all recipes
+                    RecipeListView(selectedTab: $selectedTab) // Browse all recipes
                 case .profile:
                     PlaceholderView(title: "👤 My Profile", subtitle: "Coming soon!")
                 }
@@ -145,6 +145,7 @@ struct HomeView: View {
     @ObservedObject var avatarModel: AvatarModel
     @Binding var selectedTab: MainTabView.Tab
     @EnvironmentObject var gameState: GameState
+    @State private var selectedRecipe: Recipe? = nil
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -281,20 +282,9 @@ struct HomeView: View {
                         }
                     }
 
-                    RecipeCardView(
-                        recipe: Recipe(
-                            title: "Rainbow Veggie Wrap",
-                            description: "A colorful, crunchy wrap packed with fresh vegetables and hummus",
-                            imageName: "recipe_wrap_rainbow_veggie",
-                            category: .lunch,
-                            cookTime: 15,
-                            difficulty: .easy,
-                            servings: 2,
-                            needsAdultHelp: false,
-                            nutritionFacts: ["Vitamin A", "Fiber", "Protein"]
-                        )
-                    )
-                    .onTapGesture { selectedTab = .recipes }
+                    let todaysRecipe = GardenRecipes.all.first(where: { $0.id == "chicken-veggie-platter" }) ?? GardenRecipes.all[0]
+                    RecipeCardView(recipe: todaysRecipe)
+                        .onTapGesture { selectedRecipe = todaysRecipe }
                 }
                 .padding(.horizontal, AppSpacing.md)
 
@@ -304,6 +294,11 @@ struct HomeView: View {
             .padding(.top, AppSpacing.md)
         }
         .background(Color.AppTheme.cream)
+        .fullScreenCover(item: $selectedRecipe) { recipe in
+            RecipeDetailView(recipe: recipe) {
+                selectedTab = .kitchen
+            }
+        }
     }
 
     var greetingMessage: String {

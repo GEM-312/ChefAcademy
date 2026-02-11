@@ -23,17 +23,16 @@ enum RecipeCategory: String, CaseIterable {
 /// Items always available in the kitchen — no need to grow these!
 enum PantryItem: String, CaseIterable, Identifiable {
     // Basics
-    case salt, pepper, sugar, flour
+    case salt, pepper, sugar, flour, cinnamon
     // Oils & Fats
     case butter, oliveOil, vegetableOil
     // Dairy & Eggs
-    case eggs, milk, cheese, cream
-    // Protein
-    case chicken, groundBeef
-    // Pantry Staples
-    case rice, pasta, bread, tortilla
+    case eggs, milk, cheese, cream, greekYogurt
+    // Protein & Nuts
+    case chicken, groundBeef, nuts
+    // (Starch items removed — all recipes are now starch-free!)
     // Sauces & Condiments
-    case soySauce, tomatoSauce, vinegar, honey
+    case soySauce, tomatoSauce, vinegar, honey, lemon
 
     var id: String { rawValue }
 
@@ -43,6 +42,7 @@ enum PantryItem: String, CaseIterable, Identifiable {
         case .pepper: return "Pepper"
         case .sugar: return "Sugar"
         case .flour: return "Flour"
+        case .cinnamon: return "Cinnamon"
         case .butter: return "Butter"
         case .oliveOil: return "Olive Oil"
         case .vegetableOil: return "Vegetable Oil"
@@ -50,16 +50,15 @@ enum PantryItem: String, CaseIterable, Identifiable {
         case .milk: return "Milk"
         case .cheese: return "Cheese"
         case .cream: return "Cream"
+        case .greekYogurt: return "Greek Yogurt"
         case .chicken: return "Chicken"
         case .groundBeef: return "Ground Beef"
-        case .rice: return "Rice"
-        case .pasta: return "Pasta"
-        case .bread: return "Bread"
-        case .tortilla: return "Tortilla"
+        case .nuts: return "Nuts"
         case .soySauce: return "Soy Sauce"
         case .tomatoSauce: return "Tomato Sauce"
         case .vinegar: return "Vinegar"
         case .honey: return "Honey"
+        case .lemon: return "Lemon"
         }
     }
 
@@ -69,22 +68,22 @@ enum PantryItem: String, CaseIterable, Identifiable {
         case .pepper: return "🌶️"
         case .sugar: return "🍬"
         case .flour: return "🌾"
+        case .cinnamon: return "🫙"
         case .butter: return "🧈"
         case .oliveOil, .vegetableOil: return "🫒"
         case .eggs: return "🥚"
         case .milk: return "🥛"
         case .cheese: return "🧀"
         case .cream: return "🥛"
+        case .greekYogurt: return "🥣"
         case .chicken: return "🍗"
         case .groundBeef: return "🥩"
-        case .rice: return "🍚"
-        case .pasta: return "🍝"
-        case .bread: return "🍞"
-        case .tortilla: return "🫓"
+        case .nuts: return "🥜"
         case .soySauce: return "🫙"
         case .tomatoSauce: return "🥫"
         case .vinegar: return "🫙"
         case .honey: return "🍯"
+        case .lemon: return "🍋"
         }
     }
 
@@ -93,38 +92,37 @@ enum PantryItem: String, CaseIterable, Identifiable {
         switch self {
         case .salt, .pepper: return 2
         case .sugar, .flour: return 3
+        case .cinnamon: return 2
         case .butter: return 5
         case .oliveOil, .vegetableOil: return 4
         case .eggs: return 5
         case .milk: return 4
         case .cheese: return 6
         case .cream: return 5
+        case .greekYogurt: return 5
         case .chicken: return 12
         case .groundBeef: return 15
-        case .rice, .pasta: return 4
-        case .bread: return 3
-        case .tortilla: return 3
+        case .nuts: return 6
         case .soySauce: return 3
         case .tomatoSauce: return 4
         case .vinegar: return 3
         case .honey: return 6
+        case .lemon: return 2
         }
     }
 
     /// Shop category for grouping items
     var shopCategory: ShopCategory {
         switch self {
-        case .salt, .pepper, .sugar, .flour:
+        case .salt, .pepper, .sugar, .flour, .cinnamon:
             return .basics
         case .butter, .oliveOil, .vegetableOil:
             return .oilsAndFats
-        case .eggs, .milk, .cheese, .cream:
+        case .eggs, .milk, .cheese, .cream, .greekYogurt:
             return .dairy
-        case .chicken, .groundBeef:
+        case .chicken, .groundBeef, .nuts:
             return .protein
-        case .rice, .pasta, .bread, .tortilla:
-            return .grains
-        case .soySauce, .tomatoSauce, .vinegar, .honey:
+        case .soySauce, .tomatoSauce, .vinegar, .honey, .lemon:
             return .sauces
         }
     }
@@ -180,9 +178,11 @@ struct Recipe: Identifiable {
     let nutritionFacts: [String]
     let gardenIngredients: [VegetableType]  // Veggies you GROW — the game part!
     let pantryIngredients: [PantryItem]     // Always available in the kitchen
+    let glucoseTip: String                  // Kid-friendly Glucose Goddess nutrition tip
+    let steps: [String]                      // Kid-friendly cooking instructions
 
     // Default initializer
-    init(id: String = UUID().uuidString, title: String, description: String, imageName: String, imageYOffset: CGFloat = 0, category: RecipeCategory = .lunch, cookTime: Int, difficulty: DifficultyBadge.Level, servings: Int, needsAdultHelp: Bool, nutritionFacts: [String], gardenIngredients: [VegetableType] = [], pantryIngredients: [PantryItem] = []) {
+    init(id: String = UUID().uuidString, title: String, description: String, imageName: String, imageYOffset: CGFloat = 0, category: RecipeCategory = .lunch, cookTime: Int, difficulty: DifficultyBadge.Level, servings: Int, needsAdultHelp: Bool, nutritionFacts: [String], gardenIngredients: [VegetableType] = [], pantryIngredients: [PantryItem] = [], glucoseTip: String = "", steps: [String] = []) {
         self.id = id
         self.title = title
         self.description = description
@@ -196,6 +196,8 @@ struct Recipe: Identifiable {
         self.nutritionFacts = nutritionFacts
         self.gardenIngredients = gardenIngredients
         self.pantryIngredients = pantryIngredients
+        self.glucoseTip = glucoseTip
+        self.steps = steps
     }
 
     /// Check if the player has all GARDEN ingredients for this recipe
@@ -252,7 +254,18 @@ struct GardenRecipes {
             needsAdultHelp: true,
             nutritionFacts: ["Protein", "Vitamin C", "Calcium"],
             gardenIngredients: [.tomato, .onion],
-            pantryIngredients: [.eggs, .butter, .cheese, .salt, .pepper]
+            pantryIngredients: [.eggs, .butter, .cheese, .salt, .pepper],
+            glucoseTip: "This savory breakfast is perfect! Eggs + cheese give you protein and fat to keep your energy steady all morning.",
+            steps: [
+                "Crack 2 eggs into a bowl and whisk until fluffy.",
+                "Chop the tomato and onion into small pieces.",
+                "Melt butter in a pan over medium heat.",
+                "Pour the eggs into the pan and cook for 1 minute.",
+                "Add tomato, onion, and cheese on one half.",
+                "Fold the omelette in half with a spatula.",
+                "Cook 2 more minutes until cheese melts.",
+                "Slide onto a plate — bon appetit!"
+            ]
         ),
         Recipe(
             id: "veggie-scramble",
@@ -266,52 +279,118 @@ struct GardenRecipes {
             needsAdultHelp: true,
             nutritionFacts: ["Protein", "Vitamin K", "Iron"],
             gardenIngredients: [.broccoli, .zucchini],
-            pantryIngredients: [.eggs, .butter, .salt, .pepper]
+            pantryIngredients: [.eggs, .butter, .salt, .pepper],
+            glucoseTip: "Veggies + eggs for breakfast means steady energy! Savory breakfasts help you focus better than sugary cereal.",
+            steps: [
+                "Chop the broccoli into tiny florets and dice the zucchini.",
+                "Crack 3 eggs into a bowl, add salt and pepper, and whisk.",
+                "Melt butter in a pan over medium heat.",
+                "Add the broccoli and zucchini, cook for 3 minutes until soft.",
+                "Pour the whisked eggs over the veggies.",
+                "Gently stir with a spatula until eggs are fluffy and cooked.",
+                "Scoop into bowls and enjoy your power breakfast!"
+            ]
+        ),
+        Recipe(
+            id: "yogurt-power-bowl",
+            title: "Greek Yogurt Power Bowl",
+            description: "Creamy Greek yogurt topped with crunchy nuts, cinnamon, and fresh carrot shreds",
+            imageName: "recipe_wrap_rainbow_veggie",
+            category: .breakfast,
+            cookTime: 5,
+            difficulty: .easy,
+            servings: 1,
+            needsAdultHelp: false,
+            nutritionFacts: ["Protein", "Calcium", "Healthy Fats"],
+            gardenIngredients: [.carrot],
+            pantryIngredients: [.greekYogurt, .nuts, .cinnamon],
+            glucoseTip: "Greek yogurt is packed with protein! Cinnamon adds yummy flavor without any sugar. Smart swap!",
+            steps: [
+                "Peel the carrot and grate it into thin shreds.",
+                "Scoop Greek yogurt into a bowl.",
+                "Sprinkle cinnamon on top.",
+                "Add a handful of crunchy nuts.",
+                "Top with the carrot shreds.",
+                "Mix it all together and dig in!"
+            ]
         ),
 
         // MARK: - Lunch
 
         Recipe(
-            id: "rainbow-veggie-wrap",
-            title: "Rainbow Veggie Wrap",
-            description: "A colorful tortilla wrap with crunchy lettuce, carrot, and cucumber",
+            id: "chicken-veggie-platter",
+            title: "Crunchy Chicken Veggie Platter",
+            description: "Build-your-own veggie and chicken plate with lemon dressing — crunchy, fresh, and filling!",
             imageName: "recipe_wrap_rainbow_veggie",
             category: .lunch,
             cookTime: 15,
             difficulty: .easy,
             servings: 2,
             needsAdultHelp: false,
-            nutritionFacts: ["Vitamin A", "Fiber", "Hydration"],
+            nutritionFacts: ["Protein", "Vitamin A", "Fiber"],
             gardenIngredients: [.lettuce, .carrot, .cucumber],
-            pantryIngredients: [.tortilla, .cheese]
+            pantryIngredients: [.chicken, .cheese, .oliveOil, .lemon, .salt],
+            glucoseTip: "No bread needed! Veggies + chicken + cheese give you protein, fiber, and healthy fats — the perfect energy trio.",
+            steps: [
+                "Wash the lettuce, carrot, and cucumber.",
+                "Tear the lettuce into bite-sized pieces.",
+                "Peel and slice the carrot into sticks.",
+                "Cut the cucumber into rounds.",
+                "Slice the chicken into strips (use pre-cooked chicken!).",
+                "Arrange everything on a big plate.",
+                "Squeeze lemon juice and drizzle olive oil for dressing.",
+                "Sprinkle cheese and salt on top — done!"
+            ]
         ),
         Recipe(
             id: "garden-salad",
             title: "Fresh Garden Salad",
-            description: "Crispy lettuce, juicy tomato, and crunchy cucumber with olive oil dressing",
+            description: "Crispy lettuce, juicy tomato, and cucumber with eggs, cheese, and olive oil dressing",
             imageName: "recipe_wrap_rainbow_veggie",
             category: .lunch,
             cookTime: 10,
             difficulty: .easy,
             servings: 2,
             needsAdultHelp: false,
-            nutritionFacts: ["Vitamin C", "Fiber", "Hydration"],
+            nutritionFacts: ["Vitamin C", "Protein", "Fiber"],
             gardenIngredients: [.lettuce, .tomato, .cucumber],
-            pantryIngredients: [.oliveOil, .vinegar, .salt]
+            pantryIngredients: [.oliveOil, .vinegar, .eggs, .cheese, .salt],
+            glucoseTip: "Starting a meal with salad is a superpower! The fiber in veggies helps your body handle everything you eat after.",
+            steps: [
+                "Boil 2 eggs for 10 minutes, then peel and slice them.",
+                "Wash and tear the lettuce into pieces.",
+                "Chop the tomato into chunks.",
+                "Slice the cucumber into thin rounds.",
+                "Toss all the veggies into a big bowl.",
+                "Add the sliced eggs and crumbled cheese.",
+                "Drizzle olive oil and a splash of vinegar.",
+                "Sprinkle salt, toss gently, and serve!"
+            ]
         ),
         Recipe(
             id: "pumpkin-soup",
             title: "Cozy Pumpkin Soup",
-            description: "Creamy pumpkin soup with butter and onion — warm and cozy!",
+            description: "Creamy pumpkin soup with chicken, butter, and onion — warm, cozy, and filling!",
             imageName: "recipe_wrap_rainbow_veggie",
             category: .lunch,
             cookTime: 25,
             difficulty: .medium,
             servings: 4,
             needsAdultHelp: true,
-            nutritionFacts: ["Vitamin A", "Fiber", "Potassium"],
+            nutritionFacts: ["Vitamin A", "Protein", "Potassium"],
             gardenIngredients: [.pumpkin, .onion],
-            pantryIngredients: [.butter, .cream, .salt, .pepper]
+            pantryIngredients: [.chicken, .butter, .cream, .salt, .pepper],
+            glucoseTip: "Adding chicken to soup gives it protein power! Your muscles love protein — it keeps you strong and full.",
+            steps: [
+                "Peel the pumpkin and cut it into small cubes.",
+                "Chop the onion into tiny pieces.",
+                "Melt butter in a big pot over medium heat.",
+                "Cook the onion until it's soft and golden.",
+                "Add the pumpkin cubes and stir for 2 minutes.",
+                "Pour in water and add chicken pieces.",
+                "Let it simmer for 15 minutes until pumpkin is soft.",
+                "Blend until smooth, stir in cream, and add salt and pepper!"
+            ]
         ),
         Recipe(
             id: "chicken-lettuce-wrap",
@@ -325,15 +404,51 @@ struct GardenRecipes {
             needsAdultHelp: true,
             nutritionFacts: ["Protein", "Vitamin A", "Fiber"],
             gardenIngredients: [.lettuce, .carrot, .onion],
-            pantryIngredients: [.chicken, .soySauce, .vegetableOil, .salt]
+            pantryIngredients: [.chicken, .soySauce, .vegetableOil, .salt],
+            glucoseTip: "Using lettuce instead of bread is genius! You get all the crunch with extra fiber and vitamins instead of starch.",
+            steps: [
+                "Chop the chicken into small pieces.",
+                "Dice the onion and grate the carrot.",
+                "Heat vegetable oil in a pan over medium heat.",
+                "Cook the chicken pieces until golden brown.",
+                "Add onion and carrot, stir for 3 minutes.",
+                "Splash in soy sauce and mix well.",
+                "Wash and separate big lettuce leaves for cups.",
+                "Scoop the filling into lettuce cups and enjoy!"
+            ]
+        ),
+        Recipe(
+            id: "tomato-egg-soup",
+            title: "Creamy Tomato Egg Soup",
+            description: "Warm tomato soup with whisked eggs stirred in — high protein, cozy, and delicious!",
+            imageName: "recipe_pasta_garden",
+            category: .lunch,
+            cookTime: 20,
+            difficulty: .medium,
+            servings: 2,
+            needsAdultHelp: true,
+            nutritionFacts: ["Protein", "Vitamin C", "Vitamin A"],
+            gardenIngredients: [.tomato, .onion],
+            pantryIngredients: [.eggs, .butter, .cream, .salt, .pepper],
+            glucoseTip: "Eggs in soup? Yes! They add protein that keeps you full and your energy nice and steady.",
+            steps: [
+                "Chop the tomatoes and onion into small pieces.",
+                "Melt butter in a pot over medium heat.",
+                "Cook the onion until soft, then add tomatoes.",
+                "Simmer for 10 minutes until tomatoes break down.",
+                "Whisk 2 eggs in a small bowl.",
+                "Slowly pour the eggs into the soup while stirring.",
+                "Add cream, salt, and pepper.",
+                "Stir gently and serve warm!"
+            ]
         ),
 
         // MARK: - Dinner
 
         Recipe(
-            id: "chicken-stir-fry",
-            title: "Chicken Veggie Stir Fry",
-            description: "Sizzling chicken with broccoli, carrot, and zucchini in soy sauce",
+            id: "chicken-veggie-skillet",
+            title: "Sizzling Chicken Veggie Skillet",
+            description: "Sizzling chicken with broccoli, carrot, and zucchini in soy sauce — no rice needed!",
             imageName: "recipe_pasta_garden",
             category: .dinner,
             cookTime: 20,
@@ -342,85 +457,146 @@ struct GardenRecipes {
             needsAdultHelp: true,
             nutritionFacts: ["Protein", "Vitamin C", "Vitamin K"],
             gardenIngredients: [.broccoli, .carrot, .zucchini],
-            pantryIngredients: [.chicken, .soySauce, .vegetableOil, .rice, .salt, .pepper]
+            pantryIngredients: [.chicken, .soySauce, .oliveOil, .salt, .pepper],
+            glucoseTip: "All the sizzle, no rice needed! Your plate is full of protein and colorful veggies — that's real fuel.",
+            steps: [
+                "Cut the chicken into bite-sized pieces.",
+                "Chop broccoli into florets, slice carrot and zucchini.",
+                "Heat olive oil in a big skillet over medium-high heat.",
+                "Cook the chicken pieces for 5 minutes until golden.",
+                "Add all the veggies to the skillet.",
+                "Stir and cook for 5 more minutes.",
+                "Pour soy sauce over everything and toss.",
+                "Season with salt and pepper, then serve hot!"
+            ]
         ),
         Recipe(
-            id: "garden-pasta",
-            title: "Garden Pasta",
-            description: "Pasta with fresh tomatoes, zucchini, onion, and olive oil",
-            imageName: "recipe_pasta_garden",
-            category: .dinner,
-            cookTime: 25,
-            difficulty: .medium,
-            servings: 4,
-            needsAdultHelp: true,
-            nutritionFacts: ["Vitamin C", "Fiber", "Iron"],
-            gardenIngredients: [.tomato, .zucchini, .onion],
-            pantryIngredients: [.pasta, .oliveOil, .salt, .pepper, .cheese]
-        ),
-        Recipe(
-            id: "stuffed-pumpkin",
-            title: "Stuffed Pumpkin Bowl",
-            description: "Roasted pumpkin filled with rice, broccoli, onion, and carrots",
-            imageName: "recipe_pasta_garden",
-            category: .dinner,
-            cookTime: 35,
-            difficulty: .hard,
-            servings: 2,
-            needsAdultHelp: true,
-            nutritionFacts: ["Vitamin A", "Vitamin K", "Fiber"],
-            gardenIngredients: [.pumpkin, .broccoli, .onion, .carrot],
-            pantryIngredients: [.rice, .butter, .cheese, .salt, .pepper]
-        ),
-        Recipe(
-            id: "beef-veggie-rice",
-            title: "Beef & Veggie Rice Bowl",
-            description: "Ground beef with broccoli and onion over fluffy rice",
+            id: "zucchini-noodle-chicken",
+            title: "Zucchini Noodle Chicken Bowl",
+            description: "Spiralized zucchini noodles with chicken, tomato sauce, and melted cheese — a pasta swap!",
             imageName: "recipe_pasta_garden",
             category: .dinner,
             cookTime: 25,
             difficulty: .medium,
             servings: 3,
             needsAdultHelp: true,
-            nutritionFacts: ["Protein", "Iron", "Vitamin K"],
-            gardenIngredients: [.broccoli, .onion],
-            pantryIngredients: [.groundBeef, .rice, .soySauce, .vegetableOil, .salt, .pepper]
+            nutritionFacts: ["Vitamin C", "Protein", "Fiber"],
+            gardenIngredients: [.zucchini, .tomato, .onion],
+            pantryIngredients: [.chicken, .oliveOil, .cheese, .salt, .pepper],
+            glucoseTip: "Zucchini noodles look like pasta but are made of veggies! Same fun, way more vitamins.",
+            steps: [
+                "Use a spiralizer or peeler to make zucchini noodles.",
+                "Chop the tomato and onion into small pieces.",
+                "Cut the chicken into thin strips.",
+                "Heat olive oil in a pan and cook the chicken.",
+                "Add onion and tomato, cook for 3 minutes.",
+                "Toss in the zucchini noodles and stir gently.",
+                "Cook for 2 minutes — don't overcook the noodles!",
+                "Top with cheese, salt, and pepper. Twirl and enjoy!"
+            ]
+        ),
+        Recipe(
+            id: "cheesy-stuffed-pumpkin",
+            title: "Cheesy Stuffed Pumpkin",
+            description: "Roasted pumpkin stuffed with scrambled eggs, cheese, broccoli, and carrots — no rice needed!",
+            imageName: "recipe_pasta_garden",
+            category: .dinner,
+            cookTime: 35,
+            difficulty: .hard,
+            servings: 2,
+            needsAdultHelp: true,
+            nutritionFacts: ["Vitamin A", "Protein", "Fiber"],
+            gardenIngredients: [.pumpkin, .broccoli, .onion, .carrot],
+            pantryIngredients: [.eggs, .cheese, .butter, .salt, .pepper],
+            glucoseTip: "Eggs and cheese fill this pumpkin with protein instead of rice! Your muscles will thank you.",
+            steps: [
+                "Cut the pumpkin in half and scoop out the seeds.",
+                "Brush with butter and roast at 375°F for 20 minutes.",
+                "Chop broccoli, onion, and carrot into small pieces.",
+                "Scramble eggs in a pan with butter.",
+                "Mix the scrambled eggs with chopped veggies.",
+                "Add cheese, salt, and pepper to the mixture.",
+                "Scoop the filling into the roasted pumpkin halves.",
+                "Bake 10 more minutes until cheese is bubbly!"
+            ]
+        ),
+        Recipe(
+            id: "beef-stuffed-zucchini",
+            title: "Beef Stuffed Zucchini Boats",
+            description: "Halved zucchini filled with seasoned beef, tomato sauce, and melted cheese — so good!",
+            imageName: "recipe_pasta_garden",
+            category: .dinner,
+            cookTime: 30,
+            difficulty: .medium,
+            servings: 3,
+            needsAdultHelp: true,
+            nutritionFacts: ["Protein", "Iron", "Vitamin C"],
+            gardenIngredients: [.zucchini, .onion, .tomato],
+            pantryIngredients: [.groundBeef, .cheese, .tomatoSauce, .salt, .pepper],
+            glucoseTip: "Zucchini boats hold all the yummy beef and cheese! No starch — just protein, veggies, and flavor.",
+            steps: [
+                "Cut each zucchini in half lengthwise.",
+                "Scoop out the middle to make little boats.",
+                "Chop the onion and tomato into small pieces.",
+                "Brown the ground beef in a pan over medium heat.",
+                "Add onion, tomato, and tomato sauce to the beef.",
+                "Cook for 5 minutes, then add salt and pepper.",
+                "Fill each zucchini boat with the beef mixture.",
+                "Top with cheese and bake at 375°F for 15 minutes!"
+            ]
         ),
 
         // MARK: - Snacks
 
         Recipe(
             id: "carrot-sticks",
-            title: "Carrot Crunch Sticks",
-            description: "Fresh carrot sticks with a honey drizzle — sweet and crunchy!",
+            title: "Carrot Crunch & Cheese Dip",
+            description: "Fresh carrot sticks with creamy cheese dip — savory and crunchy!",
             imageName: "recipe_wrap_rainbow_veggie",
             category: .snacks,
             cookTime: 5,
             difficulty: .easy,
             servings: 1,
             needsAdultHelp: false,
-            nutritionFacts: ["Vitamin A", "Fiber", "Beta-Carotene"],
+            nutritionFacts: ["Vitamin A", "Protein", "Calcium"],
             gardenIngredients: [.carrot],
-            pantryIngredients: [.honey]
+            pantryIngredients: [.cheese],
+            glucoseTip: "Savory snacks are the best! Cheese gives you protein which keeps you full way longer than sweet treats.",
+            steps: [
+                "Wash and peel the carrots.",
+                "Cut them into long, thin sticks.",
+                "Put soft cheese in a small bowl.",
+                "Arrange carrot sticks around the cheese dip.",
+                "Dip, crunch, and enjoy!"
+            ]
         ),
         Recipe(
             id: "cucumber-bites",
-            title: "Cool Cucumber Bites",
-            description: "Crispy cucumber slices with a pinch of salt — refreshing!",
+            title: "Cucumber & Cheese Bites",
+            description: "Crispy cucumber slices topped with cheese — refreshing and filling!",
             imageName: "recipe_wrap_rainbow_veggie",
             category: .snacks,
             cookTime: 5,
             difficulty: .easy,
             servings: 1,
             needsAdultHelp: false,
-            nutritionFacts: ["Hydration", "Vitamin K", "Fiber"],
+            nutritionFacts: ["Hydration", "Protein", "Calcium"],
             gardenIngredients: [.cucumber],
-            pantryIngredients: [.salt]
+            pantryIngredients: [.cheese, .salt],
+            glucoseTip: "Veggies + cheese = the perfect snack! This combo gives you hydration, fiber, AND protein all at once.",
+            steps: [
+                "Wash the cucumber.",
+                "Slice it into thick rounds.",
+                "Cut cheese into small squares.",
+                "Place a cheese square on each cucumber round.",
+                "Sprinkle a tiny bit of salt on top.",
+                "Pop them in your mouth — so refreshing!"
+            ]
         ),
         Recipe(
             id: "cheesy-broccoli-bites",
             title: "Cheesy Broccoli Bites",
-            description: "Tiny broccoli florets baked with melted cheese — so yummy!",
+            description: "Tiny broccoli florets baked with eggs and melted cheese — so yummy!",
             imageName: "recipe_wrap_rainbow_veggie",
             category: .snacks,
             cookTime: 15,
@@ -429,7 +605,43 @@ struct GardenRecipes {
             needsAdultHelp: true,
             nutritionFacts: ["Calcium", "Vitamin K", "Protein"],
             gardenIngredients: [.broccoli],
-            pantryIngredients: [.cheese, .eggs, .flour, .salt]
+            pantryIngredients: [.cheese, .eggs, .flour, .salt],
+            glucoseTip: "The eggs and cheese \"dress\" the flour in this recipe! Protein and fat make sure your energy stays nice and steady.",
+            steps: [
+                "Chop broccoli into tiny, tiny florets.",
+                "Crack an egg into a bowl and whisk it.",
+                "Mix in a spoonful of flour and a pinch of salt.",
+                "Add the broccoli and shredded cheese to the bowl.",
+                "Stir everything together into a thick batter.",
+                "Drop spoonfuls onto a greased baking sheet.",
+                "Bake at 375°F for 12 minutes until golden.",
+                "Let them cool a bit, then munch away!"
+            ]
+        ),
+        Recipe(
+            id: "zucchini-fritters",
+            title: "Zucchini Cheese Fritters",
+            description: "Crispy zucchini fritters with eggs and melted cheese — a savory protein snack!",
+            imageName: "recipe_wrap_rainbow_veggie",
+            category: .snacks,
+            cookTime: 15,
+            difficulty: .medium,
+            servings: 2,
+            needsAdultHelp: true,
+            nutritionFacts: ["Protein", "Vitamin C", "Calcium"],
+            gardenIngredients: [.zucchini],
+            pantryIngredients: [.eggs, .cheese, .flour, .oliveOil, .salt],
+            glucoseTip: "These fritters are packed with protein from eggs and cheese! Savory snacks keep you energized way better than candy.",
+            steps: [
+                "Grate the zucchini and squeeze out extra water.",
+                "Crack an egg into a bowl and whisk it.",
+                "Mix in flour, shredded cheese, and salt.",
+                "Add the grated zucchini and stir well.",
+                "Heat olive oil in a pan over medium heat.",
+                "Drop spoonfuls of batter into the pan.",
+                "Cook 3 minutes on each side until golden and crispy.",
+                "Place on a paper towel to cool, then enjoy!"
+            ]
         ),
         Recipe(
             id: "lettuce-cups",
@@ -443,7 +655,17 @@ struct GardenRecipes {
             needsAdultHelp: false,
             nutritionFacts: ["Vitamin A", "Vitamin C", "Fiber"],
             gardenIngredients: [.lettuce, .carrot, .tomato],
-            pantryIngredients: [.cheese, .salt]
+            pantryIngredients: [.cheese, .salt],
+            glucoseTip: "Lettuce cups are a fiber-first snack! The veggies and cheese keep you going strong until dinner time.",
+            steps: [
+                "Wash the lettuce and separate big leaves.",
+                "Peel and dice the carrot into tiny pieces.",
+                "Chop the tomato into small cubes.",
+                "Cut cheese into small strips or crumbles.",
+                "Place carrot, tomato, and cheese inside each lettuce leaf.",
+                "Sprinkle a pinch of salt on top.",
+                "Roll them up or eat them open — your choice!"
+            ]
         ),
     ]
 
@@ -466,9 +688,6 @@ struct GardenRecipes {
 // MARK: - Recipe Card View
 struct RecipeCardView: View {
     let recipe: Recipe
-    var showIngredientStatus: Bool = false
-    var harvestedIngredients: [HarvestedIngredient] = []
-    var pantryInventory: [PantryStock] = []
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -512,11 +731,6 @@ struct RecipeCardView: View {
                     .foregroundColor(Color.AppTheme.sepia)
                     .lineLimit(2)
 
-                // Ingredient status (when enabled)
-                if showIngredientStatus {
-                    ingredientStatusRow
-                }
-
                 // Divider
                 Rectangle()
                     .fill(Color.AppTheme.sepia.opacity(0.2))
@@ -551,53 +765,19 @@ struct RecipeCardView: View {
         .cornerRadius(AppSpacing.cardCornerRadius)
         .shadow(color: Color.AppTheme.sepia.opacity(0.15), radius: 10, x: 0, y: 4)
     }
-
-    // MARK: - Ingredient Status Row
-
-    var ingredientStatusRow: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            // Garden ingredients
-            if !recipe.gardenIngredients.isEmpty {
-                HStack(spacing: 4) {
-                    Image(systemName: "leaf.fill")
-                        .font(.system(size: 10))
-                        .foregroundColor(Color.AppTheme.sage)
-                    ForEach(recipe.gardenIngredients, id: \.self) { veg in
-                        let hasIt = harvestedIngredients.first(where: { $0.type == veg })?.quantity ?? 0 >= 1
-                        Text(veg.emoji)
-                            .font(.system(size: 14))
-                            .opacity(hasIt ? 1.0 : 0.3)
-                    }
-                }
-            }
-
-            // Pantry ingredients
-            if !recipe.pantryIngredients.isEmpty {
-                HStack(spacing: 4) {
-                    Image(systemName: "cart.fill")
-                        .font(.system(size: 10))
-                        .foregroundColor(Color.AppTheme.goldenWheat)
-                    ForEach(recipe.pantryIngredients, id: \.self) { item in
-                        let hasIt = pantryInventory.first(where: { $0.item == item })?.quantity ?? 0 >= 1
-                        Text(item.emoji)
-                            .font(.system(size: 14))
-                            .opacity(hasIt ? 1.0 : 0.3)
-                    }
-                }
-            }
-        }
-    }
 }
 
 // MARK: - Recipe List View
 struct RecipeListView: View {
     @EnvironmentObject var gameState: GameState
+    @Binding var selectedTab: MainTabView.Tab
 
     // Use garden recipes
     let recipes: [Recipe] = GardenRecipes.all
 
     // Track which category is selected
     @State private var selectedCategory: RecipeCategory = .all
+    @State private var selectedRecipe: Recipe? = nil
 
     // Filter recipes based on selected category
     var filteredRecipes: [Recipe] {
@@ -657,13 +837,9 @@ struct RecipeListView: View {
                     // Recipe Cards - Shows filtered recipes
                     VStack(spacing: AppSpacing.md) {
                         ForEach(filteredRecipes) { recipe in
-                            RecipeCardView(
-                                recipe: recipe,
-                                showIngredientStatus: true,
-                                harvestedIngredients: gameState.harvestedIngredients,
-                                pantryInventory: gameState.pantryInventory
-                            )
-                            .transition(.opacity.combined(with: .scale(scale: 0.95)))
+                            RecipeCardView(recipe: recipe)
+                                .onTapGesture { selectedRecipe = recipe }
+                                .transition(.opacity.combined(with: .scale(scale: 0.95)))
                         }
                     }
                     .padding(.horizontal, AppSpacing.md)
@@ -675,6 +851,11 @@ struct RecipeListView: View {
             .navigationBarHidden(true)
         }
         .navigationViewStyle(.stack)
+        .fullScreenCover(item: $selectedRecipe) { recipe in
+            RecipeDetailView(recipe: recipe) {
+                selectedTab = .kitchen
+            }
+        }
     }
 }
 
@@ -705,7 +886,7 @@ struct CategoryPill: View {
 
 // MARK: - Preview
 #Preview {
-    RecipeListView()
+    RecipeListView(selectedTab: .constant(.recipes))
         .environmentObject(GameState.preview)
 }
 

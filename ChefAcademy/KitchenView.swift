@@ -412,12 +412,7 @@ struct KitchenView: View {
                     }
 
                     ForEach(readyRecipes) { recipe in
-                        RecipeCardView(
-                            recipe: recipe,
-                            showIngredientStatus: true,
-                            harvestedIngredients: gameState.harvestedIngredients,
-                            pantryInventory: gameState.pantryInventory
-                        )
+                        RecipeCardView(recipe: recipe)
                         .onTapGesture {
                             selectedRecipe = recipe
                             showRecipePicker = false
