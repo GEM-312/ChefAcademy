@@ -23,7 +23,7 @@ enum RecipeCategory: String, CaseIterable {
 /// Items always available in the kitchen — no need to grow these!
 enum PantryItem: String, CaseIterable, Identifiable {
     // Basics
-    case salt, pepper, sugar, flour, cinnamon
+    case salt, pepper, flour, cinnamon
     // Oils & Fats
     case butter, oliveOil, vegetableOil
     // Dairy & Eggs
@@ -40,7 +40,6 @@ enum PantryItem: String, CaseIterable, Identifiable {
         switch self {
         case .salt: return "Salt"
         case .pepper: return "Pepper"
-        case .sugar: return "Sugar"
         case .flour: return "Flour"
         case .cinnamon: return "Cinnamon"
         case .butter: return "Butter"
@@ -66,7 +65,6 @@ enum PantryItem: String, CaseIterable, Identifiable {
         switch self {
         case .salt: return "🧂"
         case .pepper: return "🌶️"
-        case .sugar: return "🍬"
         case .flour: return "🌾"
         case .cinnamon: return "🫙"
         case .butter: return "🧈"
@@ -87,11 +85,37 @@ enum PantryItem: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Farm item illustration image name (in Assets catalog)
+    var imageName: String {
+        switch self {
+        case .salt: return "farm_salt"
+        case .pepper: return "farm_pepper"
+        case .flour: return "farm_flour"
+        case .cinnamon: return "farm_cinnamon"
+        case .butter: return "farm_butter"
+        case .oliveOil: return "farm_oliveOil"
+        case .vegetableOil: return "farm_oliveOil"
+        case .eggs: return "farm_eggs"
+        case .milk: return "farm_milk"
+        case .cheese: return "farm_cheese"
+        case .cream: return "farm_cream"
+        case .greekYogurt: return "farm_greekYogurt"
+        case .chicken: return "farm_chicken"
+        case .groundBeef: return "farm_groundBeef"
+        case .nuts: return "farm_nuts"
+        case .soySauce: return "farm_soySauce"
+        case .tomatoSauce: return "farm_tomatoSauce"
+        case .vinegar: return "farm_vinegar"
+        case .honey: return "farm_honey"
+        case .lemon: return "farm_lemon"
+        }
+    }
+
     /// Price to buy from the farm shop
     var shopPrice: Int {
         switch self {
         case .salt, .pepper: return 2
-        case .sugar, .flour: return 3
+        case .flour: return 3
         case .cinnamon: return 2
         case .butter: return 5
         case .oliveOil, .vegetableOil: return 4
@@ -114,7 +138,7 @@ enum PantryItem: String, CaseIterable, Identifiable {
     /// Shop category for grouping items
     var shopCategory: ShopCategory {
         switch self {
-        case .salt, .pepper, .sugar, .flour, .cinnamon:
+        case .salt, .pepper, .flour, .cinnamon:
             return .basics
         case .butter, .oliveOil, .vegetableOil:
             return .oilsAndFats
@@ -246,7 +270,7 @@ struct GardenRecipes {
             id: "veggie-omelette",
             title: "Garden Veggie Omelette",
             description: "A fluffy egg omelette stuffed with fresh tomatoes, onions, and melted cheese",
-            imageName: "recipe_wrap_rainbow_veggie",
+            imageName: "recipe_veggie_omelette",
             category: .breakfast,
             cookTime: 10,
             difficulty: .easy,
@@ -271,7 +295,7 @@ struct GardenRecipes {
             id: "veggie-scramble",
             title: "Scrambled Egg Veggie Bowl",
             description: "Scrambled eggs with broccoli and zucchini — a power breakfast!",
-            imageName: "recipe_wrap_rainbow_veggie",
+            imageName: "recipe_scrambled_egg_bowl",
             category: .breakfast,
             cookTime: 12,
             difficulty: .easy,
@@ -295,7 +319,7 @@ struct GardenRecipes {
             id: "yogurt-power-bowl",
             title: "Greek Yogurt Power Bowl",
             description: "Creamy Greek yogurt topped with crunchy nuts, cinnamon, and fresh carrot shreds",
-            imageName: "recipe_wrap_rainbow_veggie",
+            imageName: "recipe_yogurt_power_bowl",
             category: .breakfast,
             cookTime: 5,
             difficulty: .easy,
@@ -321,7 +345,7 @@ struct GardenRecipes {
             id: "chicken-veggie-platter",
             title: "Crunchy Chicken Veggie Platter",
             description: "Build-your-own veggie and chicken plate with lemon dressing — crunchy, fresh, and filling!",
-            imageName: "recipe_wrap_rainbow_veggie",
+            imageName: "recipe_chicken_veggie_platter",
             category: .lunch,
             cookTime: 15,
             difficulty: .easy,
@@ -371,7 +395,7 @@ struct GardenRecipes {
             id: "pumpkin-soup",
             title: "Cozy Pumpkin Soup",
             description: "Creamy pumpkin soup with chicken, butter, and onion — warm, cozy, and filling!",
-            imageName: "recipe_wrap_rainbow_veggie",
+            imageName: "recipe_pumpkin_soup",
             category: .lunch,
             cookTime: 25,
             difficulty: .medium,
@@ -396,7 +420,7 @@ struct GardenRecipes {
             id: "chicken-lettuce-wrap",
             title: "Chicken Lettuce Wrap",
             description: "Seasoned chicken in crunchy lettuce cups with carrot and onion",
-            imageName: "recipe_wrap_rainbow_veggie",
+            imageName: "recipe_chicken_lettuce_wrap",
             category: .lunch,
             cookTime: 20,
             difficulty: .medium,
@@ -421,7 +445,7 @@ struct GardenRecipes {
             id: "tomato-egg-soup",
             title: "Creamy Tomato Egg Soup",
             description: "Warm tomato soup with whisked eggs stirred in — high protein, cozy, and delicious!",
-            imageName: "recipe_pasta_garden",
+            imageName: "recipe_tomato_egg_soup",
             category: .lunch,
             cookTime: 20,
             difficulty: .medium,
@@ -449,7 +473,7 @@ struct GardenRecipes {
             id: "chicken-veggie-skillet",
             title: "Sizzling Chicken Veggie Skillet",
             description: "Sizzling chicken with broccoli, carrot, and zucchini in soy sauce — no rice needed!",
-            imageName: "recipe_pasta_garden",
+            imageName: "recipe_chicken_veggie_skillet",
             category: .dinner,
             cookTime: 20,
             difficulty: .medium,
@@ -474,7 +498,7 @@ struct GardenRecipes {
             id: "zucchini-noodle-chicken",
             title: "Zucchini Noodle Chicken Bowl",
             description: "Spiralized zucchini noodles with chicken, tomato sauce, and melted cheese — a pasta swap!",
-            imageName: "recipe_pasta_garden",
+            imageName: "recipe_zucchini_noodle_bowl",
             category: .dinner,
             cookTime: 25,
             difficulty: .medium,
@@ -524,7 +548,7 @@ struct GardenRecipes {
             id: "beef-stuffed-zucchini",
             title: "Beef Stuffed Zucchini Boats",
             description: "Halved zucchini filled with seasoned beef, tomato sauce, and melted cheese — so good!",
-            imageName: "recipe_pasta_garden",
+            imageName: "recipe_beef_zucchini_boats",
             category: .dinner,
             cookTime: 30,
             difficulty: .medium,
@@ -552,7 +576,7 @@ struct GardenRecipes {
             id: "carrot-sticks",
             title: "Carrot Crunch & Cheese Dip",
             description: "Fresh carrot sticks with creamy cheese dip — savory and crunchy!",
-            imageName: "recipe_wrap_rainbow_veggie",
+            imageName: "recipe_carrot_cheese_dip",
             category: .snacks,
             cookTime: 5,
             difficulty: .easy,
@@ -574,7 +598,7 @@ struct GardenRecipes {
             id: "cucumber-bites",
             title: "Cucumber & Cheese Bites",
             description: "Crispy cucumber slices topped with cheese — refreshing and filling!",
-            imageName: "recipe_wrap_rainbow_veggie",
+            imageName: "recipe_cucumber_cheese_bites",
             category: .snacks,
             cookTime: 5,
             difficulty: .easy,
@@ -622,7 +646,7 @@ struct GardenRecipes {
             id: "zucchini-fritters",
             title: "Zucchini Cheese Fritters",
             description: "Crispy zucchini fritters with eggs and melted cheese — a savory protein snack!",
-            imageName: "recipe_wrap_rainbow_veggie",
+            imageName: "recipe_zucchini_fritters",
             category: .snacks,
             cookTime: 15,
             difficulty: .medium,
@@ -647,7 +671,7 @@ struct GardenRecipes {
             id: "lettuce-cups",
             title: "Veggie Lettuce Cups",
             description: "Crunchy lettuce cups with chopped carrot, tomato, and cheese",
-            imageName: "recipe_wrap_rainbow_veggie",
+            imageName: "recipe_veggie_lettuce_cups",
             category: .snacks,
             cookTime: 10,
             difficulty: .easy,

@@ -118,19 +118,10 @@ struct MeetPipView: View {
             VStack(spacing: AppSpacing.lg) {
                 Spacer()
 
-                // Pip Video Animation - Large and friendly!
-                VStack(spacing: AppSpacing.sm) {
-                    VideoPlayerWithFallback(
-                        videoName: "pip_waving",
-                        fallbackImage: "pip_waving",
-                        size: AdaptiveCardSize.pipOnboarding(for: sizeClass),
-                        circular: true,
-                        borderColor: Color.AppTheme.sage,
-                        borderWidth: AdaptiveCardSize.pipBorderWidth(for: sizeClass)
-                    )
+                // Animated Pip waving (frame animation, transparent bg)
+                PipWavingAnimatedView(size: AdaptiveCardSize.pipOnboarding(for: sizeClass))
                     .scaleEffect(showPip ? 1 : 0.3)
                     .opacity(showPip ? 1 : 0)
-                }
 
                 // Dialogue Box
                 VStack(spacing: AppSpacing.md) {
@@ -306,15 +297,8 @@ struct ReadyToStartView: View {
                             .scaleEffect(sizeClass == .compact ? 0.5 : 0.7)
                     }
 
-                    // Pip Video Animation
-                    VideoPlayerWithFallback(
-                        videoName: "pip_waving",
-                        fallbackImage: "pip_waving",
-                        size: AdaptiveCardSize.pipReadyScreen(for: sizeClass),
-                        circular: true,
-                        borderColor: Color.AppTheme.sage,
-                        borderWidth: AdaptiveCardSize.pipBorderWidth(for: sizeClass)
-                    )
+                    // Animated Pip waving (frame animation, transparent bg)
+                    PipWavingAnimatedView(size: AdaptiveCardSize.pipReadyScreen(for: sizeClass))
                 }
                 .scaleEffect(showContent ? 1 : 0.5)
                 .opacity(showContent ? 1 : 0)

@@ -159,7 +159,7 @@ struct AdaptiveCardSize {
 
     /// Pip video size for message cards (home screen)
     static func pipMessage(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
-        sizeClass == .compact ? 70 : 140
+        sizeClass == .compact ? 140 : 280
     }
 
     /// Pip size for onboarding/welcome screens (large)

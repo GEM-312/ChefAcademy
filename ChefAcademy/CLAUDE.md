@@ -368,15 +368,23 @@ struct ExampleView: View {
 - 17 garden recipes in GardenRecipes.all with gardenIngredients, pantryIngredients, glucoseTip, and cooking steps
 - Glucose Goddess integration: all recipes have kid-friendly nutrition tips, zero starch-centered meals
 - Vegetable images used throughout (RecipeDetailView, ChopMiniGame, GardenView, PlotView) — emojis only for pantry items
+- **FarmTabView** — Pip walks across bg_farm toward barn, then crossfades to FarmShopView. Replays each visit, tap to skip.
+- **FarmTransitionView** — zoomed/panned bg_farm with walking Pip animation, Scene Editor support for waypoints. Tweakable panX/panY/sceneHeightRatio.
+- **BasketWithVeggiesView** — harvest basket on garden map showing collected veggies inside (ZStack layering trick: veggies behind basket rim)
+- **vegetable_basket.imageset** and **bg_farm.imageset** properly set up in Assets.xcassets
+- Walking Pip frame animation (15 frames) used in both GardenView and FarmTransitionView
+- Pip walking frame assets (pip_walking_frame_01 through 15) added to Assets
 
 ### 🚧 In Progress:
-- Cooking session flow (selecting recipe in Kitchen → mini-game sequence)
-- Mini-games (ChopMiniGame exists as template)
+- Harvest basket in GardenView — positioning and veggie placement inside basket needs fine-tuning via Scene Editor
+- Farm transition walk — waypoints and camera (panX/panY) tuned but may need more adjustment
+- FarmShopView needs a background image (currently plain cream)
 
 ### ❌ Not Started:
 - CookingSessionView (mini-game sequence manager)
-- More mini-games (Crack, Mix, Pour, Flip, Heat)
+- More mini-games (Crack, Mix, Pour, Flip, Heat) following ChopMiniGame pattern
 - Body Adventure animation (FoodJourneyView)
+- SwiftData migration for persistent game state
 - Quest system UI
 - Badges UI
 - Profile view
@@ -391,7 +399,7 @@ struct ExampleView: View {
 | Home | house.fill | HomeView / HomeAnimatedView | Main hub, quick actions |
 | Garden | leaf.fill | GardenView | Plant & harvest veggies (interactive map) |
 | Kitchen | fork.knife | KitchenView | Cook recipes with Pip (interactive map) |
-| Farm | cart.fill | FarmShopView | Buy pantry items with coins |
+| Farm | cart.fill | FarmTabView → FarmShopView | Pip walks to barn, then shop |
 | Recipes | book.fill | RecipeListView | Browse all recipes |
 | Me | person.fill | PlaceholderView | Profile (coming soon) |
 
@@ -418,11 +426,14 @@ Image("bg_xxx").resizable().aspectRatio(contentMode: .fit)
 - Kitchen counter shows combined count of garden veggies + pantry items
 
 ### Next Tasks
-1. Build CookingSessionView — mini-game sequence when player taps "Cook!" in Kitchen
-2. More mini-games (Crack, Mix, Pour, Flip, Heat) following ChopMiniGame pattern
-3. Body Adventure / FoodJourneyView
-4. Quest system and Badges UI
-5. Profile view
+1. Fix harvest basket in GardenView — fine-tune position and veggie placement with Scene Editor
+2. Finish farm transition — adjust walk path, add background to FarmShopView (market scene)
+3. Kitchen game — build CookingSessionView (mini-game sequence when player taps "Cook!" in Kitchen)
+4. Generate Body Buddy avatar assets (organ illustrations matching art style)
+5. More mini-games (Crack, Mix, Pour, Flip, Heat) following ChopMiniGame pattern
+6. SwiftData migration — persist GameState between sessions
+7. Body Adventure / FoodJourneyView
+8. Quest system, Badges UI, Profile view
 
 ---
 

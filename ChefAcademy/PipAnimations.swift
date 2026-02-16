@@ -1,5 +1,60 @@
 import SwiftUI
 
+// MARK: - Pip Waving Frame Animation
+/// Cycles through 15 transparent-background PNG frames for a natural waving animation.
+/// No circle, no border — Pip appears with transparent background.
+struct PipWavingAnimatedView: View {
+    var size: CGFloat = 200
+
+    private let frameNames: [String] = (1...15).map { String(format: "pip_waving_frame_%02d", $0) }
+    private let fps: Double = 6.0 // smooth wave
+    private let pauseBetweenWaves: Double = 3.0
+
+    @State private var currentFrame = 0
+    @State private var timer: Timer?
+    @State private var isPaused = false
+
+    var body: some View {
+        Image(frameNames[currentFrame])
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .frame(width: size, height: size)
+            .opacity(0.9)
+            .onAppear { startAnimation() }
+            .onDisappear { stopAnimation() }
+    }
+
+    private func startAnimation() {
+        scheduleNextFrame()
+    }
+
+    private func stopAnimation() {
+        timer?.invalidate()
+        timer = nil
+    }
+
+    private func scheduleNextFrame() {
+        let delay = isPaused ? pauseBetweenWaves : (1.0 / fps)
+        timer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { _ in
+            if isPaused {
+                isPaused = false
+                currentFrame = 0
+                scheduleNextFrame()
+            } else {
+                let nextFrame = currentFrame + 1
+                if nextFrame >= frameNames.count {
+                    // Wave finished — pause before next wave
+                    isPaused = true
+                    scheduleNextFrame()
+                } else {
+                    currentFrame = nextFrame
+                    scheduleNextFrame()
+                }
+            }
+        }
+    }
+}
+
 // MARK: - Pip Pose Enum
 enum PipPose: String, CaseIterable {
     case neutral = "pip_neutral"

@@ -289,15 +289,8 @@ struct PipMessageAnimated: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: AppSpacing.md) {
-            // Animated Pip Video - larger on iPad
-            VideoPlayerWithFallback(
-                videoName: "pip_waving",
-                fallbackImage: "pip_waving",
-                size: AdaptiveCardSize.pipMessage(for: sizeClass),
-                circular: true,
-                borderColor: Color.AppTheme.sage,
-                borderWidth: sizeClass == .compact ? 2 : 3
-            )
+            // Animated Pip waving (frame animation, transparent bg)
+            PipWavingAnimatedView(size: AdaptiveCardSize.pipMessage(for: sizeClass))
 
             // Message bubble
             VStack(alignment: .leading, spacing: AppSpacing.xs) {

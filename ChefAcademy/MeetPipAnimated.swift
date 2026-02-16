@@ -30,17 +30,10 @@ struct MeetPipAnimatedView: View {
             VStack(spacing: AppSpacing.lg) {
                 Spacer()
 
-                // Animated Pip Video
-                VideoPlayerWithFallback(
-                    videoName: "pip_waving",
-                    fallbackImage: "pip_waving",
-                    size: AdaptiveCardSize.pipOnboarding(for: sizeClass),
-                    circular: true,
-                    borderColor: Color.AppTheme.sage,
-                    borderWidth: AdaptiveCardSize.pipBorderWidth(for: sizeClass)
-                )
-                .scaleEffect(showPip ? 1 : 0.3)
-                .opacity(showPip ? 1 : 0)
+                // Animated Pip waving (frame animation, transparent bg)
+                PipWavingAnimatedView(size: AdaptiveCardSize.pipOnboarding(for: sizeClass))
+                    .scaleEffect(showPip ? 1 : 0.3)
+                    .opacity(showPip ? 1 : 0)
 
                 // Dialogue Box
                 VStack(spacing: AppSpacing.md) {
@@ -207,19 +200,12 @@ struct ReadyToStartAnimatedView: View {
                     .opacity(showContent ? 1 : 0)
                     .offset(y: showContent ? 0 : 20)
 
-                    // Pip Waving Video - The star of the show!
+                    // Pip Waving - The star of the show!
                     VStack(spacing: AppSpacing.sm) {
-                        // Video player with circular sage border
-                        VideoPlayerWithFallback(
-                            videoName: "pip_waving",
-                            fallbackImage: "pip_waving",
-                            size: AdaptiveCardSize.pipOnboarding(for: sizeClass),
-                            circular: true,
-                            borderColor: Color.AppTheme.sage,
-                            borderWidth: AdaptiveCardSize.pipBorderWidth(for: sizeClass)
-                        )
-                        .scaleEffect(showPip ? 1 : 0.5)
-                        .opacity(showPip ? 1 : 0)
+                        // Frame animation, transparent bg
+                        PipWavingAnimatedView(size: AdaptiveCardSize.pipOnboarding(for: sizeClass))
+                            .scaleEffect(showPip ? 1 : 0.5)
+                            .opacity(showPip ? 1 : 0)
 
                         // Pip's name badge
                         Text("Pip")

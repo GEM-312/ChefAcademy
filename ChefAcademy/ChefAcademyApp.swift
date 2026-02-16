@@ -88,7 +88,7 @@ struct MainTabView: View {
                 case .kitchen:
                     KitchenView() // Pip's Kitchen - cook recipes!
                 case .farm:
-                    FarmShopView() // Farm shop for pantry items!
+                    FarmTabView() // Pip walks to barn, then Farm Shop!
                 case .recipes:
                     RecipeListView(selectedTab: $selectedTab) // Browse all recipes
                 case .profile:
@@ -351,15 +351,8 @@ struct PipMessageCard: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: AppSpacing.md) {
-            // Pip Video Animation - small size for message card
-            VideoPlayerWithFallback(
-                videoName: "pip_waving",
-                fallbackImage: "pip_waving",
-                size: 60,
-                circular: true,
-                borderColor: Color.AppTheme.sage,
-                borderWidth: 2
-            )
+            // Animated Pip waving (frame animation, transparent bg)
+            PipWavingAnimatedView(size: 120)
 
             // Message bubble
             VStack(alignment: .leading, spacing: AppSpacing.xs) {

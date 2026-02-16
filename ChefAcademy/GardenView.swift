@@ -226,6 +226,285 @@ struct DraggablePipView: View {
     }
 }
 
+// MARK: - Walking Pip View
+/// Pip walks between waypoints when plants are growing, idles when garden is empty.
+/// Drag Pip over a READY plot to harvest it (same as DraggablePipView).
+///
+/// Three modes:
+/// - **idle**: pip_neutral with bounce, shown when nothing is growing
+/// - **walking**: cycles through pip_walking_frame_XX at ~8fps, interpolates between waypoints
+/// - **dragging**: user drags Pip to harvest, pauses walking
+
+struct WalkingPipView: View {
+    let mapWidth: CGFloat
+    let mapHeight: CGFloat
+    let isVisible: Bool
+    var isIPad: Bool = false
+
+    /// Absolute positions for each waypoint (from walk SceneItems)
+    let waypoints: [CGPoint]
+
+    /// Pip's idle position (from "pip" SceneItem)
+    let idlePosition: CGPoint
+
+    /// True when any plot is .growing
+    let isGrowing: Bool
+
+    /// Plot positions for harvest detection
+    let plotPositions: [CGPoint]
+
+    /// Which plots are ready to harvest
+    let readyPlotIndices: [Int]
+
+    /// Called when Pip reaches a ready plot
+    let onHarvestPlot: (Int) -> Void
+
+    // ==========================================
+    // TWEAK THESE:
+    // ==========================================
+
+    private var pipSize: CGFloat { isIPad ? 80 : 55 }
+    private var harvestRadius: CGFloat { isIPad ? 100 : 60 }
+
+    /// How many points Pip moves per tick (1/30s)
+    private let walkSpeed: CGFloat = 1.8
+
+    private var pipDisplaySize: CGFloat { isIPad ? 160 : 110 }
+
+    /// Walking frame names
+    private let walkingFrames: [String] = (1...15).map {
+        String(format: "pip_walking_frame_%02d", $0)
+    }
+
+    // ==========================================
+    // STATE
+    // ==========================================
+
+    @State private var pipPosition: CGPoint = .zero
+    @State private var dragOffset: CGSize = .zero
+    @State private var isDragging: Bool = false
+    @State private var idleBounce: Bool = false
+    @State private var nearbyPlotIndex: Int? = nil
+    @State private var showHarvestBurst: Bool = false
+    @State private var facingRight: Bool = true
+
+    // Walking state
+    @State private var currentWaypointIndex: Int = 0
+    @State private var walkProgress: CGFloat = 0.0
+    @State private var walkingFrameIndex: Int = 0
+    @State private var tickCounter: Int = 0
+    @State private var walkTimer: Timer? = nil
+    @State private var wasGrowing: Bool = false
+
+    /// Pip's display position (walk position or idle, plus drag offset)
+    private var pipCenter: CGPoint {
+        CGPoint(
+            x: pipPosition.x + dragOffset.width,
+            y: pipPosition.y + dragOffset.height
+        )
+    }
+
+    var body: some View {
+        ZStack {
+            // Glow ring when near a harvestable plot
+            if nearbyPlotIndex != nil {
+                Circle()
+                    .fill(Color.AppTheme.goldenWheat.opacity(0.3))
+                    .frame(width: pipDisplaySize + 20, height: pipDisplaySize + 20)
+                    .scaleEffect(showHarvestBurst ? 1.5 : 1.0)
+                    .opacity(showHarvestBurst ? 0 : 0.6)
+                    .position(pipCenter)
+            }
+
+            // Pip character
+            Image(isGrowing && !isDragging ? walkingFrames[walkingFrameIndex] : "pip_neutral")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: pipDisplaySize, height: pipDisplaySize)
+                .shadow(
+                    color: isDragging ? Color.AppTheme.sage.opacity(0.4) : Color.black.opacity(0.2),
+                    radius: isDragging ? 8 : 4,
+                    x: 0,
+                    y: isDragging ? 6 : 3
+                )
+                .scaleEffect(x: facingRight ? 1 : -1, y: 1)
+                .scaleEffect(isDragging ? 1.1 : 1.0)
+                // Idle bounce when not walking and not dragging
+                .offset(y: (!isDragging && !isGrowing && idleBounce) ? -4 : 0)
+                .position(pipCenter)
+                .gesture(
+                    DragGesture()
+                        .onChanged { value in
+                            isDragging = true
+                            dragOffset = value.translation
+
+                            // Flip Pip to face drag direction
+                            if value.translation.width > 5 {
+                                facingRight = true
+                            } else if value.translation.width < -5 {
+                                facingRight = false
+                            }
+
+                            checkNearbyPlots()
+                        }
+                        .onEnded { _ in
+                            isDragging = false
+
+                            // If near a ready plot, harvest it!
+                            if let plotIndex = nearbyPlotIndex {
+                                triggerHarvest(plotIndex: plotIndex)
+                            }
+
+                            // Snap back — reset drag offset, keep walk position
+                            dragOffset = .zero
+                        }
+                )
+                // Hint text
+                .overlay(
+                    Group {
+                        if !isDragging && nearbyPlotIndex == nil && !isGrowing {
+                            Text("Drag me!")
+                                .font(.system(size: 9, weight: .semibold, design: .rounded))
+                                .foregroundColor(Color.AppTheme.sage)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Color.AppTheme.warmCream.opacity(0.9))
+                                .cornerRadius(6)
+                                .offset(y: pipDisplaySize / 2 + 10)
+                                .position(pipCenter)
+                                .opacity(idleBounce ? 1.0 : 0.5)
+                        }
+                    }
+                )
+        }
+        .opacity(isVisible ? 1.0 : 0.0)
+        .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isVisible)
+        .onAppear {
+            pipPosition = idlePosition
+            // Start idle bounce
+            withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
+                idleBounce = true
+            }
+        }
+        .onChange(of: isGrowing) { growing in
+            if growing {
+                startWalking()
+            } else {
+                stopWalking()
+            }
+        }
+    }
+
+    // MARK: - Walking Engine
+
+    private func startWalking() {
+        guard waypoints.count >= 2 else { return }
+        guard walkTimer == nil else { return }
+
+        // Start from nearest waypoint
+        currentWaypointIndex = 0
+        walkProgress = 0.0
+        pipPosition = waypoints[0]
+
+        walkTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 30.0, repeats: true) { _ in
+            guard !isDragging else { return }
+
+            let fromIndex = currentWaypointIndex
+            let toIndex = (currentWaypointIndex + 1) % waypoints.count
+            let from = waypoints[fromIndex]
+            let to = waypoints[toIndex]
+
+            // Distance between waypoints
+            let dx = to.x - from.x
+            let dy = to.y - from.y
+            let segmentLength = sqrt(dx * dx + dy * dy)
+            guard segmentLength > 0 else { return }
+
+            // Advance progress
+            let progressPerTick = walkSpeed / segmentLength
+            walkProgress += progressPerTick
+
+            // Update facing direction based on horizontal movement
+            if dx > 1 {
+                facingRight = true
+            } else if dx < -1 {
+                facingRight = false
+            }
+
+            if walkProgress >= 1.0 {
+                // Reached waypoint — advance to next
+                walkProgress = 0.0
+                currentWaypointIndex = toIndex
+                pipPosition = to
+            } else {
+                // Interpolate position
+                pipPosition = CGPoint(
+                    x: from.x + dx * walkProgress,
+                    y: from.y + dy * walkProgress
+                )
+            }
+
+            // Advance walking frame every 4 ticks (~8fps at 30fps timer)
+            tickCounter += 1
+            if tickCounter >= 4 {
+                tickCounter = 0
+                walkingFrameIndex = (walkingFrameIndex + 1) % walkingFrames.count
+            }
+        }
+    }
+
+    private func stopWalking() {
+        walkTimer?.invalidate()
+        walkTimer = nil
+        tickCounter = 0
+        walkingFrameIndex = 0
+
+        // Animate back to idle position
+        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+            pipPosition = idlePosition
+        }
+    }
+
+    // MARK: - Harvest Detection
+
+    private func checkNearbyPlots() {
+        var closestReady: Int? = nil
+        var closestDist: CGFloat = .infinity
+
+        for index in readyPlotIndices {
+            guard index < plotPositions.count else { continue }
+            let plotPos = plotPositions[index]
+            let dist = distance(from: pipCenter, to: plotPos)
+
+            if dist < harvestRadius && dist < closestDist {
+                closestDist = dist
+                closestReady = index
+            }
+        }
+
+        withAnimation(.easeInOut(duration: 0.15)) {
+            nearbyPlotIndex = closestReady
+        }
+    }
+
+    private func triggerHarvest(plotIndex: Int) {
+        withAnimation(.spring(response: 0.3, dampingFraction: 0.4)) {
+            showHarvestBurst = true
+        }
+
+        onHarvestPlot(plotIndex)
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            showHarvestBurst = false
+            nearbyPlotIndex = nil
+        }
+    }
+
+    private func distance(from a: CGPoint, to b: CGPoint) -> CGFloat {
+        sqrt(pow(a.x - b.x, 2) + pow(a.y - b.y, 2))
+    }
+}
+
 // MARK: - Garden View
 //
 // This view shows a garden map background image with
@@ -263,6 +542,12 @@ struct GardenView: View {
         SceneItem(id: "plot3", label: "Plot 3", icon: "🌱", xPercent: 0.73, yPercent: 0.78),
         SceneItem(id: "plot4", label: "Plot 4", icon: "🌱", xPercent: 0.82, yPercent: 0.88),
         SceneItem(id: "pip", label: "Pip Idle", icon: "🦔", xPercent: 0.50, yPercent: 0.90),
+        SceneItem(id: "walk0", label: "Walk 0", icon: "👣", xPercent: 0.25, yPercent: 0.88),
+        SceneItem(id: "walk1", label: "Walk 1", icon: "👣", xPercent: 0.38, yPercent: 0.72),
+        SceneItem(id: "walk2", label: "Walk 2", icon: "👣", xPercent: 0.60, yPercent: 0.65),
+        SceneItem(id: "walk3", label: "Walk 3", icon: "👣", xPercent: 0.82, yPercent: 0.72),
+        SceneItem(id: "walk4", label: "Walk 4", icon: "👣", xPercent: 0.75, yPercent: 0.90),
+        SceneItem(id: "basket", label: "Basket", icon: "🧺", xPercent: 0.50, yPercent: 0.52),
     ]
 
     var body: some View {
@@ -433,18 +718,37 @@ struct GardenView: View {
                         gardenPlotSpot(index: 4)
                             .position(plotPositions[4])
 
-                        // Draggable Pip — appears once something is planted!
-                        DraggablePipView(
+                        // Walking Pip — walks between waypoints when plants grow!
+                        let waypointPositions: [CGPoint] = (0...4).map { i in
+                            plotPos(for: "walk\(i)", w: w, h: h)
+                        }
+                        let pipIdlePos = plotPos(for: "pip", w: w, h: h)
+                        let anyGrowing = gameState.gardenPlots.contains(where: { $0.state == .growing })
+
+                        WalkingPipView(
                             mapWidth: w,
                             mapHeight: h,
                             isVisible: gameState.gardenPlots.contains(where: { $0.state != .empty }),
                             isIPad: isIPad,
+                            waypoints: waypointPositions,
+                            idlePosition: pipIdlePos,
+                            isGrowing: anyGrowing,
                             plotPositions: plotPositions,
                             readyPlotIndices: gameState.gardenPlots.indices.filter { gameState.gardenPlots[$0].state == .ready },
                             onHarvestPlot: { index in
                                 harvestPlot(index: index)
                             }
                         )
+
+                        // Harvest basket — shows collected veggies
+                        if !gameState.harvestedIngredients.isEmpty {
+                            let basketPos = plotPos(for: "basket", w: w, h: h)
+                            BasketWithVeggiesView(
+                                harvestedIngredients: gameState.harvestedIngredients,
+                                basketSize: isIPad ? 350 : 280
+                            )
+                            .position(basketPos)
+                        }
                     }
                 }
             )
@@ -604,7 +908,7 @@ struct GardenView: View {
         if hasReady {
             return "Drag Pip to a glowing plot to harvest!"
         } else if hasGrowing {
-            return "Plants are growing... Pip is watching over them!"
+            return "Pip is patrolling the garden while your plants grow!"
         } else {
             return "Tap a plot to plant seeds!"
         }
@@ -626,15 +930,8 @@ struct GardenView: View {
 struct PipGardenMessage: View {
     var body: some View {
         HStack(alignment: .top, spacing: AppSpacing.md) {
-            // Pip Video Animation - small size for message card
-            VideoPlayerWithFallback(
-                videoName: "pip_waving",
-                fallbackImage: "pip_waving",
-                size: 60,
-                circular: true,
-                borderColor: Color.AppTheme.sage,
-                borderWidth: 2
-            )
+            // Animated Pip waving (frame animation, transparent bg)
+            PipWavingAnimatedView(size: 120)
 
             // Message bubble
             VStack(alignment: .leading, spacing: AppSpacing.xs) {

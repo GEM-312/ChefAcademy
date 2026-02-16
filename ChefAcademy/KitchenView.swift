@@ -475,14 +475,8 @@ struct PipKitchenMessage: View {
 
     var body: some View {
         HStack(alignment: .top, spacing: AppSpacing.md) {
-            VideoPlayerWithFallback(
-                videoName: "pip_waving",
-                fallbackImage: "pip_cooking",
-                size: AdaptiveCardSize.pipMessage(for: sizeClass),
-                circular: true,
-                borderColor: Color.AppTheme.goldenWheat,
-                borderWidth: sizeClass == .compact ? 2 : 3
-            )
+            // Animated Pip waving (frame animation, transparent bg)
+            PipWavingAnimatedView(size: AdaptiveCardSize.pipMessage(for: sizeClass))
 
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text("Chef Pip")
