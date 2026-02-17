@@ -21,6 +21,7 @@ extension Color {
         static let goldenWheat = Color(hex: "C9A227")     // Highlights, buttons, rewards
         static let softOlive = Color(hex: "8A9A7B")       // Secondary accents
         static let terracotta = Color(hex: "B87333")      // Warnings, heat indicators
+        static let warmKhaki = Color(hex: "C6BA8B")       // Warm accent (from avatar style)
         
         // Functional Colors
         static let easyLevel = Color(hex: "8A9A7B")       // Easy recipes
