@@ -347,10 +347,10 @@ struct FarmTransitionView: View {
 
     /// How tall the farm scene is vs screen. Bigger = more zoom.
     /// At 0.55 on iPhone, you see roughly the left half of the image (big barn).
-    private let sceneHeightRatio: CGFloat = 1.03
+    private let sceneHeightRatio: CGFloat = 0.9
 
     /// Pan the camera left/right. Negative = barn moves left on screen.
-    private let panX: CGFloat = -0.73
+    private let panX: CGFloat = -1.0
 
     /// Pan the camera up/down. Negative = pull image up on screen.
     /// Try -0.1, -0.2, etc. until the ground/fence is where you want it.
@@ -375,10 +375,10 @@ struct FarmTransitionView: View {
     /// Waypoints for Pip's walk — positions are % of the VISIBLE area.
     /// Adjust with the Scene Editor (pencil icon, DEBUG builds only).
     @State private var farmSceneItems: [SceneItem] = [
-        SceneItem(id: "walk0",  label: "Start",  icon: "1️⃣", xPercent: 0.98, yPercent: 0.66),
-        SceneItem(id: "walk1",  label: "Mid 1",  icon: "2️⃣", xPercent: 0.70, yPercent: 0.57),
-        SceneItem(id: "walk2",  label: "Mid 2",  icon: "3️⃣", xPercent: 0.40, yPercent: 0.58),
-        SceneItem(id: "walk3",  label: "Barn",   icon: "4️⃣", xPercent: 0.21, yPercent: 0.51),
+        SceneItem(id: "walk0",  label: "Start",  icon: "1️⃣", xPercent: 0.94, yPercent: 0.97),
+        SceneItem(id: "walk1",  label: "Mid 1",  icon: "2️⃣", xPercent: 0.67, yPercent: 0.94),
+        SceneItem(id: "walk2",  label: "Mid 2",  icon: "3️⃣", xPercent: 0.49, yPercent: 0.85),
+        SceneItem(id: "walk3",  label: "Barn",   icon: "4️⃣", xPercent: 0.45, yPercent: 0.73),
     ]
 
     @State private var pipPosition: CGPoint = .zero
@@ -388,6 +388,7 @@ struct FarmTransitionView: View {
     @State private var segmentProgress: CGFloat = 0.0
     @State private var walkTimer: Timer? = nil
     @State private var hasCompleted: Bool = false
+    @State private var doorsOpen: Bool = false
 
     var body: some View {
         GeometryReader { screen in
@@ -400,19 +401,30 @@ struct FarmTransitionView: View {
 
                 // Farm image — .fill + .leading crops to show the big barn on the left.
                 // panX shifts the viewport: negative = barn moves left on screen.
-                Image("bg_farm")
-                    .resizable()
-                    .aspectRatio(contentMode: .fill)
-                    .offset(x: sceneWidth * panX, y: sceneHeight * panY)
-                    .frame(width: sceneWidth, height: sceneHeight, alignment: .leading)
-                    .clipped()
-                    .opacity(0.6)
-                    .position(x: sceneWidth / 2, y: screen.size.height / 2)
-                    // Tap-to-skip lives on the image only (not the pencil button)
-                    .contentShape(Rectangle())
-                    .onTapGesture {
-                        if !editMode { skip() }
-                    }
+                // Two layers: closed doors underneath, open doors on top (fades in).
+                ZStack {
+                    Image("bg_farm")
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .offset(x: sceneWidth * panX, y: sceneHeight * panY)
+                        .frame(width: sceneWidth, height: sceneHeight, alignment: .leading)
+                        .clipped()
+
+                    Image("bg_farm_open_doors")
+                        .resizable()
+                        .aspectRatio(contentMode: .fill)
+                        .offset(x: sceneWidth * panX, y: sceneHeight * panY)
+                        .frame(width: sceneWidth, height: sceneHeight, alignment: .leading)
+                        .clipped()
+                        .opacity(doorsOpen ? 1.0 : 0.0)
+                }
+                .opacity(0.8)
+                .position(x: sceneWidth / 2, y: screen.size.height / 2)
+                // Tap-to-skip lives on the image only (not the pencil button)
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    if !editMode { skip() }
+                }
 
                 // Pip + Basket + Scene Editor — same frame, centered on screen
                 ZStack {
@@ -554,7 +566,13 @@ struct FarmTransitionView: View {
     }
 
     private func skip() {
-        complete()
+        guard !hasCompleted else { return }
+        hasCompleted = true
+        walkTimer?.invalidate()
+        walkTimer = nil
+        // Instant door open + transition when skipping
+        doorsOpen = true
+        onComplete()
     }
 
     private func complete() {
@@ -562,7 +580,14 @@ struct FarmTransitionView: View {
         hasCompleted = true
         walkTimer?.invalidate()
         walkTimer = nil
-        onComplete()
+
+        // Doors swing open, then after a beat transition to shop
+        withAnimation(.easeInOut(duration: 0.6)) {
+            doorsOpen = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
+            onComplete()
+        }
     }
 }
 

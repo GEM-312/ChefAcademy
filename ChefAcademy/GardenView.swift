@@ -529,6 +529,11 @@ struct GardenView: View {
     @State private var suggestedRecipe: Recipe?
     @State private var showRecipeSuggestion = false
 
+    // Falling veggie animation
+    @State private var fallingVeggie: VegetableType? = nil
+    @State private var fallingOffset: CGFloat = -200
+    @State private var fallingOpacity: Double = 1.0
+
     // ==========================================
     // SCENE EDITOR: Set to true to drag plot positions!
     // Drag handles around, then copy printed values to code.
@@ -740,15 +745,7 @@ struct GardenView: View {
                             }
                         )
 
-                        // Harvest basket — shows collected veggies
-                        if !gameState.harvestedIngredients.isEmpty {
-                            let basketPos = plotPos(for: "basket", w: w, h: h)
-                            BasketWithVeggiesView(
-                                harvestedIngredients: gameState.harvestedIngredients,
-                                basketSize: isIPad ? 350 : 280
-                            )
-                            .position(basketPos)
-                        }
+                        // Basket removed from map — now shown below in harvestedSection
                     }
                 }
             )
@@ -805,12 +802,11 @@ struct GardenView: View {
                     .padding(.horizontal, isIPad ? AppSpacing.lg : AppSpacing.md)
             } else {
                 ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: isIPad ? AppSpacing.md : AppSpacing.sm) {
+                    HStack(spacing: 0) {
                         ForEach(gameState.seeds) { seed in
                             SeedBadge(seed: seed, isIPad: isIPad)
                         }
                     }
-                    .padding(.horizontal, isIPad ? AppSpacing.lg : AppSpacing.md)
                 }
             }
         }
@@ -826,11 +822,47 @@ struct GardenView: View {
                 .padding(.horizontal, isIPad ? AppSpacing.lg : AppSpacing.md)
 
             if gameState.harvestedIngredients.isEmpty {
-                Text("Nothing harvested yet. Grow some veggies!")
-                    .font(isIPad ? .AppTheme.headline : .AppTheme.body)
-                    .foregroundColor(Color.AppTheme.sepia)
-                    .padding(.horizontal, isIPad ? AppSpacing.lg : AppSpacing.md)
+                // Empty basket + hint text
+                GeometryReader { geo in
+                    VStack(spacing: isIPad ? AppSpacing.md : AppSpacing.sm) {
+                        Image("vegetable_basket")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: geo.size.width * 0.9)
+                            .opacity(0.3)
+
+                        Text("Nothing harvested yet. Grow some veggies!")
+                            .font(isIPad ? .AppTheme.headline : .AppTheme.body)
+                            .foregroundColor(Color.AppTheme.sepia)
+                    }
+                    .frame(width: geo.size.width, height: geo.size.width * 0.7)
+                }
+                .frame(height: UIScreen.main.bounds.width * 0.7)
+                .padding(.vertical, isIPad ? AppSpacing.md : AppSpacing.sm)
             } else {
+                // Basket with veggies + falling animation
+                ZStack {
+                    BasketWithVeggiesView(
+                        harvestedIngredients: gameState.harvestedIngredients,
+                        basketSize: UIScreen.main.bounds.width * 0.85
+                    )
+                    .opacity(0.75)
+
+                    // Falling veggie animation overlay
+                    if let veggie = fallingVeggie {
+                        let sz = UIScreen.main.bounds.width * 0.17
+                        Image(veggie.imageName)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: sz, height: sz)
+                            .offset(y: fallingOffset)
+                            .opacity(fallingOpacity)
+                    }
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, isIPad ? AppSpacing.sm : AppSpacing.xs)
+
+                // Ingredient badges grid below basket
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: isIPad ? AppSpacing.md : AppSpacing.sm) {
                         ForEach(gameState.harvestedIngredients) { ingredient in
@@ -881,6 +913,22 @@ struct GardenView: View {
 
         // Add to inventory
         gameState.addHarvestedIngredient(vegType, quantity: yield)
+
+        // Trigger falling veggie animation
+        fallingVeggie = vegType
+        fallingOffset = -200
+        fallingOpacity = 1.0
+        withAnimation(.easeIn(duration: 0.6)) {
+            fallingOffset = 0
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            withAnimation(.easeOut(duration: 0.3)) {
+                fallingOpacity = 0
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            fallingVeggie = nil
+        }
 
         // Award coins!
         let coinsEarned = vegType.harvestValue * yield
@@ -965,29 +1013,42 @@ struct SeedBadge: View {
     let seed: Seed
     var isIPad: Bool = false
 
-    private var imgSize: CGFloat { isIPad ? 60 : 36 }
-    private var badgeWidth: CGFloat { isIPad ? 110 : 70 }
+    // Each badge = 3/8 screen width (1.5x the old 1/4)
+    private var badgeWidth: CGFloat {
+        UIScreen.main.bounds.width * 3 / 8
+    }
+    private var imgSize: CGFloat { badgeWidth * 0.65 }
+    private var badgeHeight: CGFloat { badgeWidth * 1.5 }
 
     var body: some View {
-        VStack(spacing: isIPad ? 6 : 4) {
-            Image(seed.vegetableType.imageName)
+        ZStack {
+            // Bag background (cropped tight to bag shape)
+            Image("seed_bag_background")
                 .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: imgSize, height: imgSize)
+                .aspectRatio(contentMode: .fill)
+                .frame(width: badgeWidth, height: badgeHeight)
+                .clipped()
+                .opacity(0.5)
 
-            Text(seed.vegetableType.displayName)
-                .font(.system(size: isIPad ? 13 : 9, weight: .medium, design: .rounded))
-                .foregroundColor(Color.AppTheme.darkBrown)
-                .lineLimit(1)
+            // Content on top of the bag
+            VStack(spacing: 2) {
+                Image(seed.vegetableType.imageName)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: imgSize, height: imgSize)
 
-            Text("x\(seed.quantity)")
-                .font(isIPad ? .AppTheme.body : .AppTheme.caption)
-                .foregroundColor(Color.AppTheme.sepia)
+                Text(seed.vegetableType.displayName)
+                    .font(.system(size: isIPad ? 18 : 14, weight: .medium, design: .rounded))
+                    .foregroundColor(Color.AppTheme.darkBrown)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.7)
+
+                Text("x\(seed.quantity)")
+                    .font(.system(size: isIPad ? 18 : 15, weight: .semibold, design: .rounded))
+                    .foregroundColor(Color.AppTheme.sepia)
+            }
         }
-        .frame(width: badgeWidth)
-        .padding(isIPad ? AppSpacing.md : AppSpacing.sm)
-        .background(Color.AppTheme.warmCream)
-        .cornerRadius(isIPad ? 16 : 12)
+        .frame(width: badgeWidth, height: badgeHeight)
     }
 }
 

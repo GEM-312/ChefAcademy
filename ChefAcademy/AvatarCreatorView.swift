@@ -13,25 +13,21 @@ import Combine
 struct AvatarCreatorView: View {
     @ObservedObject var avatarModel: AvatarModel
     @ObservedObject var onboardingManager: OnboardingManager
-    
-    @State private var selectedTab: CustomizationTab = .skin
-    
+
+    @State private var selectedTab: CustomizationTab = .outfit
+
     enum CustomizationTab: String, CaseIterable {
-        case skin = "Skin"
-        case hair = "Hair"
-        case color = "Color"
         case outfit = "Outfit"
-        
+        case covering = "Covering"
+
         var icon: String {
             switch self {
-            case .skin: return "hand.raised.fill"
-            case .hair: return "comb.fill"
-            case .color: return "paintpalette.fill"
             case .outfit: return "tshirt.fill"
+            case .covering: return "person.crop.circle.fill"
             }
         }
     }
-    
+
     var body: some View {
         VStack(spacing: 0) {
             // Header
@@ -39,19 +35,19 @@ struct AvatarCreatorView: View {
                 Text("Create Your Chef!")
                     .font(.AppTheme.title)
                     .foregroundColor(Color.AppTheme.darkBrown)
-                
+
                 Text("Make yourself look awesome")
                     .font(.AppTheme.subheadline)
                     .foregroundColor(Color.AppTheme.sepia)
             }
             .padding(.top, AppSpacing.lg)
-            
+
             // Avatar Preview
             AvatarPreviewView(avatarModel: avatarModel)
                 .frame(height: 280)
                 .padding(.vertical, AppSpacing.md)
-            
-            // Customization Tabs
+
+            // Customization Tabs — 2 tabs: Outfit, Covering
             HStack(spacing: AppSpacing.xs) {
                 ForEach(CustomizationTab.allCases, id: \.self) { tab in
                     TabButton(
@@ -66,26 +62,22 @@ struct AvatarCreatorView: View {
                 }
             }
             .padding(.horizontal, AppSpacing.md)
-            
+
             // Customization Options
             ScrollView {
                 VStack(spacing: AppSpacing.md) {
                     switch selectedTab {
-                    case .skin:
-                        SkinToneSelector(selectedSkin: $avatarModel.skinTone)
-                    case .hair:
-                        HairStyleSelector(selectedStyle: $avatarModel.hairStyle)
-                    case .color:
-                        HairColorSelector(selectedColor: $avatarModel.hairColor)
                     case .outfit:
                         OutfitSelector(selectedOutfit: $avatarModel.outfit)
+                    case .covering:
+                        HeadCoveringSelector(selectedCovering: $avatarModel.headCovering)
                     }
                 }
                 .padding(AppSpacing.md)
             }
             .background(Color.AppTheme.parchment)
             .cornerRadius(AppSpacing.cardCornerRadius, corners: [.topLeft, .topRight])
-            
+
             // Navigation Buttons
             HStack(spacing: AppSpacing.md) {
                 Button(action: {
@@ -97,7 +89,7 @@ struct AvatarCreatorView: View {
                     }
                 }
                 .buttonStyle(SecondaryButtonStyle())
-                
+
                 Button(action: {
                     onboardingManager.nextStep()
                 }) {
@@ -114,109 +106,68 @@ struct AvatarCreatorView: View {
     }
 }
 
-// MARK: - Avatar Preview
+// MARK: - Avatar Preview (uses actual character image from gender selection)
 struct AvatarPreviewView: View {
     @ObservedObject var avatarModel: AvatarModel
-    
+
+    /// Last frame of the chosen gender's animation — the final pose
+    private var characterImage: String {
+        avatarModel.gender == .boy ? "boy_card_frame_28" : "girl_card_frame_15"
+    }
+
     var body: some View {
         ZStack {
             // Background circle
             Circle()
                 .fill(Color.AppTheme.parchment)
                 .frame(width: 220, height: 220)
-            
-            // Avatar representation (simplified - replace with actual illustrations)
-            VStack(spacing: 0) {
-                // Hair (top)
-                HairView(style: avatarModel.hairStyle, color: avatarModel.hairColor)
-                
-                // Face
-                ZStack {
-                    // Head shape
-                    Circle()
-                        .fill(avatarModel.skinTone.color)
-                        .frame(width: 120, height: 120)
-                    
-                    // Eyes
-                    HStack(spacing: 25) {
-                        Circle()
-                            .fill(Color.AppTheme.darkBrown)
-                            .frame(width: 12, height: 12)
-                        Circle()
-                            .fill(Color.AppTheme.darkBrown)
-                            .frame(width: 12, height: 12)
-                    }
-                    .offset(y: -10)
-                    
-                    // Smile
-                    Path { path in
-                        path.addArc(
-                            center: CGPoint(x: 60, y: 70),
-                            radius: 20,
-                            startAngle: .degrees(0),
-                            endAngle: .degrees(180),
-                            clockwise: false
-                        )
-                    }
-                    .stroke(Color.AppTheme.darkBrown, lineWidth: 3)
-                    .frame(width: 120, height: 120)
-                    
-                    // Blush
-                    HStack(spacing: 60) {
-                        Circle()
-                            .fill(Color.pink.opacity(0.3))
-                            .frame(width: 20, height: 15)
-                        Circle()
-                            .fill(Color.pink.opacity(0.3))
-                            .frame(width: 20, height: 15)
-                    }
-                    .offset(y: 10)
-                }
-                
-                // Outfit
-                OutfitView(outfit: avatarModel.outfit)
-                    .offset(y: -20)
-            }
+
+            // Character image from chosen gender
+            Image(characterImage)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: 200, height: 200)
+                .clipShape(Circle())
         }
     }
 }
 
-// MARK: - Hair View
+// MARK: - Hair View (no color — uses game's sepia/dark brown)
 struct HairView: View {
     let style: HairStyle
-    let color: HairColor
-    
+    private let hairColor = Color.AppTheme.darkBrown.opacity(0.6)
+
     var body: some View {
         ZStack {
             switch style {
             case .short:
                 Capsule()
-                    .fill(color.color)
+                    .fill(hairColor)
                     .frame(width: 100, height: 40)
                     .offset(y: 30)
-                
+
             case .medium:
                 Ellipse()
-                    .fill(color.color)
+                    .fill(hairColor)
                     .frame(width: 130, height: 60)
                     .offset(y: 25)
-                
+
             case .long:
                 VStack(spacing: -10) {
                     Ellipse()
-                        .fill(color.color)
+                        .fill(hairColor)
                         .frame(width: 130, height: 50)
                     RoundedRectangle(cornerRadius: 20)
-                        .fill(color.color)
+                        .fill(hairColor)
                         .frame(width: 120, height: 80)
                 }
                 .offset(y: 15)
-                
+
             case .curly:
                 ZStack {
-                    ForEach(0..<8) { i in
+                    ForEach(0..<8, id: \.self) { i in
                         Circle()
-                            .fill(color.color)
+                            .fill(hairColor)
                             .frame(width: 35, height: 35)
                             .offset(
                                 x: CGFloat(cos(Double(i) * .pi / 4) * 45),
@@ -224,29 +175,29 @@ struct HairView: View {
                             )
                     }
                 }
-                
+
             case .braids:
                 HStack(spacing: 60) {
                     RoundedRectangle(cornerRadius: 8)
-                        .fill(color.color)
+                        .fill(hairColor)
                         .frame(width: 20, height: 80)
                     RoundedRectangle(cornerRadius: 8)
-                        .fill(color.color)
+                        .fill(hairColor)
                         .frame(width: 20, height: 80)
                 }
                 .offset(y: 50)
                 Ellipse()
-                    .fill(color.color)
+                    .fill(hairColor)
                     .frame(width: 110, height: 40)
                     .offset(y: 30)
-                
+
             case .bun:
                 VStack(spacing: -5) {
                     Circle()
-                        .fill(color.color)
+                        .fill(hairColor)
                         .frame(width: 50, height: 50)
                     Ellipse()
-                        .fill(color.color)
+                        .fill(hairColor)
                         .frame(width: 110, height: 35)
                 }
                 .offset(y: 10)
@@ -256,17 +207,65 @@ struct HairView: View {
     }
 }
 
+// MARK: - Head Covering View
+struct HeadCoveringView: View {
+    let covering: HeadCovering
+
+    var body: some View {
+        switch covering {
+        case .none:
+            EmptyView()
+
+        case .hijab:
+            // Draped hijab shape wrapping around head
+            ZStack {
+                // Main drape
+                Ellipse()
+                    .fill(Color.AppTheme.sage.opacity(0.5))
+                    .frame(width: 150, height: 70)
+                    .offset(y: 20)
+                // Side drape falling down
+                RoundedRectangle(cornerRadius: 15)
+                    .fill(Color.AppTheme.sage.opacity(0.5))
+                    .frame(width: 130, height: 60)
+                    .offset(y: 55)
+            }
+
+        case .kippah:
+            // Small round cap on top of head
+            Ellipse()
+                .fill(Color.AppTheme.darkBrown.opacity(0.4))
+                .frame(width: 50, height: 20)
+                .offset(y: 10)
+
+        case .turban:
+            // Wrapped turban on top
+            ZStack {
+                Ellipse()
+                    .fill(Color.AppTheme.goldenWheat.opacity(0.5))
+                    .frame(width: 120, height: 50)
+                    .offset(y: 18)
+                // Wrap line
+                Capsule()
+                    .fill(Color.AppTheme.goldenWheat.opacity(0.7))
+                    .frame(width: 100, height: 12)
+                    .offset(y: 25)
+            }
+        }
+    }
+}
+
 // MARK: - Outfit View
 struct OutfitView: View {
     let outfit: Outfit
-    
+
     var body: some View {
         ZStack {
             // Body/Torso
             RoundedRectangle(cornerRadius: 20)
                 .fill(outfit.color)
                 .frame(width: 100, height: 60)
-            
+
             // Apron pocket (for apron outfits)
             if outfit != .chefWhite {
                 RoundedRectangle(cornerRadius: 8)
@@ -274,7 +273,7 @@ struct OutfitView: View {
                     .frame(width: 40, height: 25)
                     .offset(y: 10)
             }
-            
+
             // Chef buttons (for chef coat)
             if outfit == .chefWhite {
                 VStack(spacing: 8) {
@@ -296,7 +295,7 @@ struct TabButton: View {
     let icon: String
     let isSelected: Bool
     let action: () -> Void
-    
+
     var body: some View {
         Button(action: action) {
             VStack(spacing: 4) {
@@ -314,53 +313,16 @@ struct TabButton: View {
     }
 }
 
-// MARK: - Skin Tone Selector
-struct SkinToneSelector: View {
-    @Binding var selectedSkin: SkinTone
-    
-    var body: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("Choose your skin tone")
-                .font(.AppTheme.headline)
-                .foregroundColor(Color.AppTheme.darkBrown)
-            
-            HStack(spacing: AppSpacing.md) {
-                ForEach(SkinTone.allCases) { tone in
-                    Button(action: { selectedSkin = tone }) {
-                        Circle()
-                            .fill(tone.color)
-                            .frame(width: 50, height: 50)
-                            .overlay(
-                                Circle()
-                                    .stroke(selectedSkin == tone ? Color.AppTheme.goldenWheat : Color.clear, lineWidth: 3)
-                            )
-                            .overlay(
-                                selectedSkin == tone ?
-                                Image(systemName: "checkmark")
-                                    .foregroundColor(Color.AppTheme.darkBrown)
-                                    .font(.system(size: 16, weight: .bold))
-                                : nil
-                            )
-                    }
-                }
-            }
-        }
-        .padding()
-        .background(Color.AppTheme.warmCream)
-        .cornerRadius(AppSpacing.cardCornerRadius)
-    }
-}
-
 // MARK: - Hair Style Selector
 struct HairStyleSelector: View {
     @Binding var selectedStyle: HairStyle
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text("Choose your hairstyle")
                 .font(.AppTheme.headline)
                 .foregroundColor(Color.AppTheme.darkBrown)
-            
+
             LazyVGrid(columns: [
                 GridItem(.flexible()),
                 GridItem(.flexible()),
@@ -373,12 +335,12 @@ struct HairStyleSelector: View {
                                 Circle()
                                     .fill(Color.AppTheme.parchment)
                                     .frame(width: 60, height: 60)
-                                
+
                                 // Mini hair preview
-                                HairView(style: style, color: .brown)
+                                HairView(style: style)
                                     .scaleEffect(0.4)
                             }
-                            
+
                             Text(style.rawValue)
                                 .font(.AppTheme.caption)
                                 .foregroundColor(Color.AppTheme.sepia)
@@ -400,44 +362,63 @@ struct HairStyleSelector: View {
     }
 }
 
-// MARK: - Hair Color Selector
-struct HairColorSelector: View {
-    @Binding var selectedColor: HairColor
-    
+// MARK: - Head Covering Selector
+struct HeadCoveringSelector: View {
+    @Binding var selectedCovering: HeadCovering
+
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("Choose your hair color")
+            Text("Head covering")
                 .font(.AppTheme.headline)
                 .foregroundColor(Color.AppTheme.darkBrown)
-            
+
+            Text("This also sets your dietary preference")
+                .font(.AppTheme.caption)
+                .foregroundColor(Color.AppTheme.sepia)
+
             LazyVGrid(columns: [
-                GridItem(.flexible()),
-                GridItem(.flexible()),
                 GridItem(.flexible()),
                 GridItem(.flexible())
             ], spacing: AppSpacing.md) {
-                ForEach(HairColor.allCases) { color in
-                    Button(action: { selectedColor = color }) {
-                        VStack(spacing: 6) {
-                            Circle()
-                                .fill(color.color)
-                                .frame(width: 45, height: 45)
-                                .overlay(
-                                    Circle()
-                                        .stroke(selectedColor == color ? Color.AppTheme.goldenWheat : Color.clear, lineWidth: 3)
-                                )
-                                .overlay(
-                                    selectedColor == color ?
-                                    Image(systemName: "checkmark")
-                                        .foregroundColor(.white)
-                                        .font(.system(size: 14, weight: .bold))
-                                    : nil
-                                )
-                            
-                            Text(color.rawValue)
-                                .font(.AppTheme.caption)
-                                .foregroundColor(Color.AppTheme.sepia)
+                ForEach(HeadCovering.allCases) { covering in
+                    Button(action: { selectedCovering = covering }) {
+                        VStack(spacing: 8) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.AppTheme.parchment)
+                                    .frame(width: 70, height: 70)
+
+                                // Mini covering preview
+                                HeadCoveringView(covering: covering)
+                                    .scaleEffect(0.5)
+
+                                // Show person icon for "none"
+                                if covering == .none {
+                                    Image(systemName: "person.fill")
+                                        .font(.system(size: 24))
+                                        .foregroundColor(Color.AppTheme.sepia.opacity(0.5))
+                                }
+                            }
+
+                            Text(covering.rawValue)
+                                .font(.AppTheme.body)
+                                .foregroundColor(Color.AppTheme.darkBrown)
+
+                            // Show dietary link
+                            if covering.dietaryPreference != .none {
+                                Text(covering.dietaryPreference.displayName)
+                                    .font(.AppTheme.caption)
+                                    .foregroundColor(Color.AppTheme.sage)
+                            }
                         }
+                        .padding(AppSpacing.sm)
+                        .frame(maxWidth: .infinity)
+                        .background(selectedCovering == covering ? Color.AppTheme.goldenWheat.opacity(0.3) : Color.clear)
+                        .cornerRadius(16)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16)
+                                .stroke(selectedCovering == covering ? Color.AppTheme.goldenWheat : Color.clear, lineWidth: 2)
+                        )
                     }
                 }
             }
@@ -451,13 +432,13 @@ struct HairColorSelector: View {
 // MARK: - Outfit Selector
 struct OutfitSelector: View {
     @Binding var selectedOutfit: Outfit
-    
+
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text("Choose your outfit")
                 .font(.AppTheme.headline)
                 .foregroundColor(Color.AppTheme.darkBrown)
-            
+
             LazyVGrid(columns: [
                 GridItem(.flexible()),
                 GridItem(.flexible()),
@@ -470,11 +451,11 @@ struct OutfitSelector: View {
                                 RoundedRectangle(cornerRadius: 12)
                                     .fill(Color.AppTheme.parchment)
                                     .frame(width: 70, height: 70)
-                                
+
                                 OutfitView(outfit: outfit)
                                     .scaleEffect(0.7)
                             }
-                            
+
                             Text(outfit.rawValue)
                                 .font(.AppTheme.caption)
                                 .foregroundColor(Color.AppTheme.sepia)
@@ -507,7 +488,7 @@ extension View {
 struct RoundedCorner: Shape {
     var radius: CGFloat = .infinity
     var corners: UIRectCorner = .allCorners
-    
+
     func path(in rect: CGRect) -> Path {
         let path = UIBezierPath(
             roundedRect: rect,

@@ -17,10 +17,24 @@ class AvatarModel: ObservableObject {
         }
     }
 
-    @Published var skinTone: SkinTone = .medium
-    @Published var hairStyle: HairStyle = .short
-    @Published var hairColor: HairColor = .brown
+    @Published var gender: Gender = .girl {
+        didSet {
+            UserDefaults.standard.set(gender.rawValue, forKey: "userGender")
+        }
+    }
+
+    @Published var hairStyle: HairStyle = .medium
     @Published var outfit: Outfit = .apronRed
+    @Published var headCovering: HeadCovering = .none {
+        didSet {
+            UserDefaults.standard.set(headCovering.rawValue, forKey: "userHeadCovering")
+        }
+    }
+
+    // Dietary preference derived from head covering
+    var dietaryPreference: DietaryPreference {
+        headCovering.dietaryPreference
+    }
 
     // Stats (will be affected by nutrition later)
     @Published var energyLevel: Double = 100
@@ -42,30 +56,74 @@ class AvatarModel: ObservableObject {
     // Initialize with saved values from UserDefaults
     init() {
         self.name = UserDefaults.standard.string(forKey: "userName") ?? ""
-    }
-}
-
-// MARK: - Customization Options
-
-enum SkinTone: String, CaseIterable, Identifiable {
-    case light = "Light"
-    case lightMedium = "Light Medium"
-    case medium = "Medium"
-    case mediumDark = "Medium Dark"
-    case dark = "Dark"
-    
-    var id: String { rawValue }
-    
-    var color: Color {
-        switch self {
-        case .light: return Color(hex: "FFE0BD")
-        case .lightMedium: return Color(hex: "F1C27D")
-        case .medium: return Color(hex: "E0AC69")
-        case .mediumDark: return Color(hex: "C68642")
-        case .dark: return Color(hex: "8D5524")
+        if let genderRaw = UserDefaults.standard.string(forKey: "userGender"),
+           let saved = Gender(rawValue: genderRaw) {
+            self.gender = saved
+        }
+        if let coveringRaw = UserDefaults.standard.string(forKey: "userHeadCovering"),
+           let saved = HeadCovering(rawValue: coveringRaw) {
+            self.headCovering = saved
         }
     }
 }
+
+// MARK: - Gender
+
+enum Gender: String, CaseIterable, Identifiable {
+    case boy = "Boy"
+    case girl = "Girl"
+
+    var id: String { rawValue }
+}
+
+// MARK: - Head Covering
+
+enum HeadCovering: String, CaseIterable, Identifiable {
+    case none = "None"
+    case hijab = "Hijab"
+    case kippah = "Kippah"
+    case turban = "Turban"
+
+    var id: String { rawValue }
+
+    var iconName: String {
+        switch self {
+        case .none: return "person.fill"
+        case .hijab: return "person.fill"
+        case .kippah: return "person.fill"
+        case .turban: return "person.fill"
+        }
+    }
+
+    var dietaryPreference: DietaryPreference {
+        switch self {
+        case .none: return .none
+        case .hijab: return .halal
+        case .kippah: return .kosher
+        case .turban: return .none
+        }
+    }
+}
+
+// MARK: - Dietary Preference
+
+enum DietaryPreference: String, CaseIterable, Identifiable {
+    case none = "None"
+    case halal = "Halal"
+    case kosher = "Kosher"
+
+    var id: String { rawValue }
+
+    var displayName: String {
+        switch self {
+        case .none: return "No restrictions"
+        case .halal: return "Halal"
+        case .kosher: return "Kosher"
+        }
+    }
+}
+
+// MARK: - Hair Style
 
 enum HairStyle: String, CaseIterable, Identifiable {
     case short = "Short"
@@ -74,9 +132,9 @@ enum HairStyle: String, CaseIterable, Identifiable {
     case curly = "Curly"
     case braids = "Braids"
     case bun = "Bun"
-    
+
     var id: String { rawValue }
-    
+
     var iconName: String {
         switch self {
         case .short: return "person.fill"
@@ -89,29 +147,7 @@ enum HairStyle: String, CaseIterable, Identifiable {
     }
 }
 
-enum HairColor: String, CaseIterable, Identifiable {
-    case black = "Black"
-    case brown = "Brown"
-    case blonde = "Blonde"
-    case red = "Red"
-    case blue = "Blue"
-    case purple = "Purple"
-    case pink = "Pink"
-    
-    var id: String { rawValue }
-    
-    var color: Color {
-        switch self {
-        case .black: return Color(hex: "2C2C2C")
-        case .brown: return Color(hex: "6B4423")
-        case .blonde: return Color(hex: "D4A853")
-        case .red: return Color(hex: "A52A2A")
-        case .blue: return Color(hex: "4A90D9")
-        case .purple: return Color(hex: "8B5CF6")
-        case .pink: return Color(hex: "EC4899")
-        }
-    }
-}
+// MARK: - Outfit
 
 enum Outfit: String, CaseIterable, Identifiable {
     case apronRed = "Red Apron"
@@ -119,9 +155,9 @@ enum Outfit: String, CaseIterable, Identifiable {
     case apronGreen = "Green Apron"
     case apronYellow = "Yellow Apron"
     case chefWhite = "Chef Coat"
-    
+
     var id: String { rawValue }
-    
+
     var color: Color {
         switch self {
         case .apronRed: return Color(hex: "E53E3E")
@@ -142,7 +178,7 @@ struct Badge: Identifiable, Equatable {
     let category: BadgeCategory
     var isEarned: Bool = false
     var earnedDate: Date?
-    
+
     enum BadgeCategory: String {
         case streak = "Streak"
         case nutrition = "Nutrition"
@@ -159,14 +195,14 @@ extension Badge {
         Badge(name: "Veggie Visitor", description: "Visit Pip for 7 days", iconName: "carrot.fill", category: .streak),
         Badge(name: "Kitchen Regular", description: "Visit Pip for 14 days", iconName: "flame.fill", category: .streak),
         Badge(name: "Pip's Best Friend", description: "Visit Pip for 30 days", iconName: "star.fill", category: .streak),
-        
+
         // Nutrition Badges
         Badge(name: "Eye Spy", description: "Learn about Vitamin A", iconName: "eye.fill", category: .nutrition),
         Badge(name: "Muscle Builder", description: "Learn about Protein", iconName: "figure.strengthtraining.traditional", category: .nutrition),
         Badge(name: "Bone Boss", description: "Learn about Calcium", iconName: "figure.stand", category: .nutrition),
         Badge(name: "Brain Booster", description: "Learn about Omega-3", iconName: "brain.head.profile", category: .nutrition),
         Badge(name: "Energy Expert", description: "Learn about Carbohydrates", iconName: "bolt.fill", category: .nutrition),
-        
+
         // Cooking Badges
         Badge(name: "First Flip", description: "Complete your first recipe", iconName: "frying.pan.fill", category: .cooking),
         Badge(name: "Salad Star", description: "Make 3 salads", iconName: "leaf.circle.fill", category: .cooking),

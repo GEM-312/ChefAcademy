@@ -19,7 +19,7 @@ struct RecipeDetailView: View {
                         Image(recipe.imageName)
                             .resizable()
                             .aspectRatio(contentMode: .fill)
-                            .frame(height: 250)
+                            .frame(height: 180)
                             .offset(y: recipe.imageYOffset)
                             .clipped()
 
@@ -35,10 +35,10 @@ struct RecipeDetailView: View {
                         .padding(AppSpacing.md)
                     }
 
-                    VStack(alignment: .leading, spacing: AppSpacing.lg) {
+                    VStack(alignment: .leading, spacing: AppSpacing.md) {
 
                         // MARK: - Title Block
-                        VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        VStack(alignment: .leading, spacing: AppSpacing.xs) {
                             // Adult help badge
                             if recipe.needsAdultHelp {
                                 HStack(spacing: 4) {
@@ -54,55 +54,56 @@ struct RecipeDetailView: View {
                             }
 
                             Text(recipe.title)
-                                .font(.AppTheme.largeTitle)
+                                .font(.AppTheme.title)
                                 .foregroundColor(Color.AppTheme.darkBrown)
 
                             Text(recipe.description)
-                                .font(.AppTheme.body)
+                                .font(.AppTheme.subheadline)
                                 .foregroundColor(Color.AppTheme.sepia)
-                        }
 
-                        // MARK: - Metadata Row
-                        HStack(spacing: AppSpacing.md) {
-                            DifficultyBadge(level: recipe.difficulty)
+                            // Metadata inline with title block
+                            HStack(spacing: AppSpacing.sm) {
+                                DifficultyBadge(level: recipe.difficulty)
 
-                            HStack(spacing: 4) {
-                                Image(systemName: "clock")
-                                Text("\(recipe.cookTime) min")
+                                HStack(spacing: 4) {
+                                    Image(systemName: "clock")
+                                    Text("\(recipe.cookTime) min")
+                                }
+                                .font(.AppTheme.caption)
+                                .foregroundColor(Color.AppTheme.lightSepia)
+
+                                HStack(spacing: 4) {
+                                    Image(systemName: "person.2")
+                                    Text("\(recipe.servings) servings")
+                                }
+                                .font(.AppTheme.caption)
+                                .foregroundColor(Color.AppTheme.lightSepia)
+
+                                Spacer()
                             }
-                            .font(.AppTheme.caption)
-                            .foregroundColor(Color.AppTheme.lightSepia)
-
-                            HStack(spacing: 4) {
-                                Image(systemName: "person.2")
-                                Text("\(recipe.servings) servings")
-                            }
-                            .font(.AppTheme.caption)
-                            .foregroundColor(Color.AppTheme.lightSepia)
-
-                            Spacer()
                         }
 
                         // MARK: - Pip's Tip
                         if !recipe.glucoseTip.isEmpty {
                             HStack(alignment: .top, spacing: 8) {
                                 Image(systemName: "lightbulb.fill")
-                                    .font(.system(size: 16))
+                                    .font(.system(size: 14))
                                     .foregroundColor(Color.AppTheme.goldenWheat)
 
-                                VStack(alignment: .leading, spacing: 4) {
+                                VStack(alignment: .leading, spacing: 2) {
                                     Text("Pip's Tip")
-                                        .font(.AppTheme.headline)
+                                        .font(.AppTheme.subheadline)
+                                        .fontWeight(.semibold)
                                         .foregroundColor(Color.AppTheme.darkBrown)
                                     Text(recipe.glucoseTip)
-                                        .font(.AppTheme.body)
+                                        .font(.AppTheme.caption)
                                         .foregroundColor(Color.AppTheme.sepia)
                                 }
                             }
-                            .padding(AppSpacing.md)
+                            .padding(AppSpacing.sm)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background(Color.AppTheme.goldenWheat.opacity(0.1))
-                            .cornerRadius(AppSpacing.cardCornerRadius)
+                            .cornerRadius(12)
                         }
 
                         // MARK: - Garden Ingredients
@@ -157,8 +158,10 @@ struct RecipeDetailView: View {
                                 ], spacing: AppSpacing.sm) {
                                     ForEach(recipe.pantryIngredients, id: \.self) { item in
                                         HStack(spacing: 6) {
-                                            Text(item.emoji)
-                                                .font(.system(size: 20))
+                                            Image(item.imageName)
+                                                .resizable()
+                                                .aspectRatio(contentMode: .fit)
+                                                .frame(width: 24, height: 24)
                                             Text(item.displayName)
                                                 .font(.AppTheme.subheadline)
                                                 .foregroundColor(Color.AppTheme.darkBrown)
@@ -248,12 +251,12 @@ struct RecipeDetailView: View {
                                 .background(Color.AppTheme.sage)
                                 .cornerRadius(AppSpacing.cardCornerRadius)
                         }
-                        .padding(.top, AppSpacing.sm)
+                        .padding(.top, AppSpacing.xs)
 
-                        Spacer().frame(height: AppSpacing.xl)
+                        Spacer().frame(height: AppSpacing.lg)
                     }
-                    .padding(.horizontal, AppSpacing.md)
-                    .padding(.top, AppSpacing.lg)
+                    .padding(.horizontal, AppSpacing.lg)
+                    .padding(.top, AppSpacing.md)
                 }
             }
         }

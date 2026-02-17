@@ -516,8 +516,10 @@ struct PantryStapleItem: View {
 
     var body: some View {
         VStack(spacing: isIPad ? 6 : 4) {
-            Text(stock.item.emoji)
-                .font(.system(size: isIPad ? 28 : 24))
+            Image(stock.item.imageName)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: isIPad ? 40 : 30, height: isIPad ? 40 : 30)
             Text(stock.item.displayName)
                 .font(.system(size: isIPad ? 13 : 9, weight: .medium, design: .rounded))
                 .foregroundColor(Color.AppTheme.darkBrown)

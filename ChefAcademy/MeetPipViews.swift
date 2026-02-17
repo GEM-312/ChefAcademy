@@ -282,8 +282,11 @@ struct ReadyToStartView: View {
                 .opacity(showContent ? 1 : 0)
                 .offset(y: showContent ? 0 : 20)
 
-                // Avatar with Pip Video
+                // Pip (left) + Avatar (right)
                 HStack(spacing: sizeClass == .compact ? -20 : -30) {
+                    // Animated Pip waving
+                    PipWavingAnimatedView(size: AdaptiveCardSize.pipReadyScreen(for: sizeClass))
+
                     // User's Avatar
                     ZStack {
                         Circle()
@@ -296,9 +299,6 @@ struct ReadyToStartView: View {
                         AvatarPreviewView(avatarModel: avatarModel)
                             .scaleEffect(sizeClass == .compact ? 0.5 : 0.7)
                     }
-
-                    // Animated Pip waving (frame animation, transparent bg)
-                    PipWavingAnimatedView(size: AdaptiveCardSize.pipReadyScreen(for: sizeClass))
                 }
                 .scaleEffect(showContent ? 1 : 0.5)
                 .opacity(showContent ? 1 : 0)
