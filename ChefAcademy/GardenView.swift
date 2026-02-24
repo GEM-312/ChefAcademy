@@ -529,6 +529,9 @@ struct GardenView: View {
     @State private var suggestedRecipe: Recipe?
     @State private var showRecipeSuggestion = false
 
+    // Seed info full-screen cover
+    @State private var selectedSeed: Seed?
+
     // Falling veggie animation
     @State private var fallingVeggie: VegetableType? = nil
     @State private var fallingOffset: CGFloat = -200
@@ -600,15 +603,44 @@ struct GardenView: View {
         .onReceive(timer) { _ in
             updateGrowthStates()
         }
-        // Recipe suggestion popup after harvest
-        .alert("Recipe Unlocked! 🍳", isPresented: $showRecipeSuggestion) {
-            Button("Let's Cook!") {
-                selectedTab = .kitchen
-            }
-            Button("Later", role: .cancel) { }
-        } message: {
-            if let recipe = suggestedRecipe {
-                Text("You have all the ingredients for \(recipe.title)! Want to cook it now?")
+        // Recipe suggestion overlay after harvest (game-style dialog)
+        .overlay {
+            if showRecipeSuggestion, let recipe = suggestedRecipe {
+                let missing = recipe.missingPantryItems(from: gameState.pantryInventory)
+                let isFullMatch = missing.isEmpty
+                let message = isFullMatch
+                    ? "You have everything for \(recipe.title)! Want to cook it now?"
+                    : "You can almost make \(recipe.title)! Just need \(missing.map(\.displayName).joined(separator: ", ")) from the Farm Shop."
+
+                PipDialogView(
+                    message: message,
+                    choices: isFullMatch
+                        ? [
+                            PipDialogChoice(label: "Yes, let's cook!", style: .primary) {
+                                showRecipeSuggestion = false
+                                selectedTab = .kitchen
+                            },
+                            PipDialogChoice(label: "Not yet", style: .secondary) {
+                                showRecipeSuggestion = false
+                            },
+                            PipDialogChoice(label: "Keep gardening", style: .subtle) {
+                                showRecipeSuggestion = false
+                            },
+                        ]
+                        : [
+                            PipDialogChoice(label: "Go to Farm Shop!", style: .primary) {
+                                showRecipeSuggestion = false
+                                selectedTab = .farm
+                            },
+                            PipDialogChoice(label: "Go to Kitchen", style: .secondary) {
+                                showRecipeSuggestion = false
+                                selectedTab = .kitchen
+                            },
+                            PipDialogChoice(label: "Keep gardening", style: .subtle) {
+                                showRecipeSuggestion = false
+                            },
+                        ]
+                )
             }
         }
     }
@@ -805,10 +837,16 @@ struct GardenView: View {
                     HStack(spacing: 0) {
                         ForEach(gameState.seeds) { seed in
                             SeedBadge(seed: seed, isIPad: isIPad)
+                                .onTapGesture {
+                                    selectedSeed = seed
+                                }
                         }
                     }
                 }
             }
+        }
+        .fullScreenCover(item: $selectedSeed) { seed in
+            SeedInfoView(seed: seed)
         }
     }
 
@@ -937,8 +975,15 @@ struct GardenView: View {
         // Award XP
         gameState.addXP(10)
 
-        // Check if any recipe can now be cooked with harvested ingredients
-        let availableRecipes = GardenRecipes.availableRecipes(with: gameState.harvestedIngredients)
+        // Check if any recipe can now be cooked (try full match first, then garden-only)
+        let fullMatch = GardenRecipes.fullyAvailableRecipes(
+            harvestedIngredients: gameState.harvestedIngredients,
+            pantryInventory: gameState.pantryInventory
+        )
+        let gardenMatch = fullMatch.isEmpty
+            ? GardenRecipes.availableRecipes(with: gameState.harvestedIngredients)
+            : []
+        let availableRecipes = fullMatch.isEmpty ? gardenMatch : fullMatch
         if let recipe = availableRecipes.first {
             suggestedRecipe = recipe
             // Small delay so harvest animation plays first
@@ -1017,7 +1062,7 @@ struct SeedBadge: View {
     private var badgeWidth: CGFloat {
         UIScreen.main.bounds.width * 3 / 8
     }
-    private var imgSize: CGFloat { badgeWidth * 0.65 }
+    private var imgSize: CGFloat { badgeWidth * 0.43 }
     private var badgeHeight: CGFloat { badgeWidth * 1.5 }
 
     var body: some View {
@@ -1036,16 +1081,19 @@ struct SeedBadge: View {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: imgSize, height: imgSize)
+                    .offset(y: 25)
 
                 Text(seed.vegetableType.displayName)
                     .font(.system(size: isIPad ? 18 : 14, weight: .medium, design: .rounded))
                     .foregroundColor(Color.AppTheme.darkBrown)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
+                    .offset(y: 20)
 
                 Text("x\(seed.quantity)")
                     .font(.system(size: isIPad ? 18 : 15, weight: .semibold, design: .rounded))
                     .foregroundColor(Color.AppTheme.sepia)
+                    .offset(y: 20)
             }
         }
         .frame(width: badgeWidth, height: badgeHeight)

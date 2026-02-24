@@ -691,6 +691,104 @@ struct GardenRecipes {
                 "Roll them up or eat them open — your choice!"
             ]
         ),
+
+        // MARK: - Simple Butter Recipes (easy to cook early game!)
+
+        Recipe(
+            id: "buttered-carrots",
+            title: "Honey Butter Carrots",
+            description: "Sweet, tender carrots glazed with butter and a drizzle of honey",
+            imageName: "recipe_honey_butter_carrots",
+            category: .snacks,
+            cookTime: 8,
+            difficulty: .easy,
+            servings: 2,
+            needsAdultHelp: true,
+            nutritionFacts: ["Vitamin A", "Fiber", "Healthy Fats"],
+            gardenIngredients: [.carrot],
+            pantryIngredients: [.butter, .honey],
+            glucoseTip: "Carrots are naturally sweet! The butter and honey make them extra yummy while the fiber keeps your tummy happy.",
+            steps: [
+                "Wash and peel the carrots.",
+                "Cut them into thin sticks or coins.",
+                "Melt a bit of butter in a pan.",
+                "Add the carrots and cook until tender.",
+                "Drizzle honey on top and stir.",
+                "Let them cool a bit and enjoy!"
+            ]
+        ),
+
+        Recipe(
+            id: "buttered-zucchini",
+            title: "Butter Zucchini Bites",
+            description: "Golden pan-fried zucchini coins tossed in butter — simple and delicious!",
+            imageName: "recipe_butter_zucchini",
+            category: .snacks,
+            cookTime: 8,
+            difficulty: .easy,
+            servings: 2,
+            needsAdultHelp: true,
+            nutritionFacts: ["Vitamin B6", "Potassium", "Healthy Fats"],
+            gardenIngredients: [.zucchini],
+            pantryIngredients: [.butter],
+            glucoseTip: "Zucchini is packed with vitamins! Cooking it in butter helps your body absorb all the good nutrients.",
+            steps: [
+                "Wash the zucchini.",
+                "Cut it into round coins.",
+                "Melt butter in a pan on medium heat.",
+                "Place zucchini coins in the pan.",
+                "Cook until golden on each side.",
+                "Let them cool and munch away!"
+            ]
+        ),
+
+        Recipe(
+            id: "garden-yogurt-bowl",
+            title: "Garden Yogurt Bowl",
+            description: "Creamy Greek yogurt topped with grated carrots, honey, and a sprinkle of cinnamon",
+            imageName: "recipe_garden_yogurt_bowl",
+            category: .breakfast,
+            cookTime: 5,
+            difficulty: .easy,
+            servings: 1,
+            needsAdultHelp: false,
+            nutritionFacts: ["Protein", "Vitamin A", "Calcium"],
+            gardenIngredients: [.carrot],
+            pantryIngredients: [.greekYogurt, .honey, .cinnamon],
+            glucoseTip: "Starting with yogurt gives you protein first! Adding carrots and cinnamon keeps your energy smooth all morning.",
+            steps: [
+                "Scoop Greek yogurt into a bowl.",
+                "Peel and grate the carrot into thin shreds.",
+                "Sprinkle the carrot shreds on top.",
+                "Drizzle a little honey over everything.",
+                "Add a pinch of cinnamon.",
+                "Mix and enjoy your garden bowl!"
+            ]
+        ),
+
+        Recipe(
+            id: "lettuce-butter-wraps",
+            title: "Buttery Lettuce Wraps",
+            description: "Crisp lettuce leaves with warm buttered carrots and onions inside",
+            imageName: "recipe_lettuce_butter_wraps",
+            category: .lunch,
+            cookTime: 10,
+            difficulty: .easy,
+            servings: 2,
+            needsAdultHelp: true,
+            nutritionFacts: ["Vitamin A", "Fiber", "Vitamin K"],
+            gardenIngredients: [.lettuce, .carrot, .onion],
+            pantryIngredients: [.butter],
+            glucoseTip: "Lettuce wraps are a smart choice! The veggies give you fiber first, which helps your body handle everything better.",
+            steps: [
+                "Wash lettuce leaves and pat dry.",
+                "Peel and slice carrots into thin sticks.",
+                "Dice the onion into small pieces.",
+                "Melt butter in a pan and cook carrots and onions until soft.",
+                "Scoop the warm veggies into lettuce leaves.",
+                "Roll up and take a big crunchy bite!"
+            ]
+        ),
     ]
 
     /// Find recipes the player can make right now (checks garden ingredients only)

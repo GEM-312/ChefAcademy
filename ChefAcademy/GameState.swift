@@ -9,6 +9,7 @@
 //
 
 import SwiftUI
+import SwiftData
 import Combine
 
 // MARK: - GameState (The Central Manager)
@@ -19,6 +20,25 @@ import Combine
 //
 
 class GameState: ObservableObject {
+
+    // ============================================
+    // SWIFTDATA PERSISTENCE
+    // ============================================
+
+    /// ModelContext for reading/writing PlayerData. Nil in previews.
+    var modelContext: ModelContext?
+
+    /// Auto-save subscription — saves whenever any @Published property changes
+    private var autoSaveCancellable: AnyCancellable?
+
+    /// Set up auto-save: debounce 0.5s so rapid changes batch into one write
+    func startAutoSave() {
+        autoSaveCancellable = objectWillChange
+            .debounce(for: .seconds(0.5), scheduler: RunLoop.main)
+            .sink { [weak self] _ in
+                self?.saveToStore()
+            }
+    }
 
     // ============================================
     // CURRENCY & PROGRESSION
@@ -91,6 +111,7 @@ class GameState: ObservableObject {
         withAnimation(.spring()) {
             coins += amount
         }
+        saveToStore()
     }
 
     /// Spend coins (returns false if not enough)
@@ -99,6 +120,7 @@ class GameState: ObservableObject {
         withAnimation(.spring()) {
             coins -= amount
         }
+        saveToStore()
         return true
     }
 
@@ -106,6 +128,7 @@ class GameState: ObservableObject {
     func addXP(_ amount: Int) {
         xp += amount
         checkLevelUp()
+        saveToStore()
     }
 
     /// Check if player should level up
@@ -124,6 +147,7 @@ class GameState: ObservableObject {
         } else {
             harvestedIngredients.append(HarvestedIngredient(type: type, quantity: quantity))
         }
+        saveToStore()
     }
 
     /// Check if player has enough of an ingredient
@@ -144,6 +168,7 @@ class GameState: ObservableObject {
         if harvestedIngredients[index].quantity <= 0 {
             harvestedIngredients.remove(at: index)
         }
+        saveToStore()
         return true
     }
 
@@ -164,6 +189,7 @@ class GameState: ObservableObject {
 
         // Award XP for shopping!
         addXP(3 * quantity)
+        // saveToStore() already called by addXP and spendCoins
         return true
     }
 
@@ -185,12 +211,155 @@ class GameState: ObservableObject {
         if pantryInventory[index].quantity <= 0 {
             pantryInventory.remove(at: index)
         }
+        saveToStore()
         return true
     }
 
     /// Get quantity of a pantry item
     func pantryQuantity(for item: PantryItem) -> Int {
         pantryInventory.first(where: { $0.item == item })?.quantity ?? 0
+    }
+
+    // ============================================
+    // COOKING COMPLETION
+    // ============================================
+
+    /// Complete a cooking session — award stars, coins, and XP
+    func completeCooking(recipeID: String, stars: Int, coins: Int, xp: Int) {
+        addCoins(coins)
+        addXP(xp)
+        recipeStars[recipeID] = max(recipeStars[recipeID] ?? 0, stars)
+        saveToStore()
+    }
+
+    // ============================================
+    // SWIFTDATA SAVE / LOAD
+    // ============================================
+
+    /// Load player progress from SwiftData (called once on app launch)
+    func loadFromStore() {
+        guard let context = modelContext else { return }
+
+        let descriptor = FetchDescriptor<PlayerData>()
+        guard let saved = try? context.fetch(descriptor).first else { return }
+
+        // Currency
+        coins = saved.coins
+        xp = saved.xp
+        playerLevel = saved.playerLevel
+
+        // Seeds
+        seeds = saved.seedsData.compactMap { data in
+            guard let veg = VegetableType(rawValue: data.vegetableRawValue) else { return nil }
+            return Seed(vegetableType: veg, quantity: data.quantity)
+        }
+
+        // Harvested
+        harvestedIngredients = saved.harvestedData.compactMap { data in
+            guard let veg = VegetableType(rawValue: data.vegetableRawValue) else { return nil }
+            return HarvestedIngredient(type: veg, quantity: data.quantity)
+        }
+
+        // Plots
+        gardenPlots = saved.plotsData.map { data in
+            var plot = GardenPlot(id: data.id)
+            plot.state = PlotState(rawValue: data.stateRaw) ?? .empty
+            if let vegRaw = data.vegetableRaw {
+                plot.vegetable = VegetableType(rawValue: vegRaw)
+            }
+            plot.plantedDate = data.plantedDate
+            return plot
+        }
+        // If saved plots is empty (first launch after migration), keep starter plots
+        if gardenPlots.isEmpty {
+            gardenPlots = GardenPlot.createStarterPlots()
+        }
+
+        // Pantry
+        pantryInventory = saved.pantryData.compactMap { data in
+            guard let item = PantryItem(rawValue: data.itemRawValue) else { return nil }
+            return PantryStock(item: item, quantity: data.quantity)
+        }
+
+        // Recipes
+        unlockedRecipeIDs = Set(saved.unlockedRecipeIDs)
+        recipeStars = saved.recipeStarsData
+
+        // Body Buddy
+        brainHealth = saved.brainHealth
+        muscleHealth = saved.muscleHealth
+        boneHealth = saved.boneHealth
+        heartHealth = saved.heartHealth
+        immuneHealth = saved.immuneHealth
+        energyLevel = saved.energyLevel
+
+        // Achievements
+        completedBadgeIDs = Set(saved.completedBadgeIDs)
+    }
+
+    /// Persist current state to SwiftData
+    func saveToStore() {
+        guard let context = modelContext else { return }
+
+        // Fetch existing or create new
+        let descriptor = FetchDescriptor<PlayerData>()
+        let existing = try? context.fetch(descriptor).first
+        let saved: PlayerData
+        if let existing {
+            saved = existing
+        } else {
+            saved = PlayerData()
+            context.insert(saved)
+        }
+
+        // Currency
+        saved.coins = coins
+        saved.xp = xp
+        saved.playerLevel = playerLevel
+
+        // Seeds
+        saved.seedsData = seeds.map {
+            SeedData(vegetableRawValue: $0.vegetableType.rawValue, quantity: $0.quantity)
+        }
+
+        // Harvested
+        saved.harvestedData = harvestedIngredients.map {
+            HarvestedData(vegetableRawValue: $0.type.rawValue, quantity: $0.quantity)
+        }
+
+        // Plots
+        saved.plotsData = gardenPlots.map { plot in
+            PlotData(
+                id: plot.id,
+                stateRaw: plot.state.rawValue,
+                vegetableRaw: plot.vegetable?.rawValue,
+                plantedDate: plot.plantedDate
+            )
+        }
+
+        // Pantry
+        saved.pantryData = pantryInventory.map {
+            PantryData(itemRawValue: $0.item.rawValue, quantity: $0.quantity)
+        }
+
+        // Recipes
+        saved.unlockedRecipeIDs = Array(unlockedRecipeIDs)
+        saved.recipeStarsData = recipeStars
+
+        // Body Buddy
+        saved.brainHealth = brainHealth
+        saved.muscleHealth = muscleHealth
+        saved.boneHealth = boneHealth
+        saved.heartHealth = heartHealth
+        saved.immuneHealth = immuneHealth
+        saved.energyLevel = energyLevel
+
+        // Achievements
+        saved.completedBadgeIDs = Array(completedBadgeIDs)
+
+        saved.lastSaved = Date()
+
+        try? context.save()
     }
 }
 
@@ -256,6 +425,28 @@ enum VegetableType: String, CaseIterable, Identifiable {
     case zucchini
     case onion
     case pumpkin
+    case spinach
+    case bellPepperRed
+    case bellPepperYellow
+    case sweetPotato
+    case corn
+    case beet
+    case eggplant
+    case radish
+    // Greens & Herbs
+    case kale
+    case basil
+    case mint
+    case greenBeans
+    // Fruits
+    case strawberry
+    case watermelon
+    case avocado
+    case lemon
+    // Berries
+    case blueberry
+    case raspberry
+    case blackberry
 
     var id: String { rawValue }
 
@@ -270,6 +461,25 @@ enum VegetableType: String, CaseIterable, Identifiable {
         case .zucchini: return "Zucchini"
         case .onion: return "Onion"
         case .pumpkin: return "Pumpkin"
+        case .spinach: return "Spinach"
+        case .bellPepperRed: return "Red Pepper"
+        case .bellPepperYellow: return "Yellow Pepper"
+        case .sweetPotato: return "Sweet Potato"
+        case .corn: return "Corn"
+        case .beet: return "Beet"
+        case .eggplant: return "Eggplant"
+        case .radish: return "Radish"
+        case .kale: return "Kale"
+        case .basil: return "Basil"
+        case .mint: return "Mint"
+        case .greenBeans: return "Green Beans"
+        case .strawberry: return "Strawberry"
+        case .watermelon: return "Watermelon"
+        case .avocado: return "Avocado"
+        case .lemon: return "Lemon"
+        case .blueberry: return "Blueberry"
+        case .raspberry: return "Raspberry"
+        case .blackberry: return "Blackberry"
         }
     }
 
@@ -284,6 +494,25 @@ enum VegetableType: String, CaseIterable, Identifiable {
         case .zucchini: return "zuccini_veggie"
         case .onion: return "onion_veggie"
         case .pumpkin: return "pumpkin_veggie"
+        case .spinach: return "spinach_veggie"
+        case .bellPepperRed: return "bellpepper_red_veggie"
+        case .bellPepperYellow: return "bellpepper_yellow_veggie"
+        case .sweetPotato: return "sweetpotato_veggie"
+        case .corn: return "corn_veggie"
+        case .beet: return "beet_veggie"
+        case .eggplant: return "eggplant_veggie"
+        case .radish: return "radish_veggie"
+        case .kale: return "kale_veggie"
+        case .basil: return "basil_veggie"
+        case .mint: return "mint_veggie"
+        case .greenBeans: return "greenbeans_veggie"
+        case .strawberry: return "strawberry_veggie"
+        case .watermelon: return "watermelon_veggie"
+        case .avocado: return "avocado_veggie"
+        case .lemon: return "lemon_veggie"
+        case .blueberry: return "blueberry_veggie"
+        case .raspberry: return "raspberry_veggie"
+        case .blackberry: return "blackberry_veggie"
         }
     }
 
@@ -298,6 +527,25 @@ enum VegetableType: String, CaseIterable, Identifiable {
         case .zucchini: return "🥒"
         case .onion: return "🧅"
         case .pumpkin: return "🎃"
+        case .spinach: return "🥬"
+        case .bellPepperRed: return "🫑"
+        case .bellPepperYellow: return "🫑"
+        case .sweetPotato: return "🍠"
+        case .corn: return "🌽"
+        case .beet: return "🟣"
+        case .eggplant: return "🍆"
+        case .radish: return "🔴"
+        case .kale: return "🥬"
+        case .basil: return "🌿"
+        case .mint: return "🌿"
+        case .greenBeans: return "🫛"
+        case .strawberry: return "🍓"
+        case .watermelon: return "🍉"
+        case .avocado: return "🥑"
+        case .lemon: return "🍋"
+        case .blueberry: return "🫐"
+        case .raspberry: return "🫐"
+        case .blackberry: return "🫐"
         }
     }
 
@@ -312,6 +560,25 @@ enum VegetableType: String, CaseIterable, Identifiable {
         case .zucchini: return 75      // 1.25 minutes
         case .onion: return 90         // 1.5 minutes
         case .pumpkin: return 180      // 3 minutes (slowest)
+        case .spinach: return 45       // 45 seconds
+        case .bellPepperRed: return 100 // 1 min 40 sec
+        case .bellPepperYellow: return 100
+        case .sweetPotato: return 150  // 2.5 minutes
+        case .corn: return 120         // 2 minutes
+        case .beet: return 110         // ~2 minutes
+        case .eggplant: return 130     // ~2 minutes
+        case .radish: return 25        // 25 seconds (fastest!)
+        case .kale: return 55          // ~1 minute
+        case .basil: return 35         // 35 seconds
+        case .mint: return 40          // 40 seconds
+        case .greenBeans: return 70    // ~1 minute
+        case .strawberry: return 90    // 1.5 minutes
+        case .watermelon: return 200   // 3+ minutes (big fruit!)
+        case .avocado: return 160      // ~2.5 minutes
+        case .lemon: return 140        // ~2.5 minutes
+        case .blueberry: return 80     // ~1.5 minutes
+        case .raspberry: return 75     // ~1.25 minutes
+        case .blackberry: return 85    // ~1.5 minutes
         }
     }
 
@@ -326,6 +593,25 @@ enum VegetableType: String, CaseIterable, Identifiable {
         case .zucchini: return 3
         case .onion: return 3
         case .pumpkin: return 1
+        case .spinach: return 3
+        case .bellPepperRed: return 2
+        case .bellPepperYellow: return 2
+        case .sweetPotato: return 2
+        case .corn: return 3
+        case .beet: return 2
+        case .eggplant: return 2
+        case .radish: return 4
+        case .kale: return 3
+        case .basil: return 4
+        case .mint: return 4
+        case .greenBeans: return 5
+        case .strawberry: return 6
+        case .watermelon: return 1
+        case .avocado: return 1
+        case .lemon: return 2
+        case .blueberry: return 8
+        case .raspberry: return 6
+        case .blackberry: return 6
         }
     }
 
@@ -340,6 +626,25 @@ enum VegetableType: String, CaseIterable, Identifiable {
         case .zucchini: return 12
         case .onion: return 8
         case .pumpkin: return 30
+        case .spinach: return 8
+        case .bellPepperRed: return 18
+        case .bellPepperYellow: return 18
+        case .sweetPotato: return 22
+        case .corn: return 12
+        case .beet: return 15
+        case .eggplant: return 20
+        case .radish: return 5
+        case .kale: return 10
+        case .basil: return 8
+        case .mint: return 8
+        case .greenBeans: return 10
+        case .strawberry: return 15
+        case .watermelon: return 25
+        case .avocado: return 28
+        case .lemon: return 18
+        case .blueberry: return 12
+        case .raspberry: return 12
+        case .blackberry: return 12
         }
     }
 
@@ -354,6 +659,25 @@ enum VegetableType: String, CaseIterable, Identifiable {
         case .zucchini: return 7
         case .onion: return 4
         case .pumpkin: return 20
+        case .spinach: return 5
+        case .bellPepperRed: return 10
+        case .bellPepperYellow: return 10
+        case .sweetPotato: return 14
+        case .corn: return 6
+        case .beet: return 9
+        case .eggplant: return 11
+        case .radish: return 3
+        case .kale: return 6
+        case .basil: return 4
+        case .mint: return 4
+        case .greenBeans: return 5
+        case .strawberry: return 8
+        case .watermelon: return 15
+        case .avocado: return 18
+        case .lemon: return 10
+        case .blueberry: return 7
+        case .raspberry: return 7
+        case .blackberry: return 7
         }
     }
 
@@ -368,6 +692,25 @@ enum VegetableType: String, CaseIterable, Identifiable {
         case .zucchini: return [.vitaminB6, .potassium]
         case .onion: return [.vitaminC, .antioxidants]
         case .pumpkin: return [.vitaminA, .fiber, .potassium]
+        case .spinach: return [.iron, .vitaminK, .vitaminA]
+        case .bellPepperRed: return [.vitaminC, .vitaminA]
+        case .bellPepperYellow: return [.vitaminC, .vitaminB6]
+        case .sweetPotato: return [.vitaminA, .fiber, .potassium]
+        case .corn: return [.fiber, .vitaminB6]
+        case .beet: return [.antioxidants, .iron, .fiber]
+        case .eggplant: return [.fiber, .antioxidants]
+        case .radish: return [.vitaminC, .fiber]
+        case .kale: return [.vitaminK, .iron, .vitaminC]
+        case .basil: return [.vitaminK, .antioxidants]
+        case .mint: return [.vitaminA, .antioxidants]
+        case .greenBeans: return [.fiber, .vitaminC, .vitaminK]
+        case .strawberry: return [.vitaminC, .antioxidants]
+        case .watermelon: return [.hydration, .vitaminC]
+        case .avocado: return [.healthyFats, .potassium, .fiber]
+        case .lemon: return [.vitaminC, .antioxidants]
+        case .blueberry: return [.antioxidants, .vitaminK]
+        case .raspberry: return [.fiber, .vitaminC]
+        case .blackberry: return [.antioxidants, .vitaminK, .fiber]
         }
     }
 }

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import SwiftData
 import Combine
 
 @main
@@ -16,6 +17,9 @@ struct ChefAcademyApp: App {
     // This is the "brain" of your game - all data lives here!
     @StateObject private var avatarModel = AvatarModel()
     @StateObject private var gameState = GameState()
+
+    // SwiftData container for persisting player progress
+    private let modelContainer: ModelContainer
 
     // Set to true to test Pip images, false for normal app flow
     private let showPipTest = false
@@ -28,25 +32,42 @@ struct ChefAcademyApp: App {
             UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
             UserDefaults.standard.removeObject(forKey: "userName")
         }
+
+        // Create SwiftData container for PlayerData
+        do {
+            modelContainer = try ModelContainer(for: PlayerData.self)
+        } catch {
+            fatalError("Failed to create ModelContainer: \(error)")
+        }
     }
 
     var body: some Scene {
         WindowGroup {
-            if showPipTest {
-                // TEMPORARY: Show PipTestView to check all Pip images
-                PipTestView()
-            } else if hasCompletedOnboarding {
-                // Main app view
-                MainTabView(avatarModel: avatarModel)
-                    // .environmentObject() makes gameState available to ALL child views
-                    // Any view can access it with @EnvironmentObject var gameState: GameState
+            Group {
+                if showPipTest {
+                    // TEMPORARY: Show PipTestView to check all Pip images
+                    PipTestView()
+                } else if hasCompletedOnboarding {
+                    // Main app view
+                    MainTabView(avatarModel: avatarModel)
+                        // .environmentObject() makes gameState available to ALL child views
+                        // Any view can access it with @EnvironmentObject var gameState: GameState
+                        .environmentObject(gameState)
+                } else {
+                    OnboardingView(
+                        avatarModel: avatarModel,
+                        isOnboardingComplete: $hasCompletedOnboarding
+                    )
                     .environmentObject(gameState)
-            } else {
-                OnboardingView(
-                    avatarModel: avatarModel,
-                    isOnboardingComplete: $hasCompletedOnboarding
-                )
-                .environmentObject(gameState)
+                }
+            }
+            .onAppear {
+                // Wire SwiftData to GameState and load saved progress
+                if gameState.modelContext == nil {
+                    gameState.modelContext = modelContainer.mainContext
+                    gameState.loadFromStore()
+                    gameState.startAutoSave()
+                }
             }
         }
     }
