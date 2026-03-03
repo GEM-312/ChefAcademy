@@ -10,26 +10,11 @@ import Combine
 
 // MARK: - Avatar Model
 class AvatarModel: ObservableObject {
-    // User's name - persisted to UserDefaults
-    @Published var name: String {
-        didSet {
-            UserDefaults.standard.set(name, forKey: "userName")
-        }
-    }
-
-    @Published var gender: Gender = .girl {
-        didSet {
-            UserDefaults.standard.set(gender.rawValue, forKey: "userGender")
-        }
-    }
-
+    @Published var name: String = ""
+    @Published var gender: Gender = .girl
     @Published var hairStyle: HairStyle = .medium
     @Published var outfit: Outfit = .apronRed
-    @Published var headCovering: HeadCovering = .none {
-        didSet {
-            UserDefaults.standard.set(headCovering.rawValue, forKey: "userHeadCovering")
-        }
-    }
+    @Published var headCovering: HeadCovering = .none
 
     // Dietary preference derived from head covering
     var dietaryPreference: DietaryPreference {
@@ -53,17 +38,24 @@ class AvatarModel: ObservableObject {
     @Published var recipesCompleted: Int = 0
     @Published var badges: [Badge] = []
 
-    // Initialize with saved values from UserDefaults
-    init() {
-        self.name = UserDefaults.standard.string(forKey: "userName") ?? ""
-        if let genderRaw = UserDefaults.standard.string(forKey: "userGender"),
-           let saved = Gender(rawValue: genderRaw) {
-            self.gender = saved
-        }
-        if let coveringRaw = UserDefaults.standard.string(forKey: "userHeadCovering"),
-           let saved = HeadCovering(rawValue: coveringRaw) {
-            self.headCovering = saved
-        }
+    init() {}
+
+    // MARK: - Profile Integration
+
+    /// Load avatar state from a UserProfile
+    func loadFrom(profile: UserProfile) {
+        name = profile.name
+        gender = profile.gender
+        headCovering = profile.headCovering
+        outfit = profile.outfit
+    }
+
+    /// Save current avatar state back to a UserProfile
+    func saveTo(profile: UserProfile) {
+        profile.name = name
+        profile.genderRaw = gender.rawValue
+        profile.headCoveringRaw = headCovering.rawValue
+        profile.outfitRaw = outfit.rawValue
     }
 }
 

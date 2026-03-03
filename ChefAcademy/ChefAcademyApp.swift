@@ -11,33 +11,49 @@ import Combine
 
 @main
 struct ChefAcademyApp: App {
-    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding: Bool = false
-
-    // @StateObject creates the object ONCE and keeps it alive
-    // This is the "brain" of your game - all data lives here!
+    // The three core state objects shared across the entire app
     @StateObject private var avatarModel = AvatarModel()
     @StateObject private var gameState = GameState()
+    @StateObject private var sessionManager = SessionManager()
 
-    // SwiftData container for persisting player progress
+    // SwiftData container — now includes FamilyProfile & UserProfile
     private let modelContainer: ModelContainer
 
     // Set to true to test Pip images, false for normal app flow
     private let showPipTest = false
 
-    // TEMPORARY: Set to true to reset onboarding for testing, then set back to false
-    private let resetOnboarding = true
-
     init() {
-        if resetOnboarding {
-            UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
-            UserDefaults.standard.removeObject(forKey: "userName")
+        // Create SwiftData container with auto-recovery.
+        // If the store is corrupted or has an old schema, delete and retry.
+        // On real devices CloudKit sync is enabled; on Simulator it's local only.
+
+        // First attempt
+        if let container = try? ModelContainer(
+            for: FamilyProfile.self, UserProfile.self, PlayerData.self
+        ) {
+            modelContainer = container
+            return
         }
 
-        // Create SwiftData container for PlayerData
+        // If that failed, delete the old store and retry
+        print("[ChefAcademy] First ModelContainer attempt failed — deleting old store and retrying...")
+        let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        for ext in ["default.store", "default.store-shm", "default.store-wal"] {
+            try? FileManager.default.removeItem(at: appSupport.appendingPathComponent(ext))
+        }
+
         do {
-            modelContainer = try ModelContainer(for: PlayerData.self)
+            modelContainer = try ModelContainer(
+                for: FamilyProfile.self, UserProfile.self, PlayerData.self
+            )
         } catch {
-            fatalError("Failed to create ModelContainer: \(error)")
+            // Last resort: in-memory so the app at least launches
+            print("[ChefAcademy] Disk store failed: \(error). Falling back to in-memory.")
+            let config = ModelConfiguration(isStoredInMemoryOnly: true)
+            modelContainer = try! ModelContainer(
+                for: FamilyProfile.self, UserProfile.self, PlayerData.self,
+                configurations: config
+            )
         }
     }
 
@@ -45,31 +61,90 @@ struct ChefAcademyApp: App {
         WindowGroup {
             Group {
                 if showPipTest {
-                    // TEMPORARY: Show PipTestView to check all Pip images
                     PipTestView()
-                } else if hasCompletedOnboarding {
-                    // Main app view
-                    MainTabView(avatarModel: avatarModel)
-                        // .environmentObject() makes gameState available to ALL child views
-                        // Any view can access it with @EnvironmentObject var gameState: GameState
-                        .environmentObject(gameState)
                 } else {
-                    OnboardingView(
-                        avatarModel: avatarModel,
-                        isOnboardingComplete: $hasCompletedOnboarding
-                    )
-                    .environmentObject(gameState)
+                    // RootRouterView switches screens based on sessionManager.route
+                    RootRouterView(avatarModel: avatarModel)
+                        .environmentObject(gameState)
+                        .environmentObject(sessionManager)
+                        .environmentObject(avatarModel)
                 }
             }
             .onAppear {
-                // Wire SwiftData to GameState and load saved progress
+                // Wire SwiftData context to both GameState and SessionManager
                 if gameState.modelContext == nil {
                     gameState.modelContext = modelContainer.mainContext
-                    gameState.loadFromStore()
+                    sessionManager.bootstrap(context: modelContainer.mainContext)
                     gameState.startAutoSave()
+
+                    // Register for silent push notifications so CloudKit
+                    // can tell this device when data changed on another device.
+                    // This does NOT prompt the user — it's invisible.
+                    UIApplication.shared.registerForRemoteNotifications()
                 }
             }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
+                sessionManager.appWillBackground(gameState: gameState, avatarModel: avatarModel)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: UIApplication.willEnterForegroundNotification)) { _ in
+                sessionManager.appWillForeground()
+            }
         }
+        .modelContainer(modelContainer)
+    }
+}
+
+// MARK: - Root Router View
+// This is the "traffic controller" — it looks at sessionManager.route
+// and shows the correct screen. Think of it like a GPS for your app.
+struct RootRouterView: View {
+    @ObservedObject var avatarModel: AvatarModel
+    @EnvironmentObject var sessionManager: SessionManager
+    @EnvironmentObject var gameState: GameState
+
+    var body: some View {
+        Group {
+            switch sessionManager.route {
+            case .loading:
+                // Simple loading screen while bootstrap runs
+                ZStack {
+                    Color.AppTheme.cream.ignoresSafeArea()
+                    VStack {
+                        PipWavingAnimatedView(size: 120)
+                        Text("Loading...")
+                            .font(.AppTheme.body)
+                            .foregroundColor(Color.AppTheme.sepia)
+                    }
+                }
+
+            case .familySetup:
+                FamilySetupView()
+
+            case .migrationPINSetup:
+                MigrationPINSetupView()
+
+            case .profilePicker:
+                ProfilePickerView()
+
+            case .parentPINEntry(let purpose):
+                ParentPINEntryView(
+                    purpose: purpose,
+                    onSuccess: { sessionManager.route = .profilePicker },
+                    onCancel: { sessionManager.route = .profilePicker }
+                )
+
+            case .childOnboarding:
+                // Future: per-child onboarding if needed
+                ProfilePickerView()
+
+            case .mainApp:
+                MainTabView(avatarModel: avatarModel)
+
+            case .parentDashboard:
+                ParentDashboardView()
+            }
+        }
+        .animation(.easeInOut(duration: 0.3), value: sessionManager.route)
     }
 }
 // MARK: - Main Tab View
@@ -113,7 +188,7 @@ struct MainTabView: View {
                 case .recipes:
                     RecipeListView(selectedTab: $selectedTab) // Browse all recipes
                 case .profile:
-                    PlaceholderView(title: "👤 My Profile", subtitle: "Coming soon!")
+                    ProfileView(selectedTab: $selectedTab)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -34,41 +34,50 @@ struct PantryData: Codable {
     var quantity: Int
 }
 
+struct RecipeStarData: Codable {
+    var recipeID: String
+    var stars: Int
+}
+
 // MARK: - PlayerData (@Model)
+// CloudKit requires ALL properties to have default values at declaration.
 
 @Model
 class PlayerData {
 
     // Currency
-    var coins: Int
-    var xp: Int
-    var playerLevel: Int
+    var coins: Int = 100
+    var xp: Int = 0
+    var playerLevel: Int = 1
 
     // Garden — stored as Codable arrays
-    var seedsData: [SeedData]
-    var harvestedData: [HarvestedData]
-    var plotsData: [PlotData]
+    var seedsData: [SeedData] = []
+    var harvestedData: [HarvestedData] = []
+    var plotsData: [PlotData] = []
 
     // Pantry
-    var pantryData: [PantryData]
+    var pantryData: [PantryData] = []
 
     // Recipes
-    var unlockedRecipeIDs: [String]
-    var recipeStarsData: [String: Int]
+    var unlockedRecipeIDs: [String] = ["veggie-wrap", "garden-salad"]
+    var recipeStars: [RecipeStarData] = []
 
     // Body Buddy (0-100 scale)
-    var brainHealth: Int
-    var muscleHealth: Int
-    var boneHealth: Int
-    var heartHealth: Int
-    var immuneHealth: Int
-    var energyLevel: Int
+    var brainHealth: Int = 50
+    var muscleHealth: Int = 50
+    var boneHealth: Int = 50
+    var heartHealth: Int = 50
+    var immuneHealth: Int = 50
+    var energyLevel: Int = 50
 
     // Achievements
-    var completedBadgeIDs: [String]
+    var completedBadgeIDs: [String] = []
 
     // Timestamp
-    var lastSaved: Date
+    var lastSaved: Date = Date()
+
+    // Multi-user ownership (linked by UUID, not @Relationship)
+    var ownerID: UUID? = nil
 
     init(
         coins: Int = 100,
@@ -79,7 +88,7 @@ class PlayerData {
         plotsData: [PlotData] = [],
         pantryData: [PantryData] = [],
         unlockedRecipeIDs: [String] = ["veggie-wrap", "garden-salad"],
-        recipeStarsData: [String: Int] = [:],
+        recipeStars: [RecipeStarData] = [],
         brainHealth: Int = 50,
         muscleHealth: Int = 50,
         boneHealth: Int = 50,
@@ -97,7 +106,7 @@ class PlayerData {
         self.plotsData = plotsData
         self.pantryData = pantryData
         self.unlockedRecipeIDs = unlockedRecipeIDs
-        self.recipeStarsData = recipeStarsData
+        self.recipeStars = recipeStars
         self.brainHealth = brainHealth
         self.muscleHealth = muscleHealth
         self.boneHealth = boneHealth
@@ -106,5 +115,19 @@ class PlayerData {
         self.energyLevel = energyLevel
         self.completedBadgeIDs = completedBadgeIDs
         self.lastSaved = lastSaved
+    }
+
+    // MARK: - Recipe Stars Helpers
+
+    func stars(for recipeID: String) -> Int {
+        recipeStars.first { $0.recipeID == recipeID }?.stars ?? 0
+    }
+
+    func setStars(_ stars: Int, for recipeID: String) {
+        if let index = recipeStars.firstIndex(where: { $0.recipeID == recipeID }) {
+            recipeStars[index].stars = stars
+        } else {
+            recipeStars.append(RecipeStarData(recipeID: recipeID, stars: stars))
+        }
     }
 }

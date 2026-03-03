@@ -352,12 +352,21 @@ struct ReadyToStartView: View {
 struct FeatureRow: View {
     let icon: String
     let text: String
-    
+    var systemIcon: Bool = false
+
     var body: some View {
         HStack(spacing: AppSpacing.md) {
-            Text(icon)
-                .font(.system(size: 24))
-            
+            if systemIcon {
+                Image(systemName: icon)
+                    .font(.system(size: 24))
+                    .foregroundColor(Color.AppTheme.sage)
+                    .frame(width: 32)
+            } else {
+                Text(icon)
+                    .font(.system(size: 24))
+                    .frame(width: 32)
+            }
+
             Text(text)
                 .font(.AppTheme.body)
                 .foregroundColor(Color.AppTheme.sepia)

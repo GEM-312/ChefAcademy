@@ -28,6 +28,9 @@ class GameState: ObservableObject {
     /// ModelContext for reading/writing PlayerData. Nil in previews.
     var modelContext: ModelContext?
 
+    /// The active user profile's ID (for multi-user save/load)
+    var activeProfileID: UUID?
+
     /// Auto-save subscription — saves whenever any @Published property changes
     private var autoSaveCancellable: AnyCancellable?
 
@@ -236,23 +239,19 @@ class GameState: ObservableObject {
     // SWIFTDATA SAVE / LOAD
     // ============================================
 
-    /// Load player progress from SwiftData (called once on app launch)
-    func loadFromStore() {
-        guard let context = modelContext else { return }
-
-        let descriptor = FetchDescriptor<PlayerData>()
-        guard let saved = try? context.fetch(descriptor).first else { return }
-
+    /// Load player progress from a specific PlayerData record
+    func loadFromStore(for saved: PlayerData) {
         // Currency
         coins = saved.coins
         xp = saved.xp
         playerLevel = saved.playerLevel
 
-        // Seeds
-        seeds = saved.seedsData.compactMap { data in
+        // Seeds — if empty (new profile or corrupt data), give starter seeds
+        let loadedSeeds = saved.seedsData.compactMap { data -> Seed? in
             guard let veg = VegetableType(rawValue: data.vegetableRawValue) else { return nil }
             return Seed(vegetableType: veg, quantity: data.quantity)
         }
+        seeds = loadedSeeds.isEmpty ? Seed.starterSeeds : loadedSeeds
 
         // Harvested
         harvestedIngredients = saved.harvestedData.compactMap { data in
@@ -283,7 +282,9 @@ class GameState: ObservableObject {
 
         // Recipes
         unlockedRecipeIDs = Set(saved.unlockedRecipeIDs)
-        recipeStars = saved.recipeStarsData
+        recipeStars = Dictionary(
+            uniqueKeysWithValues: saved.recipeStars.map { ($0.recipeID, $0.stars) }
+        )
 
         // Body Buddy
         brainHealth = saved.brainHealth
@@ -297,19 +298,41 @@ class GameState: ObservableObject {
         completedBadgeIDs = Set(saved.completedBadgeIDs)
     }
 
-    /// Persist current state to SwiftData
+    /// Legacy load — fetches first PlayerData (for backwards compat)
+    func loadFromStore() {
+        guard let context = modelContext else { return }
+        let descriptor = FetchDescriptor<PlayerData>()
+        guard let saved = try? context.fetch(descriptor).first else { return }
+        loadFromStore(for: saved)
+    }
+
+    /// Persist current state to SwiftData (profile-aware)
     func saveToStore() {
         guard let context = modelContext else { return }
 
-        // Fetch existing or create new
-        let descriptor = FetchDescriptor<PlayerData>()
-        let existing = try? context.fetch(descriptor).first
+        // Find the PlayerData for the active profile
         let saved: PlayerData
-        if let existing {
-            saved = existing
+
+        if let profileID = activeProfileID {
+            let profileDescriptor = FetchDescriptor<UserProfile>(
+                predicate: #Predicate<UserProfile> { $0.id == profileID }
+            )
+            if let profile = try? context.fetch(profileDescriptor).first,
+               let playerData = profile.playerData(in: context) {
+                saved = playerData
+            } else {
+                return
+            }
         } else {
-            saved = PlayerData()
-            context.insert(saved)
+            // Fallback: legacy single-user mode
+            let descriptor = FetchDescriptor<PlayerData>()
+            if let existing = try? context.fetch(descriptor).first {
+                saved = existing
+            } else {
+                let newData = PlayerData()
+                context.insert(newData)
+                saved = newData
+            }
         }
 
         // Currency
@@ -344,7 +367,7 @@ class GameState: ObservableObject {
 
         // Recipes
         saved.unlockedRecipeIDs = Array(unlockedRecipeIDs)
-        saved.recipeStarsData = recipeStars
+        saved.recipeStars = recipeStars.map { RecipeStarData(recipeID: $0.key, stars: $0.value) }
 
         // Body Buddy
         saved.brainHealth = brainHealth
@@ -360,6 +383,27 @@ class GameState: ObservableObject {
         saved.lastSaved = Date()
 
         try? context.save()
+    }
+
+    /// Reset all game state to new-player defaults
+    func resetToDefaults() {
+        coins = 100
+        xp = 0
+        playerLevel = 1
+        seeds = Seed.starterSeeds
+        harvestedIngredients = []
+        gardenPlots = GardenPlot.createStarterPlots()
+        pantryInventory = []
+        unlockedRecipeIDs = ["veggie-wrap", "garden-salad"]
+        recipeStars = [:]
+        brainHealth = 50
+        muscleHealth = 50
+        boneHealth = 50
+        heartHealth = 50
+        immuneHealth = 50
+        energyLevel = 50
+        dailyQuests = Quest.generateDailyQuests()
+        completedBadgeIDs = []
     }
 }
 
