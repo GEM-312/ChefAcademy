@@ -267,17 +267,24 @@ struct ShopItemCard: View {
 
                 // Buy button
                 Button(action: onBuy) {
-                    HStack(spacing: 2) {
+                    HStack(spacing: 3) {
                         Image(systemName: "circle.fill")
                             .font(.system(size: 8))
                             .foregroundColor(Color.AppTheme.goldenWheat)
                         Text("\(item.shopPrice)")
-                            .font(.system(size: 10))
+                            .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        Text("Buy")
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
                     }
-                    .foregroundColor(canAfford ? Color.AppTheme.darkBrown : Color.AppTheme.lightSepia)
+                    .foregroundColor(canAfford ? Color.AppTheme.cream : Color.AppTheme.lightSepia)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 4)
+                    .background(canAfford ? Color.AppTheme.sage : Color.AppTheme.parchment)
+                    .cornerRadius(8)
                 }
                 .buttonStyle(.plain)
                 .disabled(!canAfford)
+                .padding(.horizontal, 4)
             }
             .padding(.vertical, 4)
         }
