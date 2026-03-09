@@ -164,10 +164,14 @@ struct FarmShopView: View {
             spacing: AppSpacing.md
         ) {
             ForEach(filteredItems) { item in
+                let isLearned = item.nutrients.contains { nutrient in
+                    gameState.isKnowledgeClaimed("pantry_\(item.rawValue)_\(nutrient.rawValue)")
+                }
                 ShopItemCard(
                     item: item,
                     ownedQuantity: gameState.pantryQuantity(for: item),
                     canAfford: gameState.coins >= item.shopPrice,
+                    isLearned: isLearned,
                     isBouncing: bounceItem == item,
                     onBuy: {
                         buyItem(item)
@@ -229,14 +233,20 @@ struct ShopItemCard: View {
     let item: PantryItem
     let ownedQuantity: Int
     let canAfford: Bool
+    let isLearned: Bool
     let isBouncing: Bool
     let onBuy: () -> Void
     var onInfo: (() -> Void)? = nil
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Tappable image area → opens info card
-            Button(action: { onInfo?() }) {
+        Button(action: {
+            if isLearned {
+                onBuy()
+            } else {
+                onInfo?()
+            }
+        }) {
+            VStack(spacing: 0) {
                 Image(item.imageName)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
@@ -249,50 +259,53 @@ struct ShopItemCard: View {
                     .scaleEffect(isBouncing ? 1.1 : 1.0)
                     .animation(.spring(response: 0.3, dampingFraction: 0.5), value: isBouncing)
                     .padding(.top, 4)
-            }
-            .buttonStyle(.plain)
 
-            // Info area below the image
-            VStack(spacing: 1) {
-                Text(item.displayName)
-                    .font(.AppTheme.caption)
-                    .foregroundColor(Color.AppTheme.darkBrown)
-                    .lineLimit(1)
+                VStack(spacing: 1) {
+                    Text(item.displayName)
+                        .font(.AppTheme.caption)
+                        .foregroundColor(Color.AppTheme.darkBrown)
+                        .lineLimit(1)
 
-                if ownedQuantity > 0 {
-                    Text("x\(ownedQuantity)")
-                        .font(.system(size: 10))
-                        .foregroundColor(Color.AppTheme.sepia)
-                }
+                    if ownedQuantity > 0 {
+                        Text("x\(ownedQuantity)")
+                            .font(.system(size: 10))
+                            .foregroundColor(Color.AppTheme.sepia)
+                    }
 
-                // Buy button
-                Button(action: onBuy) {
-                    HStack(spacing: 3) {
+                    HStack(spacing: 2) {
                         Image(systemName: "circle.fill")
                             .font(.system(size: 8))
                             .foregroundColor(Color.AppTheme.goldenWheat)
                         Text("\(item.shopPrice)")
-                            .font(.system(size: 11, weight: .semibold, design: .rounded))
-                        Text("Buy")
-                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .font(.system(size: 10))
                     }
-                    .foregroundColor(canAfford ? Color.AppTheme.cream : Color.AppTheme.lightSepia)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 4)
-                    .background(canAfford ? Color.AppTheme.sage : Color.AppTheme.parchment)
-                    .cornerRadius(8)
+                    .foregroundColor(Color.AppTheme.lightSepia)
                 }
-                .buttonStyle(.plain)
-                .disabled(!canAfford)
-                .padding(.horizontal, 4)
+                .padding(.vertical, 4)
             }
-            .padding(.vertical, 4)
+            .frame(maxWidth: .infinity)
+            .background(Color.AppTheme.warmCream)
+            .cornerRadius(12)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .overlay(
+                // Lock icon if not learned yet
+                !isLearned ?
+                    AnyView(
+                        Image(systemName: "book.closed.fill")
+                            .font(.system(size: 14))
+                            .foregroundColor(Color.AppTheme.goldenWheat)
+                            .padding(6)
+                            .background(Color.AppTheme.warmCream)
+                            .clipShape(Circle())
+                            .shadow(color: .black.opacity(0.1), radius: 2, y: 1)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                            .padding(4)
+                    ) : AnyView(EmptyView())
+            )
         }
-        .frame(maxWidth: .infinity)
-        .background(Color.AppTheme.warmCream)
-        .cornerRadius(12)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .opacity(canAfford ? 1.0 : 0.5)
+        .buttonStyle(.plain)
+        .opacity(isLearned && !canAfford ? 0.5 : 1.0)
+        .disabled(isLearned && !canAfford)
     }
 }
 
