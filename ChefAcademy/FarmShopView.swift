@@ -287,21 +287,6 @@ struct ShopItemCard: View {
             .background(Color.AppTheme.warmCream)
             .cornerRadius(12)
             .clipShape(RoundedRectangle(cornerRadius: 12))
-            .overlay(
-                // Lock icon if not learned yet
-                !isLearned ?
-                    AnyView(
-                        Image(systemName: "book.closed.fill")
-                            .font(.system(size: 14))
-                            .foregroundColor(Color.AppTheme.goldenWheat)
-                            .padding(6)
-                            .background(Color.AppTheme.warmCream)
-                            .clipShape(Circle())
-                            .shadow(color: .black.opacity(0.1), radius: 2, y: 1)
-                            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
-                            .padding(4)
-                    ) : AnyView(EmptyView())
-            )
         }
         .buttonStyle(.plain)
         .opacity(isLearned && !canAfford ? 0.5 : 1.0)
