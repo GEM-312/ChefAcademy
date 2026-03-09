@@ -32,6 +32,7 @@ struct RecipeDetailView: View {
                                 .background(Color.AppTheme.cream.opacity(0.9))
                                 .clipShape(Circle())
                         }
+                        .buttonStyle(.plain)
                         .padding(AppSpacing.md)
                     }
 
@@ -251,6 +252,7 @@ struct RecipeDetailView: View {
                                 .background(Color.AppTheme.sage)
                                 .cornerRadius(AppSpacing.cardCornerRadius)
                         }
+                        .buttonStyle(.plain)
                         .padding(.top, AppSpacing.xs)
 
                         Spacer().frame(height: AppSpacing.lg)
