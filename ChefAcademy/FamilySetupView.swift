@@ -63,6 +63,7 @@ struct FamilySetupView: View {
     @EnvironmentObject var sessionManager: SessionManager
     @EnvironmentObject var gameState: GameState
     @EnvironmentObject var avatarModel: AvatarModel
+    @EnvironmentObject var authManager: AuthManager
     @StateObject private var setupManager = FamilySetupManager()
 
     var body: some View {
@@ -81,6 +82,12 @@ struct FamilySetupView: View {
                     onNext: { setupManager.nextStep() },
                     onBack: { setupManager.previousStep() }
                 )
+                .onAppear {
+                    // Pre-fill with the name from Sign in with Apple (if available)
+                    if setupManager.parentName.isEmpty, let appleName = authManager.signedInName {
+                        setupManager.parentName = appleName
+                    }
+                }
 
             case .parentAvatar:
                 FamilyAvatarStep(
@@ -141,7 +148,8 @@ struct FamilySetupView: View {
         guard let context = sessionManager.modelContext else { return }
 
         // Create family — PIN goes to Keychain, not SwiftData (security)
-        let family = FamilyProfile(parentPIN: "")
+        // Link to the parent's Apple ID so this family syncs across their devices
+        let family = FamilyProfile(parentPIN: "", appleUserID: authManager.appleUserID ?? "")
         PINKeychain.save(pin: setupManager.parentPIN)
 
         // Create parent profile
@@ -667,4 +675,5 @@ struct FamilyReadyStep: View {
         .environmentObject(SessionManager())
         .environmentObject(GameState())
         .environmentObject(AvatarModel())
+        .environmentObject(AuthManager())
 }

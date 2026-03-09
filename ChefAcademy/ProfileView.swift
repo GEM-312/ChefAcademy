@@ -110,6 +110,7 @@ struct ProfileView: View {
                         .background(Color.AppTheme.warmCream)
                         .cornerRadius(AppSpacing.cardCornerRadius)
                     }
+                    .buttonStyle(.plain)
 
                     // Parent Dashboard (only show for parents, or require PIN for children)
                     if let profile = sessionManager.activeProfile {
@@ -129,6 +130,7 @@ struct ProfileView: View {
                                 .background(Color.AppTheme.warmCream)
                                 .cornerRadius(AppSpacing.cardCornerRadius)
                             }
+                            .buttonStyle(.plain)
                         } else {
                             Button(action: { showPINForDashboard = true }) {
                                 HStack {
@@ -145,6 +147,7 @@ struct ProfileView: View {
                                 .background(Color.AppTheme.warmCream)
                                 .cornerRadius(AppSpacing.cardCornerRadius)
                             }
+                            .buttonStyle(.plain)
                         }
                     }
                 }
@@ -181,7 +184,7 @@ struct ProfileView: View {
 }
 
 #Preview {
-    ProfileView(selectedTab: .constant(.profile))
+    ProfileView(selectedTab: .constant(.home))
         .environmentObject(SessionManager())
         .environmentObject(GameState.preview)
         .environmentObject(AvatarModel())

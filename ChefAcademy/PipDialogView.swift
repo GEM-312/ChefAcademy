@@ -66,7 +66,7 @@ struct PipDialogView: View {
                     .cornerRadius(AppSpacing.cardCornerRadius)
                 }
                 .padding(.horizontal, AppSpacing.md)
-                .padding(.bottom, AppSpacing.xl)
+                .padding(.bottom, 100)
                 .scaleEffect(appeared ? 1.0 : 0.8)
                 .opacity(appeared ? 1.0 : 0.0)
             }

@@ -519,6 +519,12 @@ struct GardenView: View {
 
     // Tab navigation binding — so we can switch to Kitchen after harvest
     @Binding var selectedTab: MainTabView.Tab
+    // Callback to switch to Farm Shop within the GardenHub
+    var onShowFarmShop: (() -> Void)? = nil
+    // When visiting a sibling's garden — disables planting, harvesting, Pip dialog
+    var isVisiting: Bool = false
+    var visitingName: String = ""
+    var onLikeGarden: (() -> Void)? = nil
 
     // Adaptive: detect iPad
     private var isIPad: Bool { sizeClass != .compact }
@@ -531,6 +537,9 @@ struct GardenView: View {
 
     // Seed info full-screen cover
     @State private var selectedSeed: Seed?
+
+    // Visitor greeting
+    @State private var showVisitorGreeting = false
 
     // Falling veggie animation
     @State private var fallingVeggie: VegetableType? = nil
@@ -630,7 +639,7 @@ struct GardenView: View {
                         : [
                             PipDialogChoice(label: "Go to Farm Shop!", style: .primary) {
                                 showRecipeSuggestion = false
-                                selectedTab = .farm
+                                onShowFarmShop?()
                             },
                             PipDialogChoice(label: "Go to Kitchen", style: .secondary) {
                                 showRecipeSuggestion = false
@@ -643,6 +652,35 @@ struct GardenView: View {
                 )
             }
         }
+        // Visitor greeting overlay
+        .overlay {
+            if isVisiting && showVisitorGreeting {
+                let greetings = [
+                    "Welcome to \(visitingName)'s garden! Look around and see what they're growing!",
+                    "Glad to see you here! \(visitingName) has been working hard in the garden!",
+                    "Hey there! Take a look at \(visitingName)'s awesome garden!",
+                ]
+                PipDialogView(
+                    message: greetings.randomElement() ?? greetings[0],
+                    choices: [
+                        PipDialogChoice(label: "❤️ Cool garden!", style: .primary) {
+                            onLikeGarden?()
+                            showVisitorGreeting = false
+                        },
+                        PipDialogChoice(label: "Let me look around", style: .secondary) {
+                            showVisitorGreeting = false
+                        },
+                    ]
+                )
+            }
+        }
+        .onAppear {
+            if isVisiting {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    showVisitorGreeting = true
+                }
+            }
+        }
     }
 
     // MARK: - Header View
@@ -650,13 +688,23 @@ struct GardenView: View {
     var headerView: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("My Garden")
+                Text(isVisiting ? "\(visitingName)'s Garden" : "My Garden")
                     .font(isIPad ? .AppTheme.largeTitle : .AppTheme.title)
                     .foregroundColor(Color.AppTheme.darkBrown)
 
-                Text(gardenHint)
+                Text(isVisiting ? "You're visiting!" : gardenHint)
                     .font(isIPad ? .AppTheme.body : .AppTheme.caption)
                     .foregroundColor(Color.AppTheme.sepia)
+                if !isVisiting && gameState.gardenLikes > 0 {
+                    HStack(spacing: 4) {
+                        Image(systemName: "heart.fill")
+                            .foregroundColor(.red.opacity(0.7))
+                            .font(.system(size: 12))
+                        Text("\(gameState.gardenLikes)")
+                            .font(.AppTheme.caption)
+                            .foregroundColor(Color.AppTheme.sepia)
+                    }
+                }
             }
 
             Spacer()
@@ -672,6 +720,7 @@ struct GardenView: View {
                     .font(.system(size: isIPad ? 24 : 20))
                     .foregroundColor(editMode ? .red : Color.AppTheme.lightSepia)
             }
+            .buttonStyle(.plain)
             #endif
 
             // Coin display
@@ -916,6 +965,9 @@ struct GardenView: View {
     // MARK: - Actions
 
     func handlePlotTap(index: Int) {
+        // Visiting mode — no interactions allowed
+        guard !isVisiting else { return }
+
         let plot = gameState.gardenPlots[index]
 
         switch plot.state {
@@ -938,6 +990,7 @@ struct GardenView: View {
     }
 
     func harvestPlot(index: Int) {
+        guard !isVisiting else { return }
         guard gameState.gardenPlots[index].isReadyToHarvest,
               let vegType = gameState.gardenPlots[index].vegetable else { return }
 

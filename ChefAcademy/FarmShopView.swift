@@ -226,43 +226,49 @@ struct ShopItemCard: View {
 
     var body: some View {
         Button(action: onBuy) {
-            VStack(spacing: AppSpacing.xs) {
-                // Farm item illustration
+            VStack(spacing: 0) {
+                // Farm item illustration — fixed height, all cards same size
                 Image(item.imageName)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(width: 80, height: 80)
+                    .scaleEffect(item.shopScale)
+                    .offset(y: item.shopOffset)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: item.shopFrameHeight)
+                    .clipped()
                     .opacity(0.8)
-                    .scaleEffect(isBouncing ? 1.3 : 1.0)
+                    .scaleEffect(isBouncing ? 1.1 : 1.0)
                     .animation(.spring(response: 0.3, dampingFraction: 0.5), value: isBouncing)
+                    .padding(.top, 4)
 
-                // Item name
-                Text(item.displayName)
-                    .font(.AppTheme.caption)
-                    .foregroundColor(Color.AppTheme.darkBrown)
-                    .lineLimit(1)
-
-                // Owned quantity
-                if ownedQuantity > 0 {
-                    Text("x\(ownedQuantity)")
+                // Info area below the image
+                VStack(spacing: 1) {
+                    Text(item.displayName)
                         .font(.AppTheme.caption)
-                        .foregroundColor(Color.AppTheme.sepia)
-                }
+                        .foregroundColor(Color.AppTheme.darkBrown)
+                        .lineLimit(1)
 
-                // Price
-                HStack(spacing: 2) {
-                    Image(systemName: "circle.fill")
-                        .font(.system(size: 10))
-                        .foregroundColor(Color.AppTheme.goldenWheat)
-                    Text("\(item.shopPrice)")
-                        .font(.system(size: 10))
+                    if ownedQuantity > 0 {
+                        Text("x\(ownedQuantity)")
+                            .font(.system(size: 10))
+                            .foregroundColor(Color.AppTheme.sepia)
+                    }
+
+                    HStack(spacing: 2) {
+                        Image(systemName: "circle.fill")
+                            .font(.system(size: 8))
+                            .foregroundColor(Color.AppTheme.goldenWheat)
+                        Text("\(item.shopPrice)")
+                            .font(.system(size: 10))
+                    }
+                    .foregroundColor(Color.AppTheme.lightSepia)
                 }
-                .foregroundColor(Color.AppTheme.lightSepia)
+                .padding(.vertical, 4)
             }
             .frame(maxWidth: .infinity)
-            .padding(AppSpacing.sm)
             .background(Color.AppTheme.warmCream)
             .cornerRadius(12)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(.plain)
         .opacity(canAfford ? 1.0 : 0.5)
@@ -276,11 +282,14 @@ struct PantryBadge: View {
     let stock: PantryStock
 
     var body: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 2) {
             Image(stock.item.imageName)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
-                .frame(width: 36, height: 36)
+                .scaleEffect(2.2)
+                .frame(width: 80, height: 65)
+                .clipped()
+                .opacity(0.8)
 
             Text(stock.item.displayName)
                 .font(.system(size: 9, weight: .medium, design: .rounded))
@@ -291,8 +300,9 @@ struct PantryBadge: View {
                 .font(.AppTheme.caption)
                 .foregroundColor(Color.AppTheme.sepia)
         }
-        .frame(width: 70)
-        .padding(AppSpacing.sm)
+        .frame(width: 80)
+        .padding(.vertical, AppSpacing.xs)
+        .padding(.horizontal, AppSpacing.xs)
         .background(Color.AppTheme.warmCream)
         .cornerRadius(12)
     }

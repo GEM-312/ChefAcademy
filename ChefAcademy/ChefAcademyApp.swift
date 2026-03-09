@@ -11,10 +11,11 @@ import Combine
 
 @main
 struct ChefAcademyApp: App {
-    // The three core state objects shared across the entire app
+    // The four core state objects shared across the entire app
     @StateObject private var avatarModel = AvatarModel()
     @StateObject private var gameState = GameState()
     @StateObject private var sessionManager = SessionManager()
+    @StateObject private var authManager = AuthManager()
 
     // SwiftData container — now includes FamilyProfile & UserProfile
     private let modelContainer: ModelContainer
@@ -68,18 +69,31 @@ struct ChefAcademyApp: App {
                         .environmentObject(gameState)
                         .environmentObject(sessionManager)
                         .environmentObject(avatarModel)
+                        .environmentObject(authManager)
                 }
             }
             .onAppear {
                 // Wire SwiftData context to both GameState and SessionManager
                 if gameState.modelContext == nil {
                     gameState.modelContext = modelContainer.mainContext
-                    sessionManager.bootstrap(context: modelContainer.mainContext)
+
+                    // Check if parent is already signed in with Apple
+                    authManager.checkExistingCredential()
+
+                    // Give Apple a moment to verify the credential, then bootstrap.
+                    // On first launch this is instant (no saved credential).
+                    // On subsequent launches, Apple verifies in ~0.1-0.3s.
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                        sessionManager.bootstrap(
+                            context: modelContainer.mainContext,
+                            authManager: authManager
+                        )
+                    }
+
                     gameState.startAutoSave()
 
                     // Register for silent push notifications so CloudKit
                     // can tell this device when data changed on another device.
-                    // This does NOT prompt the user — it's invisible.
                     UIApplication.shared.registerForRemoteNotifications()
                 }
             }
@@ -101,6 +115,7 @@ struct RootRouterView: View {
     @ObservedObject var avatarModel: AvatarModel
     @EnvironmentObject var sessionManager: SessionManager
     @EnvironmentObject var gameState: GameState
+    @EnvironmentObject var authManager: AuthManager
 
     var body: some View {
         Group {
@@ -116,6 +131,16 @@ struct RootRouterView: View {
                             .foregroundColor(Color.AppTheme.sepia)
                     }
                 }
+
+            case .signIn:
+                // Parent sign-in screen (Sign in with Apple)
+                SignInView()
+                    .onChange(of: authManager.isAuthenticated) { _, isAuth in
+                        if isAuth {
+                            // Parent just signed in — find or create their family
+                            sessionManager.handleAuthenticationComplete(authManager: authManager)
+                        }
+                    }
 
             case .familySetup:
                 FamilySetupView()
@@ -151,23 +176,23 @@ struct RootRouterView: View {
 struct MainTabView: View {
     @ObservedObject var avatarModel: AvatarModel
     @State private var selectedTab: Tab = .home
-    
+
     enum Tab: String, CaseIterable {
         case home = "Home"
         case garden = "Garden"
+        case shop = "Shop"
         case kitchen = "Kitchen"
-        case farm = "Farm"
-        case recipes = "Recipes"
-        case profile = "Me"
+        case bodyBuddy = "Body"
+        case playLearn = "Play"
 
         var icon: String {
             switch self {
             case .home: return "house.fill"
             case .garden: return "leaf.fill"
+            case .shop: return "cart.fill"
             case .kitchen: return "fork.knife"
-            case .farm: return "cart.fill"
-            case .recipes: return "book.fill"
-            case .profile: return "person.fill"
+            case .bodyBuddy: return "figure.stand"
+            case .playLearn: return "gamecontroller.fill"
             }
         }
     }
@@ -180,15 +205,15 @@ struct MainTabView: View {
                 case .home:
                     HomeView(avatarModel: avatarModel, selectedTab: $selectedTab)
                 case .garden:
-                    GardenView(selectedTab: $selectedTab) // Our garden!
+                    GardenView(selectedTab: $selectedTab, onShowFarmShop: { selectedTab = .shop })
+                case .shop:
+                    FarmTabView()
                 case .kitchen:
-                    KitchenView() // Pip's Kitchen - cook recipes!
-                case .farm:
-                    FarmTabView() // Pip walks to barn, then Farm Shop!
-                case .recipes:
-                    RecipeListView(selectedTab: $selectedTab) // Browse all recipes
-                case .profile:
-                    ProfileView(selectedTab: $selectedTab)
+                    KitchenView()
+                case .bodyBuddy:
+                    BodyBuddyView(selectedTab: $selectedTab)
+                case .playLearn:
+                    PlayLearnView()
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -203,6 +228,11 @@ struct MainTabView: View {
 // MARK: - Custom Tab Bar
 struct CustomTabBar: View {
     @Binding var selectedTab: MainTabView.Tab
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
+
+    private var isLandscape: Bool {
+        verticalSizeClass == .compact
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -221,17 +251,19 @@ struct CustomTabBar: View {
                         }
                         .foregroundColor(selectedTab == tab ? Color.AppTheme.goldenWheat : Color.AppTheme.lightSepia)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, AppSpacing.sm)
+                        .padding(.vertical, isLandscape ? 2 : AppSpacing.sm)
                     }
+                    .buttonStyle(.plain)
                 }
             }
             .padding(.horizontal, AppSpacing.sm)
             .padding(.top, AppSpacing.sm)
         }
+        .frame(maxWidth: .infinity)
         .background(
             Color.AppTheme.warmCream
                 .shadow(color: Color.AppTheme.sepia.opacity(0.1), radius: 10, x: 0, y: -5)
-                .ignoresSafeArea(.container, edges: .bottom)
+                .ignoresSafeArea(.container, edges: [.bottom, .leading, .trailing])
         )
     }
 }
@@ -241,7 +273,18 @@ struct HomeView: View {
     @ObservedObject var avatarModel: AvatarModel
     @Binding var selectedTab: MainTabView.Tab
     @EnvironmentObject var gameState: GameState
+    @EnvironmentObject var sessionManager: SessionManager
+    @Environment(\.modelContext) private var modelContext
     @State private var selectedRecipe: Recipe? = nil
+    @State private var showSwitchConfirm = false
+    @State private var showPINForDashboard = false
+    @State private var selectedSibling: UserProfile?
+
+    private var siblings: [UserProfile] {
+        guard let family = sessionManager.familyProfile,
+              let activeID = sessionManager.activeProfile?.id else { return [] }
+        return family.childProfiles(in: modelContext).filter { $0.id != activeID }
+    }
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -351,8 +394,9 @@ struct HomeView: View {
                         HStack(spacing: AppSpacing.md) {
                             QuickActionCardWithBg(title: "Visit Garden", imageName: "bg_garden", color: Color.AppTheme.sage, action: { selectedTab = .garden })
                             QuickActionCardWithBg(title: "Cook Recipe", imageName: "bg_kitchen", color: Color.AppTheme.goldenWheat, action: { selectedTab = .kitchen })
-                            QuickActionCard(icon: "🛒", title: "Farm Shop", color: Color.AppTheme.terracotta, action: { selectedTab = .farm })
-                            QuickActionCard(icon: "🏆", title: "My Badges", color: Color.AppTheme.sage, action: { selectedTab = .profile })
+                            QuickActionCard(icon: "🛒", title: "Farm Shop", color: Color.AppTheme.terracotta, action: { selectedTab = .shop })
+                            QuickActionCard(icon: "🫀", title: "Body Buddy", color: .red.opacity(0.7), action: { selectedTab = .bodyBuddy })
+                            QuickActionCard(icon: "🎮", title: "Play Games", color: .purple.opacity(0.7), action: { selectedTab = .playLearn })
                         }
                         .padding(.horizontal, AppSpacing.md)
                     }
@@ -367,7 +411,7 @@ struct HomeView: View {
 
                         Spacer()
 
-                        Button(action: { selectedTab = .recipes }) {
+                        Button(action: { selectedTab = .kitchen }) {
                             HStack(spacing: 4) {
                                 Text("See All")
                                     .font(.AppTheme.subheadline)
@@ -376,11 +420,103 @@ struct HomeView: View {
                             }
                             .foregroundColor(Color.AppTheme.goldenWheat)
                         }
+                        .buttonStyle(.plain)
                     }
 
                     let todaysRecipe = GardenRecipes.all.first(where: { $0.id == "chicken-veggie-platter" }) ?? GardenRecipes.all[0]
                     RecipeCardView(recipe: todaysRecipe)
                         .onTapGesture { selectedRecipe = todaysRecipe }
+                }
+                .padding(.horizontal, AppSpacing.md)
+
+                // Visit Sibling's Garden
+                if !siblings.isEmpty {
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        Text("Visit a Friend's Garden")
+                            .font(.AppTheme.headline)
+                            .foregroundColor(Color.AppTheme.darkBrown)
+
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: AppSpacing.sm) {
+                                ForEach(siblings, id: \.id) { sibling in
+                                    Button(action: { selectedSibling = sibling }) {
+                                        VStack(spacing: 4) {
+                                            Image(sibling.gender == .boy ? "boy_card_frame_28" : "girl_card_frame_15")
+                                                .resizable()
+                                                .aspectRatio(contentMode: .fit)
+                                                .frame(width: 60, height: 60)
+                                                .clipShape(Circle())
+                                                .overlay(
+                                                    Circle()
+                                                        .stroke(Color.AppTheme.sage, lineWidth: 2)
+                                                )
+                                            Text(sibling.name)
+                                                .font(.AppTheme.caption)
+                                                .foregroundColor(Color.AppTheme.darkBrown)
+                                        }
+                                    }
+                                    .buttonStyle(.plain)
+                                }
+                            }
+                        }
+                    }
+                    .padding(.horizontal, AppSpacing.md)
+                }
+
+                // Profile Actions
+                VStack(spacing: AppSpacing.sm) {
+                    Button(action: { showSwitchConfirm = true }) {
+                        HStack {
+                            Image(systemName: "person.2.fill")
+                            Text("Switch Player")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                        }
+                        .font(.AppTheme.body)
+                        .foregroundColor(Color.AppTheme.sepia)
+                        .padding(AppSpacing.md)
+                        .background(Color.AppTheme.warmCream)
+                        .cornerRadius(AppSpacing.cardCornerRadius)
+                    }
+                    .buttonStyle(.plain)
+
+                    if let profile = sessionManager.activeProfile {
+                        if profile.isParent {
+                            Button(action: {
+                                sessionManager.route = .parentDashboard
+                            }) {
+                                HStack {
+                                    Image(systemName: "chart.bar.fill")
+                                    Text("Parent Dashboard")
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                }
+                                .font(.AppTheme.body)
+                                .foregroundColor(Color.AppTheme.sage)
+                                .padding(AppSpacing.md)
+                                .background(Color.AppTheme.warmCream)
+                                .cornerRadius(AppSpacing.cardCornerRadius)
+                            }
+                            .buttonStyle(.plain)
+                        } else {
+                            Button(action: { showPINForDashboard = true }) {
+                                HStack {
+                                    Image(systemName: "chart.bar.fill")
+                                    Text("Parent Dashboard")
+                                    Image(systemName: "lock.fill")
+                                        .font(.system(size: 12))
+                                    Spacer()
+                                    Image(systemName: "chevron.right")
+                                }
+                                .font(.AppTheme.body)
+                                .foregroundColor(Color.AppTheme.sage)
+                                .padding(AppSpacing.md)
+                                .background(Color.AppTheme.warmCream)
+                                .cornerRadius(AppSpacing.cardCornerRadius)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
                 }
                 .padding(.horizontal, AppSpacing.md)
 
@@ -394,6 +530,31 @@ struct HomeView: View {
             RecipeDetailView(recipe: recipe) {
                 selectedTab = .kitchen
             }
+        }
+        .alert("Switch Player?", isPresented: $showSwitchConfirm) {
+            Button("Cancel", role: .cancel) {}
+            Button("Switch") {
+                sessionManager.switchToProfilePicker(gameState: gameState, avatarModel: avatarModel)
+            }
+        } message: {
+            Text("Your progress will be saved.")
+        }
+        .fullScreenCover(isPresented: $showPINForDashboard) {
+            ParentPINEntryView(
+                purpose: .openDashboard,
+                onSuccess: {
+                    showPINForDashboard = false
+                    sessionManager.route = .parentDashboard
+                },
+                onCancel: { showPINForDashboard = false }
+            )
+            .environmentObject(sessionManager)
+        }
+        .fullScreenCover(item: $selectedSibling) { sibling in
+            SiblingProfileView(
+                sibling: sibling,
+                onBack: { selectedSibling = nil }
+            )
         }
     }
 

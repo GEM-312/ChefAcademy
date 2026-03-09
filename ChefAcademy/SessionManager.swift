@@ -23,6 +23,7 @@ enum PINPurpose {
 
 enum AppRoute: Equatable {
     case loading
+    case signIn                     // Parent must sign in with Apple
     case familySetup
     case migrationPINSetup
     case profilePicker
@@ -34,6 +35,7 @@ enum AppRoute: Equatable {
     static func == (lhs: AppRoute, rhs: AppRoute) -> Bool {
         switch (lhs, rhs) {
         case (.loading, .loading): return true
+        case (.signIn, .signIn): return true
         case (.familySetup, .familySetup): return true
         case (.migrationPINSetup, .migrationPINSetup): return true
         case (.profilePicker, .profilePicker): return true
@@ -64,14 +66,22 @@ class SessionManager: ObservableObject {
 
     // MARK: - Bootstrap (called on app launch)
 
-    func bootstrap(context: ModelContext) {
+    /// The bootstrap flow is now auth-aware:
+    /// 1. Check if parent is authenticated (Sign in with Apple)
+    /// 2. If not → show sign-in screen
+    /// 3. If yes → check for existing family → profile picker or setup
+    ///
+    /// EXCEPTION: If a family already exists on this device (from before
+    /// we added auth), we skip the sign-in check and show a "link your
+    /// Apple ID" prompt later in the parent dashboard.
+    func bootstrap(context: ModelContext, authManager: AuthManager? = nil) {
         self.modelContext = context
 
         let familyDescriptor = FetchDescriptor<FamilyProfile>()
         let families = (try? context.fetch(familyDescriptor)) ?? []
 
         if let family = families.first {
-            // Family exists — go to profile picker
+            // Family already exists on this device
             self.familyProfile = family
 
             // Migrate PIN from SwiftData to Keychain if needed
@@ -81,27 +91,91 @@ class SessionManager: ObservableObject {
                 try? context.save()
             }
 
+            // Always let users reach the profile picker — children can play without auth.
+            // Parent access (dashboard, adding kids) is PIN-gated separately.
+            // Auth is only needed when the parent wants to sign in or link Apple ID.
             withAnimation(.easeInOut(duration: 0.3)) {
                 self.route = .profilePicker
             }
         } else {
-            // No family — check for legacy single-user data
+            // No family on this device
             let playerDescriptor = FetchDescriptor<PlayerData>()
             let legacyPlayers = (try? context.fetch(playerDescriptor)) ?? []
 
             if let legacyData = legacyPlayers.first, legacyData.ownerID == nil {
-                // Legacy data exists — migrate
+                // Legacy single-user data — migrate first, then ask for Apple ID later
                 migrateLegacyData(legacyPlayerData: legacyData, context: context)
                 withAnimation(.easeInOut(duration: 0.3)) {
                     self.route = .migrationPINSetup
                 }
-            } else {
-                // Brand new install
+            } else if let auth = authManager, auth.isAuthenticated {
+                // Authenticated but no family — maybe CloudKit hasn't synced yet,
+                // or this is a new device. Go to family setup.
                 withAnimation(.easeInOut(duration: 0.3)) {
                     self.route = .familySetup
                 }
+            } else {
+                // Brand new install, no auth — show sign-in first
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    self.route = .signIn
+                }
             }
         }
+    }
+
+    // MARK: - Post-Authentication Routing
+
+    /// Called after the parent signs in with Apple.
+    /// Checks if a family exists (maybe synced via CloudKit) and routes accordingly.
+    func handleAuthenticationComplete(authManager: AuthManager) {
+        guard let context = modelContext else { return }
+
+        let familyDescriptor = FetchDescriptor<FamilyProfile>()
+        let families = (try? context.fetch(familyDescriptor)) ?? []
+
+        if let family = families.first {
+            // Family found (synced via CloudKit) — link Apple ID if needed
+            if family.appleUserID.isEmpty, let userID = authManager.appleUserID {
+                family.appleUserID = userID
+                try? context.save()
+            }
+            self.familyProfile = family
+            withAnimation(.easeInOut(duration: 0.3)) {
+                self.route = .profilePicker
+            }
+        } else {
+            // No family yet — create one via setup wizard
+            withAnimation(.easeInOut(duration: 0.3)) {
+                self.route = .familySetup
+            }
+        }
+    }
+
+    // MARK: - Sign Out
+
+    /// Signs the parent out: clears auth, returns to sign-in screen.
+    /// Family data stays in CloudKit — they can sign back in to get it.
+    func signOut(authManager: AuthManager, gameState: GameState, avatarModel: AvatarModel) {
+        // Save any in-progress session
+        if let profile = activeProfile {
+            avatarModel.saveTo(profile: profile)
+            recordPlayTime(for: profile)
+            gameState.saveToStore()
+            try? modelContext?.save()
+        }
+
+        // Change route FIRST (before clearing data) so the view
+        // switches away from ParentDashboard immediately.
+        // Go to profilePicker so children can still play without auth.
+        route = .profilePicker
+
+        stopPlayTimeTracking()
+        activeProfile = nil
+        familyProfile = nil
+        gameState.activeProfileID = nil
+
+        // Clear auth state
+        authManager.signOut()
     }
 
     // MARK: - Profile Selection

@@ -31,6 +31,7 @@ struct KitchenView: View {
 
     // Browse mode
     @State private var showRecipePicker = false
+    @State private var showRecipeList = false
 
     // Cooking mode
     @State private var cookingPhase: KitchenCookingPhase = .browsing
@@ -101,6 +102,18 @@ struct KitchenView: View {
             recipePicker
                 .environmentObject(gameState)
         }
+        .sheet(isPresented: $showRecipeList) {
+            NavigationView {
+                RecipeListView(selectedTab: .constant(.kitchen))
+                    .environmentObject(gameState)
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("Done") { showRecipeList = false }
+                                .foregroundColor(Color.AppTheme.sage)
+                        }
+                    }
+            }
+        }
         .fullScreenCover(isPresented: $showMiniGame) {
             if let recipe = cookingRecipe {
                 CookingSessionView(recipe: recipe)
@@ -130,6 +143,14 @@ struct KitchenView: View {
             }
 
             Spacer()
+
+            // Recipe Book button
+            Button(action: { showRecipeList = true }) {
+                Image(systemName: "book.fill")
+                    .font(.system(size: isIPad ? 24 : 20))
+                    .foregroundColor(Color.AppTheme.goldenWheat)
+            }
+            .buttonStyle(.plain)
 
             #if DEBUG
             Button {

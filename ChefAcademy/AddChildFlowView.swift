@@ -8,6 +8,7 @@
 
 import SwiftUI
 import SwiftData
+import Combine
 
 struct AddChildFlowView: View {
     @EnvironmentObject var sessionManager: SessionManager
@@ -107,12 +108,20 @@ struct AddChildFlowView: View {
     }
 
     private func finishAddChild() {
-        _ = sessionManager.addChildProfile(
+        let newChild = sessionManager.addChildProfile(
             name: childName,
             gender: childGender,
             headCovering: childHeadCovering,
             outfit: childOutfit
         )
+
+        // Force SwiftData to persist immediately so ProfilePickerView
+        // sees the new child right away (fixes delayed appearance)
+        if newChild != nil {
+            try? modelContext.save()
+            sessionManager.objectWillChange.send()
+        }
+
         dismiss()
     }
 }

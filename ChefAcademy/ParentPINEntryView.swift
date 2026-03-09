@@ -21,7 +21,10 @@ struct ParentPINEntryView: View {
     @State private var isConfirming: Bool = false
 
     var body: some View {
-        VStack(spacing: AppSpacing.lg) {
+        ZStack {
+            Color.AppTheme.cream.ignoresSafeArea()
+
+            VStack(spacing: AppSpacing.lg) {
             Spacer()
 
             // Pip thinking
@@ -82,32 +85,32 @@ struct ParentPINEntryView: View {
                     }
                 }
 
-                // Bottom row: empty, 0, backspace
+                // Bottom row: cancel, 0, backspace
                 HStack(spacing: 20) {
-                    // Cancel button
                     Button(action: onCancel) {
                         Text("Cancel")
                             .font(.AppTheme.body)
                             .foregroundColor(Color.AppTheme.sepia)
                             .frame(width: 75, height: 55)
                     }
+                    .buttonStyle(.plain)
 
                     PINButton(label: "0") {
                         appendDigit("0")
                     }
 
-                    // Backspace
                     Button(action: deleteDigit) {
                         Image(systemName: "delete.left.fill")
                             .font(.system(size: 22))
                             .foregroundColor(Color.AppTheme.sepia)
                             .frame(width: 75, height: 55)
                     }
+                    .buttonStyle(.plain)
                 }
             }
             .padding(.bottom, AppSpacing.xl)
         }
-        .background(Color.AppTheme.cream)
+        }
     }
 
     // MARK: - Computed
@@ -213,6 +216,7 @@ struct PINButton: View {
                 .background(Color.AppTheme.warmCream)
                 .cornerRadius(12)
         }
+        .buttonStyle(.plain)
     }
 }
 

@@ -15,14 +15,21 @@ class FamilyProfile {
     var parentPIN: String = ""
     var createdDate: Date = Date()
 
+    // Links this family to a parent's Apple ID.
+    // This is an opaque string from Apple (not email, not name) — safe to store.
+    // When the parent signs in on a new device, we match by this ID.
+    var appleUserID: String = ""
+
     init(
         id: UUID = UUID(),
         parentPIN: String = "0000",
-        createdDate: Date = Date()
+        createdDate: Date = Date(),
+        appleUserID: String = ""
     ) {
         self.id = id
         self.parentPIN = parentPIN
         self.createdDate = createdDate
+        self.appleUserID = appleUserID
     }
 
     // MARK: - Helpers (query by familyID on UserProfile)

@@ -5,7 +5,7 @@
 **App Name:** Pip's Kitchen Garden
 **Platform:** iOS (iPhone/iPad)
 **Language:** Swift / SwiftUI
-**Target:** Ages 9-12
+**Target:** Ages 6+ (shifted from 8-12 based on UX audit)
 **Developer:** Marina Pollak
 **Deadline:** May 15, 2026
 **Course:** PROG-360A Project Studio, Columbia College Chicago
@@ -23,58 +23,87 @@ The core loop is: **GROW → COOK → FEED → REWARDS → repeat**
 
 ---
 
-## Game Design Summary
-
-```
-┌─────────────────────────────────────────────────────────┐
-│                   PIP'S KITCHEN GARDEN                  │
-│                                                         │
-│     🌱 GROW          🍳 COOK           🫀 FEED          │
-│    ─────────  →    ─────────   →    ─────────          │
-│    Garden          Kitchen          Body               │
-│    Mini-games      Mini-games       Adventure          │
-│                                                         │
-│                    🏆 REWARDS                           │
-│              Coins, Seeds, XP, Badges                   │
-└─────────────────────────────────────────────────────────┘
-```
-
-### Three Pillars:
-
-1. **GROW (Garden)**
-   - Tap to plant seeds
-   - Swipe to water plants
-   - Tap bugs to defend crops
-   - Pull gesture to harvest
-   - Real-time or accelerated growth
-
-2. **COOK (Kitchen)**
-   - Each recipe = series of mini-games
-   - Mini-game types: CHOP, CRACK, MIX, POUR, FLIP, HEAT, SPREAD, ASSEMBLE
-   - Star rating (1-3) based on performance
-   - Need ingredients from garden to cook
-
-3. **FEED (Body Adventure)**
-   - Animated food journey through digestive system
-   - Organs light up when receiving nutrients
-   - Persistent health meters for Body Buddy
-   - Educational but FUN
-
----
-
 ## Tech Stack
 
 - **UI Framework:** SwiftUI
-- **Mini-games:** SwiftUI with gestures (or SpriteKit if needed)
-- **Persistence:** UserDefaults for MVP, Core Data for full version
+- **Persistence:** SwiftData with iCloud CloudKit sync
+- **Mini-games:** SwiftUI with gestures
 - **Minimum iOS:** 16.0
-- **Architecture:** MVVM with ObservableObject
+- **Architecture:** MVVM with ObservableObject + SwiftData @Model
+- **Security:** Keychain for parent PIN (iCloud Keychain sync)
+
+---
+
+## Multi-User Family System (COMPLETE)
+
+The app supports multiple players per device via a family profile system.
+
+### Architecture
+- **FamilyProfile** (@Model) — one per device, linked to UserProfiles via `familyID`
+- **UserProfile** (@Model) — parent or child, linked to PlayerData via `ownerID` UUID
+- **PlayerData** (@Model) — per-user game progress (coins, seeds, plots, recipes, health)
+- **SessionManager** (ObservableObject) — central coordinator: routing, profile CRUD, PIN, play time
+- **No @Relationship macros** — all linking via UUID fields (CloudKit compatibility)
+
+### App Route Flow
+```
+App Launch → bootstrap()
+  ├── Family exists → ProfilePickerView ("Who's playing today?")
+  ├── Legacy data exists → MigrationPINSetupView
+  └── Brand new → FamilySetupView (8-step wizard)
+
+FamilySetupView: Welcome → Parent Name → Parent Avatar → Set PIN → Child Name → Child Avatar → Meet Pip → Ready
+
+ProfilePickerView:
+  ├── Tap child card → selectProfile() → MainTabView
+  ├── Tap parent card → PIN entry → selectProfile() or ParentDashboardView
+  └── Add Little Chef → PIN entry → AddChildFlowView (3 steps)
+```
+
+### Key Files
+| File | Purpose |
+|------|---------|
+| `SessionManager.swift` | Route state machine, profile CRUD, PIN verify, play time |
+| `FamilyProfile.swift` | @Model: familyID-based queries for members |
+| `UserProfile.swift` | @Model: role, gender, avatar, familyID, playerData lookup |
+| `PlayerData.swift` | @Model: coins, seeds, plots, pantry, recipes, health |
+| `PINKeychain.swift` | Secure parent PIN via Keychain Services |
+| `ProfilePickerView.swift` | "Who's playing today?" profile selection |
+| `FamilySetupView.swift` | First-launch 8-step family wizard |
+| `AddChildFlowView.swift` | Add subsequent children (3 steps + duplicate name check) |
+| `ParentDashboardView.swift` | Child stats, play time, manage profiles |
+| `ParentPINEntryView.swift` | Reusable PIN pad (setup + verify modes) |
+| `ProfileView.swift` | Me tab: stats, badges, switch player, dashboard |
+| `MigrationPINSetupView.swift` | Upgrade path for legacy single-user installs |
+
+### SwiftData Rules (CloudKit Compatibility)
+- ALL @Model properties MUST have default values at declaration
+- NO @Relationship macros — use UUID linking instead
+- NO [String: Int] dictionaries — use [CodableStruct] arrays
+- `.modelContainer(modelContainer)` MUST be on WindowGroup
+- `@Environment(\.modelContext)` only works if .modelContainer is set
+
+### PIN System
+- Stored in Keychain (not SwiftData) for security
+- Syncs across devices via iCloud Keychain
+- `PINKeychain.save(pin:)` / `PINKeychain.load()` / `PINKeychain.delete()`
+- Parent PIN required for: accessing parent profile, adding children, dashboard, changing PIN
+
+### Profile Data Flow
+```
+selectProfile() →
+  ├── Existing PlayerData found → loadFromStore(for:) → MainTabView
+  └── No PlayerData → createPlayerData() → resetToDefaults() → saveToStore() → MainTabView
+
+resetToDefaults() gives: 100 coins, starter seeds (8 types), 5 garden plots, 2 unlocked recipes
+loadFromStore() safety: if seeds empty → gives starter seeds automatically
+```
 
 ---
 
 ## Visual Style
 
-**Aesthetic:** Vintage botanical watercolor
+**Aesthetic:** Vintage botanical watercolor ("paper style")
 **Colors (defined in AppTheme.swift):**
 - Cream: #FDF6E3 (backgrounds)
 - Warm Cream: #FAF0DC
@@ -84,417 +113,143 @@ The core loop is: **GROW → COOK → FEED → REWARDS → repeat**
 - Terracotta: #C4A484
 - Sepia: #5D4E37 (text)
 - Dark Brown: #3D2914 (headings)
+- Warm Khaki: #C6BA8B
 
-**Fonts:**
-- Headings: Georgia (serif)
-- Body: System default
-
-**UI Guidelines:**
-- Rounded corners everywhere (16pt default)
-- Soft shadows
-- Bouncy spring animations
-- NO harsh colors
-- Kid-friendly, cozy, whimsical
+**UX Audit Feedback:** Palette described as "gray/adult/sad" — needs vibrant accent colors for CTAs (see UX_REDESIGN_PLAN.md)
 
 ---
 
 ## Character: Pip the Hedgehog
 
 - Round, fluffy hedgehog with chef hat
-- 6 poses available as PNG images:
-  - pip_neutral.png
-  - pip_waving.png
-  - pip_excited.png
-  - pip_cooking.png
-  - pip_thinking.png
-  - pip_celebrating.png
-- Use circle mask (no transparent background)
-- Bouncy idle animation
-- Appears throughout app as guide/mascot
+- 6 static poses + 15-frame walking animation + waving animation
+- `PipWavingAnimatedView(size:)` — reusable animated Pip component
+- Walking frames: pip_walking_frame_01 through 15 (30fps Timer-based)
+- Appears throughout app as interactive guide/mascot
 
 ---
 
-## Project File Structure
+## Current Tab Structure (6 tabs)
 
-```
-PipsKitchenGarden/
-├── App/
-│   ├── PipsKitchenGardenApp.swift    # Main app entry
-│   └── MainTabView.swift              # Tab navigation
-│
-├── Models/
-│   ├── GameState.swift                # Central game state manager
-│   ├── GardenModel.swift              # Garden, plots, seeds, vegetables
-│   ├── RecipeData.swift               # All recipes with ingredients/steps
-│   ├── BodyBuddyModel.swift           # Body Buddy health & avatar
-│   ├── QuestModel.swift               # Daily/weekly quests
-│   └── BadgeModel.swift               # Achievements
-│
-├── Views/
-│   ├── Hub/
-│   │   └── HubView.swift              # Main game hub screen
-│   │
-│   ├── Garden/
-│   │   ├── GardenView.swift           # Garden grid view
-│   │   ├── PlotView.swift             # Individual plot
-│   │   ├── PlantingSheet.swift        # Seed selection
-│   │   └── HarvestAnimation.swift     # Harvest effects
-│   │
-│   ├── Kitchen/
-│   │   ├── KitchenView.swift          # Recipe selection
-│   │   ├── RecipeDetailView.swift     # Recipe info + start cooking
-│   │   ├── CookingSessionView.swift   # Mini-game sequence manager
-│   │   └── MiniGames/
-│   │       ├── ChopMiniGame.swift
-│   │       ├── CrackMiniGame.swift
-│   │       ├── MixMiniGame.swift
-│   │       ├── PourMiniGame.swift
-│   │       ├── FlipMiniGame.swift
-│   │       └── HeatMiniGame.swift
-│   │
-│   ├── Body/
-│   │   ├── BodyBuddyView.swift        # Body Buddy with health meters
-│   │   ├── FoodJourneyView.swift      # Animated digestion journey
-│   │   └── OrganDetailView.swift      # Tap organ for info
-│   │
-│   ├── Profile/
-│   │   ├── ProfileView.swift          # Player stats, settings
-│   │   ├── BadgesView.swift           # Achievement gallery
-│   │   └── InventoryView.swift        # Seeds & ingredients
-│   │
-│   └── Onboarding/
-│       ├── OnboardingView.swift       # Flow manager
-│       ├── AvatarCreatorView.swift    # Create Body Buddy
-│       └── MeetPipViews.swift         # Meet Pip dialogue
-│
-├── Components/
-│   ├── PipCharacterView.swift         # Animated Pip component
-│   ├── CoinDisplay.swift              # Currency display
-│   ├── XPBar.swift                    # Experience progress bar
-│   ├── HealthMeter.swift              # Body Buddy health bars
-│   ├── StarRating.swift               # 1-3 star display
-│   └── QuestCard.swift                # Daily quest card
-│
-├── Animation/
-│   ├── PipAnimations.swift            # Pip poses & transitions
-│   └── ParticleEffects.swift          # Sparkles, confetti
-│
-├── Theme/
-│   └── AppTheme.swift                 # Colors, fonts, spacing
-│
-└── Assets.xcassets/
-    ├── Pip/                           # Pip character images
-    ├── Vegetables/                    # Vegetable illustrations
-    ├── UI/                            # Buttons, icons
-    └── Body/                          # Body Buddy organs
+| Tab | Icon | View | Purpose |
+|-----|------|------|---------|
+| Home | house.fill | HomeView | Main hub, quick actions |
+| Garden | leaf.fill | GardenView | Plant & harvest veggies (interactive map) |
+| Kitchen | fork.knife | KitchenView | Cook recipes with Pip (interactive map) |
+| Farm | cart.fill | FarmTabView → FarmShopView | Pip walks to barn, then shop |
+| Recipes | book.fill | RecipeListView | Browse all recipes |
+| Me | person.fill | ProfileView | Stats, badges, switch player, dashboard |
+
+**UX Audit Recommendation:** Merge Garden + Farm into one tab (see UX_REDESIGN_PLAN.md)
+
+---
+
+## Mini-Game System (COMPLETE)
+
+9 mini-game types in `CookingMiniGames.swift`:
+| Type | Gesture | File |
+|------|---------|------|
+| HeatPan | Hold finger | CookingMiniGames.swift |
+| AddToPan | Drag ingredient | CookingMiniGames.swift |
+| Stir | Circular swipe | CookingMiniGames.swift |
+| Season | Tap sprinkle | CookingMiniGames.swift |
+| Peel | Swipe down | CookingMiniGames.swift |
+| CookTimer | Green zone timing | CookingMiniGames.swift |
+| Wash | Tap rapidly | CookingMiniGames.swift |
+| CrackEgg | Tap to crack | CookingMiniGames.swift |
+| Assemble | Tap to plate | CookingMiniGames.swift |
+| Chop | Tap timing | ChopMiniGame.swift |
+
+`CookingSessionView.swift` — state machine: parses recipe steps → generates mini-game sequence → scores 0-100 per game → averages for star rating (85+=3, 60-84=2, <60=1)
+
+---
+
+## Key File Locations
+
+| Category | File | Purpose |
+|----------|------|---------|
+| **App Entry** | `ChefAcademyApp.swift` | ModelContainer, RootRouterView, MainTabView, HomeView |
+| **State** | `GameState.swift` | Central game state, SwiftData load/save, auto-save |
+| **Theme** | `AppTheme.swift` | Colors, fonts, spacing constants |
+| **Garden** | `GardenView.swift` | Interactive map with plots + draggable Pip |
+| **Kitchen** | `KitchenView.swift` | Interactive cooking scene map |
+| **Cooking** | `CookingSessionView.swift` | Mini-game sequence manager |
+| **Mini-games** | `CookingMiniGames.swift` | 9 mini-game views |
+| **Recipes** | `RecipeCardExample.swift` | PantryItem enum, Recipe struct, GardenRecipes.all |
+| **Recipe Detail** | `RecipeDetailView.swift` | Full-screen cookbook page |
+| **Farm** | `FarmShopView.swift` | Grid shop for pantry items |
+| **Farm Anim** | `FarmTabView.swift` | Walk transition → shop |
+| **Avatar** | `AvatarModel.swift` | Gender, outfit, head covering, profile load/save |
+| **Onboarding** | `OnboardingView.swift` | Original onboarding flow manager |
+| **Seed Info** | `SeedInfoView.swift` | Educational veggie pages + PencilKit coloring |
+| **Scene Editor** | `SceneEditor.swift` | Dev tool for positioning map items |
+
+---
+
+## Build & Test
+
+```bash
+# Build
+xcodebuild -scheme ChefAcademy -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
+
+# Reset data (delete SwiftData store on simulator)
+find ~/Library/Developer/CoreSimulator/Devices -name "default.store*" -path "*/Application Support/*" -exec rm -f {} \;
 ```
 
 ---
 
-## Key Models Reference
+## UX Audit & Redesign (March 2026)
 
-### GameState (Central Manager)
-```swift
-class GameState: ObservableObject {
-    @Published var coins: Int
-    @Published var xp: Int
-    @Published var playerLevel: Int
-    @Published var seeds: [Seed]
-    @Published var harvestedIngredients: [HarvestedIngredient]
-    @Published var gardenPlots: [GardenPlot]
-    @Published var unlockedRecipeIDs: Set<String>
-    @Published var recipeStars: [String: Int]
-    @Published var dailyQuests: [Quest]
-    // Body Buddy health meters (0-100)
-    @Published var brainHealth: Int
-    @Published var muscleHealth: Int
-    @Published var boneHealth: Int
-    @Published var heartHealth: Int
-    @Published var immuneHealth: Int
-    @Published var energyLevel: Int
-}
-```
+External UX audit identified critical changes needed for 6+ audience:
+- **Full report:** `UX_AUDIT_REPORT.md`
+- **Implementation plan:** `UX_REDESIGN_PLAN.md`
+- **Test plans:** `PROTOTYPE_TEST_PLAN.md`, `TestingPlan_PipsKitchenGarden.md`
 
-### GardenPlot
-```swift
-struct GardenPlot: Identifiable {
-    let id: Int
-    var state: PlotState // .empty, .planted, .growing, .ready, .water
-    var vegetable: VegetableType?
-    var plantedDate: Date?
-    var growthProgress: Double // 0.0 to 1.0
-}
-```
+### Top Priority Changes (P0):
+1. Reduce text density — add voice (AVSpeechSynthesizer), max 4 steps
+2. Brighten color palette — vibrant CTAs against paper backgrounds
+3. Scroll-down cues on all scrollable areas
+4. Make Pip bigger and interactive (tap to bounce, drag)
+5. Fix typography consistency (unified bold child-friendly font)
+6. Fix asset masking (transparent character PNGs)
 
-### VegetableType
-```swift
-enum VegetableType: String, CaseIterable {
-    case lettuce, carrot, tomato, cucumber
-    case bellPepperRed, bellPepperYellow, spinach, avocado
-    
-    var growthTime: TimeInterval // seconds
-    var harvestYield: Int
-    var seedCost: Int
-    var harvestValue: Int // coins
-    var nutrients: [NutrientBoost]
-}
-```
-
-### Recipe (in RecipeCardExample.swift)
-```swift
-struct Recipe: Identifiable {
-    let id: String
-    let title: String
-    let description: String
-    let imageName: String
-    let category: RecipeCategory  // .breakfast, .lunch, .dinner, .snacks
-    let cookTime: Int
-    let difficulty: DifficultyBadge.Level
-    let servings: Int
-    let needsAdultHelp: Bool
-    let nutritionFacts: [String]
-    let gardenIngredients: [VegetableType]
-    let pantryIngredients: [PantryItem]
-    let glucoseTip: String       // Kid-friendly nutrition tip
-    let steps: [String]          // Kid-friendly cooking instructions
-}
-```
-- 17 total recipes (3 breakfast, 5 lunch, 4 dinner, 5 snacks)
-- Star rating based on mini-game performance
+### Next Priority Changes (P1):
+7. Condense Garden + Farm into single tab
+8. Kid-friendly recipe names (verb-object: "Sizzling Veggie Pan" not "Stir Fry")
+9. Non-binary gender option
+10. Pantry "grab all" / quantity stepper
+11. Skippable animations after first viewing
 
 ---
 
-## Mini-Game Specifications
+## Next Session Priorities
 
-Each mini-game should:
-1. Have a clear objective shown at start
-2. Use intuitive gestures (tap, swipe, drag)
-3. Give immediate visual/audio feedback
-4. Award points based on timing/accuracy
-5. Show result (Perfect! / Good! / Okay!)
-6. Take 10-30 seconds to complete
+### Multi-User Polish
+- [ ] Test full flow on clean simulator: fresh install → family setup → play → switch profiles → verify data persists
+- [ ] Verify parent dashboard shows correct child stats
+- [ ] Test adding/removing child profiles
+- [ ] Verify starter seeds work for all new profiles
 
-### Mini-Game Types:
-
-| Type | Gesture | Visual |
-|------|---------|--------|
-| CHOP | Tap at right moment | Knife cuts vegetable |
-| CRACK | Tap + pull apart | Egg cracks into bowl |
-| MIX | Circular swipe | Spoon stirs ingredients |
-| POUR | Tilt/drag | Liquid fills to line |
-| FLIP | Swipe up | Food flips in pan |
-| HEAT | Slider + timing | Temperature control |
-| SPREAD | Back-forth swipe | Knife spreads on bread |
-| ASSEMBLE | Drag & drop | Build the final dish |
-
----
-
-## Animation Guidelines
-
-Use SwiftUI animations with these principles:
-- `.spring(response: 0.5, dampingFraction: 0.6)` for bouncy
-- `.easeOut` for UI appearing
-- `.easeIn` for UI disappearing
-- Always animate state changes
-- Use `withAnimation { }` blocks
-- Particle effects for celebrations (sparkles, confetti)
+### Game & UX Improvements
+- [ ] Begin P0 UX redesign items (voice, colors, Pip scaling)
+- [ ] Body Buddy — post-cooking flow: BodyBuddyView → animated food journey → organ highlights
+- [ ] Polish cooking mini-games (visual feedback, scoring balance)
+- [ ] Generate missing veggie/fruit/berry image assets (19 of 27 needed)
+- [ ] Food Encyclopedia view
+- [ ] Recipe gating by garden progress
 
 ---
 
 ## Coding Conventions
 
-1. **Use SwiftUI** for all views
-2. **MVVM pattern** with ObservableObject
-3. **@EnvironmentObject** for GameState (inject at app root)
-4. **Descriptive names** - prioritize readability
-5. **Comment complex logic** but don't over-comment obvious code
-6. **Group related code** with `// MARK: -` sections
-7. **Keep views small** - extract components when >100 lines
-8. **Use AppTheme** constants for all colors, fonts, spacing
-
-### Example View Structure:
-```swift
-import SwiftUI
-
-struct ExampleView: View {
-    @EnvironmentObject var gameState: GameState
-    @State private var localState: Bool = false
-    
-    var body: some View {
-        VStack(spacing: AppSpacing.md) {
-            // Content here
-        }
-        .background(Color.AppTheme.cream)
-    }
-}
-
-#Preview {
-    ExampleView()
-        .environmentObject(GameState())
-}
-```
-
----
-
-## Current Progress (What's Already Built)
-
-### ✅ Complete:
-- AppTheme.swift (colors, fonts, spacing)
-- AdaptiveLayout.swift (iPhone/iPad responsive helpers)
-- Onboarding flow (5 screens) - connected to HomeView
-- Avatar creator (becomes Body Buddy)
-- AvatarModel with UserDefaults persistence for name
-- Meet Pip dialogue sequence
-- PipAnimations.swift (6 poses, circle mask, bounce)
-- Pip character images (6 poses from Midjourney)
-- **MainTabView** with 6 tabs (Home, Garden, Kitchen, Farm, Recipes, Me)
-- **HomeView** with greeting, streak card, Pip message, quick actions with bg images, recipe preview
-- **HomeAnimated.swift** with QuickActionCardWithImage using bg_garden/bg_kitchen images
-- **RecipeListView** with category filtering (All, Breakfast, Lunch, Dinner, Snacks)
-- RecipeCardView — clean cards with image, title, description, difficulty/time/servings (no glucose tip or ingredient status)
-- **RecipeDetailView.swift** — full-screen cookbook page via `.fullScreenCover(item:)` with hero image, Pip's Tip, ingredients, numbered cooking steps, nutrition pills, "Let's Cook!" button
-- Recipe illustrations (Rainbow Veggie Wrap, Sunny Pancakes, Garden Pasta)
-- Navigation from Home → other tabs via quick action buttons
-- Tapping any recipe card opens RecipeDetailView; "Let's Cook!" navigates to Kitchen tab
-- README.md with full style guide and Leonardo.ai prompts
-- **GardenView** — interactive map (bg_garden) with 5 draggable plot spots + draggable Pip for harvesting
-- **KitchenView** — interactive cooking scene map (bg_kitchen) with Counter, Stove, Pantry, Pip spots
-- **SceneEditor.swift** — Theatre.js-style drag-to-position tool for map items (developer-only via #if DEBUG)
-- **FarmShopView** — grid shop for buying pantry items with coins
-- **GameState.swift** — central manager with coins, seeds, 5 garden plots, harvested ingredients, pantry inventory (starts empty)
-- Garden → Kitchen navigation: "Let's Cook!" button after harvest switches to Kitchen tab
-- Kitchen counter badge shows real counts (garden veggies + pantry items from Farm Shop)
-- Vegetable illustrations (8 veggies: broccoli, carrot, cucumber, lettuce, onion, pumpkin, tomato, zucchini)
-- 17 garden recipes in GardenRecipes.all with gardenIngredients, pantryIngredients, glucoseTip, and cooking steps
-- Glucose Goddess integration: all recipes have kid-friendly nutrition tips, zero starch-centered meals
-- Vegetable images used throughout (RecipeDetailView, ChopMiniGame, GardenView, PlotView) — emojis only for pantry items
-- **FarmTabView** — Pip walks across bg_farm toward barn, then crossfades to FarmShopView. Replays each visit, tap to skip.
-- **FarmTransitionView** — zoomed/panned bg_farm with walking Pip animation, Scene Editor support for waypoints. Tweakable panX/panY/sceneHeightRatio.
-- **BasketWithVeggiesView** — harvest basket on garden map showing collected veggies inside (ZStack layering trick: veggies behind basket rim)
-- **vegetable_basket.imageset** and **bg_farm.imageset** properly set up in Assets.xcassets
-- Walking Pip frame animation (15 frames) used in both GardenView and FarmTransitionView
-- Pip walking frame assets (pip_walking_frame_01 through 15) added to Assets
-
-### 🚧 In Progress:
-- Harvest basket in GardenView — positioning and veggie placement inside basket needs fine-tuning via Scene Editor
-- Farm transition walk — waypoints and camera (panX/panY) tuned but may need more adjustment
-- FarmShopView needs a background image (currently plain cream)
-
-### ❌ Not Started:
-- CookingSessionView (mini-game sequence manager)
-- More mini-games (Crack, Mix, Pour, Flip, Heat) following ChopMiniGame pattern
-- Body Adventure animation (FoodJourneyView)
-- SwiftData migration for persistent game state
-- Quest system UI
-- Badges UI
-- Profile view
-
----
-
-## Key Architecture Notes
-
-### Tab Structure (6 tabs)
-| Tab | Icon | View | Purpose |
-|-----|------|------|---------|
-| Home | house.fill | HomeView / HomeAnimatedView | Main hub, quick actions |
-| Garden | leaf.fill | GardenView | Plant & harvest veggies (interactive map) |
-| Kitchen | fork.knife | KitchenView | Cook recipes with Pip (interactive map) |
-| Farm | cart.fill | FarmTabView → FarmShopView | Pip walks to barn, then shop |
-| Recipes | book.fill | RecipeListView | Browse all recipes |
-| Me | person.fill | PlaceholderView | Profile (coming soon) |
-
-### Interactive Map Pattern
-Both GardenView and KitchenView use the same pattern:
-```swift
-Image("bg_xxx").resizable().aspectRatio(contentMode: .fit)
-    .overlay(GeometryReader { geo in
-        // Items positioned with .position(x: w * percent, y: h * percent)
-    })
-```
-
-### Scene Editor (Developer Tool)
-- `SceneEditor.swift` — drag items on map to position them visually
-- Toggle via pencil icon (only in `#if DEBUG` builds)
-- Prints coordinates to console for easy copying to code
-- Works on any map-based view (Garden, Kitchen, future scenes)
-
-### Data Flow
-- `pantryInventory` starts **empty** — player buys items from Farm Shop
-- `harvestedIngredients` starts **empty** — player harvests from Garden
-- Garden plots: 5 plots (expandable via Scene Editor + gardenSceneItems array)
-- Recipe model: `gardenIngredients: [VegetableType]` and `pantryIngredients: [PantryItem]` are flat enum arrays
-- Kitchen counter shows combined count of garden veggies + pantry items
-
-### Next Tasks
-1. Fix harvest basket in GardenView — fine-tune position and veggie placement with Scene Editor
-2. Finish farm transition — adjust walk path, add background to FarmShopView (market scene)
-3. Kitchen game — build CookingSessionView (mini-game sequence when player taps "Cook!" in Kitchen)
-4. Generate Body Buddy avatar assets (organ illustrations matching art style)
-5. More mini-games (Crack, Mix, Pour, Flip, Heat) following ChopMiniGame pattern
-6. SwiftData migration — persist GameState between sessions
-7. Body Adventure / FoodJourneyView
-8. Quest system, Badges UI, Profile view
-
----
-
-## Development Notes
-
-### Testing Onboarding
-In ChefAcademyApp.swift there's a flag:
-```swift
-private let resetOnboarding = true  // Set to false after testing
-```
-Set to `true` to reset and test onboarding flow again.
-
-### Key File Locations:
-- Main app + tabs + HomeView: `ChefAcademyApp.swift`
-- Animated home: `HomeAnimated.swift`
-- Garden (interactive map): `GardenView.swift`
-- Kitchen (interactive map): `KitchenView.swift`
-- Scene Editor (dev tool): `SceneEditor.swift`
-- Farm Shop: `FarmShopView.swift`
-- Recipes + models: `RecipeCardExample.swift`
-- Recipe detail (cookbook page): `RecipeDetailView.swift`
-- Game state: `GameState.swift`
-- Onboarding: `OnboardingView.swift`
-- Avatar/User data: `AvatarModel.swift`
-- Theme: `AppTheme.swift`
-- Adaptive layout: `AdaptiveLayout.swift`
-- Mini-game template: `ChopMiniGame.swift`
-
----
-
-## When Building New Features
-
-1. **Check if model exists** - Don't duplicate data structures
-2. **Use GameState** - All game data goes through central manager
-3. **Follow visual style** - Use AppTheme colors/fonts
-4. **Make it playful** - This is a GAME for kids, add delight!
-5. **Test with previews** - Every view should have #Preview
-6. **Keep scope realistic** - MVP first, polish later
-
----
-
-## Important Files to Reference
-
-Before building, read these files for context:
-- `/Documentation/GameDesignDocument.md` - Full game design
-- `/Documentation/ProjectProposal_OnePage.md` - Quick overview
-- `/Content/SavoryBreakfastRecipes.md` - Recipe content
-- `/Theme/AppTheme.swift` - Visual constants
-- `/Models/RecipeData.swift` - Recipe data structure
-
----
-
-## Quick Commands
-
-When asked to build something:
-1. First check what files already exist
-2. Reference the file structure above
-3. Use existing models/components when possible
-4. Create new files in the correct folders
-5. Always inject GameState as @EnvironmentObject
-6. Add #Preview for every new view
+1. **SwiftUI** for all views
+2. **MVVM** with ObservableObject + SwiftData @Model
+3. **@EnvironmentObject** for GameState, SessionManager, AvatarModel
+4. **@Environment(\.modelContext)** for SwiftData queries in views
+5. **UUID-based linking** between models (no @Relationship)
+6. **AppTheme** constants for all colors, fonts, spacing
+7. **`// MARK: -`** sections for code organization
+8. **#Preview** for every new view
 
 ---
 
@@ -504,9 +259,7 @@ When asked to build something:
 **Course:** PROG-360A, Columbia College Chicago
 **Instructor:** Janell Baxter
 **Nutrition Research:** Jessie Inchauspé ("Glucose Goddess")
-- "Glucose Revolution" (2022)
-- "The Glucose Goddess Method" (2023)
 
 ---
 
-*Last Updated: February 9, 2026*
+*Last Updated: March 3, 2026*

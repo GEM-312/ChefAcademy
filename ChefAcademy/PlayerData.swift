@@ -70,6 +70,9 @@ class PlayerData {
     var immuneHealth: Int = 50
     var energyLevel: Int = 50
 
+    // Social
+    var gardenLikes: Int = 0
+
     // Achievements
     var completedBadgeIDs: [String] = []
 
@@ -95,6 +98,7 @@ class PlayerData {
         heartHealth: Int = 50,
         immuneHealth: Int = 50,
         energyLevel: Int = 50,
+        gardenLikes: Int = 0,
         completedBadgeIDs: [String] = [],
         lastSaved: Date = Date()
     ) {
@@ -113,6 +117,7 @@ class PlayerData {
         self.heartHealth = heartHealth
         self.immuneHealth = immuneHealth
         self.energyLevel = energyLevel
+        self.gardenLikes = gardenLikes
         self.completedBadgeIDs = completedBadgeIDs
         self.lastSaved = lastSaved
     }

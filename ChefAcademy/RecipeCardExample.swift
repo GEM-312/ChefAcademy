@@ -111,6 +111,34 @@ enum PantryItem: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Per-item scale for the shop card
+    var shopScale: CGFloat { 2.0 }
+
+    /// Vertical offset to crop transparent top padding (negative = shift up)
+    var shopOffset: CGFloat {
+        switch self {
+        case .salt: return -16
+        case .pepper: return -12
+        case .milk: return -10
+        case .soySauce: return -16
+        case .vinegar: return -16
+        case .cheese: return -14
+        case .cream: return -14
+        case .tomatoSauce: return -18
+        case .lemon: return -18
+        default: return 0
+        }
+    }
+
+    /// Frame height for shop card image area (taller for items that need more room)
+    var shopFrameHeight: CGFloat {
+        switch self {
+        case .cheese, .oliveOil, .vegetableOil, .chicken: return 115
+        case .flour, .cinnamon: return 110
+        default: return 100
+        }
+    }
+
     /// Price to buy from the farm shop
     var shopPrice: Int {
         switch self {
@@ -1008,7 +1036,7 @@ struct CategoryPill: View {
 
 // MARK: - Preview
 #Preview {
-    RecipeListView(selectedTab: .constant(.recipes))
+    RecipeListView(selectedTab: .constant(.kitchen))
         .environmentObject(GameState.preview)
 }
 

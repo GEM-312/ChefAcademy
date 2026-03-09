@@ -99,6 +99,12 @@ class GameState: ObservableObject {
     @Published var energyLevel: Int = 50
 
     // ============================================
+    // SOCIAL
+    // ============================================
+
+    @Published var gardenLikes: Int = 0
+
+    // ============================================
     // QUESTS & ACHIEVEMENTS
     // ============================================
 
@@ -294,6 +300,9 @@ class GameState: ObservableObject {
         immuneHealth = saved.immuneHealth
         energyLevel = saved.energyLevel
 
+        // Social
+        gardenLikes = saved.gardenLikes
+
         // Achievements
         completedBadgeIDs = Set(saved.completedBadgeIDs)
     }
@@ -377,6 +386,9 @@ class GameState: ObservableObject {
         saved.immuneHealth = immuneHealth
         saved.energyLevel = energyLevel
 
+        // Social
+        saved.gardenLikes = gardenLikes
+
         // Achievements
         saved.completedBadgeIDs = Array(completedBadgeIDs)
 
@@ -402,6 +414,7 @@ class GameState: ObservableObject {
         heartHealth = 50
         immuneHealth = 50
         energyLevel = 50
+        gardenLikes = 0
         dailyQuests = Quest.generateDailyQuests()
         completedBadgeIDs = []
     }

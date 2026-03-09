@@ -5,14 +5,15 @@
 <h1 align="center">Pip's Kitchen Garden</h1>
 
 <p align="center">
-  <strong>A delightful iOS cooking game for kids aged 9-12</strong><br>
-  Grow vegetables, cook recipes, and learn about nutrition!
+  <strong>A delightful iOS cooking game for kids aged 6+</strong><br>
+  Grow vegetables, cook recipes, and learn about nutrition with Pip the hedgehog!
 </p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-iOS-blue?style=flat-square" alt="Platform"/>
   <img src="https://img.shields.io/badge/Swift-5.9-orange?style=flat-square" alt="Swift"/>
   <img src="https://img.shields.io/badge/SwiftUI-4.0-purple?style=flat-square" alt="SwiftUI"/>
+  <img src="https://img.shields.io/badge/SwiftData-1.0-red?style=flat-square" alt="SwiftData"/>
   <img src="https://img.shields.io/badge/iOS-16.0+-green?style=flat-square" alt="iOS Version"/>
 </p>
 
@@ -20,7 +21,7 @@
 
 ## Meet Pip
 
-Pip is your friendly hedgehog chef guide! With 6 adorable poses, Pip helps kids through every step of their cooking adventure.
+Pip is your friendly hedgehog chef guide! With 6 adorable poses and a walking animation, Pip helps kids through every step of their cooking adventure.
 
 <p align="center">
   <img src="ChefAcademy/Assets.xcassets/Pip/pip_neutral.imageset/pip_neutral.png" width="120" alt="Pip Neutral"/>
@@ -32,7 +33,7 @@ Pip is your friendly hedgehog chef guide! With 6 adorable poses, Pip helps kids 
 </p>
 
 <p align="center">
-  <em>Neutral • Waving • Cooking • Thinking • Excited • Celebrating</em>
+  <em>Neutral - Waving - Cooking - Thinking - Excited - Celebrating</em>
 </p>
 
 ---
@@ -40,17 +41,17 @@ Pip is your friendly hedgehog chef guide! With 6 adorable poses, Pip helps kids 
 ## Game Loop
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                   PIP'S KITCHEN GARDEN                  │
-│                                                         │
-│     🌱 GROW          🍳 COOK           🫀 FEED          │
-│    ─────────  →    ─────────   →    ─────────          │
-│    Garden          Kitchen          Body               │
-│    Mini-games      Mini-games       Adventure          │
-│                                                         │
-│                    🏆 REWARDS                           │
-│              Coins, Seeds, XP, Badges                   │
-└─────────────────────────────────────────────────────────┘
++-----------------------------------------------------------+
+|                   PIP'S KITCHEN GARDEN                     |
+|                                                            |
+|    GROW           COOK            FEED                     |
+|   ---------  ->  ---------  ->  ---------                  |
+|   Garden         Kitchen        Body Buddy                 |
+|   Mini-games     Mini-games     Nutrition Viz              |
+|                                                            |
+|                   REWARDS                                  |
+|             Coins, Seeds, XP, Badges                       |
++-----------------------------------------------------------+
 ```
 
 ---
@@ -59,11 +60,85 @@ Pip is your friendly hedgehog chef guide! With 6 adorable poses, Pip helps kids 
 
 | Feature | Description |
 |---------|-------------|
-| 🌱 **Garden** | Plant, water, and harvest vegetables with fun gestures |
-| 🍳 **Kitchen** | Cook recipes through interactive mini-games (chop, mix, pour, flip!) |
-| 🫀 **Body Buddy** | Watch food travel through the digestive system |
-| ⭐ **Progression** | Earn coins, XP, badges, and unlock new recipes |
-| 🎯 **Quests** | Daily and weekly challenges to keep kids engaged |
+| **Garden** | Plant, water, and harvest 27 types of vegetables with fun gestures |
+| **Kitchen** | Cook 17 recipes through 10 interactive mini-games (chop, stir, season, peel, crack eggs, and more!) |
+| **Farm Shop** | Buy pantry ingredients with earned coins |
+| **Body Buddy** | Track how food fuels your body with organ health rings |
+| **Play & Learn** | Mini-game hub with veggie match, nutrition quiz, and chop challenges |
+| **Seed Info** | Educational veggie pages with PencilKit coloring and fun facts |
+| **Multi-User** | Family system with up to 4 children per device, parent PIN protection |
+| **Sibling Visits** | Visit your sibling's garden, see their progress, and leave likes! |
+| **Progression** | Earn coins, XP, badges, and unlock new recipes |
+| **Quests** | Daily challenges to keep kids engaged |
+
+---
+
+## Multi-User Family System
+
+The app supports multiple players per device via a family profile system:
+
+- **Family Setup** - 8-step onboarding wizard for first launch
+- **Profile Picker** - "Who's playing today?" screen with child avatars
+- **Parent PIN** - Secure Keychain-stored PIN for parent access
+- **Separate Progress** - Each child has their own garden, recipes, coins, and stats
+- **Parent Dashboard** - View children's stats, play time, and manage profiles
+- **Avatar Creator** - Boy/girl character selection with head covering options
+
+---
+
+## Sibling Garden Visits
+
+Kids can visit each other's gardens from the Home screen:
+
+1. Tap a sibling's avatar on the Home screen
+2. View their profile (level, stats, harvested veggies, recipes cooked)
+3. Tap "Visit Garden" to see their real garden (read-only)
+4. Pip greets the visitor with a fun message
+5. Tap "Cool garden!" to leave a like that the garden owner collects
+
+---
+
+## Cooking System
+
+Multi-step cooking with 10 mini-game types:
+
+| Mini-Game | Gesture | Description |
+|-----------|---------|-------------|
+| **Chop** | Tap timing | Chop veggies to the beat |
+| **Heat Pan** | Hold finger | Heat the pan to the right temperature |
+| **Add to Pan** | Drag | Drag ingredients into the pan |
+| **Stir** | Circular swipe | Stir the pot with circular gestures |
+| **Season** | Tap sprinkle | Season with taps |
+| **Peel** | Swipe down | Peel veggies with swipe gestures |
+| **Cook Timer** | Green zone timing | Stop the timer in the green zone |
+| **Wash** | Tap rapidly | Wash veggies clean |
+| **Crack Egg** | Tap to crack | Crack eggs into the bowl |
+| **Assemble** | Tap to plate | Plate the final dish |
+
+Scoring: Each mini-game scores 0-100, averaged for star rating (85+ = 3 stars, 60-84 = 2 stars, <60 = 1 star).
+
+---
+
+## Nutrition Integration
+
+Inspired by Jessie Inchauste's ("Glucose Goddess") research:
+- 17 recipes across 4 categories: breakfast, lunch, dinner, snacks
+- Zero starch-centered meals - focused on veggie-forward nutrition
+- Glucose tips on recipes explaining blood sugar impact
+- Color-coded nutrition education in Seed Info (PencilKit coloring maps ink colors to nutrients)
+
+---
+
+## Tab Structure
+
+| Tab | Icon | View | Purpose |
+|-----|------|------|---------|
+| Home | house.fill | HomeView | Main hub, sibling visits, quick actions |
+| Garden | leaf.fill | GardenView | Plant & harvest veggies (interactive map) |
+| Shop | cart.fill | FarmTabView | Pip walks to barn, then pantry shop |
+| Kitchen | fork.knife | KitchenView | Cook recipes (+ Recipe Book access) |
+| Body | figure.stand | BodyBuddyView | Organ health visualization |
+| Play | gamecontroller.fill | PlayLearnView | Mini-games hub |
 
 ---
 
@@ -75,38 +150,29 @@ The visual style is inspired by **vintage botanical watercolor illustrations** w
 
 #### Primary Colors (Backgrounds)
 
-| Color | Hex | Preview | Usage |
-|-------|-----|---------|-------|
-| **Cream** | `#F5F0E1` | ![#F5F0E1](https://via.placeholder.com/60x30/F5F0E1/F5F0E1) | Main backgrounds |
-| **Warm Cream** | `#FAF6EB` | ![#FAF6EB](https://via.placeholder.com/60x30/FAF6EB/FAF6EB) | Lighter backgrounds |
-| **Parchment** | `#EDE6D3` | ![#EDE6D3](https://via.placeholder.com/60x30/EDE6D3/EDE6D3) | Cards, surfaces |
+| Color | Hex | Usage |
+|-------|-----|-------|
+| **Cream** | `#F5F0E1` | Main backgrounds |
+| **Warm Cream** | `#FAF6EB` | Lighter backgrounds |
+| **Parchment** | `#EDE6D3` | Cards, surfaces |
 
 #### Text Colors
 
-| Color | Hex | Preview | Usage |
-|-------|-----|---------|-------|
-| **Dark Brown** | `#5D4E37` | ![#5D4E37](https://via.placeholder.com/60x30/5D4E37/5D4E37) | Headlines, emphasis |
-| **Sepia** | `#8B7355` | ![#8B7355](https://via.placeholder.com/60x30/8B7355/8B7355) | Primary text |
-| **Light Sepia** | `#A89880` | ![#A89880](https://via.placeholder.com/60x30/A89880/A89880) | Secondary text |
+| Color | Hex | Usage |
+|-------|-----|-------|
+| **Dark Brown** | `#5D4E37` | Headlines, emphasis |
+| **Sepia** | `#8B7355` | Primary text |
+| **Light Sepia** | `#A89880` | Secondary text |
 
 #### Accent Colors
 
-| Color | Hex | Preview | Usage |
-|-------|-----|---------|-------|
-| **Golden Wheat** | `#C9A227` | ![#C9A227](https://via.placeholder.com/60x30/C9A227/C9A227) | Buttons, highlights, rewards |
-| **Sage** | `#6B7B5E` | ![#6B7B5E](https://via.placeholder.com/60x30/6B7B5E/6B7B5E) | Nature accents, success states |
-| **Soft Olive** | `#8A9A7B` | ![#8A9A7B](https://via.placeholder.com/60x30/8A9A7B/8A9A7B) | Secondary accents |
-| **Terracotta** | `#B87333` | ![#B87333](https://via.placeholder.com/60x30/B87333/B87333) | Warnings, heat indicators |
-
-#### Difficulty Level Colors
-
-| Level | Color | Hex | Icon |
-|-------|-------|-----|------|
-| **Easy** | Soft Olive | `#8A9A7B` | 🌿 `leaf.fill` |
-| **Medium** | Golden Wheat | `#C9A227` | 🔥 `flame.fill` |
-| **Hard** | Terracotta | `#B87333` | 👥 `person.2.fill` |
-
----
+| Color | Hex | Usage |
+|-------|-----|-------|
+| **Golden Wheat** | `#C9A227` | Buttons, highlights, rewards |
+| **Sage** | `#6B7B5E` | Nature accents, success states |
+| **Soft Olive** | `#8A9A7B` | Secondary accents |
+| **Terracotta** | `#B87333` | Warnings, heat indicators |
+| **Warm Khaki** | `#C6BA8B` | Avatar styling, gradient accents |
 
 ### Typography
 
@@ -117,146 +183,9 @@ All fonts use **SF Rounded** (system) for a friendly, approachable feel.
 | **Large Title** | 34pt | Bold | Main screen titles |
 | **Title** | 28pt | Semibold | Section headers |
 | **Title 2** | 22pt | Semibold | Card titles |
-| **Title 3** | 20pt | Medium | Subsection headers |
 | **Headline** | 17pt | Semibold | Button text, emphasis |
 | **Body** | 17pt | Regular | Main content text |
-| **Body Bold** | 17pt | Semibold | Emphasized body text |
-| **Callout** | 16pt | Regular | Supporting information |
-| **Subheadline** | 15pt | Regular | Secondary information |
-| **Footnote** | 13pt | Regular | Small details |
 | **Caption** | 12pt | Regular | Labels, badges |
-
-#### Special Styles
-
-| Style | Size | Weight | Usage |
-|-------|------|--------|-------|
-| **Recipe Step** | 18pt | Medium | Cooking instructions |
-| **Ingredient Item** | 16pt | Regular | Ingredient lists |
-| **Timer Display** | 48pt | Light | Countdown timers |
-
----
-
-### Spacing System
-
-Consistent spacing creates visual harmony throughout the app.
-
-| Token | Value | Usage |
-|-------|-------|-------|
-| `xxs` | 4pt | Tight spacing (icon + label) |
-| `xs` | 8pt | Small gaps |
-| `sm` | 12pt | Compact spacing |
-| `md` | 16pt | Default spacing |
-| `lg` | 24pt | Section spacing |
-| `xl` | 32pt | Large gaps |
-| `xxl` | 48pt | Screen sections |
-
-#### Component Sizing
-
-| Component | Value | Notes |
-|-----------|-------|-------|
-| **Min Tap Target** | 44pt | Accessibility requirement |
-| **Button Height** | 52pt | Kid-friendly tap area |
-| **Card Corner Radius** | 16pt | Soft, rounded corners |
-| **Icon Size** | 24pt | Standard icons |
-| **Large Icon Size** | 48pt | Feature icons |
-
----
-
-### UI Components
-
-#### Cards
-```
-┌────────────────────────────────┐
-│  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░  │  ← 16pt padding
-│  ░                          ░  │
-│  ░       Card Content       ░  │  ← Parchment background (#EDE6D3)
-│  ░                          ░  │
-│  ░░░░░░░░░░░░░░░░░░░░░░░░░░░░  │  ← 16pt corner radius
-└────────────────────────────────┘    ← Soft shadow (8pt blur)
-```
-
-#### Buttons
-
-| Type | Background | Text Color | Border |
-|------|------------|------------|--------|
-| **Primary** | Golden Wheat `#C9A227` | Cream `#F5F0E1` | None |
-| **Secondary** | Parchment `#EDE6D3` | Dark Brown `#5D4E37` | Sepia 30% opacity |
-
----
-
-### Animation Guidelines
-
-| Animation | Timing | Easing |
-|-----------|--------|--------|
-| **Bouncy interactions** | 0.5s | `spring(response: 0.5, dampingFraction: 0.6)` |
-| **UI appearing** | 0.3s | `easeOut` |
-| **UI disappearing** | 0.2s | `easeIn` |
-| **Button press** | 0.15s | `easeInOut` (scale to 0.97) |
-
----
-
-### AI Image Generation (Leonardo.ai)
-
-Use these prompts with **Leonardo.ai** to generate images matching Pip's style.
-
-#### Leonardo Settings
-
-| Setting | Value |
-|---------|-------|
-| **Model** | Leonardo Phoenix |
-| **Alchemy** | ON |
-| **Style Reference** | Upload Pip image (pip_neutral or pip_waving) |
-| **Style Strength** | 0.75 - 0.80 |
-
-#### Negative Prompt (use for all)
-```
-realistic, 3d, photograph, dark, scary, detailed, complex, medical diagram, red blood
-```
-
-#### Base Style Prompt
-Add this to all prompts for consistency:
-```
-soft pencil sketch on cream paper, children's book illustration,
-gentle sepia shading, whimsical friendly character, hand-drawn feel,
-minimal details, cozy warm tones, subtle pink blush accents
-```
-
-#### Body Buddy Organ Prompts
-
-**Stomach:**
-```
-cute friendly cartoon stomach character, soft pencil sketch on cream paper,
-children's book illustration, gentle sepia shading, whimsical happy face,
-hand-drawn feel, minimal details, warm cozy style
-```
-
-**Heart:**
-```
-adorable cartoon heart organ with friendly face, soft pencil sketch,
-cream paper background, gentle sepia and pink tones, children's book style,
-whimsical character, hand-drawn minimal illustration
-```
-
-**Brain:**
-```
-cute friendly cartoon brain character, soft pencil sketch on cream paper,
-gentle sepia shading, children's educational illustration, whimsical face,
-hand-drawn cozy style, minimal simple details
-```
-
-**Intestines:**
-```
-friendly cartoon intestines character, cute happy face, soft pencil sketch,
-cream paper background, sepia tones, children's book illustration style,
-whimsical minimal hand-drawn
-```
-
-**Lungs:**
-```
-adorable cartoon lungs pair with friendly faces, soft pencil sketch,
-cream background, gentle sepia shading, children's book whimsical style,
-hand-drawn minimal cozy illustration
-```
 
 ---
 
@@ -264,8 +193,10 @@ hand-drawn minimal cozy illustration
 
 - **Language:** Swift 5.9
 - **UI Framework:** SwiftUI
-- **Architecture:** MVVM with ObservableObject
-- **Persistence:** UserDefaults (MVP) / Core Data (full version)
+- **Persistence:** SwiftData with iCloud CloudKit sync
+- **Architecture:** MVVM with ObservableObject + SwiftData @Model
+- **Security:** Keychain for parent PIN (iCloud Keychain sync)
+- **Drawing:** PencilKit (Seed Info coloring)
 - **Minimum iOS:** 16.0
 - **Target Devices:** iPhone & iPad
 
@@ -275,31 +206,69 @@ hand-drawn minimal cozy illustration
 
 ```
 ChefAcademy/
-├── ChefAcademyApp.swift      # App entry point
-├── ContentView.swift         # Main navigation
-├── GameState.swift           # Central game state manager
-│
-├── Views/
-│   ├── OnboardingView.swift      # Welcome flow
-│   ├── MeetPipViews.swift        # Meet Pip dialogue
-│   ├── AvatarCreatorView.swift   # Body Buddy creator
-│   ├── GardenView.swift          # Garden gameplay
-│   ├── PlotView.swift            # Individual garden plots
-│   └── ChopMiniGame.swift        # Chopping mini-game
-│
-├── Components/
-│   ├── PipAnimations.swift       # Pip character poses
-│   ├── BackgroundView.swift      # Scenic backgrounds
-│   └── VideoPlayerView.swift     # Video playback
-│
-├── Theme/
-│   ├── AppTheme.swift            # Colors, fonts, spacing
-│   └── AdaptiveLayout.swift      # Device adaptations
-│
-└── Assets.xcassets/
-    ├── Pip/                      # Character images
-    ├── Backgrounds/              # Scene backgrounds
-    └── AppIcon.appiconset/       # App icons
++-- ChefAcademyApp.swift        # App entry, MainTabView, HomeView, CustomTabBar
++-- GameState.swift              # Central game state, SwiftData load/save, auto-save
++-- AppTheme.swift               # Colors, fonts, spacing constants
+|
++-- Models/
+|   +-- PlayerData.swift         # @Model: coins, seeds, plots, pantry, health, likes
+|   +-- UserProfile.swift        # @Model: name, role, gender, avatar, familyID
+|   +-- FamilyProfile.swift      # @Model: familyID-based member queries
+|   +-- SessionManager.swift     # Route state machine, profile CRUD, PIN, play time
+|   +-- PINKeychain.swift        # Secure parent PIN via Keychain Services
+|   +-- AvatarModel.swift        # Gender, outfit, head covering
+|
++-- Garden/
+|   +-- GardenView.swift         # Interactive garden map with plots + draggable Pip
+|   +-- PlantingSheet.swift      # Seed selection sheet for planting
+|   +-- SeedInfoView.swift       # Educational veggie pages + PencilKit coloring
+|
++-- Kitchen/
+|   +-- KitchenView.swift        # Interactive cooking scene + Recipe Book button
+|   +-- CookingSessionView.swift # Multi-step cooking state machine
+|   +-- CookingMiniGames.swift   # 9 mini-game views
+|   +-- ChopMiniGame.swift       # Original chopping mini-game
+|   +-- CookingCompletionView.swift # Post-cooking results
+|
++-- Farm/
+|   +-- FarmTabView.swift        # Walk transition -> shop
+|   +-- FarmShopView.swift       # Grid shop for pantry items
+|
++-- Recipes/
+|   +-- RecipeCardExample.swift  # PantryItem enum, Recipe struct, GardenRecipes.all
+|   +-- RecipeDetailView.swift   # Full-screen cookbook page
+|
++-- Social/
+|   +-- SiblingProfileView.swift # Sibling stats, harvested veggies, visit garden
+|   +-- SiblingGardenView.swift  # Read-only garden visit with Pip greeting
+|   +-- PipDialogView.swift      # Game-style dialog overlay with choices
+|
++-- Body & Play/
+|   +-- BodyBuddyView.swift      # Organ health rings visualization
+|   +-- PlayLearnView.swift      # Mini-games hub (6 game cards)
+|
++-- Family Setup/
+|   +-- FamilySetupView.swift    # 8-step first-launch wizard
+|   +-- ProfilePickerView.swift  # "Who's playing today?" screen
+|   +-- AddChildFlowView.swift   # Add subsequent children
+|   +-- ParentDashboardView.swift# Child stats, play time, manage profiles
+|   +-- ParentPINEntryView.swift # PIN pad (setup + verify modes)
+|   +-- ProfileView.swift        # Player profile stats and badges
+|
++-- Onboarding/
+|   +-- OnboardingView.swift     # Original onboarding flow
+|   +-- AvatarCreatorView.swift  # Character creation (2 tabs: Outfit, Covering)
+|
++-- Components/
+|   +-- PipAnimations.swift      # Pip character poses + waving animation
+|   +-- SceneEditor.swift        # Dev tool for positioning map items
+|
++-- Assets.xcassets/
+    +-- Pip/                     # Character images (6 poses + 15 walking frames)
+    +-- AvatarCards/             # Boy (28 frames) + Girl (15 frames) animations
+    +-- Backgrounds/             # Scene backgrounds (garden, kitchen, farm)
+    +-- FarmItems/               # Pantry item images (farm_salt, farm_pepper, etc.)
+    +-- Vegetables/              # 27 veggie/fruit/berry images
 ```
 
 ---
@@ -318,6 +287,38 @@ ChefAcademy/
    ```
 
 3. Build and run on simulator or device (iOS 16.0+)
+   ```bash
+   xcodebuild -scheme ChefAcademy -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
+   ```
+
+---
+
+## Development Progress
+
+### Completed
+- [x] Core game loop: Grow -> Cook -> Feed -> Rewards
+- [x] Interactive garden with 27 plant types and plot management
+- [x] Multi-step cooking system with 10 mini-game types
+- [x] 17 veggie-forward recipes (breakfast, lunch, dinner, snacks)
+- [x] Farm Shop with pantry items and coin economy
+- [x] Multi-user family system with SwiftData + iCloud CloudKit prep
+- [x] Parent PIN protection via Keychain
+- [x] Avatar creator with gender + head covering options
+- [x] Seed Info educational pages with PencilKit coloring
+- [x] Sibling garden visits with Pip greeting and likes system
+- [x] Body Buddy organ health visualization
+- [x] Play & Learn mini-games hub
+- [x] Tab-based navigation (6 tabs: Home, Garden, Shop, Kitchen, Body, Play)
+- [x] Landscape support with adaptive tab bar
+- [x] PipDialogView game-style dialog system
+
+### In Progress
+- [ ] P0 UX Redesign: voice/audio, vibrant CTA colors, scroll cues
+- [ ] Body Buddy animated food journey through organs
+- [ ] Cooking mini-game visual feedback and scoring polish
+- [ ] 19 missing veggie/fruit/berry image assets
+- [ ] Food Encyclopedia view
+- [ ] Recipe gating by garden progress
 
 ---
 
@@ -326,9 +327,10 @@ ChefAcademy/
 **Developer:** Marina Pollak
 **Course:** PROG-360A Project Studio, Columbia College Chicago
 **Instructor:** Janell Baxter
+**Deadline:** May 15, 2026
 
 **Nutrition Research:**
-- Jessie Inchauspé ("Glucose Goddess")
+- Jessie Inchauste ("Glucose Goddess")
 - *Glucose Revolution* (2022)
 - *The Glucose Goddess Method* (2023)
 

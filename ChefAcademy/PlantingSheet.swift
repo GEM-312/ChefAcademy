@@ -149,6 +149,7 @@ struct PlantingSheet: View {
                 .background(Color.AppTheme.sage)
                 .cornerRadius(AppSpacing.cardCornerRadius)
         }
+        .buttonStyle(.plain)
         .padding(.bottom, AppSpacing.lg)
     }
 

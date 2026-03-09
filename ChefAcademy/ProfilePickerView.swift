@@ -84,6 +84,7 @@ struct ProfilePickerView: View {
                         .background(Color.AppTheme.warmCream)
                         .cornerRadius(AppSpacing.cardCornerRadius)
                     }
+                    .buttonStyle(.plain)
                 }
 
                 Spacer().frame(height: AppSpacing.xxl)

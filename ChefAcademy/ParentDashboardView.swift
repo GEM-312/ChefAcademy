@@ -12,6 +12,7 @@ struct ParentDashboardView: View {
     @EnvironmentObject var sessionManager: SessionManager
     @EnvironmentObject var gameState: GameState
     @EnvironmentObject var avatarModel: AvatarModel
+    @EnvironmentObject var authManager: AuthManager
     @Environment(\.modelContext) private var modelContext
 
     @State private var selectedChildID: UUID?
@@ -19,6 +20,8 @@ struct ParentDashboardView: View {
     @State private var childToRemove: UserProfile?
     @State private var showChangePIN = false
     @State private var showAddChild = false
+    @State private var showSignOutConfirmation = false
+    @State private var signInCoordinator: SignInCoordinator?
 
     private var children: [UserProfile] {
         guard let family = sessionManager.familyProfile else { return [] }
@@ -121,6 +124,7 @@ struct ParentDashboardView: View {
                             .background(Color.red.opacity(0.1))
                             .cornerRadius(AppSpacing.cardCornerRadius)
                         }
+                        .buttonStyle(.plain)
                     }
                     .padding(.horizontal, AppSpacing.md)
                 } else if children.isEmpty {
@@ -156,6 +160,7 @@ struct ParentDashboardView: View {
                             .background(Color.AppTheme.warmCream)
                             .cornerRadius(AppSpacing.cardCornerRadius)
                         }
+                        .buttonStyle(.plain)
                     }
 
                     Button(action: { showChangePIN = true }) {
@@ -170,6 +175,59 @@ struct ParentDashboardView: View {
                         .padding(AppSpacing.md)
                         .background(Color.AppTheme.warmCream)
                         .cornerRadius(AppSpacing.cardCornerRadius)
+                    }
+                    .buttonStyle(.plain)
+
+                    // Apple ID status + Link / Sign Out
+                    if authManager.isAuthenticated {
+                        // Signed in — show sign out option
+                        HStack {
+                            Image(systemName: "apple.logo")
+                            Text("Signed in with Apple")
+                                .font(.AppTheme.body)
+                            Spacer()
+                            Image(systemName: "checkmark.circle.fill")
+                                .foregroundColor(Color.AppTheme.sage)
+                        }
+                        .foregroundColor(Color.AppTheme.sepia)
+                        .padding(AppSpacing.md)
+                        .background(Color.AppTheme.warmCream)
+                        .cornerRadius(AppSpacing.cardCornerRadius)
+
+                        Button(action: { showSignOutConfirmation = true }) {
+                            HStack {
+                                Image(systemName: "rectangle.portrait.and.arrow.right")
+                                Text("Sign Out")
+                                Spacer()
+                            }
+                            .font(.AppTheme.body)
+                            .foregroundColor(.red.opacity(0.8))
+                            .padding(AppSpacing.md)
+                            .background(Color.red.opacity(0.05))
+                            .cornerRadius(AppSpacing.cardCornerRadius)
+                        }
+                        .buttonStyle(.plain)
+                    } else if let family = sessionManager.familyProfile, family.appleUserID.isEmpty {
+                        // Family exists but no Apple ID linked (legacy user)
+                        Button(action: { linkAppleID() }) {
+                            HStack {
+                                Image(systemName: "apple.logo")
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Link Apple ID")
+                                        .font(.AppTheme.body)
+                                    Text("Sync your family across devices")
+                                        .font(.AppTheme.caption)
+                                        .foregroundColor(Color.AppTheme.lightSepia)
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                            }
+                            .foregroundColor(Color.AppTheme.sage)
+                            .padding(AppSpacing.md)
+                            .background(Color.AppTheme.sage.opacity(0.1))
+                            .cornerRadius(AppSpacing.cardCornerRadius)
+                        }
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal, AppSpacing.md)
@@ -229,6 +287,34 @@ struct ParentDashboardView: View {
                 .environmentObject(gameState)
                 .environmentObject(avatarModel)
         }
+        .alert("Sign Out?", isPresented: $showSignOutConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Sign Out", role: .destructive) {
+                sessionManager.signOut(
+                    authManager: authManager,
+                    gameState: gameState,
+                    avatarModel: avatarModel
+                )
+            }
+        } message: {
+            Text("Your family data will stay saved. You can sign back in anytime to access it.")
+        }
+    }
+
+    // MARK: - Link Apple ID (for legacy users who didn't have auth)
+
+    private func linkAppleID() {
+        // Store the coordinator in @State so it stays alive while Apple's
+        // auth sheet is showing (otherwise ARC would deallocate it)
+        let coordinator = SignInCoordinator(authManager: authManager) { [self] in
+            // After successful sign-in, link the Apple ID to the existing family
+            if let userID = authManager.appleUserID {
+                sessionManager.familyProfile?.appleUserID = userID
+                try? modelContext.save()
+            }
+        }
+        signInCoordinator = coordinator
+        coordinator.signIn()
     }
 }
 
@@ -300,4 +386,5 @@ struct StatCard: View {
         .environmentObject(SessionManager())
         .environmentObject(GameState())
         .environmentObject(AvatarModel())
+        .environmentObject(AuthManager())
 }
