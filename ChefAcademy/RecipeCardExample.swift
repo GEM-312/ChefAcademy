@@ -163,6 +163,58 @@ enum PantryItem: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Nutrients in this pantry item (for knowledge cards)
+    var nutrients: [NutrientType] {
+        switch self {
+        case .salt: return [.minerals]
+        case .pepper: return [.antioxidants, .vitaminC]
+        case .flour: return [.carbs, .fiber, .iron]
+        case .cinnamon: return [.antioxidants, .manganese]
+        case .butter: return [.fat, .vitaminA]
+        case .oliveOil: return [.healthyFats, .vitaminE, .antioxidants]
+        case .vegetableOil: return [.healthyFats, .vitaminE]
+        case .eggs: return [.protein, .fat, .vitaminD, .vitaminB6]
+        case .milk: return [.calcium, .protein, .vitaminD]
+        case .cheese: return [.calcium, .protein, .fat]
+        case .cream: return [.fat, .vitaminA, .calcium]
+        case .greekYogurt: return [.protein, .probiotics, .calcium]
+        case .chicken: return [.protein, .vitaminB6, .zinc]
+        case .groundBeef: return [.protein, .iron, .zinc]
+        case .nuts: return [.healthyFats, .protein, .magnesium, .omega3]
+        case .soySauce: return [.minerals, .protein]
+        case .tomatoSauce: return [.vitaminC, .antioxidants]
+        case .vinegar: return [.antioxidants, .minerals]
+        case .honey: return [.antioxidants, .carbs]
+        case .lemon: return [.vitaminC, .antioxidants]
+        }
+    }
+
+    /// Fun fact about this pantry item
+    var funFact: String {
+        switch self {
+        case .salt: return "Salt is one of the oldest seasonings in the world! Roman soldiers were sometimes paid in salt — that's where the word 'salary' comes from."
+        case .pepper: return "Pepper was once so valuable it was called 'black gold'! In the Middle Ages, people used peppercorns as money."
+        case .flour: return "It takes about 10,000 grains of wheat to make enough flour for one loaf of bread! Flour has been made for over 30,000 years."
+        case .cinnamon: return "Cinnamon comes from the bark of a tree! Ancient Egyptians used it as a gift for kings. It has more antioxidants than most foods on Earth."
+        case .butter: return "It takes about 21 pounds of milk to make just 1 pound of butter! Butter has been made for over 4,000 years."
+        case .oliveOil: return "Olive trees can live for thousands of years! The oldest known olive tree is over 3,000 years old and still produces olives in Greece."
+        case .vegetableOil: return "Vegetable oil can be made from many plants — soybeans, sunflowers, corn, and more! It helps your body absorb vitamins from vegetables."
+        case .eggs: return "A hen turns her eggs nearly 50 times a day to keep the yolk from sticking! Eggs contain every vitamin except Vitamin C."
+        case .milk: return "Cows give about 6 gallons of milk every day! Milk is one of the best sources of calcium, which makes your bones super strong."
+        case .cheese: return "There are over 1,800 different types of cheese in the world! It takes about 10 pounds of milk to make just 1 pound of cheese."
+        case .cream: return "Cream rises to the top of fresh milk because it's lighter than the rest! Whipping cream traps tiny air bubbles, which is what makes whipped cream fluffy."
+        case .greekYogurt: return "Greek yogurt has twice as much protein as regular yogurt! The good bacteria in it (probiotics) help keep your tummy happy and healthy."
+        case .chicken: return "Chicken is the most popular meat in the world! It's packed with protein that helps build strong muscles. There are more chickens on Earth than people!"
+        case .groundBeef: return "Beef is one of the best sources of iron, which helps carry oxygen in your blood! Cows have 4 stomachs to help them digest their food."
+        case .nuts: return "A single walnut looks like a tiny brain — and it's actually great for your brain! Nuts are one of the best plant sources of healthy fats and omega-3."
+        case .soySauce: return "Soy sauce was invented in China over 2,000 years ago! It's made by fermenting soybeans — tiny living things break down the beans to create the flavor."
+        case .tomatoSauce: return "Tomato sauce is actually MORE nutritious than raw tomatoes! Cooking tomatoes releases more lycopene, a powerful antioxidant that protects your heart."
+        case .vinegar: return "Vinegar means 'sour wine' in French! People have used it for cooking, cleaning, and even medicine for over 5,000 years."
+        case .honey: return "Honey never goes bad — scientists found 3,000-year-old honey in Egyptian tombs that was still edible! Bees visit about 2 million flowers to make one jar."
+        case .lemon: return "Lemons have more sugar than strawberries — the sour taste comes from citric acid hiding the sweetness! Lemon juice can be used as invisible ink."
+        }
+    }
+
     /// Shop category for grouping items
     var shopCategory: ShopCategory {
         switch self {

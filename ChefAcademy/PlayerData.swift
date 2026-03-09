@@ -46,7 +46,7 @@ struct RecipeStarData: Codable {
 class PlayerData {
 
     // Currency
-    var coins: Int = 100
+    var coins: Int = 0
     var xp: Int = 0
     var playerLevel: Int = 1
 
@@ -73,6 +73,10 @@ class PlayerData {
     // Social
     var gardenLikes: Int = 0
 
+    // Knowledge rewards — tracks which knowledge cards have been claimed (one-time)
+    // Format: "seed_carrot_vitaminA", "seed_carrot_color", "pantry_eggs_protein", etc.
+    var claimedKnowledgeIDs: [String] = []
+
     // Achievements
     var completedBadgeIDs: [String] = []
 
@@ -83,7 +87,7 @@ class PlayerData {
     var ownerID: UUID? = nil
 
     init(
-        coins: Int = 100,
+        coins: Int = 0,
         xp: Int = 0,
         playerLevel: Int = 1,
         seedsData: [SeedData] = [],

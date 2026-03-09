@@ -20,6 +20,7 @@ struct FarmShopView: View {
     @State private var showPurchaseConfirm = false
     @State private var purchasedItemName = ""
     @State private var bounceItem: PantryItem?
+    @State private var selectedInfoItem: PantryItem?
 
     // Filter items by category
     var filteredItems: [PantryItem] {
@@ -69,10 +70,14 @@ struct FarmShopView: View {
         }
         .navigationViewStyle(.stack)
         // Purchase success popup
-        .alert("Purchased! 🛒", isPresented: $showPurchaseConfirm) {
+        .alert("Purchased!", isPresented: $showPurchaseConfirm) {
             Button("Yay!", role: .cancel) { }
         } message: {
             Text("You bought \(purchasedItemName)! Check your pantry.")
+        }
+        .fullScreenCover(item: $selectedInfoItem) { item in
+            PantryInfoView(item: item)
+                .environmentObject(gameState)
         }
     }
 
@@ -166,6 +171,9 @@ struct FarmShopView: View {
                     isBouncing: bounceItem == item,
                     onBuy: {
                         buyItem(item)
+                    },
+                    onInfo: {
+                        selectedInfoItem = item
                     }
                 )
             }
@@ -223,11 +231,12 @@ struct ShopItemCard: View {
     let canAfford: Bool
     let isBouncing: Bool
     let onBuy: () -> Void
+    var onInfo: (() -> Void)? = nil
 
     var body: some View {
-        Button(action: onBuy) {
-            VStack(spacing: 0) {
-                // Farm item illustration — fixed height, all cards same size
+        VStack(spacing: 0) {
+            // Tappable image area → opens info card
+            Button(action: { onInfo?() }) {
                 Image(item.imageName)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
@@ -240,20 +249,24 @@ struct ShopItemCard: View {
                     .scaleEffect(isBouncing ? 1.1 : 1.0)
                     .animation(.spring(response: 0.3, dampingFraction: 0.5), value: isBouncing)
                     .padding(.top, 4)
+            }
+            .buttonStyle(.plain)
 
-                // Info area below the image
-                VStack(spacing: 1) {
-                    Text(item.displayName)
-                        .font(.AppTheme.caption)
-                        .foregroundColor(Color.AppTheme.darkBrown)
-                        .lineLimit(1)
+            // Info area below the image
+            VStack(spacing: 1) {
+                Text(item.displayName)
+                    .font(.AppTheme.caption)
+                    .foregroundColor(Color.AppTheme.darkBrown)
+                    .lineLimit(1)
 
-                    if ownedQuantity > 0 {
-                        Text("x\(ownedQuantity)")
-                            .font(.system(size: 10))
-                            .foregroundColor(Color.AppTheme.sepia)
-                    }
+                if ownedQuantity > 0 {
+                    Text("x\(ownedQuantity)")
+                        .font(.system(size: 10))
+                        .foregroundColor(Color.AppTheme.sepia)
+                }
 
+                // Buy button
+                Button(action: onBuy) {
                     HStack(spacing: 2) {
                         Image(systemName: "circle.fill")
                             .font(.system(size: 8))
@@ -261,18 +274,18 @@ struct ShopItemCard: View {
                         Text("\(item.shopPrice)")
                             .font(.system(size: 10))
                     }
-                    .foregroundColor(Color.AppTheme.lightSepia)
+                    .foregroundColor(canAfford ? Color.AppTheme.darkBrown : Color.AppTheme.lightSepia)
                 }
-                .padding(.vertical, 4)
+                .buttonStyle(.plain)
+                .disabled(!canAfford)
             }
-            .frame(maxWidth: .infinity)
-            .background(Color.AppTheme.warmCream)
-            .cornerRadius(12)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .padding(.vertical, 4)
         }
-        .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
+        .background(Color.AppTheme.warmCream)
+        .cornerRadius(12)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
         .opacity(canAfford ? 1.0 : 0.5)
-        .disabled(!canAfford)
     }
 }
 

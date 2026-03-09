@@ -123,7 +123,7 @@ private let vegetableFunFacts: [VegetableType: String] = [
 
 // MARK: - Nutrient Emoji Mapping
 
-private extension NutrientType {
+extension NutrientType {
     var emoji: String {
         switch self {
         case .vitaminA:    return "👁️"
@@ -137,6 +137,17 @@ private extension NutrientType {
         case .healthyFats: return "🧠"
         case .antioxidants:return "✨"
         case .hydration:   return "💧"
+        case .protein:     return "💪"
+        case .fat:         return "⚡"
+        case .carbs:       return "🔥"
+        case .minerals:    return "🪨"
+        case .probiotics:  return "🦠"
+        case .vitaminD:    return "☀️"
+        case .vitaminE:    return "🌿"
+        case .omega3:      return "🐟"
+        case .magnesium:   return "🧲"
+        case .zinc:        return "🛡️"
+        case .manganese:   return "🦴"
         }
     }
 
@@ -153,7 +164,23 @@ private extension NutrientType {
         case .healthyFats: return "brain.head.profile"
         case .antioxidants:return "shield.fill"
         case .hydration:   return "figure.run"
+        case .protein:     return "figure.strengthtraining.traditional"
+        case .fat:         return "bolt.fill"
+        case .carbs:       return "flame.fill"
+        case .minerals:    return "circle.grid.3x3.fill"
+        case .probiotics:  return "stomach"
+        case .vitaminD:    return "sun.max.fill"
+        case .vitaminE:    return "leaf.fill"
+        case .omega3:      return "brain.head.profile"
+        case .magnesium:   return "figure.strengthtraining.traditional"
+        case .zinc:        return "shield.fill"
+        case .manganese:   return "figure.stand"
         }
+    }
+
+    /// Coin reward for tapping this nutrient knowledge card
+    var coinReward: Int {
+        return 5
     }
 }
 
@@ -229,6 +256,7 @@ struct VeggieCanvasView: UIViewRepresentable {
 struct SeedInfoView: View {
     let seed: Seed
     @Environment(\.dismiss) var dismiss
+    @EnvironmentObject var gameState: GameState
 
     // Appear animation
     @State private var appeared = false
@@ -239,7 +267,15 @@ struct SeedInfoView: View {
     @State private var showPipTip = false
     @State private var showToolPicker = false
 
+    // Coin reward animation
+    @State private var showCoinReward: String? = nil
+    @State private var coloringRewardClaimed = false
+
     private var veggie: VegetableType { seed.vegetableType }
+    private var colorKnowledgeID: String { "seed_\(veggie.rawValue)_color" }
+    private func nutrientKnowledgeID(_ nutrient: NutrientType) -> String {
+        "seed_\(veggie.rawValue)_\(nutrient.rawValue)"
+    }
 
     var body: some View {
         ZStack {
@@ -289,10 +325,27 @@ struct SeedInfoView: View {
                 .padding(.top, 60) // room for close button
             }
 
-            // MARK: - Close Button
+            // MARK: - Close Button + Coin Counter
             VStack {
                 HStack {
+                    // Coin display
+                    HStack(spacing: 6) {
+                        Image(systemName: "circle.fill")
+                            .foregroundColor(Color.AppTheme.goldenWheat)
+                            .font(.system(size: 14))
+                        Text("\(gameState.coins)")
+                            .font(.AppTheme.headline)
+                            .foregroundColor(Color.AppTheme.darkBrown)
+                    }
+                    .padding(.horizontal, AppSpacing.md)
+                    .padding(.vertical, AppSpacing.xs)
+                    .background(Color.AppTheme.warmCream)
+                    .cornerRadius(20)
+                    .padding(.leading, AppSpacing.md)
+                    .padding(.top, AppSpacing.md)
+
                     Spacer()
+
                     Button {
                         dismiss()
                     } label: {
@@ -301,11 +354,26 @@ struct SeedInfoView: View {
                             .foregroundColor(Color.AppTheme.sepia.opacity(0.6))
                             .padding(AppSpacing.md)
                     }
+                    .buttonStyle(.plain)
                 }
                 Spacer()
             }
+
+            // MARK: - Floating Coin Reward
+            if let reward = showCoinReward {
+                VStack {
+                    Text(reward)
+                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .foregroundColor(Color.AppTheme.goldenWheat)
+                        .shadow(color: .black.opacity(0.2), radius: 4, y: 2)
+                        .transition(.scale.combined(with: .opacity))
+                    Spacer()
+                }
+                .padding(.top, 60)
+            }
         }
         .onAppear {
+            coloringRewardClaimed = gameState.isKnowledgeClaimed(colorKnowledgeID)
             withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
                 appeared = true
             }
@@ -341,6 +409,18 @@ struct SeedInfoView: View {
                                 detectedColorChoice = newChoice
                                 withAnimation(.easeIn(duration: 0.2)) {
                                     showPipTip = true
+                                }
+                            }
+                        }
+                        // Reward for coloring (one-time per veggie)
+                        if !coloringRewardClaimed {
+                            if gameState.claimKnowledgeReward(id: colorKnowledgeID, coins: 5) {
+                                coloringRewardClaimed = true
+                                withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+                                    showCoinReward = "+5"
+                                }
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                                    withAnimation { showCoinReward = nil }
                                 }
                             }
                         }
@@ -508,9 +588,15 @@ struct SeedInfoView: View {
 
     private var nutrientsSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("What's Inside")
-                .font(.custom("Georgia", size: 20).bold())
-                .foregroundColor(Color.AppTheme.darkBrown)
+            HStack {
+                Text("What's Inside")
+                    .font(.custom("Georgia", size: 20).bold())
+                    .foregroundColor(Color.AppTheme.darkBrown)
+                Spacer()
+                Text("Tap to learn!")
+                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .foregroundColor(Color.AppTheme.goldenWheat)
+            }
 
             VStack(spacing: AppSpacing.xs) {
                 ForEach(veggie.nutrients, id: \.rawValue) { nutrient in
@@ -522,56 +608,119 @@ struct SeedInfoView: View {
     }
 
     private func nutrientRow(_ nutrient: NutrientType) -> some View {
-        HStack(spacing: AppSpacing.md) {
-            Text(nutrient.emoji)
-                .font(.system(size: 26))
-                .frame(width: 36)
+        let knowledgeID = nutrientKnowledgeID(nutrient)
+        let isClaimed = gameState.isKnowledgeClaimed(knowledgeID)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(nutrient.rawValue)
-                    .font(.system(size: 16, weight: .semibold, design: .rounded))
-                    .foregroundColor(Color.AppTheme.darkBrown)
-
-                HStack(spacing: 4) {
-                    Image(systemName: nutrient.organIcon)
-                        .font(.system(size: 12))
-                        .foregroundColor(Color.AppTheme.sage)
-
-                    Text("Helps your \(nutrient.benefitsOrgan)")
-                        .font(.system(size: 13, weight: .regular, design: .rounded))
-                        .foregroundColor(Color.AppTheme.sepia)
+        return Button(action: {
+            if gameState.claimKnowledgeReward(id: knowledgeID, coins: nutrient.coinReward) {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+                    showCoinReward = "+\(nutrient.coinReward)"
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                    withAnimation { showCoinReward = nil }
                 }
             }
+        }) {
+            HStack(spacing: AppSpacing.md) {
+                Text(nutrient.emoji)
+                    .font(.system(size: 26))
+                    .frame(width: 36)
 
-            Spacer()
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(nutrient.rawValue)
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .foregroundColor(Color.AppTheme.darkBrown)
+
+                    HStack(spacing: 4) {
+                        Image(systemName: nutrient.organIcon)
+                            .font(.system(size: 12))
+                            .foregroundColor(Color.AppTheme.sage)
+
+                        Text("Helps your \(nutrient.benefitsOrgan)")
+                            .font(.system(size: 13, weight: .regular, design: .rounded))
+                            .foregroundColor(Color.AppTheme.sepia)
+                    }
+                }
+
+                Spacer()
+
+                if isClaimed {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundColor(Color.AppTheme.sage)
+                        .font(.system(size: 18))
+                } else {
+                    HStack(spacing: 2) {
+                        Image(systemName: "circle.fill")
+                            .foregroundColor(Color.AppTheme.goldenWheat)
+                            .font(.system(size: 10))
+                        Text("+\(nutrient.coinReward)")
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .foregroundColor(Color.AppTheme.goldenWheat)
+                    }
+                }
+            }
+            .padding(AppSpacing.md)
+            .background(isClaimed ? Color.AppTheme.sage.opacity(0.1) : Color.AppTheme.parchment.opacity(0.6))
+            .cornerRadius(12)
         }
-        .padding(AppSpacing.md)
-        .background(Color.AppTheme.parchment.opacity(0.6))
-        .cornerRadius(12)
+        .buttonStyle(.plain)
     }
 
     // MARK: - Fun Fact Section
 
-    private var funFactSection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            HStack(spacing: AppSpacing.xs) {
-                Image(systemName: "lightbulb.fill")
-                    .foregroundColor(Color.AppTheme.goldenWheat)
-                Text("Fun Fact!")
-                    .font(.custom("Georgia", size: 20).bold())
-                    .foregroundColor(Color.AppTheme.darkBrown)
-            }
+    private var funFactKnowledgeID: String {
+        "seed_\(veggie.rawValue)_funfact"
+    }
 
-            Text(vegetableFunFacts[veggie] ?? "This vegetable is full of surprises!")
-                .font(.system(size: 16, weight: .regular, design: .rounded))
-                .foregroundColor(Color.AppTheme.sepia)
-                .lineSpacing(4)
-                .fixedSize(horizontal: false, vertical: true)
+    private var funFactSection: some View {
+        let isClaimed = gameState.isKnowledgeClaimed(funFactKnowledgeID)
+
+        return Button(action: {
+            if gameState.claimKnowledgeReward(id: funFactKnowledgeID, coins: 5) {
+                withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+                    showCoinReward = "+5"
+                }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                    withAnimation { showCoinReward = nil }
+                }
+            }
+        }) {
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                HStack(spacing: AppSpacing.xs) {
+                    Image(systemName: "lightbulb.fill")
+                        .foregroundColor(Color.AppTheme.goldenWheat)
+                    Text("Fun Fact!")
+                        .font(.custom("Georgia", size: 20).bold())
+                        .foregroundColor(Color.AppTheme.darkBrown)
+                    Spacer()
+                    if isClaimed {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(Color.AppTheme.sage)
+                            .font(.system(size: 18))
+                    } else {
+                        HStack(spacing: 2) {
+                            Image(systemName: "circle.fill")
+                                .foregroundColor(Color.AppTheme.goldenWheat)
+                                .font(.system(size: 10))
+                            Text("+5")
+                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                                .foregroundColor(Color.AppTheme.goldenWheat)
+                        }
+                    }
+                }
+
+                Text(vegetableFunFacts[veggie] ?? "This vegetable is full of surprises!")
+                    .font(.system(size: 16, weight: .regular, design: .rounded))
+                    .foregroundColor(Color.AppTheme.sepia)
+                    .lineSpacing(4)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .padding(AppSpacing.lg)
+            .background(isClaimed ? Color.AppTheme.sage.opacity(0.1) : Color.AppTheme.warmCream)
+            .cornerRadius(AppSpacing.cardCornerRadius)
+            .shadow(color: Color.AppTheme.sepia.opacity(0.08), radius: 6, y: 3)
         }
-        .padding(AppSpacing.lg)
-        .background(Color.AppTheme.warmCream)
-        .cornerRadius(AppSpacing.cardCornerRadius)
-        .shadow(color: Color.AppTheme.sepia.opacity(0.08), radius: 6, y: 3)
+        .buttonStyle(.plain)
         .padding(.horizontal, AppSpacing.lg)
     }
 }

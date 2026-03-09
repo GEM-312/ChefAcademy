@@ -105,6 +105,12 @@ class GameState: ObservableObject {
     @Published var gardenLikes: Int = 0
 
     // ============================================
+    // KNOWLEDGE REWARDS (one-time coin earnings)
+    // ============================================
+
+    @Published var claimedKnowledgeIDs: Set<String> = []
+
+    // ============================================
     // QUESTS & ACHIEVEMENTS
     // ============================================
 
@@ -131,6 +137,20 @@ class GameState: ObservableObject {
         }
         saveToStore()
         return true
+    }
+
+    /// Claim a one-time knowledge reward. Returns true if newly claimed, false if already claimed.
+    @discardableResult
+    func claimKnowledgeReward(id: String, coins reward: Int) -> Bool {
+        guard !claimedKnowledgeIDs.contains(id) else { return false }
+        claimedKnowledgeIDs.insert(id)
+        addCoins(reward)
+        return true
+    }
+
+    /// Check if a knowledge reward has been claimed
+    func isKnowledgeClaimed(_ id: String) -> Bool {
+        claimedKnowledgeIDs.contains(id)
     }
 
     /// Add XP and check for level up
@@ -303,6 +323,9 @@ class GameState: ObservableObject {
         // Social
         gardenLikes = saved.gardenLikes
 
+        // Knowledge rewards
+        claimedKnowledgeIDs = Set(saved.claimedKnowledgeIDs)
+
         // Achievements
         completedBadgeIDs = Set(saved.completedBadgeIDs)
     }
@@ -389,6 +412,9 @@ class GameState: ObservableObject {
         // Social
         saved.gardenLikes = gardenLikes
 
+        // Knowledge rewards
+        saved.claimedKnowledgeIDs = Array(claimedKnowledgeIDs)
+
         // Achievements
         saved.completedBadgeIDs = Array(completedBadgeIDs)
 
@@ -399,7 +425,7 @@ class GameState: ObservableObject {
 
     /// Reset all game state to new-player defaults
     func resetToDefaults() {
-        coins = 100
+        coins = 0
         xp = 0
         playerLevel = 1
         seeds = Seed.starterSeeds
@@ -415,6 +441,7 @@ class GameState: ObservableObject {
         immuneHealth = 50
         energyLevel = 50
         gardenLikes = 0
+        claimedKnowledgeIDs = []
         dailyQuests = Quest.generateDailyQuests()
         completedBadgeIDs = []
     }
@@ -786,6 +813,18 @@ enum NutrientType: String {
     case healthyFats = "Healthy Fats"
     case antioxidants = "Antioxidants"
     case hydration = "Hydration"
+    // Pantry-specific nutrients
+    case protein = "Protein"
+    case fat = "Fat"
+    case carbs = "Carbs"
+    case minerals = "Minerals"
+    case probiotics = "Probiotics"
+    case vitaminD = "Vitamin D"
+    case vitaminE = "Vitamin E"
+    case omega3 = "Omega-3"
+    case magnesium = "Magnesium"
+    case zinc = "Zinc"
+    case manganese = "Manganese"
 
     /// Which Body Buddy organ this helps
     var benefitsOrgan: String {
@@ -801,6 +840,17 @@ enum NutrientType: String {
         case .healthyFats: return "Brain"
         case .antioxidants: return "Immune System"
         case .hydration: return "Whole Body"
+        case .protein: return "Muscles"
+        case .fat: return "Energy"
+        case .carbs: return "Energy"
+        case .minerals: return "Whole Body"
+        case .probiotics: return "Digestive System"
+        case .vitaminD: return "Bones"
+        case .vitaminE: return "Skin"
+        case .omega3: return "Brain"
+        case .magnesium: return "Muscles"
+        case .zinc: return "Immune System"
+        case .manganese: return "Bones"
         }
     }
 }
