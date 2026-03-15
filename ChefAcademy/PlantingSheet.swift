@@ -57,12 +57,8 @@ struct PlantingSheet: View {
                     }
                     .padding(.top, isIPad ? AppSpacing.xl : AppSpacing.lg)
 
-                    // MARK: - Seed Options
-                    if gameState.seeds.isEmpty {
-                        noSeedsView
-                    } else {
-                        seedGridView
-                    }
+                    // MARK: - Seed Options (owned + buyable)
+                    seedGridView
 
                     // MARK: - Plant Button
                     if let seed = selectedSeed, seed.quantity > 0 {
@@ -118,15 +114,43 @@ struct PlantingSheet: View {
             columns: Array(repeating: GridItem(.flexible(), spacing: gridSpacing), count: gridColumns),
             spacing: gridSpacing
         ) {
-            ForEach(gameState.seeds) { seed in
+            // Owned seeds first, then unowned
+            let owned = VegetableType.allCases.filter { veg in
+                gameState.seeds.contains(where: { $0.vegetableType == veg && $0.quantity > 0 })
+            }
+            let unowned = VegetableType.allCases.filter { veg in
+                !gameState.seeds.contains(where: { $0.vegetableType == veg && $0.quantity > 0 })
+            }
+
+            ForEach(owned, id: \.self) { veg in
+                let seed = gameState.seeds.first(where: { $0.vegetableType == veg })!
                 SeedOptionCard(
                     seed: seed,
-                    isSelected: selectedSeed?.vegetableType == seed.vegetableType,
+                    isSelected: selectedSeed?.vegetableType == veg,
                     imageSize: seedImageSize,
                     isIPad: isIPad,
                     onSelect: {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                             selectedSeed = seed
+                        }
+                    }
+                )
+            }
+
+            ForEach(unowned, id: \.self) { veg in
+                BuyableSeedCard(
+                    vegType: veg,
+                    imageSize: seedImageSize,
+                    isIPad: isIPad,
+                    canAfford: gameState.coins >= veg.seedCost,
+                    onBuy: {
+                        if gameState.buySeed(veg) {
+                            // After buying, select the new seed
+                            if let seed = gameState.seeds.first(where: { $0.vegetableType == veg }) {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    selectedSeed = seed
+                                }
+                            }
                         }
                     }
                 )
@@ -195,7 +219,7 @@ struct SeedOptionCard: View {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: imageSize, height: imageSize)
-                    .opacity(0.8)
+                    .opacity(0.85)
 
                 // Vegetable name
                 Text(seed.vegetableType.displayName)
@@ -233,6 +257,74 @@ struct SeedOptionCard: View {
 
     var growthTimeText: String {
         let seconds = Int(seed.vegetableType.growthTime)
+        if seconds < 60 {
+            return "\(seconds)s"
+        } else {
+            return "\(seconds / 60)m"
+        }
+    }
+}
+
+// MARK: - Buyable Seed Card
+
+struct BuyableSeedCard: View {
+    let vegType: VegetableType
+    var imageSize: CGFloat = 80
+    var isIPad: Bool = false
+    let canAfford: Bool
+    let onBuy: () -> Void
+
+    var body: some View {
+        Button(action: onBuy) {
+            VStack(spacing: isIPad ? AppSpacing.sm : AppSpacing.xs) {
+                Image(vegType.imageName)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: imageSize, height: imageSize)
+                    .opacity(0.4)
+                    .saturation(0.3)
+
+                Text(vegType.displayName)
+                    .font(isIPad ? .AppTheme.headline : .AppTheme.caption)
+                    .foregroundColor(Color.AppTheme.darkBrown)
+                    .lineLimit(1)
+
+                // Price tag
+                HStack(spacing: 3) {
+                    Image(systemName: "circle.fill")
+                        .foregroundColor(Color.AppTheme.goldenWheat)
+                        .font(.system(size: isIPad ? 12 : 10))
+                    Text("\(vegType.seedCost)")
+                        .font(.system(size: isIPad ? 14 : 12, weight: .semibold, design: .rounded))
+                        .foregroundColor(canAfford ? Color.AppTheme.goldenWheat : Color.AppTheme.sepia.opacity(0.5))
+                }
+
+                // Growth time
+                HStack(spacing: 2) {
+                    Image(systemName: "clock")
+                        .font(.system(size: isIPad ? 14 : 10))
+                    Text(growthTimeText)
+                        .font(.system(size: isIPad ? 14 : 10))
+                }
+                .foregroundColor(Color.AppTheme.lightSepia)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(isIPad ? AppSpacing.md : AppSpacing.sm)
+            .background(Color.AppTheme.warmCream.opacity(0.5))
+            .cornerRadius(isIPad ? 16 : 12)
+            .overlay(
+                RoundedRectangle(cornerRadius: isIPad ? 16 : 12)
+                    .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [4]))
+                    .foregroundColor(Color.AppTheme.sepia.opacity(0.3))
+            )
+        }
+        .buttonStyle(.plain)
+        .opacity(canAfford ? 1.0 : 0.5)
+        .disabled(!canAfford)
+    }
+
+    var growthTimeText: String {
+        let seconds = Int(vegType.growthTime)
         if seconds < 60 {
             return "\(seconds)s"
         } else {

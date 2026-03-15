@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import Combine
+import WeatherKit
 
 @main
 struct ChefAcademyApp: App {
@@ -16,6 +17,9 @@ struct ChefAcademyApp: App {
     @StateObject private var gameState = GameState()
     @StateObject private var sessionManager = SessionManager()
     @StateObject private var authManager = AuthManager()
+
+    // Weather service — real weather affects garden growth!
+    @ObservedObject private var weatherService = GardenWeatherService.shared
 
     // SwiftData container — now includes FamilyProfile & UserProfile
     private let modelContainer: ModelContainer
@@ -91,6 +95,9 @@ struct ChefAcademyApp: App {
                     }
 
                     gameState.startAutoSave()
+
+                    // Start weather service for garden weather effects
+                    weatherService.startPeriodicRefresh()
 
                     // Register for silent push notifications so CloudKit
                     // can tell this device when data changed on another device.
@@ -279,6 +286,7 @@ struct HomeView: View {
     @State private var showSwitchConfirm = false
     @State private var showPINForDashboard = false
     @State private var selectedSibling: UserProfile?
+    @State private var showAskPip = false
 
     private var siblings: [UserProfile] {
         guard let family = sessionManager.familyProfile,
@@ -397,6 +405,7 @@ struct HomeView: View {
                             QuickActionCard(icon: "🛒", title: "Farm Shop", color: Color.AppTheme.terracotta, action: { selectedTab = .shop })
                             QuickActionCard(icon: "🫀", title: "Body Buddy", color: .red.opacity(0.7), action: { selectedTab = .bodyBuddy })
                             QuickActionCard(icon: "🎮", title: "Play Games", color: .purple.opacity(0.7), action: { selectedTab = .playLearn })
+                            QuickActionCard(icon: "💬", title: "Ask Pip!", color: Color.AppTheme.sage, action: { showAskPip = true })
                         }
                         .padding(.horizontal, AppSpacing.md)
                     }
@@ -555,6 +564,9 @@ struct HomeView: View {
                 sibling: sibling,
                 onBack: { selectedSibling = nil }
             )
+        }
+        .sheet(isPresented: $showAskPip) {
+            AskPipView()
         }
     }
 

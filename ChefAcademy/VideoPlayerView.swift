@@ -225,6 +225,77 @@ struct VideoPlayerWithFallback: View {
     }
 }
 
+// MARK: - One-Shot Video Player (plays once, no loop)
+
+struct OneShotVideoPlayer: UIViewRepresentable {
+    let videoName: String
+    let fileExtension: String
+
+    func makeUIView(context: Context) -> OneShotPlayerUIView {
+        let view = OneShotPlayerUIView()
+        view.configure(videoName: videoName, fileExtension: fileExtension)
+        return view
+    }
+
+    func updateUIView(_ uiView: OneShotPlayerUIView, context: Context) {
+        // Replay if videoName changes
+        uiView.configure(videoName: videoName, fileExtension: fileExtension)
+    }
+}
+
+class OneShotPlayerUIView: UIView {
+    private var player: AVPlayer?
+    private var playerLayer: AVPlayerLayer?
+    private var currentVideo: String?
+
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        backgroundColor = .clear
+    }
+
+    required init?(coder: NSCoder) {
+        super.init(coder: coder)
+        backgroundColor = .clear
+    }
+
+    func configure(videoName: String, fileExtension: String) {
+        // Don't re-configure if same video
+        guard currentVideo != videoName else { return }
+        currentVideo = videoName
+
+        // Clean up previous player
+        player?.pause()
+        playerLayer?.removeFromSuperlayer()
+
+        guard let url = Bundle.main.url(forResource: videoName, withExtension: fileExtension) else {
+            return
+        }
+
+        let playerItem = AVPlayerItem(url: url)
+        let avPlayer = AVPlayer(playerItem: playerItem)
+        self.player = avPlayer
+
+        let layer = AVPlayerLayer(player: avPlayer)
+        layer.videoGravity = .resizeAspectFill
+        layer.backgroundColor = UIColor.clear.cgColor
+        self.playerLayer = layer
+        self.layer.addSublayer(layer)
+
+        avPlayer.isMuted = true
+        avPlayer.play() // Plays once, no loop
+    }
+
+    override func layoutSubviews() {
+        super.layoutSubviews()
+        playerLayer?.frame = bounds
+    }
+
+    deinit {
+        player?.pause()
+        playerLayer?.removeFromSuperlayer()
+    }
+}
+
 // MARK: - Preview
 
 #Preview("Video Player") {

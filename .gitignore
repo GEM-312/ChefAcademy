@@ -27,6 +27,10 @@ Carthage/Build/
 node_modules/
 package-lock.json
 
+# API Keys / Secrets
+Secrets.xcconfig
+**/APIKeys.swift
+
 # Other
 *.log
 *.tmp

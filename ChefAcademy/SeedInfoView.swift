@@ -283,7 +283,7 @@ struct SeedInfoView: View {
             Color.AppTheme.cream
                 .ignoresSafeArea()
 
-            ScrollView(showsIndicators: false) {
+            ScrollView(.vertical, showsIndicators: false) {
                 VStack(spacing: AppSpacing.lg) {
 
                     // MARK: - Veggie name
@@ -323,7 +323,9 @@ struct SeedInfoView: View {
                     Spacer(minLength: 140)
                 }
                 .padding(.top, 60) // room for close button
+                .frame(maxWidth: .infinity)
             }
+            .clipped()
 
             // MARK: - Close Button + Coin Counter
             VStack {
@@ -396,6 +398,7 @@ struct SeedInfoView: View {
                     .aspectRatio(contentMode: .fit)
                     .frame(maxWidth: .infinity)
                     .padding(AppSpacing.lg)
+                    .clipped()
 
                 // PencilKit canvas overlay (transparent, same size)
                 VeggieCanvasView(
@@ -452,6 +455,7 @@ struct SeedInfoView: View {
                 }
             }
             .frame(height: 320)
+            .clipped()
             .padding(.horizontal, AppSpacing.md)
 
             // Clear button (only show when drawing mode is active)

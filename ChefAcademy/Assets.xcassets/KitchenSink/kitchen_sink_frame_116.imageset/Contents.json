@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "kitchen_sink_frame_116.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

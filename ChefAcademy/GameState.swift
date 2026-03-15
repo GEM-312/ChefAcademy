@@ -202,6 +202,25 @@ class GameState: ObservableObject {
     }
 
     // ============================================
+    // SEED HELPERS
+    // ============================================
+
+    /// Buy seeds from the garden shop. Returns true if purchase succeeded.
+    func buySeed(_ vegType: VegetableType, quantity: Int = 1) -> Bool {
+        let totalCost = vegType.seedCost * quantity
+        guard spendCoins(totalCost) else { return false }
+
+        if let index = seeds.firstIndex(where: { $0.vegetableType == vegType }) {
+            seeds[index].quantity += quantity
+        } else {
+            seeds.append(Seed(vegetableType: vegType, quantity: quantity))
+        }
+
+        addXP(3 * quantity)
+        return true
+    }
+
+    // ============================================
     // PANTRY HELPERS
     // ============================================
 
@@ -293,6 +312,7 @@ class GameState: ObservableObject {
                 plot.vegetable = VegetableType(rawValue: vegRaw)
             }
             plot.plantedDate = data.plantedDate
+            plot.pausedDate = data.pausedDate
             return plot
         }
         // If saved plots is empty (first launch after migration), keep starter plots
@@ -388,7 +408,8 @@ class GameState: ObservableObject {
                 id: plot.id,
                 stateRaw: plot.state.rawValue,
                 vegetableRaw: plot.vegetable?.rawValue,
-                plantedDate: plot.plantedDate
+                plantedDate: plot.plantedDate,
+                pausedDate: plot.pausedDate
             )
         }
 
@@ -874,6 +895,11 @@ struct GardenPlot: Identifiable {
     var state: PlotState = .empty
     var vegetable: VegetableType?
     var plantedDate: Date?
+    var pausedDate: Date?  // When watering was needed (growth pauses)
+
+    /// Weather-adjusted growth multiplier. Set by GardenWeatherService.
+    /// All plots share the same weather. (1.0 = normal, >1 = faster, <1 = slower)
+    static var weatherMultiplier: Double = 1.0
 
     /// Progress from 0.0 (just planted) to 1.0 (ready to harvest)
     var growthProgress: Double {
@@ -884,7 +910,8 @@ struct GardenPlot: Identifiable {
         }
 
         let elapsed = Date().timeIntervalSince(planted)
-        let progress = min(elapsed / veg.growthTime, 1.0)
+        let adjustedGrowthTime = veg.growthTime / GardenPlot.weatherMultiplier
+        let progress = min(elapsed / adjustedGrowthTime, 1.0)
         return progress
     }
 
@@ -902,6 +929,23 @@ struct GardenPlot: Identifiable {
     mutating func plant(_ type: VegetableType) {
         vegetable = type
         plantedDate = Date()
+        pausedDate = nil
+        state = .growing
+    }
+
+    /// Pause growth — plant needs water!
+    mutating func pauseForWater() {
+        pausedDate = Date()
+        state = .needsWater
+    }
+
+    /// Water the plant — resume growth (adjusts plantedDate to account for pause)
+    mutating func water() {
+        if let paused = pausedDate, let planted = plantedDate {
+            let pauseDuration = Date().timeIntervalSince(paused)
+            plantedDate = planted.addingTimeInterval(pauseDuration)
+        }
+        pausedDate = nil
         state = .growing
     }
 
@@ -913,6 +957,7 @@ struct GardenPlot: Identifiable {
         // Reset the plot
         vegetable = nil
         plantedDate = nil
+        pausedDate = nil
         state = .empty
 
         return yield

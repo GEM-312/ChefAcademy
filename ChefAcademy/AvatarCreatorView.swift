@@ -68,14 +68,13 @@ struct AvatarCreatorView: View {
                 VStack(spacing: AppSpacing.md) {
                     switch selectedTab {
                     case .outfit:
-                        OutfitSelector(selectedOutfit: $avatarModel.outfit)
+                        OutfitSelector(selectedOutfit: $avatarModel.outfit, gender: avatarModel.gender)
                     case .covering:
                         HeadCoveringSelector(selectedCovering: $avatarModel.headCovering)
                     }
                 }
                 .padding(AppSpacing.md)
             }
-            .background(Color.AppTheme.parchment)
             .cornerRadius(AppSpacing.cardCornerRadius, corners: [.topLeft, .topRight])
 
             // Navigation Buttons
@@ -266,28 +265,48 @@ struct OutfitView: View {
                 .fill(outfit.color)
                 .frame(width: 100, height: 60)
 
-            // Apron pocket (for apron outfits)
-            if outfit != .chefWhite {
+            if outfit.isApron {
+                // Apron pocket
                 RoundedRectangle(cornerRadius: 8)
                     .fill(Color.white.opacity(0.3))
                     .frame(width: 40, height: 25)
                     .offset(y: 10)
-            }
-
-            // Chef buttons (for chef coat)
-            if outfit == .chefWhite {
-                VStack(spacing: 8) {
-                    Circle()
-                        .fill(Color.AppTheme.darkBrown)
-                        .frame(width: 8, height: 8)
-                    Circle()
-                        .fill(Color.AppTheme.darkBrown)
-                        .frame(width: 8, height: 8)
+            } else {
+                // Chef coat — double-breasted buttons
+                let buttonColor = outfit == .chefWhite ? Color.AppTheme.darkBrown : Color.white.opacity(0.8)
+                HStack(spacing: 14) {
+                    VStack(spacing: 8) {
+                        Circle().fill(buttonColor).frame(width: 7, height: 7)
+                        Circle().fill(buttonColor).frame(width: 7, height: 7)
+                    }
+                    VStack(spacing: 8) {
+                        Circle().fill(buttonColor).frame(width: 7, height: 7)
+                        Circle().fill(buttonColor).frame(width: 7, height: 7)
+                    }
                 }
+
+                // Collar
+                VStack {
+                    HStack(spacing: 30) {
+                        Triangle()
+                            .fill(outfit.color.opacity(0.6))
+                            .frame(width: 20, height: 12)
+                            .rotationEffect(.degrees(15))
+                        Triangle()
+                            .fill(outfit.color.opacity(0.6))
+                            .frame(width: 20, height: 12)
+                            .rotationEffect(.degrees(-15))
+                    }
+                    .offset(y: -24)
+                    Spacer()
+                }
+                .frame(height: 60)
             }
         }
     }
 }
+
+// Triangle shape reused from MeetPipViews.swift
 
 // MARK: - Tab Button
 struct TabButton: View {
@@ -378,64 +397,79 @@ struct HeadCoveringSelector: View {
 
             LazyVGrid(columns: [
                 GridItem(.flexible()),
+                GridItem(.flexible()),
+                GridItem(.flexible()),
                 GridItem(.flexible())
-            ], spacing: AppSpacing.md) {
+            ], spacing: AppSpacing.sm) {
                 ForEach(HeadCovering.allCases) { covering in
                     Button(action: { selectedCovering = covering }) {
-                        VStack(spacing: 8) {
-                            ZStack {
-                                Circle()
-                                    .fill(Color.AppTheme.parchment)
-                                    .frame(width: 70, height: 70)
-
-                                // Mini covering preview
-                                HeadCoveringView(covering: covering)
-                                    .scaleEffect(0.5)
-
-                                // Show person icon for "none"
-                                if covering == .none {
-                                    Image(systemName: "person.fill")
-                                        .font(.system(size: 24))
-                                        .foregroundColor(Color.AppTheme.sepia.opacity(0.5))
-                                }
-                            }
+                        VStack(spacing: 4) {
+                            Image(systemName: coveringIcon(covering))
+                                .font(.system(size: 22))
+                                .foregroundColor(coveringColor(covering))
+                                .frame(width: 44, height: 44)
 
                             Text(covering.rawValue)
-                                .font(.AppTheme.body)
+                                .font(.AppTheme.caption)
                                 .foregroundColor(Color.AppTheme.darkBrown)
 
-                            // Show dietary link
                             if covering.dietaryPreference != .none {
                                 Text(covering.dietaryPreference.displayName)
-                                    .font(.AppTheme.caption)
+                                    .font(.system(size: 9))
                                     .foregroundColor(Color.AppTheme.sage)
                             }
                         }
-                        .padding(AppSpacing.sm)
-                        .frame(maxWidth: .infinity)
+                        .padding(AppSpacing.xs)
                         .background(selectedCovering == covering ? Color.AppTheme.goldenWheat.opacity(0.3) : Color.clear)
-                        .cornerRadius(16)
+                        .cornerRadius(12)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 16)
+                            RoundedRectangle(cornerRadius: 12)
                                 .stroke(selectedCovering == covering ? Color.AppTheme.goldenWheat : Color.clear, lineWidth: 2)
                         )
                     }
+                    .buttonStyle(.plain)
                 }
             }
         }
-        .padding()
-        .background(Color.AppTheme.warmCream)
-        .cornerRadius(AppSpacing.cardCornerRadius)
+        .padding(.horizontal, AppSpacing.md)
+    }
+
+    private func coveringIcon(_ covering: HeadCovering) -> String {
+        switch covering {
+        case .none:   return "person.fill"
+        case .hijab:  return "person.crop.circle.fill"
+        case .kippah: return "circle.fill"
+        case .turban: return "person.crop.circle.badge.checkmark"
+        }
+    }
+
+    private func coveringColor(_ covering: HeadCovering) -> Color {
+        switch covering {
+        case .none:   return Color.AppTheme.sepia
+        case .hijab:  return Color.AppTheme.sage
+        case .kippah: return Color.AppTheme.darkBrown
+        case .turban: return Color.AppTheme.goldenWheat
+        }
     }
 }
 
 // MARK: - Outfit Selector
 struct OutfitSelector: View {
     @Binding var selectedOutfit: Outfit
+    var gender: Gender
+
+    /// Filtered outfits: aprons for girls, chef coats for boys
+    private var availableOutfits: [Outfit] {
+        Outfit.options(for: gender)
+    }
+
+    private var sectionTitle: String {
+        gender == .girl ? "Choose your apron" : "Choose your chef coat"
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("Choose your outfit")
+            Text(sectionTitle)
                 .font(.AppTheme.headline)
                 .foregroundColor(Color.AppTheme.darkBrown)
 
@@ -444,16 +478,23 @@ struct OutfitSelector: View {
                 GridItem(.flexible()),
                 GridItem(.flexible())
             ], spacing: AppSpacing.md) {
-                ForEach(Outfit.allCases) { outfit in
+                ForEach(availableOutfits) { outfit in
                     Button(action: { selectedOutfit = outfit }) {
                         VStack(spacing: 8) {
                             ZStack {
-                                RoundedRectangle(cornerRadius: 12)
-                                    .fill(Color.AppTheme.parchment)
-                                    .frame(width: 70, height: 70)
+                                Circle()
+                                    .fill(outfit == .none ? Color.AppTheme.parchment : outfit.color)
+                                    .frame(width: 50, height: 50)
 
-                                OutfitView(outfit: outfit)
-                                    .scaleEffect(0.7)
+                                if outfit == .none {
+                                    Image(systemName: "xmark")
+                                        .font(.system(size: 18, weight: .medium))
+                                        .foregroundColor(Color.AppTheme.sepia)
+                                } else {
+                                    Image(systemName: outfit.isApron ? "tshirt.fill" : "person.bust")
+                                        .font(.system(size: 20))
+                                        .foregroundColor(.white.opacity(0.9))
+                                }
                             }
 
                             Text(outfit.rawValue)
@@ -469,12 +510,17 @@ struct OutfitSelector: View {
                                 .stroke(selectedOutfit == outfit ? Color.AppTheme.goldenWheat : Color.clear, lineWidth: 2)
                         )
                     }
+                    .buttonStyle(.plain)
                 }
             }
         }
-        .padding()
-        .background(Color.AppTheme.warmCream)
-        .cornerRadius(AppSpacing.cardCornerRadius)
+        .padding(.horizontal, AppSpacing.md)
+        .onChange(of: gender) { _, newGender in
+            // Reset to default outfit when gender changes
+            if !Outfit.options(for: newGender).contains(selectedOutfit) {
+                selectedOutfit = Outfit.defaultOutfit(for: newGender)
+            }
+        }
     }
 }
 

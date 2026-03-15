@@ -13,7 +13,7 @@ class AvatarModel: ObservableObject {
     @Published var name: String = ""
     @Published var gender: Gender = .girl
     @Published var hairStyle: HairStyle = .medium
-    @Published var outfit: Outfit = .apronRed
+    @Published var outfit: Outfit = .none
     @Published var headCovering: HeadCovering = .none
 
     // Dietary preference derived from head covering
@@ -142,22 +142,62 @@ enum HairStyle: String, CaseIterable, Identifiable {
 // MARK: - Outfit
 
 enum Outfit: String, CaseIterable, Identifiable {
+    case none = "None"
+    // Aprons (for girls)
     case apronRed = "Red Apron"
     case apronBlue = "Blue Apron"
     case apronGreen = "Green Apron"
     case apronYellow = "Yellow Apron"
-    case chefWhite = "Chef Coat"
+    case apronPink = "Pink Apron"
+    // Chef Coats (for boys)
+    case chefWhite = "White Coat"
+    case chefBlue = "Blue Coat"
+    case chefBlack = "Black Coat"
+    case chefGreen = "Green Coat"
+    case chefRed = "Red Coat"
 
     var id: String { rawValue }
 
+    /// Whether this is an apron (girls) or chef coat (boys)
+    var isApron: Bool {
+        switch self {
+        case .apronRed, .apronBlue, .apronGreen, .apronYellow, .apronPink:
+            return true
+        default:
+            return false
+        }
+    }
+
+    /// Whether an actual outfit is selected (not "None")
+    var isChosen: Bool { self != .none }
+
     var color: Color {
         switch self {
-        case .apronRed: return Color(hex: "E53E3E")
-        case .apronBlue: return Color(hex: "3182CE")
-        case .apronGreen: return Color(hex: "38A169")
+        case .none:        return Color.AppTheme.lightSepia
+        case .apronRed:    return Color(hex: "E53E3E")
+        case .apronBlue:   return Color(hex: "3182CE")
+        case .apronGreen:  return Color(hex: "38A169")
         case .apronYellow: return Color.AppTheme.goldenWheat
-        case .chefWhite: return Color(hex: "F7FAFC")
+        case .apronPink:   return Color(hex: "E91E8C")
+        case .chefWhite:   return Color(hex: "F7FAFC")
+        case .chefBlue:    return Color(hex: "2B6CB0")
+        case .chefBlack:   return Color(hex: "2D3748")
+        case .chefGreen:   return Color(hex: "276749")
+        case .chefRed:     return Color(hex: "C53030")
         }
+    }
+
+    /// Outfits available for a given gender (includes "None" first)
+    static func options(for gender: Gender) -> [Outfit] {
+        switch gender {
+        case .girl: return [.none] + allCases.filter { $0.isApron }
+        case .boy:  return [.none] + allCases.filter { !$0.isApron && $0 != .none }
+        }
+    }
+
+    /// Default outfit — always None until user picks
+    static func defaultOutfit(for gender: Gender) -> Outfit {
+        .none
     }
 }
 

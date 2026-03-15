@@ -80,12 +80,12 @@ struct PlayLearnView: View {
                         ) { selectedGame = .chopChallenge }
 
                         MiniGameCard(
-                            title: "Body Parts",
-                            icon: "figure.stand",
-                            description: "Match food to body parts!",
-                            color: .purple.opacity(0.7),
-                            isLocked: true
-                        ) { }
+                            title: "Healthy Picks",
+                            icon: "heart.circle.fill",
+                            description: "Tap healthy foods, skip the junk!",
+                            color: .red.opacity(0.7),
+                            isLocked: false
+                        ) { selectedGame = .healthyChoice }
 
                         MiniGameCard(
                             title: "Seed Sorting",
@@ -123,6 +123,7 @@ enum MiniGameType: String, Identifiable {
     case veggieMatch
     case nutritionQuiz
     case chopChallenge
+    case healthyChoice
     case bodyParts
     case seedSorting
     case gardenPuzzle
@@ -179,9 +180,22 @@ struct MiniGameCard: View {
 
 struct MiniGameRouterView: View {
     let game: MiniGameType
+    @EnvironmentObject var gameState: GameState
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
+        Group {
+            switch game {
+            case .healthyChoice:
+                HealthyChoiceGameView()
+                    .environmentObject(gameState)
+            default:
+                placeholderView
+            }
+        }
+    }
+
+    private var placeholderView: some View {
         ZStack {
             Color.AppTheme.cream.ignoresSafeArea()
 
@@ -219,6 +233,7 @@ struct MiniGameRouterView: View {
         case .veggieMatch: return "Veggie Match"
         case .nutritionQuiz: return "Nutrition Quiz"
         case .chopChallenge: return "Chop Challenge"
+        case .healthyChoice: return "Healthy Picks"
         case .bodyParts: return "Body Parts"
         case .seedSorting: return "Seed Sorting"
         case .gardenPuzzle: return "Garden Puzzle"

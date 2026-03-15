@@ -91,11 +91,15 @@ class SessionManager: ObservableObject {
                 try? context.save()
             }
 
-            // Always let users reach the profile picker — children can play without auth.
-            // Parent access (dashboard, adding kids) is PIN-gated separately.
-            // Auth is only needed when the parent wants to sign in or link Apple ID.
-            withAnimation(.easeInOut(duration: 0.3)) {
-                self.route = .profilePicker
+            // Require Apple sign-in before showing profiles
+            if let auth = authManager, auth.isAuthenticated {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    self.route = .profilePicker
+                }
+            } else {
+                withAnimation(.easeInOut(duration: 0.3)) {
+                    self.route = .signIn
+                }
             }
         } else {
             // No family on this device
@@ -166,8 +170,7 @@ class SessionManager: ObservableObject {
 
         // Change route FIRST (before clearing data) so the view
         // switches away from ParentDashboard immediately.
-        // Go to profilePicker so children can still play without auth.
-        route = .profilePicker
+        route = .signIn
 
         stopPlayTimeTracking()
         activeProfile = nil

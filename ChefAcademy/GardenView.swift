@@ -517,6 +517,9 @@ struct GardenView: View {
     @EnvironmentObject var gameState: GameState
     @Environment(\.horizontalSizeClass) var sizeClass
 
+    // Weather service — real weather affects plant growth!
+    @ObservedObject private var weatherService = GardenWeatherService.shared
+
     // Tab navigation binding — so we can switch to Kitchen after harvest
     @Binding var selectedTab: MainTabView.Tab
     // Callback to switch to Farm Shop within the GardenHub
@@ -612,74 +615,25 @@ struct GardenView: View {
         .onReceive(timer) { _ in
             updateGrowthStates()
         }
-        // Recipe suggestion overlay after harvest (game-style dialog)
-        .overlay {
-            if showRecipeSuggestion, let recipe = suggestedRecipe {
-                let missing = recipe.missingPantryItems(from: gameState.pantryInventory)
-                let isFullMatch = missing.isEmpty
-                let message = isFullMatch
-                    ? "You have everything for \(recipe.title)! Want to cook it now?"
-                    : "You can almost make \(recipe.title)! Just need \(missing.map(\.displayName).joined(separator: ", ")) from the Farm Shop."
-
-                PipDialogView(
-                    message: message,
-                    choices: isFullMatch
-                        ? [
-                            PipDialogChoice(label: "Yes, let's cook!", style: .primary) {
-                                showRecipeSuggestion = false
-                                selectedTab = .kitchen
-                            },
-                            PipDialogChoice(label: "Not yet", style: .secondary) {
-                                showRecipeSuggestion = false
-                            },
-                            PipDialogChoice(label: "Keep gardening", style: .subtle) {
-                                showRecipeSuggestion = false
-                            },
-                        ]
-                        : [
-                            PipDialogChoice(label: "Go to Farm Shop!", style: .primary) {
-                                showRecipeSuggestion = false
-                                onShowFarmShop?()
-                            },
-                            PipDialogChoice(label: "Go to Kitchen", style: .secondary) {
-                                showRecipeSuggestion = false
-                                selectedTab = .kitchen
-                            },
-                            PipDialogChoice(label: "Keep gardening", style: .subtle) {
-                                showRecipeSuggestion = false
-                            },
-                        ]
-                )
+        // Rain auto-waters all thirsty plants!
+        .onReceive(NotificationCenter.default.publisher(for: .gardenRainEvent)) { _ in
+            for index in gameState.gardenPlots.indices {
+                if gameState.gardenPlots[index].state == .needsWater {
+                    gameState.gardenPlots[index].water()
+                }
             }
         }
-        // Visitor greeting overlay
-        .overlay {
-            if isVisiting && showVisitorGreeting {
-                let greetings = [
-                    "Welcome to \(visitingName)'s garden! Look around and see what they're growing!",
-                    "Glad to see you here! \(visitingName) has been working hard in the garden!",
-                    "Hey there! Take a look at \(visitingName)'s awesome garden!",
-                ]
-                PipDialogView(
-                    message: greetings.randomElement() ?? greetings[0],
-                    choices: [
-                        PipDialogChoice(label: "❤️ Cool garden!", style: .primary) {
-                            onLikeGarden?()
-                            showVisitorGreeting = false
-                        },
-                        PipDialogChoice(label: "Let me look around", style: .secondary) {
-                            showVisitorGreeting = false
-                        },
-                    ]
-                )
-            }
-        }
+        // Recipe suggestion is now handled inline by PipGardenMessage in bottomPanel
+        // Visitor greeting is now handled inline by PipGardenMessage in bottomPanel
         .onAppear {
             if isVisiting {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     showVisitorGreeting = true
                 }
             }
+            // Fetch weather & request location on first garden visit
+            weatherService.requestLocationPermission()
+            Task { await weatherService.fetchWeather() }
         }
     }
 
@@ -722,6 +676,9 @@ struct GardenView: View {
             }
             .buttonStyle(.plain)
             #endif
+
+            // Weather badge
+            WeatherBadge(weatherService: weatherService, isIPad: isIPad)
 
             // Coin display
             HStack(spacing: 6) {
@@ -830,6 +787,16 @@ struct GardenView: View {
                     }
                 }
             )
+            // Weather overlay — rain, snow, sunshine effects!
+            .overlay(
+                GeometryReader { geo in
+                    WeatherOverlayView(
+                        weather: weatherService.currentWeather,
+                        mapWidth: geo.size.width,
+                        mapHeight: geo.size.height
+                    )
+                }
+            )
     }
 
     // MARK: - Individual Garden Plot Spot
@@ -856,8 +823,63 @@ struct GardenView: View {
 
     var bottomPanel: some View {
         VStack(spacing: AppSpacing.md) {
-            // Pip's gardening tip
-            PipGardenMessage()
+            // Pip's message — shows recipe suggestion with buttons, or a random tip
+            if showRecipeSuggestion, let recipe = suggestedRecipe {
+                let missing = recipe.missingPantryItems(from: gameState.pantryInventory)
+                let isFullMatch = missing.isEmpty
+                let message = isFullMatch
+                    ? "You have everything for \(recipe.title)! Want to cook it now?"
+                    : "You can almost make \(recipe.title)! Just need \(missing.map(\.displayName).joined(separator: ", ")) from the Farm Shop."
+
+                PipGardenMessage(
+                    recipeMessage: message,
+                    choices: isFullMatch
+                        ? [
+                            PipDialogChoice(label: "Yes, let's cook!", style: .primary) {
+                                showRecipeSuggestion = false
+                                selectedTab = .kitchen
+                            },
+                            PipDialogChoice(label: "Not yet", style: .secondary) {
+                                showRecipeSuggestion = false
+                            },
+                            PipDialogChoice(label: "Keep gardening", style: .subtle) {
+                                showRecipeSuggestion = false
+                            },
+                        ]
+                        : [
+                            PipDialogChoice(label: "Go to Farm Shop!", style: .primary) {
+                                showRecipeSuggestion = false
+                                onShowFarmShop?()
+                            },
+                            PipDialogChoice(label: "Go to Kitchen", style: .secondary) {
+                                showRecipeSuggestion = false
+                                selectedTab = .kitchen
+                            },
+                            PipDialogChoice(label: "Keep gardening", style: .subtle) {
+                                showRecipeSuggestion = false
+                            },
+                        ]
+                )
+            } else if isVisiting && showVisitorGreeting {
+                PipGardenMessage(
+                    recipeMessage: [
+                        "Welcome to \(visitingName)'s garden! Look around and see what they're growing!",
+                        "Glad to see you here! \(visitingName) has been working hard in the garden!",
+                        "Hey there! Take a look at \(visitingName)'s awesome garden!",
+                    ].randomElement(),
+                    choices: [
+                        PipDialogChoice(label: "Cool garden!", style: .primary) {
+                            onLikeGarden?()
+                            showVisitorGreeting = false
+                        },
+                        PipDialogChoice(label: "Let me look around", style: .secondary) {
+                            showVisitorGreeting = false
+                        },
+                    ]
+                )
+            } else {
+                PipGardenMessage()
+            }
 
             // Seed inventory
             seedInventorySection
@@ -876,26 +898,34 @@ struct GardenView: View {
                 .foregroundColor(Color.AppTheme.darkBrown)
                 .padding(.horizontal, isIPad ? AppSpacing.lg : AppSpacing.md)
 
-            if gameState.seeds.isEmpty {
-                Text("No seeds! Visit the shop to buy some.")
-                    .font(isIPad ? .AppTheme.headline : .AppTheme.body)
-                    .foregroundColor(Color.AppTheme.sepia)
-                    .padding(.horizontal, isIPad ? AppSpacing.lg : AppSpacing.md)
-            } else {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 0) {
-                        ForEach(gameState.seeds) { seed in
-                            SeedBadge(seed: seed, isIPad: isIPad)
-                                .onTapGesture {
-                                    selectedSeed = seed
-                                }
-                        }
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 0) {
+                    // Show ALL veggies — owned first, then buyable
+                    let owned = VegetableType.allCases.filter { veg in
+                        gameState.seeds.contains(where: { $0.vegetableType == veg && $0.quantity > 0 })
+                    }
+                    let unowned = VegetableType.allCases.filter { veg in
+                        !gameState.seeds.contains(where: { $0.vegetableType == veg && $0.quantity > 0 })
+                    }
+
+                    ForEach(owned, id: \.self) { veg in
+                        let seed = gameState.seeds.first(where: { $0.vegetableType == veg })!
+                        SeedBadge(seed: seed, isIPad: isIPad)
+                            .onTapGesture { selectedSeed = seed }
+                    }
+
+                    ForEach(unowned, id: \.self) { veg in
+                        // Create a placeholder seed for display
+                        let placeholderSeed = Seed(vegetableType: veg, quantity: 0)
+                        SeedBadge(seed: placeholderSeed, isIPad: isIPad, showPrice: true)
+                            .onTapGesture { selectedSeed = placeholderSeed }
                     }
                 }
             }
         }
         .fullScreenCover(item: $selectedSeed) { seed in
             SeedInfoView(seed: seed)
+                .environmentObject(gameState)
         }
     }
 
@@ -984,8 +1014,9 @@ struct GardenView: View {
             harvestPlot(index: index)
 
         case .needsWater:
-            // Future feature
-            break
+            // Water the plant! Resume growth.
+            gameState.gardenPlots[index].water()
+            gameState.addXP(2) // Small reward for caring
         }
     }
 
@@ -1061,11 +1092,21 @@ struct GardenView: View {
     }
 
     func updateGrowthStates() {
-        // Check each plot and update state if plant is ready
+        // Sync weather multiplier to GardenPlot
+        GardenPlot.weatherMultiplier = weatherService.currentWeather.growthMultiplier
+
+        // Check if plants need water (no rain for 5+ minutes)
+        let needsWateringCheck = weatherService.timeSinceLastRain > 300
+
+        // Check each plot and update state
         for index in gameState.gardenPlots.indices {
-            if gameState.gardenPlots[index].state == .growing &&
-               gameState.gardenPlots[index].isReadyToHarvest {
+            let plot = gameState.gardenPlots[index]
+
+            if plot.state == .growing && plot.isReadyToHarvest {
                 gameState.gardenPlots[index].state = .ready
+            } else if plot.state == .growing && needsWateringCheck && plot.growthProgress > 0.5 {
+                // Plant is thirsty! Needs watering at 50%+ growth
+                gameState.gardenPlots[index].pauseForWater()
             }
         }
     }
@@ -1074,6 +1115,9 @@ struct GardenView: View {
 // MARK: - Pip Garden Message
 
 struct PipGardenMessage: View {
+    var recipeMessage: String? = nil
+    var choices: [PipDialogChoice] = []
+
     var body: some View {
         HStack(alignment: .top, spacing: AppSpacing.md) {
             // Animated Pip waving (frame animation, transparent bg)
@@ -1085,9 +1129,33 @@ struct PipGardenMessage: View {
                     .font(.AppTheme.caption)
                     .foregroundColor(Color.AppTheme.sage)
 
-                Text(gardeningTips.randomElement() ?? "Happy gardening!")
+                Text(recipeMessage ?? gardeningTips.randomElement() ?? "Happy gardening!")
                     .font(.AppTheme.body)
                     .foregroundColor(Color.AppTheme.darkBrown)
+
+                // Action buttons (shown for recipe suggestions)
+                if !choices.isEmpty {
+                    VStack(spacing: AppSpacing.sm) {
+                        ForEach(choices.indices, id: \.self) { index in
+                            let choice = choices[index]
+                            Button(action: choice.action) {
+                                Text(choice.label)
+                                    .font(.AppTheme.headline)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, AppSpacing.sm)
+                                    .foregroundColor(choice.style == .primary ? Color.AppTheme.cream : choice.style == .secondary ? Color.AppTheme.darkBrown : Color.AppTheme.sepia)
+                                    .background(choice.style == .primary ? Color.AppTheme.sage : choice.style == .secondary ? Color.AppTheme.warmCream : Color.clear)
+                                    .cornerRadius(12)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .stroke(choice.style == .secondary ? Color.AppTheme.sepia.opacity(0.3) : Color.clear, lineWidth: 1.5)
+                                    )
+                            }
+                            .buttonStyle(BouncyButtonStyle())
+                        }
+                    }
+                    .padding(.top, AppSpacing.xs)
+                }
             }
             .padding(AppSpacing.md)
             .background(Color.AppTheme.warmCream)
@@ -1096,13 +1164,19 @@ struct PipGardenMessage: View {
         .padding(.horizontal, AppSpacing.md)
     }
 
-    let gardeningTips = [
-        "Tap an empty plot to plant seeds!",
-        "Watch your plants grow - they'll be ready soon!",
-        "Harvest veggies to use in recipes!",
-        "Different veggies take different times to grow.",
-        "Lettuce grows the fastest!"
-    ]
+    var gardeningTips: [String] {
+        let weather = GardenWeatherService.shared.currentWeather
+        var tips = [
+            "Tap an empty plot to plant seeds!",
+            "Watch your plants grow - they'll be ready soon!",
+            "Harvest veggies to use in recipes!",
+            "Different veggies take different times to grow.",
+            "Lettuce grows the fastest!"
+        ]
+        // Add weather-specific tips from Pip
+        tips.append(contentsOf: weather.pipMessages)
+        return tips
+    }
 }
 
 // MARK: - Seed Badge
@@ -1110,6 +1184,7 @@ struct PipGardenMessage: View {
 struct SeedBadge: View {
     let seed: Seed
     var isIPad: Bool = false
+    var showPrice: Bool = false
 
     // Each badge = 3/8 screen width (1.5x the old 1/4)
     private var badgeWidth: CGFloat {
@@ -1117,6 +1192,8 @@ struct SeedBadge: View {
     }
     private var imgSize: CGFloat { badgeWidth * 0.43 }
     private var badgeHeight: CGFloat { badgeWidth * 1.5 }
+
+    private var isOwned: Bool { seed.quantity > 0 }
 
     var body: some View {
         ZStack {
@@ -1126,7 +1203,7 @@ struct SeedBadge: View {
                 .aspectRatio(contentMode: .fill)
                 .frame(width: badgeWidth, height: badgeHeight)
                 .clipped()
-                .opacity(0.5)
+                .opacity(isOwned ? 0.5 : 0.25)
 
             // Content on top of the bag
             VStack(spacing: 2) {
@@ -1134,7 +1211,9 @@ struct SeedBadge: View {
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: imgSize, height: imgSize)
+                    .opacity(0.85)
                     .offset(y: 25)
+                    .saturation(isOwned ? 1.0 : 0.3)
 
                 Text(seed.vegetableType.displayName)
                     .font(.system(size: isIPad ? 18 : 14, weight: .medium, design: .rounded))
@@ -1143,10 +1222,23 @@ struct SeedBadge: View {
                     .minimumScaleFactor(0.7)
                     .offset(y: 20)
 
-                Text("x\(seed.quantity)")
-                    .font(.system(size: isIPad ? 18 : 15, weight: .semibold, design: .rounded))
-                    .foregroundColor(Color.AppTheme.sepia)
+                if isOwned {
+                    Text("x\(seed.quantity)")
+                        .font(.system(size: isIPad ? 18 : 15, weight: .semibold, design: .rounded))
+                        .foregroundColor(Color.AppTheme.sepia)
+                        .offset(y: 20)
+                } else if showPrice {
+                    // Coin price for unowned seeds
+                    HStack(spacing: 3) {
+                        Image(systemName: "circle.fill")
+                            .foregroundColor(Color.AppTheme.goldenWheat)
+                            .font(.system(size: 10))
+                        Text("\(seed.vegetableType.seedCost)")
+                            .font(.system(size: isIPad ? 16 : 13, weight: .semibold, design: .rounded))
+                            .foregroundColor(Color.AppTheme.goldenWheat)
+                    }
                     .offset(y: 20)
+                }
             }
         }
         .frame(width: badgeWidth, height: badgeHeight)

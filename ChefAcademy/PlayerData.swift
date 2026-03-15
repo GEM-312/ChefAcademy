@@ -27,6 +27,7 @@ struct PlotData: Codable {
     var stateRaw: String          // PlotState.rawValue
     var vegetableRaw: String?     // VegetableType.rawValue (nil if empty)
     var plantedDate: Date?
+    var pausedDate: Date?         // When watering was needed (for growth pause)
 }
 
 struct PantryData: Codable {

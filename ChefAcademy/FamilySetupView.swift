@@ -318,6 +318,14 @@ struct FamilyAvatarStep: View {
 
     // Temporary avatar model for preview
     @StateObject private var tempAvatar = AvatarModel()
+    @State private var genderChosen = false
+    @State private var outfitVideoKey: String = ""
+
+    /// Video name for the current gender's outfit animation
+    private var outfitVideoName: String? {
+        let name = gender == .boy ? "boy_chef_coat" : "girl_apron"
+        return Bundle.main.url(forResource: name, withExtension: "mp4") != nil ? name : nil
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -327,50 +335,105 @@ struct FamilyAvatarStep: View {
                 .padding(.top, AppSpacing.lg)
 
             // Gender selection
-            HStack(spacing: AppSpacing.lg) {
-                ForEach(Gender.allCases) { g in
-                    Button(action: {
-                        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
-                            gender = g
-                            tempAvatar.gender = g
+            GeometryReader { geo in
+                let screenW = geo.size.width
+                let bigSize = screenW * 0.55  // 55% of screen when chosen
+                let smallSize: CGFloat = 140  // Initial size (2x bigger than before)
+
+                if !genderChosen {
+                    // Show BOTH avatars side by side — big!
+                    HStack(spacing: AppSpacing.lg) {
+                        Spacer()
+                        ForEach(Gender.allCases) { g in
+                            Button(action: {
+                                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                                    gender = g
+                                    tempAvatar.gender = g
+                                    genderChosen = true
+                                    outfit = .none
+                                    outfitVideoKey = ""
+                                }
+                            }) {
+                                VStack(spacing: 6) {
+                                    let img = g == .boy ? "boy_card_frame_28" : "girl_card_frame_15"
+                                    Image(img)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .frame(width: smallSize, height: smallSize)
+                                        .clipShape(RoundedRectangle(cornerRadius: 20))
+
+                                    Text(g.rawValue)
+                                        .font(.AppTheme.body)
+                                        .foregroundColor(Color.AppTheme.darkBrown)
+                                }
+                            }
+                            .buttonStyle(.plain)
                         }
-                    }) {
-                        VStack(spacing: 4) {
-                            let img = g == .boy ? "boy_card_frame_28" : "girl_card_frame_15"
+                        Spacer()
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                } else {
+                    // Show CHOSEN avatar — big, centered
+                    VStack(spacing: 6) {
+                        let img = gender == .boy ? "boy_card_frame_28" : "girl_card_frame_15"
+
+                        if outfit.isChosen, let videoName = outfitVideoName {
+                            // Outfit video replaces avatar
+                            OneShotVideoPlayer(videoName: videoName, fileExtension: "mp4")
+                                .frame(width: bigSize, height: bigSize)
+                                .clipShape(RoundedRectangle(cornerRadius: 24))
+                                .id(outfitVideoKey)
+                        } else {
+                            // Static avatar
                             Image(img)
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
-                                .frame(width: 80, height: 80)
-                                .clipShape(Circle())
-
-                            Text(g.rawValue)
-                                .font(.AppTheme.caption)
-                                .foregroundColor(Color.AppTheme.darkBrown)
+                                .frame(width: bigSize, height: bigSize)
+                                .clipShape(RoundedRectangle(cornerRadius: 24))
                         }
-                        .padding(AppSpacing.sm)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(gender == g ? Color.AppTheme.sage.opacity(0.2) : Color.clear)
-                        )
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16)
-                                .stroke(gender == g ? Color.AppTheme.sage : Color.clear, lineWidth: 2)
-                        )
+
+                        HStack(spacing: AppSpacing.sm) {
+                            Text(gender.rawValue)
+                                .font(.AppTheme.body)
+                                .foregroundColor(Color.AppTheme.darkBrown)
+
+                            Button(action: {
+                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    genderChosen = false
+                                    outfit = .none
+                                    outfitVideoKey = ""
+                                }
+                            }) {
+                                Text("Change")
+                                    .font(.AppTheme.caption)
+                                    .foregroundColor(Color.AppTheme.sage)
+                                    .underline()
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
-                    .buttonStyle(.plain)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .transition(.scale.combined(with: .opacity))
                 }
             }
-            .padding(.vertical, AppSpacing.sm)
+            .frame(height: genderChosen ? UIScreen.main.bounds.width * 0.6 : 200)
+            .padding(.vertical, AppSpacing.xs)
 
             // Outfit + Covering selectors
             ScrollView {
                 VStack(spacing: AppSpacing.md) {
-                    OutfitSelector(selectedOutfit: $outfit)
+                    OutfitSelector(selectedOutfit: Binding(
+                        get: { outfit },
+                        set: { newOutfit in
+                            outfit = newOutfit
+                            // Trigger video replay
+                            outfitVideoKey = "\(newOutfit.rawValue)_\(UUID().uuidString)"
+                        }
+                    ), gender: gender)
                     HeadCoveringSelector(selectedCovering: $headCovering)
                 }
                 .padding(AppSpacing.md)
             }
-            .background(Color.AppTheme.parchment)
             .cornerRadius(AppSpacing.cardCornerRadius, corners: [.topLeft, .topRight])
 
             HStack(spacing: AppSpacing.md) {
