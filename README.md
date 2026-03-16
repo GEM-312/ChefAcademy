@@ -40,30 +40,14 @@ Pip is your friendly hedgehog chef guide! With 6 adorable poses and a walking an
 
 ## Meet the Characters
 
-### Avatars
-
-Kids create their own chef character with outfits and head covering options:
-
 <p align="center">
-  <img src="ChefAcademy/Assets.xcassets/AvatarCards/boy_card_frame_01.imageset/boy_card_frame_01.png" width="100" alt="Boy Chef 1"/>
-  <img src="ChefAcademy/Assets.xcassets/AvatarCards/boy_card_frame_05.imageset/boy_card_frame_05.png" width="100" alt="Boy Chef 5"/>
-  <img src="ChefAcademy/Assets.xcassets/AvatarCards/boy_card_frame_10.imageset/boy_card_frame_10.png" width="100" alt="Boy Chef 10"/>
-  <img src="ChefAcademy/Assets.xcassets/AvatarCards/boy_card_frame_15.imageset/boy_card_frame_15.png" width="100" alt="Boy Chef 15"/>
-  <img src="ChefAcademy/Assets.xcassets/AvatarCards/boy_card_frame_20.imageset/boy_card_frame_20.png" width="100" alt="Boy Chef 20"/>
-  <img src="ChefAcademy/Assets.xcassets/AvatarCards/boy_card_frame_28.imageset/boy_card_frame_28.png" width="100" alt="Boy Chef 28"/>
+  <img src="docs/boy_avatar.jpg" width="200" alt="Boy Chef Avatar"/>
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="docs/girl_avatar.jpg" width="200" alt="Girl Chef Avatar"/>
 </p>
 
 <p align="center">
-  <img src="ChefAcademy/Assets.xcassets/AvatarCards/girl_card_frame_01.imageset/girl_card_frame_01.png" width="100" alt="Girl Chef 1"/>
-  <img src="ChefAcademy/Assets.xcassets/AvatarCards/girl_card_frame_03.imageset/girl_card_frame_03.png" width="100" alt="Girl Chef 3"/>
-  <img src="ChefAcademy/Assets.xcassets/AvatarCards/girl_card_frame_06.imageset/girl_card_frame_06.png" width="100" alt="Girl Chef 6"/>
-  <img src="ChefAcademy/Assets.xcassets/AvatarCards/girl_card_frame_09.imageset/girl_card_frame_09.png" width="100" alt="Girl Chef 9"/>
-  <img src="ChefAcademy/Assets.xcassets/AvatarCards/girl_card_frame_12.imageset/girl_card_frame_12.png" width="100" alt="Girl Chef 12"/>
-  <img src="ChefAcademy/Assets.xcassets/AvatarCards/girl_card_frame_15.imageset/girl_card_frame_15.png" width="100" alt="Girl Chef 15"/>
-</p>
-
-<p align="center">
-  <em>28 boy outfits + 15 girl outfits — including hijab, kippah, and turban options for inclusive representation</em>
+  <em>Kids create their own chef character — 28 boy outfits + 15 girl outfits, with hijab, kippah, and turban options for inclusive representation</em>
 </p>
 
 ---
