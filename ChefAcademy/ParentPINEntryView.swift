@@ -66,7 +66,7 @@ struct ParentPINEntryView: View {
             if showError {
                 Text(isSetupMode ? "PINs don't match. Try again." : "Wrong PIN. Try again!")
                     .font(.AppTheme.caption)
-                    .foregroundColor(.red)
+                    .foregroundColor(Color.AppTheme.terracotta)
                     .transition(.opacity)
             }
 

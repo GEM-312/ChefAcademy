@@ -44,35 +44,19 @@ struct HeatPanMiniGame: View {
                     )
                     .frame(width: 160, height: 160)
 
-                // Pan
-                ZStack {
-                    // Pan body
-                    Ellipse()
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color(white: 0.35 + panGlow * 0.15),
-                                    Color(white: 0.25 + panGlow * 0.1)
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
-                        .frame(width: 140, height: 100)
-
-                    // Pan handle
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(Color(white: 0.3))
-                        .frame(width: 60, height: 16)
-                        .offset(x: 90)
-                }
+                // Pan image
+                Image("frying_pan")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 180, height: 180)
+                    .shadow(color: Color.AppTheme.sepia.opacity(0.3), radius: 8, y: 4)
 
                 // Heat shimmer when warm
                 if panGlow > 0.3 {
                     ForEach(0..<3, id: \.self) { i in
                         Text("~")
                             .font(.system(size: 20))
-                            .foregroundColor(.orange.opacity(0.5))
+                            .foregroundColor(Color.AppTheme.terracotta.opacity(0.5))
                             .offset(x: CGFloat(i * 25 - 25), y: -60)
                             .opacity(panGlow)
                     }
@@ -172,19 +156,16 @@ struct AddToPanMiniGame: View {
 
             // Pan target
             ZStack {
-                Ellipse()
-                    .fill(Color(white: 0.3))
-                    .frame(width: 150, height: 100)
-
-                Ellipse()
-                    .stroke(dropped ? Color.AppTheme.sage : Color.AppTheme.goldenWheat.opacity(0.6),
-                            style: StrokeStyle(lineWidth: 3, dash: dropped ? [] : [8]))
-                    .frame(width: 150, height: 100)
+                Image("frying_pan")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 180, height: 180)
+                    .shadow(color: Color.AppTheme.sepia.opacity(0.3), radius: 8, y: 4)
 
                 if dropped {
                     Text("Sizzle!")
                         .font(.AppTheme.headline)
-                        .foregroundColor(.orange)
+                        .foregroundColor(Color.AppTheme.terracotta)
                         .transition(.scale.combined(with: .opacity))
                 }
             }
@@ -865,36 +846,27 @@ struct CrackEggMiniGame: View {
             Spacer()
 
             ZStack {
-                // Bowl
-                Ellipse()
-                    .fill(Color(white: 0.9))
-                    .frame(width: 160, height: 90)
-                    .offset(y: 60)
-
                 if cracked {
-                    // Egg contents in bowl
-                    Ellipse()
-                        .fill(Color.yellow.opacity(0.8))
-                        .frame(width: 40, height: 30)
-                        .offset(y: 60)
-                    Ellipse()
-                        .fill(Color.white.opacity(0.8))
-                        .frame(width: 70, height: 40)
-                        .offset(y: 60)
-                }
-
-                // Egg
-                if !cracked {
+                    // Cracked egg with yolk
+                    Image("cracked_egg_yolk")
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 200, height: 200)
+                        .transition(.scale.combined(with: .opacity))
+                } else {
+                    // Whole egg (using farm_eggs asset)
                     ZStack {
-                        Text("🥚")
-                            .font(.system(size: 80))
+                        Image("farm_eggs")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 150, height: 150)
 
-                        // Crack lines
+                        // Crack lines appear with each tap
                         if tapCount > 0 {
                             ForEach(0..<tapCount, id: \.self) { i in
                                 Rectangle()
-                                    .fill(Color(white: 0.7))
-                                    .frame(width: 2, height: 20)
+                                    .fill(Color.AppTheme.sepia.opacity(0.6))
+                                    .frame(width: 2, height: 25)
                                     .rotationEffect(.degrees(Double(i) * 30 - 15))
                                     .offset(y: -5)
                             }
@@ -954,19 +926,12 @@ struct AssembleMiniGame: View {
             Spacer()
 
             ZStack {
-                // Plate
-                Ellipse()
-                    .fill(Color.white)
-                    .frame(width: 180, height: 120)
-                    .shadow(color: .black.opacity(0.1), radius: 5)
-
-                Ellipse()
-                    .stroke(Color.AppTheme.parchment, lineWidth: 3)
-                    .frame(width: 180, height: 120)
-
-                Text("🍽️")
-                    .font(.system(size: 50))
-                    .opacity(0.3)
+                // Plate image
+                Image("empty_plate")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 220, height: 220)
+                    .shadow(color: Color.AppTheme.sepia.opacity(0.15), radius: 8, y: 4)
 
                 // Sparkles
                 ForEach(sparkles) { sparkle in

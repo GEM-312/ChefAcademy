@@ -17,6 +17,7 @@ struct CookingCompletionView: View {
 
     @State private var starStates: [Bool] = [false, false, false]
     @State private var showRewards = false
+    @State private var showHealthBoost = false
     @State private var showButton = false
 
     var body: some View {
@@ -74,6 +75,32 @@ struct CookingCompletionView: View {
                     .transition(.opacity)
                 }
 
+                // Body Buddy health boost summary
+                if showHealthBoost {
+                    VStack(spacing: AppSpacing.xs) {
+                        Text("Body Buddy Boost!")
+                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                            .foregroundColor(Color.AppTheme.darkBrown)
+
+                        HStack(spacing: AppSpacing.sm) {
+                            ForEach(boostedOrgans, id: \.name) { organ in
+                                VStack(spacing: 2) {
+                                    Image(systemName: organ.icon)
+                                        .font(.system(size: 18))
+                                        .foregroundColor(organ.color)
+                                    Text("+\(organ.boost)")
+                                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                                        .foregroundColor(organ.color)
+                                }
+                            }
+                        }
+                    }
+                    .padding(AppSpacing.md)
+                    .background(Color.AppTheme.warmCream)
+                    .cornerRadius(AppSpacing.cardCornerRadius)
+                    .transition(.scale.combined(with: .opacity))
+                }
+
                 Spacer()
 
                 // Back to Kitchen button
@@ -107,6 +134,54 @@ struct CookingCompletionView: View {
         case 3: return "Perfect Chef!"
         case 2: return "Great Job!"
         default: return "Good Try!"
+        }
+    }
+
+    // MARK: - Boosted Organs
+
+    struct OrganBoost: Hashable {
+        let name: String
+        let icon: String
+        let color: Color
+        let boost: Int
+
+        func hash(into hasher: inout Hasher) { hasher.combine(name) }
+        static func == (lhs: OrganBoost, rhs: OrganBoost) -> Bool { lhs.name == rhs.name }
+    }
+
+    var boostedOrgans: [OrganBoost] {
+        var organs: [String: Int] = [:]
+
+        // Collect nutrients from all recipe ingredients
+        for vegType in recipe.gardenIngredients {
+            for nutrient in vegType.nutrients {
+                let organ = nutrient.benefitsOrgan
+                organs[organ, default: 0] += stars
+            }
+        }
+        for pantryItem in recipe.pantryIngredients {
+            for nutrient in pantryItem.nutrients {
+                let organ = nutrient.benefitsOrgan
+                organs[organ, default: 0] += stars
+            }
+        }
+
+        // Map to display data (top 4 organs)
+        return organs.sorted { $0.value > $1.value }.prefix(4).map { organ, boost in
+            let (icon, color): (String, Color) = {
+                switch organ {
+                case "Brain": return ("brain.head.profile", .purple)
+                case "Heart", "Blood": return ("heart.fill", .red)
+                case "Muscles": return ("figure.strengthtraining.traditional", .orange)
+                case "Bones": return ("figure.stand", .brown)
+                case "Immune System": return ("shield.fill", .blue)
+                case "Energy", "Whole Body": return ("bolt.fill", .yellow)
+                case "Eyes": return ("eye.fill", .cyan)
+                case "Skin": return ("sparkles", .pink)
+                default: return ("staroflife.fill", Color.AppTheme.sage)
+                }
+            }()
+            return OrganBoost(name: organ, icon: icon, color: color, boost: boost)
         }
     }
 
@@ -144,8 +219,15 @@ struct CookingCompletionView: View {
             }
         }
 
-        // Show button after rewards
-        DispatchQueue.main.asyncAfter(deadline: .now() + Double(stars) * 0.3 + 1.0) {
+        // Show health boost after rewards
+        DispatchQueue.main.asyncAfter(deadline: .now() + Double(stars) * 0.3 + 1.2) {
+            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+                showHealthBoost = true
+            }
+        }
+
+        // Show button after health boost
+        DispatchQueue.main.asyncAfter(deadline: .now() + Double(stars) * 0.3 + 1.8) {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
                 showButton = true
             }

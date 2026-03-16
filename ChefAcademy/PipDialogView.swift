@@ -29,6 +29,7 @@ struct PipDialogView: View {
     let choices: [PipDialogChoice]
 
     @State private var appeared = false
+    private let voice = PipVoice.shared
 
     var body: some View {
         ZStack {
@@ -75,6 +76,11 @@ struct PipDialogView: View {
             withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
                 appeared = true
             }
+            // Pip reads the dialog aloud (great for age 6+ who can't read yet)
+            voice.speak(message)
+        }
+        .onDisappear {
+            voice.stop()
         }
     }
 

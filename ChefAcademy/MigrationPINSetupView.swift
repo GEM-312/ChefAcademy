@@ -59,7 +59,7 @@ struct MigrationPINSetupView: View {
                 if showError {
                     Text("PINs don't match. Try again.")
                         .font(.AppTheme.caption)
-                        .foregroundColor(.red)
+                        .foregroundColor(Color.AppTheme.terracotta)
                 }
             }
 

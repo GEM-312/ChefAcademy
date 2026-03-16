@@ -116,7 +116,7 @@ struct AskPipView: View {
                         if let error = aiService.lastError {
                             Text("Pip says: \(error)")
                                 .font(.AppTheme.caption)
-                                .foregroundColor(.red.opacity(0.7))
+                                .foregroundColor(Color.AppTheme.terracotta.opacity(0.7))
                                 .padding(.horizontal, AppSpacing.md)
                         }
 

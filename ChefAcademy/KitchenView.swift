@@ -336,7 +336,7 @@ struct KitchenView: View {
                     badgeCount > 0 ?
                         Text("\(badgeCount)")
                             .font(.system(size: isIPad ? 12 : 10, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundColor(Color.AppTheme.cream)
                             .padding(4)
                             .background(color)
                             .clipShape(Circle())
@@ -690,7 +690,7 @@ struct KitchenView: View {
                         Text("Cook!")
                             .font(.AppTheme.caption)
                     }
-                    .foregroundColor(.white)
+                    .foregroundColor(Color.AppTheme.cream)
                     .padding(.horizontal, AppSpacing.md)
                     .padding(.vertical, AppSpacing.sm)
                     .background(Color.AppTheme.sage)

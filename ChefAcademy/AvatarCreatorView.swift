@@ -493,7 +493,7 @@ struct OutfitSelector: View {
                                 } else {
                                     Image(systemName: outfit.isApron ? "tshirt.fill" : "person.bust")
                                         .font(.system(size: 20))
-                                        .foregroundColor(.white.opacity(0.9))
+                                        .foregroundColor(Color.AppTheme.cream.opacity(0.9))
                                 }
                             }
 

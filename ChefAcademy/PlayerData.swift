@@ -27,7 +27,48 @@ struct PlotData: Codable {
     var stateRaw: String          // PlotState.rawValue
     var vegetableRaw: String?     // VegetableType.rawValue (nil if empty)
     var plantedDate: Date?
-    var pausedDate: Date?         // When watering was needed (for growth pause)
+    var pausedDate: Date?         // When watering/weeding/bugs paused growth
+
+    // Plant care tracking (per growth cycle)
+    var hasWatered: Bool = false
+    var hasWeeded: Bool = false
+    var hasDebugged: Bool = false
+    var hasSung: Bool = false
+    var weedTriggered: Bool = false
+    var bugTriggered: Bool = false
+
+    // Custom decoder so old saved data (without care fields) doesn't crash
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(Int.self, forKey: .id)
+        stateRaw = try c.decode(String.self, forKey: .stateRaw)
+        vegetableRaw = try c.decodeIfPresent(String.self, forKey: .vegetableRaw)
+        plantedDate = try c.decodeIfPresent(Date.self, forKey: .plantedDate)
+        pausedDate = try c.decodeIfPresent(Date.self, forKey: .pausedDate)
+        hasWatered = try c.decodeIfPresent(Bool.self, forKey: .hasWatered) ?? false
+        hasWeeded = try c.decodeIfPresent(Bool.self, forKey: .hasWeeded) ?? false
+        hasDebugged = try c.decodeIfPresent(Bool.self, forKey: .hasDebugged) ?? false
+        hasSung = try c.decodeIfPresent(Bool.self, forKey: .hasSung) ?? false
+        weedTriggered = try c.decodeIfPresent(Bool.self, forKey: .weedTriggered) ?? false
+        bugTriggered = try c.decodeIfPresent(Bool.self, forKey: .bugTriggered) ?? false
+    }
+
+    // Regular init for creating new PlotData in code
+    init(id: Int, stateRaw: String, vegetableRaw: String? = nil, plantedDate: Date? = nil, pausedDate: Date? = nil,
+         hasWatered: Bool = false, hasWeeded: Bool = false, hasDebugged: Bool = false,
+         hasSung: Bool = false, weedTriggered: Bool = false, bugTriggered: Bool = false) {
+        self.id = id
+        self.stateRaw = stateRaw
+        self.vegetableRaw = vegetableRaw
+        self.plantedDate = plantedDate
+        self.pausedDate = pausedDate
+        self.hasWatered = hasWatered
+        self.hasWeeded = hasWeeded
+        self.hasDebugged = hasDebugged
+        self.hasSung = hasSung
+        self.weedTriggered = weedTriggered
+        self.bugTriggered = bugTriggered
+    }
 }
 
 struct PantryData: Codable {

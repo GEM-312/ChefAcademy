@@ -301,6 +301,8 @@ struct CookingSessionView: View {
     @State private var showPipTransition = false
     @State private var pipTransitionText = ""
 
+    private let voice = PipVoice.shared
+
     private let pipEncouragements = [
         "Nice work!", "Keep going!", "You're a natural!",
         "Almost there!", "Smells delicious!", "Great job, chef!",
@@ -330,16 +332,22 @@ struct CookingSessionView: View {
                     // Header with progress
                     headerView
 
-                    // Instruction text
+                    // Instruction text — Pip reads it aloud!
                     if !transitioning, let step = currentStep {
-                        Text(step.instruction)
-                            .font(.AppTheme.headline)
-                            .foregroundColor(Color.AppTheme.darkBrown)
-                            .multilineTextAlignment(.center)
+                        HStack {
+                            Spacer()
+                            Text(step.instruction)
+                                .font(.AppTheme.headline)
+                                .foregroundColor(Color.AppTheme.darkBrown)
+                                .multilineTextAlignment(.center)
+                            SpeakerButton(text: step.instruction, size: 18)
+                            Spacer()
+                        }
                             .padding(.horizontal, AppSpacing.md)
                             .padding(.top, AppSpacing.sm)
                             .padding(.bottom, AppSpacing.xs)
                             .transition(.opacity)
+                            .onAppear { voice.speak(step.instruction) }
                     }
 
                     // Mini-game area
@@ -508,8 +516,9 @@ struct CookingSessionView: View {
                 showCompletion = true
             }
         } else {
-            // Show Pip transition, then advance
+            // Show Pip transition, then advance — Pip says encouragement aloud
             pipTransitionText = pipEncouragements.randomElement() ?? "Nice!"
+            voice.speak(pipTransitionText)
             withAnimation(.easeInOut(duration: 0.3)) {
                 showPipTransition = true
                 transitioning = true

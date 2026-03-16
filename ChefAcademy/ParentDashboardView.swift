@@ -118,7 +118,7 @@ struct ParentDashboardView: View {
                                 Text("Remove \(child.name)'s Profile")
                             }
                             .font(.AppTheme.body)
-                            .foregroundColor(.red.opacity(0.8))
+                            .foregroundColor(Color.AppTheme.terracotta.opacity(0.8))
                             .padding(AppSpacing.md)
                             .frame(maxWidth: .infinity)
                             .background(Color.red.opacity(0.1))
@@ -201,7 +201,7 @@ struct ParentDashboardView: View {
                                 Spacer()
                             }
                             .font(.AppTheme.body)
-                            .foregroundColor(.red.opacity(0.8))
+                            .foregroundColor(Color.AppTheme.terracotta.opacity(0.8))
                             .padding(AppSpacing.md)
                             .background(Color.red.opacity(0.05))
                             .cornerRadius(AppSpacing.cardCornerRadius)

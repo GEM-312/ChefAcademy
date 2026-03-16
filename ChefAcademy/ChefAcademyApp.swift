@@ -33,15 +33,19 @@ struct ChefAcademyApp: App {
         // On real devices CloudKit sync is enabled; on Simulator it's local only.
 
         // First attempt
-        if let container = try? ModelContainer(
-            for: FamilyProfile.self, UserProfile.self, PlayerData.self
-        ) {
+        do {
+            let container = try ModelContainer(
+                for: FamilyProfile.self, UserProfile.self, PlayerData.self
+            )
             modelContainer = container
+            print("[ChefAcademy] ModelContainer created successfully (persistent store)")
             return
+        } catch {
+            print("[ChefAcademy] First ModelContainer attempt FAILED: \(error)")
         }
 
         // If that failed, delete the old store and retry
-        print("[ChefAcademy] First ModelContainer attempt failed — deleting old store and retrying...")
+        print("[ChefAcademy] Deleting old store and retrying...")
         let appSupport = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         for ext in ["default.store", "default.store-shm", "default.store-wal"] {
             try? FileManager.default.removeItem(at: appSupport.appendingPathComponent(ext))

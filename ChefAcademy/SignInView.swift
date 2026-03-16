@@ -93,7 +93,7 @@ struct SignInView: View {
                 if let error = authManager.errorMessage {
                     Text(error)
                         .font(.AppTheme.caption)
-                        .foregroundColor(.red)
+                        .foregroundColor(Color.AppTheme.terracotta)
                         .padding(.horizontal, AppSpacing.xl)
                 }
 

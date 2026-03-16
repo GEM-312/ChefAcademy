@@ -13,6 +13,7 @@
 
 import SwiftUI
 import PencilKit
+import Combine
 
 // MARK: - Color Choice (Color → Nutrition mapping for Pip tips)
 
@@ -271,6 +272,10 @@ struct SeedInfoView: View {
     @State private var showCoinReward: String? = nil
     @State private var coloringRewardClaimed = false
 
+    // USDA real nutrition data
+    @ObservedObject private var usdaService = USDAFoodService.shared
+    @State private var nutrientProfile: NutrientProfile?
+
     private var veggie: VegetableType { seed.vegetableType }
     private var colorKnowledgeID: String { "seed_\(veggie.rawValue)_color" }
     private func nutrientKnowledgeID(_ nutrient: NutrientType) -> String {
@@ -384,6 +389,21 @@ struct SeedInfoView: View {
                     showPipTip = true
                 }
             }
+            // Fetch real nutrition data from USDA
+            Task {
+                let profile = await usdaService.nutrientProfile(for: veggie.rawValue)
+                await MainActor.run {
+                    nutrientProfile = profile
+                }
+                if let p = profile {
+                    print("[SeedInfo] USDA loaded for \(veggie.rawValue): \(Int(p.calories)) kcal, Vit C: \(p.vitaminC) mg, Ca: \(p.calcium) mg")
+                } else {
+                    print("[SeedInfo] USDA returned nil for \(veggie.rawValue)")
+                }
+            }
+        }
+        .onDisappear {
+            PipVoice.shared.stop()
         }
     }
 
@@ -392,12 +412,11 @@ struct SeedInfoView: View {
     private var drawableVeggieSection: some View {
         VStack(spacing: AppSpacing.sm) {
             ZStack {
-                // The veggie image — kids draw right on top of this
+                // The veggie image — constrained to prevent horizontal scroll
                 Image(veggie.imageName)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(maxWidth: .infinity)
-                    .padding(AppSpacing.lg)
+                    .frame(width: UIScreen.main.bounds.width - 60, height: 280)
                     .clipped()
 
                 // PencilKit canvas overlay (transparent, same size)
@@ -588,6 +607,106 @@ struct SeedInfoView: View {
         }
     }
 
+    // MARK: - USDA Kid-Friendly Info
+
+    /// Returns a kid-friendly superpower description based on real USDA data
+    private func usdaSuperpower(for nutrient: NutrientType, profile: NutrientProfile) -> String? {
+        switch nutrient {
+        case .vitaminA:
+            guard profile.vitaminA > 50 else { return nil }
+            if profile.vitaminA > 500 { return "Super vision power!" }
+            return "Helps you see in the dark!"
+
+        case .vitaminC:
+            guard profile.vitaminC > 2 else { return nil }
+            if profile.vitaminC > 40 { return "Germ-fighting superpower!" }
+            return "Fights off germs!"
+
+        case .vitaminK:
+            guard profile.vitaminK > 5 else { return nil }
+            return "Helps your cuts heal fast!"
+
+        case .vitaminB6:
+            guard profile.vitaminB6 > 0.05 else { return nil }
+            return "Brain fuel for thinking!"
+
+        case .calcium:
+            guard profile.calcium > 10 else { return nil }
+            if profile.calcium > 50 { return "Super strong bones!" }
+            return "Builds tough bones!"
+
+        case .iron:
+            guard profile.iron > 0.3 else { return nil }
+            return "Gives your blood energy!"
+
+        case .potassium:
+            guard profile.potassium > 50 else { return nil }
+            if profile.potassium > 200 { return "Heart superpower!" }
+            return "Keeps your heart happy!"
+
+        case .fiber:
+            guard profile.fiber > 0.5 else { return nil }
+            if profile.fiber > 2 { return "Tummy's best friend!" }
+            return "Helps your tummy work!"
+
+        case .protein:
+            guard profile.protein > 1 else { return nil }
+            if profile.protein > 5 { return "Muscle builder!" }
+            return "Helps muscles grow!"
+
+        case .magnesium:
+            guard profile.magnesium > 5 else { return nil }
+            return "Relaxes your muscles!"
+
+        case .zinc:
+            guard profile.zinc > 0.3 else { return nil }
+            return "Shield for your body!"
+
+        case .vitaminE:
+            guard profile.vitaminE > 0.3 else { return nil }
+            return "Keeps your skin glowing!"
+
+        case .vitaminD:
+            return "Sunshine vitamin for bones!"
+
+        case .omega3:
+            return "Brain booster power!"
+
+        default:
+            return nil
+        }
+    }
+
+    /// Kid-friendly comparison based on USDA data
+    private func usdaComparison(for nutrient: NutrientType, profile: NutrientProfile) -> String? {
+        switch nutrient {
+        case .vitaminC:
+            if profile.vitaminC > 80 { return "More Vitamin C than an orange!" }
+            if profile.vitaminC > 30 { return "Like half an orange of Vitamin C!" }
+            return nil
+        case .vitaminA:
+            if profile.vitaminA > 5000 { return "More Vitamin A than 5 eggs!" }
+            return nil
+        case .calcium:
+            if profile.calcium > 100 { return "Almost like a glass of milk!" }
+            return nil
+        case .iron:
+            if profile.iron > 2 { return "Packed with iron like spinach!" }
+            return nil
+        case .fiber:
+            if profile.fiber > 3 { return "More fiber than a slice of bread!" }
+            return nil
+        case .protein:
+            if profile.protein > 10 { return "Protein power like an egg!" }
+            return nil
+        case .potassium:
+            if profile.potassium > 300 { return "Almost as much potassium as a banana!" }
+            return nil
+        default:
+            return nil
+        }
+    }
+
     // MARK: - Nutrients Section
 
     private var nutrientsSection: some View {
@@ -596,6 +715,10 @@ struct SeedInfoView: View {
                 Text("What's Inside")
                     .font(.custom("Georgia", size: 20).bold())
                     .foregroundColor(Color.AppTheme.darkBrown)
+                SpeakerButton(
+                    text: "\(veggie.displayName) has \(veggie.nutrients.map { $0.rawValue }.joined(separator: ", ")). Each one helps a different part of your body!",
+                    size: 18
+                )
                 Spacer()
                 Text("Tap to learn!")
                     .font(.system(size: 12, weight: .medium, design: .rounded))
@@ -630,7 +753,7 @@ struct SeedInfoView: View {
                     .font(.system(size: 26))
                     .frame(width: 36)
 
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 3) {
                     Text(nutrient.rawValue)
                         .font(.system(size: 16, weight: .semibold, design: .rounded))
                         .foregroundColor(Color.AppTheme.darkBrown)
@@ -643,6 +766,27 @@ struct SeedInfoView: View {
                         Text("Helps your \(nutrient.benefitsOrgan)")
                             .font(.system(size: 13, weight: .regular, design: .rounded))
                             .foregroundColor(Color.AppTheme.sepia)
+                    }
+
+                    // Kid-friendly superpower from USDA data
+                    if let profile = nutrientProfile,
+                       let superpower = usdaSuperpower(for: nutrient, profile: profile) {
+                        Text(superpower)
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .foregroundColor(Color.AppTheme.goldenWheat)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(Color.AppTheme.goldenWheat.opacity(0.12))
+                            .cornerRadius(8)
+                    }
+
+                    // Fun comparison
+                    if let profile = nutrientProfile,
+                       let comparison = usdaComparison(for: nutrient, profile: profile) {
+                        Text(comparison)
+                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                            .foregroundColor(Color.AppTheme.sage)
+                            .italic()
                     }
                 }
 
@@ -696,6 +840,10 @@ struct SeedInfoView: View {
                     Text("Fun Fact!")
                         .font(.custom("Georgia", size: 20).bold())
                         .foregroundColor(Color.AppTheme.darkBrown)
+                    SpeakerButton(
+                        text: vegetableFunFacts[veggie] ?? "This vegetable is full of surprises!",
+                        size: 18
+                    )
                     Spacer()
                     if isClaimed {
                         Image(systemName: "checkmark.circle.fill")

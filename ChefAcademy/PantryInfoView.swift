@@ -38,15 +38,11 @@ struct PantryInfoView: View {
                         .scaleEffect(appeared ? 1.0 : 0.8)
                         .opacity(appeared ? 1.0 : 0)
 
-                    // Item image
+                    // Item image (no background — transparent PNG)
                     Image(item.imageName)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 200, height: 200)
-                        .padding(AppSpacing.lg)
-                        .background(Color.AppTheme.warmCream)
-                        .cornerRadius(AppSpacing.cardCornerRadius)
-                        .shadow(color: Color.AppTheme.sepia.opacity(0.1), radius: 8, y: 4)
                         .scaleEffect(appeared ? 1.0 : 0.9)
                         .opacity(appeared ? 1.0 : 0)
 

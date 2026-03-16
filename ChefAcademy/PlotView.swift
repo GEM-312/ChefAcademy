@@ -65,6 +65,10 @@ struct PlotView: View {
             readyPlotContent
         case .needsWater:
             needsWaterContent
+        case .needsWeeding:
+            needsWeedingContent
+        case .hasBugs:
+            hasBugsContent
         }
     }
 
@@ -192,14 +196,90 @@ struct PlotView: View {
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 60, height: 60)
-                        .opacity(0.4)
-                        .saturation(0.2)
+                        .rotationEffect(.degrees(-5))
+                        .opacity(0.6)
                 }
+
+                // Droopy water drops
+                Text("💧")
+                    .font(.system(size: 16))
+                    .offset(x: 30, y: -20)
             }
 
-            Text("💧 Water me!")
-                .font(.system(size: 10, weight: .medium, design: .rounded))
-                .foregroundColor(Color.AppTheme.sepia)
+            Text("Water me!")
+                .font(.system(size: 10, weight: .bold, design: .rounded))
+                .foregroundColor(Color.AppTheme.sage)
+        }
+    }
+
+    // MARK: - Needs Weeding
+
+    var needsWeedingContent: some View {
+        VStack(spacing: 4) {
+            ZStack {
+                Circle()
+                    .fill(Color.AppTheme.warmCream.opacity(0.7))
+                    .frame(width: 80, height: 80)
+
+                if let veg = plot.vegetable {
+                    Image(veg.imageName)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 50, height: 50)
+                        .opacity(0.7)
+                }
+
+                // Weeds around the plant
+                Text("🌿")
+                    .font(.system(size: 14))
+                    .offset(x: -28, y: 20)
+                Text("🌿")
+                    .font(.system(size: 12))
+                    .offset(x: 25, y: 22)
+                Text("🌿")
+                    .font(.system(size: 10))
+                    .offset(x: -5, y: 30)
+            }
+
+            Text("Pull weeds!")
+                .font(.system(size: 10, weight: .bold, design: .rounded))
+                .foregroundColor(Color.AppTheme.sage)
+        }
+    }
+
+    // MARK: - Has Bugs
+
+    var hasBugsContent: some View {
+        VStack(spacing: 4) {
+            ZStack {
+                Circle()
+                    .fill(Color.AppTheme.warmCream.opacity(0.7))
+                    .frame(width: 80, height: 80)
+
+                if let veg = plot.vegetable {
+                    Image(veg.imageName)
+                        .resizable()
+                        .aspectRatio(contentMode: .fit)
+                        .frame(width: 55, height: 55)
+                        .opacity(0.7)
+                }
+
+                // Bugs on the plant
+                Text("🐛")
+                    .font(.system(size: 12))
+                    .offset(x: -20, y: -15)
+                Text("🐛")
+                    .font(.system(size: 10))
+                    .offset(x: 22, y: 5)
+                Text("🐞")
+                    .font(.system(size: 14))
+                    .offset(x: 30, y: -25)
+                    .opacity(0.5)
+            }
+
+            Text("Help! Bugs!")
+                .font(.system(size: 10, weight: .bold, design: .rounded))
+                .foregroundColor(Color.AppTheme.terracotta)
         }
     }
 }

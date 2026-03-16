@@ -186,11 +186,12 @@ class GardenWeatherService: NSObject, ObservableObject, CLLocationManagerDelegat
         // Check cache freshness
         if let lastFetch = lastFetchDate,
            Date().timeIntervalSince(lastFetch) < cacheInterval {
-            return // Cache is still fresh
+            print("[Weather] Cache still fresh (\(Int(Date().timeIntervalSince(lastFetch)))s old). Skipping fetch.")
+            return
         }
 
         guard let location = currentLocation else {
-            // No location yet — try requesting
+            print("[Weather] No location available yet — requesting location...")
             locationManager.requestLocation()
             return
         }
@@ -199,11 +200,13 @@ class GardenWeatherService: NSObject, ObservableObject, CLLocationManagerDelegat
         defer { isLoading = false }
 
         do {
+            print("[Weather] Calling WeatherKit API for location: \(location.coordinate.latitude), \(location.coordinate.longitude)")
             let weather = try await weatherKitService.weather(for: location)
             let condition = weather.currentWeather.condition
             let tempF = Int(weather.currentWeather.temperature.converted(to: .fahrenheit).value)
             let tempC = Int(weather.currentWeather.temperature.converted(to: .celsius).value)
 
+            print("[Weather] WeatherKit SUCCESS! Condition: \(condition), Temp: \(tempF)°F")
             let mapped = mapCondition(condition)
 
             // Check if it's raining
@@ -224,7 +227,8 @@ class GardenWeatherService: NSObject, ObservableObject, CLLocationManagerDelegat
 
             print("[Weather] Updated: \(mapped.displayName), \(tempF)°F / \(tempC)°C")
         } catch {
-            print("[Weather] WeatherKit error: \(error.localizedDescription). Using cached/default.")
+            print("[Weather] WeatherKit FAILED: \(error)")
+            print("[Weather] Error description: \(error.localizedDescription)")
             // Fallback: keep current (cached or sunny default)
         }
     }
@@ -254,7 +258,11 @@ class GardenWeatherService: NSObject, ObservableObject, CLLocationManagerDelegat
     // MARK: - CLLocationManagerDelegate
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
-        guard let location = locations.last else { return }
+        guard let location = locations.last else {
+            print("[Weather] didUpdateLocations called but no locations!")
+            return
+        }
+        print("[Weather] Got location: \(location.coordinate.latitude), \(location.coordinate.longitude)")
         currentLocation = location
 
         // Fetch weather with new location
@@ -264,21 +272,25 @@ class GardenWeatherService: NSObject, ObservableObject, CLLocationManagerDelegat
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print("[Weather] Location error: \(error.localizedDescription). Using default sunny weather.")
+        print("[Weather] Location FAILED: \(error.localizedDescription)")
         // Keep sunny default — never punish the kid
     }
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         locationStatus = manager.authorizationStatus
 
+        print("[Weather] Authorization status changed: \(manager.authorizationStatus.rawValue)")
+        // 0=notDetermined, 1=restricted, 2=denied, 3=authorizedAlways, 4=authorizedWhenInUse
+
         switch manager.authorizationStatus {
         case .authorizedWhenInUse, .authorizedAlways:
+            print("[Weather] Location authorized! Requesting location...")
             locationManager.requestLocation()
         case .denied, .restricted:
-            print("[Weather] Location denied. Defaulting to sunny.")
-            // Sunny default stays — kid never notices
+            print("[Weather] Location DENIED or RESTRICTED. Defaulting to sunny.")
         case .notDetermined:
-            break // Wait for user response
+            print("[Weather] Location not determined yet — waiting for user response.")
+            break
         @unknown default:
             break
         }

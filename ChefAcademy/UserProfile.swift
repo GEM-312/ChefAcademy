@@ -72,10 +72,23 @@ class UserProfile {
     }
 
     var formattedPlayTime: String {
+        let days = totalPlayTimeSeconds / 86400
+        let hours = (totalPlayTimeSeconds % 86400) / 3600
+        let minutes = (totalPlayTimeSeconds % 3600) / 60
+        if days > 0 {
+            return "\(days)d \(hours)h \(minutes)m"
+        } else if hours > 0 {
+            return "\(hours)h \(minutes)m"
+        }
+        return "\(minutes)m"
+    }
+
+    /// Short formatted time for cards (e.g., "2h" or "15m")
+    var shortPlayTime: String {
         let hours = totalPlayTimeSeconds / 3600
         let minutes = (totalPlayTimeSeconds % 3600) / 60
         if hours > 0 {
-            return "\(hours)h \(minutes)m"
+            return "\(hours)h"
         }
         return "\(minutes)m"
     }

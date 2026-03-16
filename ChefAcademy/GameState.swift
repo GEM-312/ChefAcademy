@@ -277,7 +277,63 @@ class GameState: ObservableObject {
         addCoins(coins)
         addXP(xp)
         recipeStars[recipeID] = max(recipeStars[recipeID] ?? 0, stars)
+
+        // Update Body Buddy health based on recipe nutrients!
+        if let recipe = GardenRecipes.all.first(where: { $0.id == recipeID }) {
+            applyRecipeNutrients(recipe, starMultiplier: stars)
+        }
+
         saveToStore()
+    }
+
+    /// Calculate nutrient impact from a cooked recipe and boost organ health.
+    /// Each ingredient contributes its nutrients → mapped to organs.
+    /// Star rating multiplies the boost (3 stars = full benefit).
+    private func applyRecipeNutrients(_ recipe: Recipe, starMultiplier: Int) {
+        // Collect all nutrients from garden ingredients
+        var organBoosts: [String: Int] = [:]
+
+        for vegType in recipe.gardenIngredients {
+            for nutrient in vegType.nutrients {
+                let organ = nutrient.benefitsOrgan
+                let boost = starMultiplier // 1-3 points per nutrient per star
+                organBoosts[organ, default: 0] += boost
+            }
+        }
+
+        // Collect nutrients from pantry ingredients
+        for pantryItem in recipe.pantryIngredients {
+            for nutrient in pantryItem.nutrients {
+                let organ = nutrient.benefitsOrgan
+                let boost = starMultiplier
+                organBoosts[organ, default: 0] += boost
+            }
+        }
+
+        // Apply boosts to Body Buddy (capped at 100)
+        for (organ, boost) in organBoosts {
+            switch organ {
+            case "Brain":
+                brainHealth = min(100, brainHealth + boost)
+            case "Heart", "Blood":
+                heartHealth = min(100, heartHealth + boost)
+            case "Muscles":
+                muscleHealth = min(100, muscleHealth + boost)
+            case "Bones":
+                boneHealth = min(100, boneHealth + boost)
+            case "Immune System":
+                immuneHealth = min(100, immuneHealth + boost)
+            case "Energy", "Whole Body":
+                energyLevel = min(100, energyLevel + boost)
+            case "Eyes", "Skin", "Digestive System":
+                // Map these to closest organ
+                immuneHealth = min(100, immuneHealth + boost)
+            default:
+                energyLevel = min(100, energyLevel + boost)
+            }
+        }
+
+        print("[BodyBuddy] Recipe '\(recipe.title)' boosted: \(organBoosts)")
     }
 
     // ============================================
@@ -286,6 +342,8 @@ class GameState: ObservableObject {
 
     /// Load player progress from a specific PlayerData record
     func loadFromStore(for saved: PlayerData) {
+        print("[GameState] Loading: \(saved.coins) coins, \(saved.recipeStars.count) recipes, \(saved.harvestedData.count) harvested, ownerID=\(saved.ownerID?.uuidString.prefix(8) ?? "nil")")
+
         // Currency
         coins = saved.coins
         xp = saved.xp
@@ -313,6 +371,13 @@ class GameState: ObservableObject {
             }
             plot.plantedDate = data.plantedDate
             plot.pausedDate = data.pausedDate
+            // Restore care tracking
+            plot.hasWatered = data.hasWatered
+            plot.hasWeeded = data.hasWeeded
+            plot.hasDebugged = data.hasDebugged
+            plot.hasSung = data.hasSung
+            plot.weedTriggered = data.weedTriggered
+            plot.bugTriggered = data.bugTriggered
             return plot
         }
         // If saved plots is empty (first launch after migration), keep starter plots
@@ -360,7 +425,10 @@ class GameState: ObservableObject {
 
     /// Persist current state to SwiftData (profile-aware)
     func saveToStore() {
-        guard let context = modelContext else { return }
+        guard let context = modelContext else {
+            print("[GameState] saveToStore SKIPPED — no modelContext")
+            return
+        }
 
         // Find the PlayerData for the active profile
         let saved: PlayerData
@@ -373,9 +441,11 @@ class GameState: ObservableObject {
                let playerData = profile.playerData(in: context) {
                 saved = playerData
             } else {
+                print("[GameState] saveToStore FAILED — no PlayerData for profile \(profileID.uuidString.prefix(8))")
                 return
             }
         } else {
+            print("[GameState] saveToStore — no activeProfileID, using legacy mode")
             // Fallback: legacy single-user mode
             let descriptor = FetchDescriptor<PlayerData>()
             if let existing = try? context.fetch(descriptor).first {
@@ -409,7 +479,13 @@ class GameState: ObservableObject {
                 stateRaw: plot.state.rawValue,
                 vegetableRaw: plot.vegetable?.rawValue,
                 plantedDate: plot.plantedDate,
-                pausedDate: plot.pausedDate
+                pausedDate: plot.pausedDate,
+                hasWatered: plot.hasWatered,
+                hasWeeded: plot.hasWeeded,
+                hasDebugged: plot.hasDebugged,
+                hasSung: plot.hasSung,
+                weedTriggered: plot.weedTriggered,
+                bugTriggered: plot.bugTriggered
             )
         }
 
@@ -441,7 +517,12 @@ class GameState: ObservableObject {
 
         saved.lastSaved = Date()
 
-        try? context.save()
+        do {
+            try context.save()
+            print("[GameState] Saved: \(coins) coins, \(recipeStars.count) recipes, \(harvestedIngredients.count) harvested, profile=\(activeProfileID?.uuidString.prefix(8) ?? "legacy")")
+        } catch {
+            print("[GameState] SAVE FAILED: \(error)")
+        }
     }
 
     /// Reset all game state to new-player defaults
@@ -949,16 +1030,101 @@ struct GardenPlot: Identifiable {
         state = .growing
     }
 
-    /// Harvest the plant
+    // MARK: - Plant Care Tracking
+
+    /// Care actions performed this growth cycle
+    var hasWatered: Bool = false
+    var hasWeeded: Bool = false
+    var hasDebugged: Bool = false  // Ladybug rescue
+    var hasSung: Bool = false      // Sang to plant
+    var weedTriggered: Bool = false   // Weed event already fired this cycle
+    var bugTriggered: Bool = false    // Bug event already fired this cycle
+
+    /// Care score: 0-4 based on how many care actions were performed
+    var careScore: Int {
+        [hasWatered, hasWeeded, hasDebugged, hasSung].filter { $0 }.count
+    }
+
+    /// Bonus harvest yield based on care (0 to +2)
+    var careBonus: Int {
+        switch careScore {
+        case 4: return 2   // Perfect care!
+        case 3: return 1   // Great care
+        default: return 0  // Normal yield
+        }
+    }
+
+    // MARK: - Weeding
+
+    /// Weeds have appeared — growth slows until cleared
+    mutating func triggerWeeds() {
+        guard state == .growing, !weedTriggered else { return }
+        weedTriggered = true
+        pausedDate = Date()
+        state = .needsWeeding
+    }
+
+    /// Player removed the weeds — resume growth
+    mutating func weed() {
+        if let paused = pausedDate, let planted = plantedDate {
+            let pauseDuration = Date().timeIntervalSince(paused)
+            plantedDate = planted.addingTimeInterval(pauseDuration)
+        }
+        pausedDate = nil
+        hasWeeded = true
+        state = .growing
+    }
+
+    // MARK: - Bug Rescue
+
+    /// Aphids appeared — plant stressed until ladybugs released
+    mutating func triggerBugs() {
+        guard state == .growing, !bugTriggered else { return }
+        bugTriggered = true
+        pausedDate = Date()
+        state = .hasBugs
+    }
+
+    /// Player released ladybugs — resume growth
+    mutating func releaseLadybugs() {
+        if let paused = pausedDate, let planted = plantedDate {
+            let pauseDuration = Date().timeIntervalSince(paused)
+            plantedDate = planted.addingTimeInterval(pauseDuration)
+        }
+        pausedDate = nil
+        hasDebugged = true
+        state = .growing
+    }
+
+    // MARK: - Singing
+
+    /// Player sang to the plant — small boost
+    mutating func singToPlant() {
+        guard state == .growing, !hasSung else { return }
+        hasSung = true
+        // Small growth boost: move plantedDate back by 5% of total grow time
+        if let planted = plantedDate, let veg = vegetable {
+            let boost = veg.growthTime * 0.05
+            plantedDate = planted.addingTimeInterval(-boost)
+        }
+    }
+
+    /// Harvest the plant (includes care bonus)
     mutating func harvest() -> Int {
         guard let veg = vegetable, isReadyToHarvest else { return 0 }
-        let yield = veg.harvestYield
+        let yield = veg.harvestYield + careBonus
 
-        // Reset the plot
+        // Reset the plot + care tracking
         vegetable = nil
         plantedDate = nil
         pausedDate = nil
         state = .empty
+        hasWatered = false
+        hasWeeded = false
+        hasDebugged = false
+        hasSung = false
+        weedTriggered = false
+        bugTriggered = false
 
         return yield
     }
@@ -967,10 +1133,12 @@ struct GardenPlot: Identifiable {
 // MARK: - Plot State
 
 enum PlotState: String {
-    case empty       // Nothing planted
-    case growing     // Plant is growing
-    case ready       // Ready to harvest!
-    case needsWater  // Needs watering (future feature)
+    case empty         // Nothing planted
+    case growing       // Plant is growing
+    case ready         // Ready to harvest!
+    case needsWater    // Needs watering
+    case needsWeeding  // Weeds appeared — swipe to remove
+    case hasBugs       // Aphids on the plant — tap ladybugs to rescue
 }
 
 // MARK: - Quest Model

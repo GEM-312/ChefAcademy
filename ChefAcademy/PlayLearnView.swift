@@ -83,7 +83,7 @@ struct PlayLearnView: View {
                             title: "Healthy Picks",
                             icon: "heart.circle.fill",
                             description: "Tap healthy foods, skip the junk!",
-                            color: .red.opacity(0.7),
+                            color: Color.AppTheme.terracotta.opacity(0.7),
                             isLocked: false
                         ) { selectedGame = .healthyChoice }
 

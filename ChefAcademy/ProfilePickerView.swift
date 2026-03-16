@@ -18,6 +18,7 @@ struct ProfilePickerView: View {
     @State private var pinPurpose: PINPurpose = .selectParentProfile
     @State private var pendingParentProfile: UserProfile?
     @State private var showAddChildFlow = false
+    @State private var refreshKey = UUID()
 
     var body: some View {
         ZStack {
@@ -50,7 +51,7 @@ struct ProfilePickerView: View {
                                 }
                             }
 
-                            // Child cards
+                            // Child cards — .id(refreshKey) forces re-fetch after adding
                             ForEach(family.childProfiles(in: modelContext), id: \.id) { child in
                                 ProfileCard(
                                     profile: child,
@@ -63,6 +64,7 @@ struct ProfilePickerView: View {
                         }
                         .padding(.horizontal, AppSpacing.lg)
                     }
+                    .id(refreshKey)
                 }
 
                 Spacer()
@@ -109,6 +111,12 @@ struct ProfilePickerView: View {
                 .environmentObject(sessionManager)
                 .environmentObject(gameState)
                 .environmentObject(avatarModel)
+        }
+        .onChange(of: showAddChildFlow) { _, isShowing in
+            if !isShowing {
+                // Force re-fetch child profiles after AddChildFlowView dismisses
+                refreshKey = UUID()
+            }
         }
     }
 
@@ -188,6 +196,17 @@ struct ProfileCard: View {
                     .font(.AppTheme.headline)
                     .foregroundColor(Color.AppTheme.darkBrown)
                     .lineLimit(1)
+
+                // Play time
+                if profile.totalPlayTimeSeconds > 0 {
+                    HStack(spacing: 3) {
+                        Image(systemName: "clock.fill")
+                            .font(.system(size: 10))
+                        Text(profile.shortPlayTime)
+                            .font(.AppTheme.caption)
+                    }
+                    .foregroundColor(Color.AppTheme.lightSepia)
+                }
 
                 // Last played badge
                 if isLastPlayed {

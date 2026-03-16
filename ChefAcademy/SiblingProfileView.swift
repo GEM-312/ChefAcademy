@@ -76,7 +76,7 @@ struct SiblingProfileView: View {
                             if data.gardenLikes > 0 {
                                 HStack(spacing: AppSpacing.xs) {
                                     Image(systemName: "heart.fill")
-                                        .foregroundColor(.red.opacity(0.7))
+                                        .foregroundColor(Color.AppTheme.terracotta.opacity(0.7))
                                     Text("\(data.gardenLikes) likes")
                                         .font(.AppTheme.headline)
                                         .foregroundColor(Color.AppTheme.darkBrown)

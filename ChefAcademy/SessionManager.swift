@@ -80,6 +80,14 @@ class SessionManager: ObservableObject {
         let familyDescriptor = FetchDescriptor<FamilyProfile>()
         let families = (try? context.fetch(familyDescriptor)) ?? []
 
+        // Debug: log what's in the store
+        let allProfiles = (try? context.fetch(FetchDescriptor<UserProfile>())) ?? []
+        let allPlayerData = (try? context.fetch(FetchDescriptor<PlayerData>())) ?? []
+        print("[Session] Bootstrap: \(families.count) families, \(allProfiles.count) profiles, \(allPlayerData.count) playerData")
+        for p in allProfiles {
+            print("[Session]   Profile: '\(p.name)' role=\(p.role) familyID=\(p.familyID?.uuidString.prefix(8) ?? "nil")")
+        }
+
         if let family = families.first {
             // Family already exists on this device
             self.familyProfile = family
@@ -261,7 +269,13 @@ class SessionManager: ObservableObject {
         context.insert(profile)
         family.addMember(profile)
         profile.createPlayerData(in: context)
-        try? context.save()
+
+        do {
+            try context.save()
+            print("[Session] Child profile '\(name)' saved successfully (familyID: \(family.id))")
+        } catch {
+            print("[Session] FAILED to save child profile '\(name)': \(error)")
+        }
 
         return profile
     }

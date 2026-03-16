@@ -197,6 +197,11 @@ All fonts use **SF Rounded** (system) for a friendly, approachable feel.
 - **Architecture:** MVVM with ObservableObject + SwiftData @Model
 - **Security:** Keychain for parent PIN (iCloud Keychain sync)
 - **Drawing:** PencilKit (Seed Info coloring)
+- **Voice:** AVSpeechSynthesizer (Pip reads instructions aloud)
+- **Nutrition API:** USDA FoodData Central (real nutrient data with kid-friendly superpowers)
+- **Weather:** Apple WeatherKit (real weather affects garden growth)
+- **AI Chat:** Claude Haiku API (Pip answers kids' food questions)
+- **Auth:** Sign in with Apple (parent authentication)
 - **Minimum iOS:** 16.0
 - **Target Devices:** iPhone & iPad
 
@@ -306,19 +311,35 @@ ChefAcademy/
 - [x] Avatar creator with gender + head covering options
 - [x] Seed Info educational pages with PencilKit coloring
 - [x] Sibling garden visits with Pip greeting and likes system
-- [x] Body Buddy organ health visualization
+- [x] Body Buddy organ health visualization with animated rings
 - [x] Play & Learn mini-games hub
 - [x] Tab-based navigation (6 tabs: Home, Garden, Shop, Kitchen, Body, Play)
 - [x] Landscape support with adaptive tab bar
 - [x] PipDialogView game-style dialog system
+- [x] Sign in with Apple (parent authentication)
+
+### March 15, 2026 — New Features
+- [x] **PipVoice (AVSpeechSynthesizer)** — Pip reads instructions aloud for age 6+ audience. SpeakerButton component on cooking steps, seed info, fun facts
+- [x] **USDA FoodData Central API** — Real nutrition data for all 46 items. Kid-friendly superpowers ("Germ-fighting superpower!") and comparisons ("More Vitamin C than an orange!")
+- [x] **Plant Care System** — Watering, weeding, and bug rescue states with random triggers. Care score affects harvest yield (+0 to +2 bonus)
+- [x] **Body Buddy Redesign** — Big body figure with animated health orbs, cooked recipe cards, animated nutrient breakdown bars, USDA superpowers per organ
+- [x] **Recipe -> Body Buddy** — Cooking recipes now updates organ health (Brain, Heart, Immune, Muscles, Bones, Energy, Eyes, Digestion, Skin)
+- [x] **Cooking Assets** — Frying pan, empty plate, cracked egg images replace drawn shapes in mini-games
+- [x] **Style Consistency** — Fixed 14 off-theme color violations across 11 files (all raw .red/.blue/.orange replaced with AppTheme)
+- [x] **WeatherKit Debug** — Added comprehensive logging for JWT auth troubleshooting
+- [x] **Save/Load Logging** — Replaced silent try? with do/catch for all SwiftData saves
+- [x] **Play Time Display** — Shows days/hours/minutes on profile picker cards
+- [x] **Profile Refresh** — ProfilePickerView now refreshes after adding a new child
 
 ### In Progress
-- [ ] P0 UX Redesign: voice/audio, vibrant CTA colors, scroll cues
-- [ ] Body Buddy animated food journey through organs
-- [ ] Cooking mini-game visual feedback and scoring polish
-- [ ] 19 missing veggie/fruit/berry image assets
-- [ ] Food Encyclopedia view
-- [ ] Recipe gating by garden progress
+- [ ] Async social: visitor footprints, gifts, message board, veggie trading
+- [ ] Game Center multiplayer: real-time mini-game challenges between siblings
+- [ ] Plant care interactions: watering can drag, weeding swipe, bug rescue tap
+- [ ] Singing to plants, composting, sunshade mechanics
+- [ ] HomeView player stats (veggies grown, recipes cooked)
+- [ ] Sibling kitchen visits
+- [ ] WeatherKit activation (pending Apple server propagation)
+- [ ] ElevenLabs custom Pip voice (pre-recorded audio clips)
 
 ---
 

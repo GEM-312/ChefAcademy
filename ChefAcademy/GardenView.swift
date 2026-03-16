@@ -652,7 +652,7 @@ struct GardenView: View {
                 if !isVisiting && gameState.gardenLikes > 0 {
                     HStack(spacing: 4) {
                         Image(systemName: "heart.fill")
-                            .foregroundColor(.red.opacity(0.7))
+                            .foregroundColor(Color.AppTheme.terracotta.opacity(0.7))
                             .font(.system(size: 12))
                         Text("\(gameState.gardenLikes)")
                             .font(.AppTheme.caption)
@@ -1016,7 +1016,18 @@ struct GardenView: View {
         case .needsWater:
             // Water the plant! Resume growth.
             gameState.gardenPlots[index].water()
-            gameState.addXP(2) // Small reward for caring
+            gameState.gardenPlots[index].hasWatered = true
+            gameState.addXP(2)
+
+        case .needsWeeding:
+            // Pull the weeds! Resume growth.
+            gameState.gardenPlots[index].weed()
+            gameState.addXP(2)
+
+        case .hasBugs:
+            // Release ladybugs! Resume growth.
+            gameState.gardenPlots[index].releaseLadybugs()
+            gameState.addXP(2)
         }
     }
 
@@ -1102,11 +1113,27 @@ struct GardenView: View {
         for index in gameState.gardenPlots.indices {
             let plot = gameState.gardenPlots[index]
 
-            if plot.state == .growing && plot.isReadyToHarvest {
+            guard plot.state == .growing else { continue }
+
+            if plot.isReadyToHarvest {
                 gameState.gardenPlots[index].state = .ready
-            } else if plot.state == .growing && needsWateringCheck && plot.growthProgress > 0.5 {
+            } else if needsWateringCheck && plot.growthProgress > 0.5 && !plot.hasWatered {
                 // Plant is thirsty! Needs watering at 50%+ growth
                 gameState.gardenPlots[index].pauseForWater()
+            } else if plot.growthProgress > 0.2 && plot.growthProgress < 0.35 && !plot.weedTriggered {
+                // Random weeds at ~25% growth (30% chance)
+                if Double.random(in: 0...1) < 0.3 {
+                    gameState.gardenPlots[index].triggerWeeds()
+                } else {
+                    gameState.gardenPlots[index].weedTriggered = true // Skip this cycle
+                }
+            } else if plot.growthProgress > 0.7 && plot.growthProgress < 0.85 && !plot.bugTriggered {
+                // Random bugs at ~75% growth (25% chance)
+                if Double.random(in: 0...1) < 0.25 {
+                    gameState.gardenPlots[index].triggerBugs()
+                } else {
+                    gameState.gardenPlots[index].bugTriggered = true // Skip this cycle
+                }
             }
         }
     }
@@ -1203,7 +1230,7 @@ struct SeedBadge: View {
                 .aspectRatio(contentMode: .fill)
                 .frame(width: badgeWidth, height: badgeHeight)
                 .clipped()
-                .opacity(isOwned ? 0.5 : 0.25)
+                .opacity(isOwned ? 0.5 : 0.35)
 
             // Content on top of the bag
             VStack(spacing: 2) {
@@ -1213,7 +1240,6 @@ struct SeedBadge: View {
                     .frame(width: imgSize, height: imgSize)
                     .opacity(0.85)
                     .offset(y: 25)
-                    .saturation(isOwned ? 1.0 : 0.3)
 
                 Text(seed.vegetableType.displayName)
                     .font(.system(size: isIPad ? 18 : 14, weight: .medium, design: .rounded))
