@@ -343,6 +343,120 @@ ChefAcademy/
 
 ---
 
+## Architecture
+
+```
+┌─────────────────────────────────────────────┐
+│                 SwiftUI Views                │
+│  (HomeView, GardenView, KitchenView, etc.)  │
+├─────────────────────────────────────────────┤
+│              ViewModels / State               │
+│  GameState    SessionManager    AvatarModel   │
+├─────────────────────────────────────────────┤
+│              Services Layer                   │
+│  PipVoice  USDAFoodService  GardenWeather    │
+│  PipAIService  CloudKeyManager               │
+├─────────────────────────────────────────────┤
+│           SwiftData + CloudKit                │
+│  FamilyProfile  UserProfile  PlayerData      │
+├─────────────────────────────────────────────┤
+│           Apple Frameworks                    │
+│  WeatherKit  PencilKit  AVFoundation         │
+│  AuthenticationServices  GameKit (planned)    │
+└─────────────────────────────────────────────┘
+```
+
+---
+
+## Key Technical Challenges Solved
+
+| Challenge | Solution |
+|-----------|----------|
+| **SwiftData + CloudKit** | No @Relationship macros — UUID-based model linking, all properties with defaults |
+| **Codable backwards compatibility** | Custom `init(from:)` decoders so old saved data loads when new fields are added |
+| **USDA API response mismatch** | Unified accessors handle both flat (search) and nested (single-food) JSON formats |
+| **Silent data loss** | Replaced `try? context.save()` with `do/catch` logging to catch persistence failures |
+| **WeatherKit JWT auth** | Entitlements, provisioning profile regeneration, Apple server propagation handling |
+| **Kid-friendly nutrition** | USDA raw data (mg/IU) translated to superpowers ("Germ-fighting superpower!") via threshold logic |
+
+---
+
+## By the Numbers
+
+| Metric | Count |
+|--------|-------|
+| Swift source files | 40+ |
+| Lines of code | ~15,000+ |
+| Image assets | 285 |
+| Vegetables/fruits | 27 |
+| Pantry items | 19 |
+| Recipes | 17 |
+| Mini-game types | 10 |
+| API integrations | 3 (USDA, Claude AI, WeatherKit) |
+| Body organ systems | 9 |
+| Pip character poses | 6 + walking + waving animations |
+
+---
+
+## Design Process
+
+### Phase 1: Research & Planning (January 2026)
+- Researched iOS Developer career requirements (Swift, SwiftUI, API integration, multi-user systems)
+- Studied nutritional science: Jessie Inchauste's "Glucose Goddess" methodology
+- Analyzed competitor apps: Cooking Mama, Toca Kitchen, Khan Academy Kids
+- Defined core loop: GROW → COOK → FEED → REWARDS
+
+### Phase 2: Core Build (February 2026)
+- Built garden system (8 plants → expanded to 27)
+- Created 10 cooking mini-games with gesture recognition
+- Implemented multi-user family system with SwiftData
+- Designed avatar creator with inclusive options (gender, head coverings)
+
+### Phase 3: Integration & Polish (March 2026)
+- Integrated 3 external APIs (USDA, Claude AI, WeatherKit)
+- Added plant care system (watering, weeding, bug rescue)
+- Redesigned Body Buddy with animated health visualization
+- Conducted and implemented external UX audit (shifted target age 8-12 → 6+)
+- Built PipVoice text-to-speech for accessibility
+- Enforced visual consistency via STYLES.md design system
+
+### Phase 4: Social & Multiplayer (Planned: March-April 2026)
+- Async social features (gifts, trading, message boards)
+- Game Center real-time multiplayer mini-games
+- Family leaderboards and cooperative recipes
+
+---
+
+## Career Goal Alignment
+
+My career goal is **iOS Developer** specializing in educational and family-focused apps. This project directly demonstrates:
+
+| Industry Requirement | Project Evidence |
+|---------------------|-----------------|
+| SwiftUI proficiency | 40+ views with complex state management, animations, gestures |
+| API integration | 3 production APIs with caching, error handling, and offline fallbacks |
+| Data persistence | SwiftData + CloudKit with multi-user architecture and schema migration |
+| Security awareness | Keychain PIN, API key protection, Sign in with Apple |
+| UX / Accessibility | Voice narration, inclusive design, UX audit implementation |
+| Code quality | Design system (STYLES.md), MVVM architecture, comprehensive documentation |
+| Ship-ready mindset | Real device testing, backwards compatibility, graceful error handling |
+
+---
+
+## Project Documentation
+
+| Document | Purpose |
+|----------|---------|
+| [CLAUDE.md](CLAUDE.md) | Developer guide — architecture, conventions, key files |
+| [SKILLS.md](SKILLS.md) | Technical skills inventory + teacher-tutor learning mode |
+| [STYLES.md](STYLES.md) | Visual consistency guide — colors, fonts, spacing, banned patterns |
+| [ASSETS.md](ASSETS.md) | Full asset inventory (285 images) + needed assets for new features |
+| [TEACHING.md](TEACHING.md) | iOS/Swift learning log — concepts explained through project code |
+| [UX_AUDIT_REPORT.md](UX_AUDIT_REPORT.md) | External UX evaluation and findings |
+| [UX_REDESIGN_PLAN.md](UX_REDESIGN_PLAN.md) | Implementation plan for UX improvements |
+
+---
+
 ## Credits
 
 **Developer:** Marina Pollak
@@ -354,6 +468,8 @@ ChefAcademy/
 - Jessie Inchauste ("Glucose Goddess")
 - *Glucose Revolution* (2022)
 - *The Glucose Goddess Method* (2023)
+
+**AI Pair Programming:** Claude Code (Anthropic) — used as a teaching tool and development accelerator
 
 ---
 
