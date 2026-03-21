@@ -93,6 +93,24 @@ class UserProfile {
         return "\(minutes)m"
     }
 
+    /// Relative time since last played (e.g., "5m ago", "3h ago", "2d ago")
+    var lastPlayedRelative: String {
+        let seconds = Int(Date().timeIntervalSince(lastPlayedDate))
+        if seconds < 60 {
+            return "Just now"
+        }
+        let minutes = seconds / 60
+        if minutes < 60 {
+            return "\(minutes)m ago"
+        }
+        let hours = minutes / 60
+        if hours < 24 {
+            return "\(hours)h ago"
+        }
+        let days = hours / 24
+        return "\(days)d ago"
+    }
+
     // MARK: - PlayerData Lookup (UUID-based)
 
     func playerData(in context: ModelContext) -> PlayerData? {

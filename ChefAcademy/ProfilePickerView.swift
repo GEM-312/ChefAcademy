@@ -42,8 +42,7 @@ struct ProfilePickerView: View {
                             if let parent = family.parentProfile(in: modelContext) {
                                 ProfileCard(
                                     profile: parent,
-                                    isParent: true,
-                                    allProfiles: family.members(in: modelContext)
+                                    isParent: true
                                 ) {
                                     pendingParentProfile = parent
                                     pinPurpose = .selectParentProfile
@@ -55,8 +54,7 @@ struct ProfilePickerView: View {
                             ForEach(family.childProfiles(in: modelContext), id: \.id) { child in
                                 ProfileCard(
                                     profile: child,
-                                    isParent: false,
-                                    allProfiles: family.members(in: modelContext)
+                                    isParent: false
                                 ) {
                                     sessionManager.selectProfile(child, gameState: gameState, avatarModel: avatarModel)
                                 }
@@ -142,18 +140,10 @@ struct ProfilePickerView: View {
 struct ProfileCard: View {
     let profile: UserProfile
     let isParent: Bool
-    let allProfiles: [UserProfile]
     let onTap: () -> Void
 
     private var characterImage: String {
         profile.gender == .boy ? "boy_card_frame_28" : "girl_card_frame_15"
-    }
-
-    private var isLastPlayed: Bool {
-        guard let mostRecent = allProfiles.max(by: { $0.lastPlayedDate < $1.lastPlayedDate }) else {
-            return false
-        }
-        return mostRecent.id == profile.id
     }
 
     var body: some View {
@@ -197,23 +187,14 @@ struct ProfileCard: View {
                     .foregroundColor(Color.AppTheme.darkBrown)
                     .lineLimit(1)
 
-                // Play time
-                if profile.totalPlayTimeSeconds > 0 {
-                    HStack(spacing: 3) {
-                        Image(systemName: "clock.fill")
-                            .font(.system(size: 10))
-                        Text(profile.shortPlayTime)
-                            .font(.AppTheme.caption)
-                    }
-                    .foregroundColor(Color.AppTheme.lightSepia)
-                }
-
-                // Last played badge
-                if isLastPlayed {
-                    Text("Last played")
+                // Last played relative time
+                HStack(spacing: 3) {
+                    Image(systemName: "clock.fill")
+                        .font(.system(size: 10))
+                    Text(profile.lastPlayedRelative)
                         .font(.AppTheme.caption)
-                        .foregroundColor(Color.AppTheme.sage)
                 }
+                .foregroundColor(Color.AppTheme.lightSepia)
             }
             .frame(width: 120)
             .padding(AppSpacing.md)

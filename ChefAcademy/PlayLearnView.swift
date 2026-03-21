@@ -9,6 +9,8 @@ import SwiftUI
 
 struct PlayLearnView: View {
     @EnvironmentObject var gameState: GameState
+    @EnvironmentObject var avatarModel: AvatarModel
+    @EnvironmentObject var sessionManager: SessionManager
     @State private var selectedGame: MiniGameType?
 
     var body: some View {
@@ -113,6 +115,8 @@ struct PlayLearnView: View {
         .fullScreenCover(item: $selectedGame) { game in
             MiniGameRouterView(game: game)
                 .environmentObject(gameState)
+                .environmentObject(avatarModel)
+                .environmentObject(sessionManager)
         }
     }
 }
@@ -181,6 +185,7 @@ struct MiniGameCard: View {
 struct MiniGameRouterView: View {
     let game: MiniGameType
     @EnvironmentObject var gameState: GameState
+    @EnvironmentObject var avatarModel: AvatarModel
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {

@@ -57,7 +57,15 @@ enum HealthyGamePhase {
 
 struct HealthyChoiceGameView: View {
     @EnvironmentObject var gameState: GameState
+    @EnvironmentObject var avatarModel: AvatarModel
+    @EnvironmentObject var sessionManager: SessionManager
     @Environment(\.dismiss) private var dismiss
+
+    // Multiplayer
+    @State private var showMultiplayer = false
+    @State private var showLocalVersus = false
+    @State private var showNearby = false
+    @State private var showSplitScreen = false
 
     // Game state
     @State private var phase: HealthyGamePhase = .ready
@@ -146,6 +154,51 @@ struct HealthyChoiceGameView: View {
             }
             .buttonStyle(BouncyButtonStyle())
 
+            // Split Screen button (2 players, 1 device, simultaneous)
+            Button(action: { showSplitScreen = true }) {
+                HStack(spacing: 8) {
+                    Image(systemName: "rectangle.split.1x2.fill")
+                    Text("Split Screen")
+                }
+                .font(.AppTheme.headline)
+                .foregroundColor(Color.AppTheme.cream)
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.vertical, AppSpacing.sm)
+                .background(Color.AppTheme.sage)
+                .cornerRadius(AppSpacing.cardCornerRadius)
+            }
+            .buttonStyle(BouncyButtonStyle())
+
+            // VS Sibling button (take turns)
+            Button(action: { showLocalVersus = true }) {
+                HStack(spacing: 8) {
+                    Image(systemName: "person.2.fill")
+                    Text("Take Turns")
+                }
+                .font(.AppTheme.headline)
+                .foregroundColor(Color.AppTheme.cream)
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.vertical, AppSpacing.sm)
+                .background(Color.AppTheme.goldenWheat)
+                .cornerRadius(AppSpacing.cardCornerRadius)
+            }
+            .buttonStyle(BouncyButtonStyle())
+
+            // Nearby multiplayer button (2 devices, same room)
+            Button(action: { showNearby = true }) {
+                HStack(spacing: 8) {
+                    Image(systemName: "antenna.radiowaves.left.and.right")
+                    Text("Nearby Battle")
+                }
+                .font(.AppTheme.headline)
+                .foregroundColor(Color.AppTheme.cream)
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.vertical, AppSpacing.sm)
+                .background(Color.AppTheme.terracotta)
+                .cornerRadius(AppSpacing.cardCornerRadius)
+            }
+            .buttonStyle(BouncyButtonStyle())
+
             Button(action: { dismiss() }) {
                 Text("Back")
                     .font(.AppTheme.body)
@@ -154,6 +207,27 @@ struct HealthyChoiceGameView: View {
             .buttonStyle(.plain)
 
             Spacer()
+        }
+        .fullScreenCover(isPresented: $showLocalVersus) {
+            LocalVersusView()
+                .environmentObject(gameState)
+                .environmentObject(avatarModel)
+                .environmentObject(sessionManager)
+        }
+        .fullScreenCover(isPresented: $showSplitScreen) {
+            SplitScreenVersusView()
+                .environmentObject(gameState)
+                .environmentObject(sessionManager)
+        }
+        .fullScreenCover(isPresented: $showNearby) {
+            NearbyVersusView()
+                .environmentObject(gameState)
+                .environmentObject(avatarModel)
+        }
+        .fullScreenCover(isPresented: $showMultiplayer) {
+            MultiplayerHealthyPicksView()
+                .environmentObject(gameState)
+                .environmentObject(avatarModel)
         }
     }
 
@@ -842,4 +916,5 @@ struct HealthyChoiceGameView: View {
 #Preview {
     HealthyChoiceGameView()
         .environmentObject(GameState.preview)
+        .environmentObject(AvatarModel())
 }

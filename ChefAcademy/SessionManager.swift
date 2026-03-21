@@ -88,8 +88,9 @@ class SessionManager: ObservableObject {
             print("[Session]   Profile: '\(p.name)' role=\(p.role) familyID=\(p.familyID?.uuidString.prefix(8) ?? "nil")")
         }
 
-        if let family = families.first {
-            // Family already exists on this device
+        if !families.isEmpty {
+            // Pick the RIGHT family when CloudKit syncs multiple
+            let family = pickBestFamily(from: families, authManager: authManager, context: context)
             self.familyProfile = family
 
             // Migrate PIN from SwiftData to Keychain if needed
@@ -135,6 +136,56 @@ class SessionManager: ObservableObject {
         }
     }
 
+    // MARK: - Family Selection (CloudKit dedup)
+
+    /// When CloudKit syncs multiple families, pick the right one:
+    /// 1. Match by Apple ID (the signed-in parent)
+    /// 2. If multiple match, pick the one with the most children (most active)
+    /// 3. Fallback: most recently created
+    /// 4. Delete orphaned/stale duplicates
+    private func pickBestFamily(from families: [FamilyProfile], authManager: AuthManager?, context: ModelContext) -> FamilyProfile {
+        guard families.count > 1 else { return families[0] }
+
+        let appleID = authManager?.appleUserID ?? ""
+
+        // Prefer family matching the signed-in Apple ID
+        let matched = families.filter { $0.appleUserID == appleID && !appleID.isEmpty }
+
+        let candidates = matched.isEmpty ? families : matched
+
+        // Pick the one with the most children (most active family)
+        let best = candidates.max { a, b in
+            let aCount = a.childProfiles(in: context).count
+            let bCount = b.childProfiles(in: context).count
+            if aCount != bCount { return aCount < bCount }
+            return a.createdDate < b.createdDate // tie-break: newest
+        } ?? candidates[0]
+
+        // Delete stale duplicates (keep only the best one)
+        for family in families where family.id != best.id {
+            let orphanedProfiles = family.members(in: context)
+            let orphanCount = orphanedProfiles.count
+            print("[Session] Removing stale family \(family.id.uuidString.prefix(8)) with \(orphanCount) profiles")
+            // Delete orphaned profiles and their player data
+            for profile in orphanedProfiles {
+                if let playerData = profile.playerData(in: context) {
+                    context.delete(playerData)
+                }
+                context.delete(profile)
+            }
+            context.delete(family)
+        }
+
+        do {
+            try context.save()
+            print("[Session] Cleaned up \(families.count - 1) duplicate families. Kept: \(best.id.uuidString.prefix(8))")
+        } catch {
+            print("[Session] Failed to clean up duplicates: \(error)")
+        }
+
+        return best
+    }
+
     // MARK: - Post-Authentication Routing
 
     /// Called after the parent signs in with Apple.
@@ -145,8 +196,11 @@ class SessionManager: ObservableObject {
         let familyDescriptor = FetchDescriptor<FamilyProfile>()
         let families = (try? context.fetch(familyDescriptor)) ?? []
 
-        if let family = families.first {
-            // Family found (synced via CloudKit) — link Apple ID if needed
+        if !families.isEmpty {
+            // Pick the RIGHT family when CloudKit syncs multiple
+            let family = pickBestFamily(from: families, authManager: authManager, context: context)
+
+            // Link Apple ID if needed
             if family.appleUserID.isEmpty, let userID = authManager.appleUserID {
                 family.appleUserID = userID
                 try? context.save()
@@ -388,6 +442,7 @@ class SessionManager: ObservableObject {
         guard let start = sessionStartTime else { return }
         let elapsed = Int(Date().timeIntervalSince(start))
         profile.totalPlayTimeSeconds += elapsed
+        profile.lastPlayedDate = Date()
         try? modelContext?.save()
     }
 

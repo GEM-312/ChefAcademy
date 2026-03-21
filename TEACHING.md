@@ -4,6 +4,52 @@ Personal reference built from real code in Pip's Kitchen Garden. Newest lessons 
 
 ---
 
+## Session: March 16, 2026
+
+### GameKit & Real-Time Multiplayer
+**Where it came up:** MultiplayerManager.swift, MultiplayerHealthyPicksView.swift
+**What it is:** GameKit is Apple's framework for Game Center. It has 3 layers: (1) Authentication — "who is this player?", (2) Matchmaking — "find someone to play with" (Apple handles this), (3) GKMatch — "now talk to each other" (peer-to-peer data). Unlike a chat app where messages go through a server, GameKit connects devices directly — lower latency, no server costs.
+**In our code:** `MultiplayerManager` conforms to `GKMatchDelegate` to receive data from the opponent. `GKMatchRequest` with `minPlayers = 2, maxPlayers = 2` tells Game Center we need exactly one opponent.
+**Why it matters:** Multiplayer games need networking. GameKit gives you matchmaking + data exchange for free, no backend server to build and pay for. Perfect for indie/student projects.
+
+### Deterministic Simulation (Seeded RNG)
+**Where it came up:** SeededRandomGenerator.swift
+**What it is:** The biggest challenge in multiplayer: both devices must show the SAME food in the SAME order. Instead of sending every food item over the network (slow/laggy), both devices generate identical "random" sequences independently. If two `SeededRandomGenerator`s start with the same seed number, they produce the exact same sequence forever. The host picks a random seed, sends it once, and both devices are in sync.
+**In our code:** `state ^= state << 13; state ^= state >> 7; state ^= state << 17` — this is the xorshift64 algorithm. Fast, deterministic, good distribution. Both devices call `allFoods.randomElement(using: &rng)` and get identical food.
+**Why it matters:** This pattern is used by most real-time multiplayer games (Starcraft, Age of Empires, fighting games). It's called "lockstep simulation" — instead of syncing the entire game state, you sync just the inputs (or seed) and let each device compute identically.
+
+### The Host Pattern (Deterministic Role Assignment)
+**Where it came up:** MultiplayerManager.swift
+**What it is:** Both devices need to agree on who's "in charge" (generates the seed, starts the countdown). We compare player IDs: `isHost = localPlayerID < opponentPlayerID`. String comparison is deterministic — both devices do the same comparison and get opposite results. No extra network message needed.
+**In our code:** `isHost = GKLocalPlayer.local.gamePlayerID < opponent.gamePlayerID` — one line, no negotiation round-trip.
+**Why it matters:** Distributed systems always need a way to elect a "leader." Comparing unique IDs is the simplest approach. Production systems use fancier algorithms (Raft, Paxos), but for 2-player games, this is perfect.
+
+### Codable Enum as Message Protocol
+**Where it came up:** MultiplayerManager.swift
+**What it is:** A Swift enum where each case is a different type of network message. `Codable` conformance lets Swift automatically convert it to/from JSON data for sending over the network. The receiving device decodes it and uses `switch` to handle each message type.
+**In our code:** `enum MultiplayerMessage: Codable { case playerInfo(...), case seedExchange(...), case scoreUpdate(...) }` — one enum replaces what would normally be a complex message parsing system.
+**Why it matters:** This is how any networked app communicates — defining a "protocol" of message types. Swift's enum + Codable makes this incredibly clean compared to other languages where you'd manually parse message type codes.
+
+### UIViewControllerRepresentable (UIKit ↔ SwiftUI Bridge)
+**Where it came up:** GameCenterMatchmakerView.swift
+**What it is:** GameKit's matchmaker UI (`GKMatchmakerViewController`) is written in UIKit (Apple's older framework). SwiftUI can't directly present it, so `UIViewControllerRepresentable` wraps a UIKit view controller for SwiftUI use. The `Coordinator` class handles delegate callbacks (like "match found!" or "user cancelled").
+**In our code:** `makeUIViewController()` creates the UIKit VC, `Coordinator` implements `GKMatchmakerViewControllerDelegate` and forwards events to our `MultiplayerManager`.
+**Why it matters:** Many Apple frameworks still use UIKit. As a SwiftUI developer, you'll regularly need this bridge pattern. It's one of the most important interop skills.
+
+### State Machine Pattern
+**Where it came up:** MultiplayerHealthyPicksView.swift, MatchPhase enum
+**What it is:** The app can only be in ONE state at a time (idle, matchmaking, connected, countdown, playing, finished, error). A `switch` on the current state determines which UI to show. This prevents impossible states like "lobby and game showing simultaneously."
+**In our code:** `enum MatchPhase { case idle, authenticating, matchmaking, connected, countdown(Int), playing, finished, error(String) }` — the associated values (`Int` for countdown, `String` for error) carry extra data with the state.
+**Why it matters:** State machines prevent entire categories of bugs. Any time you have a multi-step flow (onboarding, checkout, game phases), model it as an enum. The compiler ensures you handle every state.
+
+### Misleading UI Labels (Last Played Time Bug)
+**Where it came up:** ProfilePickerView.swift — "17m" display
+**What it is:** The profile card showed a clock icon + "17m" which LOOKED like "last played 17 minutes ago" but actually meant "17 minutes total play time." Users interpret UI based on context (clock icon = time reference), not what the developer intended.
+**In our code:** Changed from `shortPlayTime` (total play time) to `lastPlayedRelative` (relative time since last played). Also fixed `recordPlayTime()` to update `lastPlayedDate` when the session ends, not just when it starts.
+**Why it matters:** UX lesson — always consider how users will READ your UI, not just what data you're showing. A clock icon + time string naturally reads as "time ago" to most people.
+
+---
+
 ## Session: March 15, 2026 (continued)
 
 ### Codable Backwards Compatibility
