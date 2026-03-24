@@ -938,12 +938,14 @@ struct CellPhaseView: View {
 
     private func organColor(_ organ: String) -> Color {
         switch organ {
-        case "Brain": return .purple
-        case "Heart", "Blood": return .red
-        case "Muscles": return .orange
-        case "Immune System": return .blue
-        case "Energy", "Whole Body": return .yellow
-        case "Eyes": return .cyan
+        case "Brain": return Color.AppTheme.darkBrown
+        case "Heart", "Blood": return Color.AppTheme.terracotta
+        case "Muscles": return Color.AppTheme.goldenWheat
+        case "Immune System": return Color.AppTheme.sage
+        case "Energy", "Whole Body": return Color.AppTheme.goldenWheat
+        case "Eyes": return Color.AppTheme.softOlive
+        case "Bones": return Color.AppTheme.warmKhaki
+        case "Skin": return Color.AppTheme.terracotta.opacity(0.7)
         default: return Color.AppTheme.sage
         }
     }

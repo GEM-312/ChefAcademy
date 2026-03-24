@@ -196,14 +196,14 @@ struct CookingCompletionView: View {
         return organs.sorted { $0.value > $1.value }.prefix(4).map { organ, boost in
             let (icon, color): (String, Color) = {
                 switch organ {
-                case "Brain": return ("brain.head.profile", .purple)
-                case "Heart", "Blood": return ("heart.fill", .red)
-                case "Muscles": return ("figure.strengthtraining.traditional", .orange)
-                case "Bones": return ("figure.stand", .brown)
-                case "Immune System": return ("shield.fill", .blue)
-                case "Energy", "Whole Body": return ("bolt.fill", .yellow)
-                case "Eyes": return ("eye.fill", .cyan)
-                case "Skin": return ("sparkles", .pink)
+                case "Brain": return ("brain.head.profile", Color.AppTheme.darkBrown)
+                case "Heart", "Blood": return ("heart.fill", Color.AppTheme.terracotta)
+                case "Muscles": return ("figure.strengthtraining.traditional", Color.AppTheme.goldenWheat)
+                case "Bones": return ("figure.stand", Color.AppTheme.warmKhaki)
+                case "Immune System": return ("shield.fill", Color.AppTheme.sage)
+                case "Energy", "Whole Body": return ("bolt.fill", Color.AppTheme.goldenWheat)
+                case "Eyes": return ("eye.fill", Color.AppTheme.softOlive)
+                case "Skin": return ("sparkles", Color.AppTheme.terracotta.opacity(0.7))
                 default: return ("staroflife.fill", Color.AppTheme.sage)
                 }
             }()

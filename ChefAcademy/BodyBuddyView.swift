@@ -136,13 +136,13 @@ struct BodyBuddyView: View {
         }
 
         return [
-            OrganData(icon: "brain.head.profile", label: "Brain", value: gameState.brainHealth, color: .purple),
+            OrganData(icon: "brain.head.profile", label: "Brain", value: gameState.brainHealth, color: Color.AppTheme.darkBrown),
             OrganData(icon: "heart.fill", label: "Heart", value: gameState.heartHealth, color: Color.AppTheme.terracotta),
             OrganData(icon: "shield.fill", label: "Immune", value: gameState.immuneHealth, color: Color.AppTheme.sage),
             OrganData(icon: "figure.strengthtraining.traditional", label: "Muscles", value: gameState.muscleHealth, color: Color.AppTheme.goldenWheat),
             OrganData(icon: "bone.fill", label: "Bones", value: gameState.boneHealth, color: Color.AppTheme.warmKhaki),
             OrganData(icon: "bolt.fill", label: "Energy", value: gameState.energyLevel, color: Color.AppTheme.goldenWheat),
-            OrganData(icon: "eye.fill", label: "Eyes", value: eyesScore, color: .cyan),
+            OrganData(icon: "eye.fill", label: "Eyes", value: eyesScore, color: Color.AppTheme.softOlive),
             OrganData(icon: "leaf.fill", label: "Digestion", value: digestionScore, color: Color.AppTheme.sage),
             OrganData(icon: "sparkles", label: "Skin", value: skinScore, color: Color.AppTheme.terracotta),
         ]
@@ -360,14 +360,14 @@ struct RecipeNutrientBreakdown: View {
 
     private func organDisplay(_ organ: String) -> (String, Color) {
         switch organ {
-        case "Brain": return ("brain.head.profile", .purple)
+        case "Brain": return ("brain.head.profile", Color.AppTheme.darkBrown)
         case "Heart": return ("heart.fill", Color.AppTheme.terracotta)
         case "Blood": return ("drop.fill", Color.AppTheme.terracotta)
         case "Muscles": return ("figure.strengthtraining.traditional", Color.AppTheme.goldenWheat)
         case "Bones": return ("bone.fill", Color.AppTheme.warmKhaki)
         case "Immune System": return ("shield.fill", Color.AppTheme.sage)
         case "Energy", "Whole Body": return ("bolt.fill", Color.AppTheme.goldenWheat)
-        case "Eyes": return ("eye.fill", .cyan)
+        case "Eyes": return ("eye.fill", Color.AppTheme.softOlive)
         case "Skin": return ("sparkles", Color.AppTheme.terracotta)
         case "Digestive System": return ("leaf.fill", Color.AppTheme.sage)
         default: return ("staroflife.fill", Color.AppTheme.sage)
