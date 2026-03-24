@@ -3,30 +3,30 @@ import SwiftUI
 // MARK: - Little Chef Academy Style Guide
 // Inspired by vintage botanical illustrations with a whimsical, handcrafted feel
 
-// MARK: - Color Palette
+// MARK: - Color Palette (Asset Catalog backed — supports Dark Mode)
 extension Color {
     struct AppTheme {
-        // Primary Colors
-        static let cream = Color(hex: "F5F0E1")           // Backgrounds
-        static let warmCream = Color(hex: "FAF6EB")       // Lighter backgrounds
-        static let parchment = Color(hex: "EDE6D3")       // Cards, surfaces
-        
+        // Primary Colors (defined in Assets.xcassets/AppColors/)
+        static let cream = Color("AppColors/cream")                // Backgrounds
+        static let warmCream = Color("AppColors/warmCream")        // Lighter backgrounds
+        static let parchment = Color("AppColors/parchment")        // Cards, surfaces
+
         // Text & Line Colors
-        static let sepia = Color(hex: "8B7355")           // Primary text
-        static let darkBrown = Color(hex: "5D4E37")       // Headlines, emphasis
-        static let lightSepia = Color(hex: "A89880")      // Secondary text
-        
+        static let sepia = Color("AppColors/sepia")                // Primary text
+        static let darkBrown = Color("AppColors/darkBrown")        // Headlines, emphasis
+        static let lightSepia = Color("AppColors/lightSepia")      // Secondary text
+
         // Accent Colors
-        static let sage = Color(hex: "6B7B5E")            // Nature accents, success
-        static let goldenWheat = Color(hex: "C9A227")     // Highlights, buttons, rewards
-        static let softOlive = Color(hex: "8A9A7B")       // Secondary accents
-        static let terracotta = Color(hex: "B87333")      // Warnings, heat indicators
-        static let warmKhaki = Color(hex: "C6BA8B")       // Warm accent (from avatar style)
-        
-        // Functional Colors
-        static let easyLevel = Color(hex: "8A9A7B")       // Easy recipes
-        static let mediumLevel = Color(hex: "C9A227")     // Medium recipes
-        static let hardLevel = Color(hex: "B87333")       // Hard recipes (needs adult help)
+        static let sage = Color("AppColors/sage")                  // Nature accents, success
+        static let goldenWheat = Color("AppColors/goldenWheat")    // Highlights, buttons, rewards
+        static let softOlive = Color("AppColors/softOlive")        // Secondary accents
+        static let terracotta = Color("AppColors/terracotta")      // Warnings, heat indicators
+        static let warmKhaki = Color("AppColors/warmKhaki")        // Warm accent (from avatar style)
+
+        // Functional Colors (aliases to accent colors)
+        static let easyLevel = Color("AppColors/softOlive")       // Easy recipes
+        static let mediumLevel = Color("AppColors/goldenWheat")   // Medium recipes
+        static let hardLevel = Color("AppColors/terracotta")      // Hard recipes (needs adult help)
     }
 }
 
