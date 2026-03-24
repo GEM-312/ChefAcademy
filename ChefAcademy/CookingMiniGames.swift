@@ -725,24 +725,30 @@ struct WashMiniGame: View {
     @State private var bubbles: [WashBubble] = []
     @State private var isDone = false
     @State private var vegScale: CGFloat = 1.0
+    @State private var sinkFrame = 1
+    @State private var sinkTimer: Timer?
 
     private let targetTaps = 6
+    private let totalSinkFrames = 15
 
     var body: some View {
         VStack(spacing: AppSpacing.lg) {
             Spacer()
 
             ZStack {
-                // Water / sink
-                Ellipse()
-                    .fill(
-                        LinearGradient(
-                            colors: [Color.AppTheme.sage.opacity(0.2), Color.AppTheme.sage.opacity(0.1)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .frame(width: 200, height: 120)
+                // Animated kitchen sink (15 frames)
+                Image(String(format: "kitchen_sink_%02d", sinkFrame))
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 280, height: 220)
+
+                // Veggie being washed (overlaid on sink)
+                Image(vegetable.imageName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: 80, height: 80)
+                    .scaleEffect(vegScale)
+                    .offset(y: 10)
 
                 // Bubbles
                 ForEach(bubbles) { bubble in
@@ -751,13 +757,6 @@ struct WashMiniGame: View {
                         .frame(width: bubble.size, height: bubble.size)
                         .offset(x: bubble.x, y: bubble.y)
                 }
-
-                // Veggie
-                Image(vegetable.imageName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 100, height: 100)
-                    .scaleEffect(vegScale)
             }
             .contentShape(Rectangle())
             .onTapGesture {
@@ -789,12 +788,21 @@ struct WashMiniGame: View {
 
             Spacer()
         }
+        .onAppear { startSinkAnimation() }
+        .onDisappear { sinkTimer?.invalidate() }
+    }
+
+    private func startSinkAnimation() {
+        // Animate sink water at ~8fps
+        sinkTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 8.0, repeats: true) { _ in
+            sinkFrame = (sinkFrame % totalSinkFrames) + 1
+        }
     }
 
     private func handleTap() {
         tapCount += 1
 
-        // Bounce animation
+        // Bounce veggie
         withAnimation(.spring(response: 0.2, dampingFraction: 0.5)) {
             vegScale = 0.85
         }
@@ -808,13 +816,14 @@ struct WashMiniGame: View {
         for _ in 0..<3 {
             bubbles.append(WashBubble(
                 x: CGFloat.random(in: -60...60),
-                y: CGFloat.random(in: -40...40),
+                y: CGFloat.random(in: -30...30),
                 size: CGFloat.random(in: 8...20)
             ))
         }
 
         if tapCount >= targetTaps {
             isDone = true
+            sinkTimer?.invalidate()
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 onComplete(100)
             }
