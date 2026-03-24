@@ -723,39 +723,83 @@ struct WashMiniGame: View {
 
     @State private var tapCount = 0
     @State private var bubbles: [WashBubble] = []
+    @State private var splashes: [WashSplash] = []
     @State private var isDone = false
     @State private var vegScale: CGFloat = 1.0
+    @State private var vegRotation: Double = 0
+    @State private var vegY: CGFloat = -120        // Starts above sink
+    @State private var dirtOpacity: Double = 0.5   // Brown overlay = dirt
+    @State private var shineOpacity: Double = 0     // Sparkle = clean
     @State private var sinkFrame = 1
     @State private var sinkTimer: Timer?
 
     private let targetTaps = 6
     private let totalSinkFrames = 15
 
+    /// How clean the veggie is (0 = dirty, 1 = sparkling)
+    private var cleanProgress: CGFloat { CGFloat(tapCount) / CGFloat(targetTaps) }
+
     var body: some View {
-        VStack(spacing: AppSpacing.lg) {
+        VStack(spacing: AppSpacing.md) {
             Spacer()
 
+            // Instruction
+            Text(isDone ? "Sparkling clean!" : "Tap to wash the \(vegetable.displayName.lowercased())!")
+                .font(.AppTheme.headline)
+                .foregroundColor(isDone ? Color.AppTheme.sage : Color.AppTheme.sepia)
+
+            // Sink + veggie scene
             ZStack {
                 // Animated kitchen sink (15 frames)
                 Image(String(format: "kitchen_sink_%02d", sinkFrame))
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(width: 280, height: 220)
+                    .frame(width: 300, height: 240)
 
-                // Veggie being washed (overlaid on sink)
-                Image(vegetable.imageName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(width: 80, height: 80)
-                    .scaleEffect(vegScale)
-                    .offset(y: 10)
+                // Veggie in the sink — gets cleaner with each tap
+                ZStack {
+                    // The veggie
+                    Image(vegetable.imageName)
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 90, height: 90)
+                        .scaleEffect(vegScale)
+                        .rotationEffect(.degrees(vegRotation))
+
+                    // Dirt overlay (brown tint that fades as you wash)
+                    Circle()
+                        .fill(Color.AppTheme.warmKhaki.opacity(dirtOpacity))
+                        .frame(width: 85, height: 85)
+                        .blendMode(.multiply)
+
+                    // Clean sparkle (appears as veggie gets cleaner)
+                    ForEach(0..<3, id: \.self) { i in
+                        Image(systemName: "sparkle")
+                            .font(.system(size: 12))
+                            .foregroundColor(Color.AppTheme.goldenWheat)
+                            .offset(
+                                x: [-30, 25, -5][i],
+                                y: [-25, -20, 30][i]
+                            )
+                            .opacity(shineOpacity)
+                    }
+                }
+                .offset(y: vegY)
+
+                // Water splashes on tap
+                ForEach(splashes) { splash in
+                    Text("💦")
+                        .font(.system(size: splash.size))
+                        .offset(x: splash.x, y: splash.y)
+                        .opacity(splash.opacity)
+                }
 
                 // Bubbles
                 ForEach(bubbles) { bubble in
                     Circle()
-                        .fill(Color.AppTheme.cream.opacity(0.6))
+                        .fill(Color.AppTheme.cream.opacity(0.5))
                         .frame(width: bubble.size, height: bubble.size)
-                        .offset(x: bubble.x, y: bubble.y)
+                        .offset(x: bubble.x, y: bubble.y + vegY + 40)
                 }
             }
             .contentShape(Rectangle())
@@ -764,36 +808,44 @@ struct WashMiniGame: View {
                 handleTap()
             }
 
-            // Progress
+            // Progress bar
             VStack(spacing: AppSpacing.xs) {
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
                         Capsule().fill(Color.AppTheme.parchment)
                         Capsule()
-                            .fill(Color.AppTheme.sage.opacity(0.5))
-                            .frame(width: geo.size.width * CGFloat(tapCount) / CGFloat(targetTaps))
+                            .fill(Color.AppTheme.sage)
+                            .frame(width: geo.size.width * cleanProgress)
+                            .animation(.spring(response: 0.3), value: cleanProgress)
                     }
                 }
                 .frame(height: 12)
 
-                Text("\(tapCount)/\(targetTaps) washes")
-                    .font(.AppTheme.body)
-                    .foregroundColor(Color.AppTheme.sepia)
+                HStack {
+                    Text("🧽")
+                    Text(isDone ? "Clean!" : "\(tapCount)/\(targetTaps)")
+                        .font(.AppTheme.callout)
+                        .foregroundColor(Color.AppTheme.sepia)
+                    if isDone {
+                        Text("✨")
+                    }
+                }
             }
             .padding(.horizontal, AppSpacing.lg)
 
-            Text("Tap to wash the \(vegetable.displayName.lowercased())!")
-                .font(.AppTheme.callout)
-                .foregroundColor(Color.AppTheme.sepia)
-
             Spacer()
         }
-        .onAppear { startSinkAnimation() }
+        .onAppear {
+            startSinkAnimation()
+            // Veggie drops into sink
+            withAnimation(.spring(response: 0.6, dampingFraction: 0.6).delay(0.3)) {
+                vegY = 10
+            }
+        }
         .onDisappear { sinkTimer?.invalidate() }
     }
 
     private func startSinkAnimation() {
-        // Animate sink water at ~8fps
         sinkTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 8.0, repeats: true) { _ in
             sinkFrame = (sinkFrame % totalSinkFrames) + 1
         }
@@ -802,33 +854,82 @@ struct WashMiniGame: View {
     private func handleTap() {
         tapCount += 1
 
-        // Bounce veggie
-        withAnimation(.spring(response: 0.2, dampingFraction: 0.5)) {
+        // Veggie bounces and rotates (like scrubbing)
+        withAnimation(.spring(response: 0.15, dampingFraction: 0.4)) {
             vegScale = 0.85
+            vegRotation = Double.random(in: -15...15)
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
             withAnimation(.spring(response: 0.2, dampingFraction: 0.5)) {
                 vegScale = 1.0
+                vegRotation = 0
             }
         }
 
-        // Spawn bubbles
-        for _ in 0..<3 {
+        // Dirt fades away with each tap
+        withAnimation(.easeOut(duration: 0.3)) {
+            dirtOpacity = max(0, 0.5 - (Double(tapCount) / Double(targetTaps)) * 0.5)
+        }
+
+        // Shine appears as veggie gets cleaner
+        withAnimation(.easeIn(duration: 0.3)) {
+            shineOpacity = Double(tapCount) / Double(targetTaps) * 0.8
+        }
+
+        // Water splash effect
+        let splash = WashSplash(
+            x: CGFloat.random(in: -40...40),
+            y: vegY + CGFloat.random(in: -20...20),
+            size: CGFloat.random(in: 14...22),
+            opacity: 1.0
+        )
+        splashes.append(splash)
+
+        // Fade and remove splash
+        withAnimation(.easeOut(duration: 0.4)) {
+            if let idx = splashes.firstIndex(where: { $0.id == splash.id }) {
+                splashes[idx].y -= 30
+                splashes[idx].opacity = 0
+            }
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            splashes.removeAll { $0.opacity <= 0 }
+        }
+
+        // Spawn bubbles around veggie
+        for _ in 0..<2 {
             bubbles.append(WashBubble(
-                x: CGFloat.random(in: -60...60),
-                y: CGFloat.random(in: -30...30),
-                size: CGFloat.random(in: 8...20)
+                x: CGFloat.random(in: -50...50),
+                y: CGFloat.random(in: -20...20),
+                size: CGFloat.random(in: 6...16)
             ))
         }
 
+        // Done!
         if tapCount >= targetTaps {
             isDone = true
             sinkTimer?.invalidate()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+
+            // Final shine burst
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+                shineOpacity = 1.0
+                vegScale = 1.15
+                dirtOpacity = 0
+            }
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
                 onComplete(100)
             }
         }
     }
+}
+
+struct WashSplash: Identifiable {
+    let id = UUID()
+    var x: CGFloat
+    var y: CGFloat
+    var size: CGFloat
+    var opacity: Double
 }
 
 struct WashBubble: Identifiable {
