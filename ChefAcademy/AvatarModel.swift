@@ -14,7 +14,7 @@ class AvatarModel: ObservableObject {
     @Published var gender: Gender = .girl
     @Published var hairStyle: HairStyle = .medium
     @Published var outfit: Outfit = .none
-    @Published var headCovering: HeadCovering = .none
+    @Published var headCovering: HeadCovering = .chefHat
 
     // Dietary preference derived from head covering
     var dietaryPreference: DietaryPreference {
@@ -71,28 +71,28 @@ enum Gender: String, CaseIterable, Identifiable {
 // MARK: - Head Covering
 
 enum HeadCovering: String, CaseIterable, Identifiable {
-    case none = "None"
-    case hijab = "Hijab"
-    case kippah = "Kippah"
-    case turban = "Turban"
+    case chefHat = "Chef Hat"
+    case kerchief = "Kerchief"
 
     var id: String { rawValue }
 
+    /// For backwards compatibility — old saves may have "None", "Hijab", "Kippah", "Turban"
+    static func fromRaw(_ raw: String) -> HeadCovering {
+        if let valid = HeadCovering(rawValue: raw) { return valid }
+        return .chefHat
+    }
+
     var iconName: String {
         switch self {
-        case .none: return "person.fill"
-        case .hijab: return "person.fill"
-        case .kippah: return "person.fill"
-        case .turban: return "person.fill"
+        case .chefHat: return "party.popper"
+        case .kerchief: return "leaf.fill"
         }
     }
 
     var dietaryPreference: DietaryPreference {
         switch self {
-        case .none: return .none
-        case .hijab: return .halal
-        case .kippah: return .kosher
-        case .turban: return .none
+        case .chefHat: return .none
+        case .kerchief: return .none
         }
     }
 }

@@ -29,8 +29,9 @@ struct PlantingSheet: View {
     // Detect iPhone vs iPad
     @Environment(\.horizontalSizeClass) var sizeClass
 
-    // Track which seed the player has selected
+    // Track which seed the player has selected (owned or buyable)
     @State private var selectedSeed: Seed?
+    @State private var selectedBuyable: VegetableType?
 
     // Adaptive sizes
     private var isIPad: Bool { sizeClass != .compact }
@@ -60,9 +61,14 @@ struct PlantingSheet: View {
                     // MARK: - Seed Options (owned + buyable)
                     seedGridView
 
-                    // MARK: - Plant Button
+                    // MARK: - Plant Button (owned seed selected)
                     if let seed = selectedSeed, seed.quantity > 0 {
                         plantButton(for: seed)
+                    }
+
+                    // MARK: - Buy & Plant Button (buyable seed selected)
+                    if let vegType = selectedBuyable {
+                        buyAndPlantButton(for: vegType)
                     }
 
                     Spacer(minLength: 40)
@@ -132,6 +138,7 @@ struct PlantingSheet: View {
                     onSelect: {
                         withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                             selectedSeed = seed
+                            selectedBuyable = nil  // clear buyable selection
                         }
                     }
                 )
@@ -143,14 +150,11 @@ struct PlantingSheet: View {
                     imageSize: seedImageSize,
                     isIPad: isIPad,
                     canAfford: gameState.coins >= veg.seedCost,
-                    onBuy: {
-                        if gameState.buySeed(veg) {
-                            // After buying, select the new seed
-                            if let seed = gameState.seeds.first(where: { $0.vegetableType == veg }) {
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                    selectedSeed = seed
-                                }
-                            }
+                    isSelected: selectedBuyable == veg,
+                    onSelect: {
+                        withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            selectedBuyable = veg
+                            selectedSeed = nil  // clear owned selection
                         }
                     }
                 )
@@ -174,6 +178,40 @@ struct PlantingSheet: View {
                 .cornerRadius(AppSpacing.cardCornerRadius)
         }
         .buttonStyle(.plain)
+        .padding(.bottom, AppSpacing.lg)
+    }
+
+    // MARK: - Buy & Plant Button
+
+    func buyAndPlantButton(for vegType: VegetableType) -> some View {
+        let canAfford = gameState.coins >= vegType.seedCost
+        return Button(action: {
+            if gameState.buySeed(vegType) {
+                if let seed = gameState.seeds.first(where: { $0.vegetableType == vegType }) {
+                    plantSeed(seed)
+                }
+            }
+        }) {
+            HStack(spacing: AppSpacing.xs) {
+                Text("Buy & Plant \(vegType.displayName)")
+                    .font(isIPad ? .AppTheme.title3 : .AppTheme.headline)
+                    .fontWeight(.semibold)
+
+                HStack(spacing: 3) {
+                    Image(systemName: "circle.fill")
+                        .font(.system(size: 12))
+                    Text("\(vegType.seedCost)")
+                        .font(isIPad ? .AppTheme.headline : .AppTheme.bodyBold)
+                }
+            }
+            .foregroundColor(Color.AppTheme.cream)
+            .frame(maxWidth: isIPad ? 400 : .infinity)
+            .padding(isIPad ? AppSpacing.lg : AppSpacing.md)
+            .background(canAfford ? Color.AppTheme.goldenWheat : Color.AppTheme.lightSepia)
+            .cornerRadius(AppSpacing.cardCornerRadius)
+        }
+        .buttonStyle(.plain)
+        .disabled(!canAfford)
         .padding(.bottom, AppSpacing.lg)
     }
 
@@ -214,12 +252,11 @@ struct SeedOptionCard: View {
     var body: some View {
         Button(action: onSelect) {
             VStack(spacing: isIPad ? AppSpacing.sm : AppSpacing.xs) {
-                // Vegetable illustration
+                // Vegetable illustration — full color when owned
                 Image(seed.vegetableType.imageName)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: imageSize, height: imageSize)
-                    .opacity(0.85)
 
                 // Vegetable name
                 Text(seed.vegetableType.displayName)
@@ -272,17 +309,18 @@ struct BuyableSeedCard: View {
     var imageSize: CGFloat = 80
     var isIPad: Bool = false
     let canAfford: Bool
-    let onBuy: () -> Void
+    var isSelected: Bool = false
+    let onSelect: () -> Void
 
     var body: some View {
-        Button(action: onBuy) {
+        Button(action: onSelect) {
             VStack(spacing: isIPad ? AppSpacing.sm : AppSpacing.xs) {
                 Image(vegType.imageName)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: imageSize, height: imageSize)
-                    .opacity(0.4)
-                    .saturation(0.3)
+                    .opacity(canAfford ? 0.9 : 0.4)
+                    .saturation(canAfford ? 1.0 : 0.3)
 
                 Text(vegType.displayName)
                     .font(isIPad ? .AppTheme.headline : .AppTheme.caption)
@@ -310,12 +348,12 @@ struct BuyableSeedCard: View {
             }
             .frame(maxWidth: .infinity)
             .padding(isIPad ? AppSpacing.md : AppSpacing.sm)
-            .background(Color.AppTheme.warmCream.opacity(0.5))
+            .background(isSelected ? Color.AppTheme.goldenWheat.opacity(0.15) : Color.AppTheme.warmCream.opacity(0.5))
             .cornerRadius(isIPad ? 16 : 12)
             .overlay(
                 RoundedRectangle(cornerRadius: isIPad ? 16 : 12)
-                    .strokeBorder(style: StrokeStyle(lineWidth: 1, dash: [4]))
-                    .foregroundColor(Color.AppTheme.sepia.opacity(0.3))
+                    .stroke(isSelected ? Color.AppTheme.goldenWheat : Color.AppTheme.sepia.opacity(0.2),
+                            lineWidth: isSelected ? (isIPad ? 3 : 2) : 1)
             )
         }
         .buttonStyle(.plain)

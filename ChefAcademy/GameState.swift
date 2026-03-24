@@ -97,6 +97,9 @@ class GameState: ObservableObject {
     @Published var heartHealth: Int = 50
     @Published var immuneHealth: Int = 50
     @Published var energyLevel: Int = 50
+    @Published var eyeHealth: Int = 50
+    @Published var skinHealth: Int = 50
+    @Published var digestiveHealth: Int = 50
 
     // ============================================
     // SOCIAL
@@ -325,9 +328,12 @@ class GameState: ObservableObject {
                 immuneHealth = min(100, immuneHealth + boost)
             case "Energy", "Whole Body":
                 energyLevel = min(100, energyLevel + boost)
-            case "Eyes", "Skin", "Digestive System":
-                // Map these to closest organ
-                immuneHealth = min(100, immuneHealth + boost)
+            case "Eyes":
+                eyeHealth = min(100, eyeHealth + boost)
+            case "Skin":
+                skinHealth = min(100, skinHealth + boost)
+            case "Digestive System":
+                digestiveHealth = min(100, digestiveHealth + boost)
             default:
                 energyLevel = min(100, energyLevel + boost)
             }
@@ -404,6 +410,9 @@ class GameState: ObservableObject {
         heartHealth = saved.heartHealth
         immuneHealth = saved.immuneHealth
         energyLevel = saved.energyLevel
+        eyeHealth = saved.eyeHealth
+        skinHealth = saved.skinHealth
+        digestiveHealth = saved.digestiveHealth
 
         // Social
         gardenLikes = saved.gardenLikes
@@ -505,6 +514,9 @@ class GameState: ObservableObject {
         saved.heartHealth = heartHealth
         saved.immuneHealth = immuneHealth
         saved.energyLevel = energyLevel
+        saved.eyeHealth = eyeHealth
+        saved.skinHealth = skinHealth
+        saved.digestiveHealth = digestiveHealth
 
         // Social
         saved.gardenLikes = gardenLikes
@@ -542,6 +554,9 @@ class GameState: ObservableObject {
         heartHealth = 50
         immuneHealth = 50
         energyLevel = 50
+        eyeHealth = 50
+        skinHealth = 50
+        digestiveHealth = 50
         gardenLikes = 0
         claimedKnowledgeIDs = []
         dailyQuests = Quest.generateDailyQuests()
@@ -595,6 +610,122 @@ struct Seed: Identifiable, Equatable {
     ]
 }
 
+// MARK: - Plant Weather Groups
+//
+// Different plants respond differently to weather!
+// Leafy greens love cool weather, tomatoes love sun, etc.
+// Each group defines how weather affects growth speed.
+
+enum PlantWeatherGroup: String {
+    case leafyGreen   // Lettuce, spinach, kale, broccoli — cool-season crops
+    case rootVeggie   // Carrot, beet, radish, sweet potato, onion — hardy
+    case warmSeason   // Tomato, pepper, eggplant, zucchini, cucumber, corn — love heat
+    case bigFruit     // Pumpkin, watermelon, avocado — need sun + water
+    case herb         // Basil, mint, green beans — mild weather
+    case berry        // Strawberry, blueberry, raspberry, blackberry, lemon — love sun
+
+    /// Growth multiplier for this plant group in the given weather
+    func multiplier(for weather: GardenWeather) -> Double {
+        switch self {
+        case .leafyGreen:
+            // Love cool/cloudy. Bolt (slow) in full sun.
+            switch weather {
+            case .sunny:        return 0.9   // Too hot — they bolt
+            case .partlyCloudy: return 1.2   // Perfect for greens!
+            case .cloudy:       return 1.3   // Love the shade
+            case .rainy:        return 1.25  // Cool + wet = happy
+            case .stormy:       return 0.85  // Too harsh
+            case .snowy:        return 0.7   // Too cold even for them
+            case .windy:        return 0.95  // A bit annoying
+            }
+
+        case .rootVeggie:
+            // Hardy — tolerate most weather, slight preferences
+            switch weather {
+            case .sunny:        return 1.1
+            case .partlyCloudy: return 1.1
+            case .cloudy:       return 1.05
+            case .rainy:        return 1.1   // Roots love water
+            case .stormy:       return 0.9   // Still OK
+            case .snowy:        return 0.85  // Slows but survives
+            case .windy:        return 1.0   // Underground = safe
+            }
+
+        case .warmSeason:
+            // Love sun and heat. Hate cold.
+            switch weather {
+            case .sunny:        return 1.3   // Tomatoes LOVE this
+            case .partlyCloudy: return 1.15
+            case .cloudy:       return 0.9   // Not enough sun
+            case .rainy:        return 0.95  // OK but prefer dry
+            case .stormy:       return 0.75  // Hate storms
+            case .snowy:        return 0.5   // Nearly stops — way too cold
+            case .windy:        return 0.85  // Dries them out
+            }
+
+        case .bigFruit:
+            // Need LOTS of sun AND water to grow big
+            switch weather {
+            case .sunny:        return 1.25  // Great but need water too
+            case .partlyCloudy: return 1.2   // Good balance
+            case .cloudy:       return 0.85  // Not enough sun for big fruit
+            case .rainy:        return 1.15  // Water helps!
+            case .stormy:       return 0.7   // Can damage big plants
+            case .snowy:        return 0.4   // Almost stops
+            case .windy:        return 0.8   // Big leaves catch wind
+            }
+
+        case .herb:
+            // Love mild, gentle weather. Sensitive to extremes.
+            switch weather {
+            case .sunny:        return 1.1
+            case .partlyCloudy: return 1.25  // Perfect mild day
+            case .cloudy:       return 1.1
+            case .rainy:        return 1.0   // OK
+            case .stormy:       return 0.7   // Delicate plants
+            case .snowy:        return 0.5   // Too cold
+            case .windy:        return 0.75  // Wind damages leaves
+            }
+
+        case .berry:
+            // Love sun. Good with rain. Sensitive to storms.
+            switch weather {
+            case .sunny:        return 1.3   // Berries love sun!
+            case .partlyCloudy: return 1.15
+            case .cloudy:       return 0.95
+            case .rainy:        return 1.05  // Some rain is good
+            case .stormy:       return 0.7   // Knocks berries off
+            case .snowy:        return 0.55  // Not berry weather
+            case .windy:        return 0.85  // Shakes the bushes
+            }
+        }
+    }
+
+    /// Kid-friendly description of what this plant group likes
+    var weatherTip: String {
+        switch self {
+        case .leafyGreen: return "Leafy greens love cool, cloudy days! Too much sun makes them sad."
+        case .rootVeggie:  return "Root veggies are tough! They grow underground so weather doesn't bother them much."
+        case .warmSeason:  return "These plants LOVE sunshine! They grow super fast on hot, sunny days."
+        case .bigFruit:    return "Big fruits need lots of sun AND water to grow. Perfect weather = partly cloudy with rain!"
+        case .herb:        return "Herbs like gentle, mild weather. Not too hot, not too cold, not too windy."
+        case .berry:       return "Berries love sunny days! They soak up sunshine to make sweet flavors."
+        }
+    }
+
+    /// Emoji for the weather group (shown in planting tips)
+    var emoji: String {
+        switch self {
+        case .leafyGreen: return "🥬"
+        case .rootVeggie:  return "🥕"
+        case .warmSeason:  return "🍅"
+        case .bigFruit:    return "🎃"
+        case .herb:        return "🌿"
+        case .berry:       return "🍓"
+        }
+    }
+}
+
 // MARK: - VegetableType Enum
 //
 // All the vegetables you can grow in your garden!
@@ -635,6 +766,33 @@ enum VegetableType: String, CaseIterable, Identifiable {
     case blackberry
 
     var id: String { rawValue }
+
+    /// Weather group — determines how this plant responds to weather
+    var weatherGroup: PlantWeatherGroup {
+        switch self {
+        // Leafy greens: love cool/cloudy, bolt in hot sun
+        case .lettuce, .spinach, .kale:
+            return .leafyGreen
+        // Root veggies: hardy, tolerate most weather
+        case .carrot, .beet, .radish, .sweetPotato, .onion:
+            return .rootVeggie
+        // Warm-season: love sun and heat, hate cold
+        case .tomato, .bellPepperRed, .bellPepperYellow, .eggplant, .zucchini, .cucumber, .corn:
+            return .warmSeason
+        // Big fruits: need lots of sun AND water
+        case .pumpkin, .watermelon, .avocado:
+            return .bigFruit
+        // Herbs: love mild weather, sensitive to wind/cold
+        case .basil, .mint, .greenBeans:
+            return .herb
+        // Berries/fruits: love sun, sensitive to storms
+        case .strawberry, .blueberry, .raspberry, .blackberry, .lemon:
+            return .berry
+        // Broccoli is cool-season like leafy greens
+        case .broccoli:
+            return .leafyGreen
+        }
+    }
 
     /// Display name for UI
     var displayName: String {
@@ -978,11 +1136,16 @@ struct GardenPlot: Identifiable {
     var plantedDate: Date?
     var pausedDate: Date?  // When watering was needed (growth pauses)
 
-    /// Weather-adjusted growth multiplier. Set by GardenWeatherService.
-    /// All plots share the same weather. (1.0 = normal, >1 = faster, <1 = slower)
-    static var weatherMultiplier: Double = 1.0
+    /// Current weather — set by GardenWeatherService, shared by all plots
+    static var currentWeather: GardenWeather = .sunny
+
+    /// Legacy multiplier for backwards compatibility (used in a few places)
+    static var weatherMultiplier: Double {
+        currentWeather.growthMultiplier
+    }
 
     /// Progress from 0.0 (just planted) to 1.0 (ready to harvest)
+    /// Now uses PER-VEGETABLE weather preference for the multiplier!
     var growthProgress: Double {
         guard let planted = plantedDate,
               let veg = vegetable,
@@ -991,7 +1154,9 @@ struct GardenPlot: Identifiable {
         }
 
         let elapsed = Date().timeIntervalSince(planted)
-        let adjustedGrowthTime = veg.growthTime / GardenPlot.weatherMultiplier
+        // Per-veggie multiplier: leafy greens grow faster in clouds, tomatoes faster in sun, etc.
+        let vegMultiplier = veg.weatherGroup.multiplier(for: GardenPlot.currentWeather)
+        let adjustedGrowthTime = veg.growthTime / vegMultiplier
         let progress = min(elapsed / adjustedGrowthTime, 1.0)
         return progress
     }

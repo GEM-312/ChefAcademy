@@ -64,24 +64,18 @@ These system colors break the botanical watercolor aesthetic. **NEVER** use them
 
 ---
 
-## Current Violations (to fix)
+## Current Violations
 
-| File | Line | Violation | Fix |
-|------|------|-----------|-----|
-| `PlotView.swift` | 211 | `.foregroundColor(.blue)` for "Water me!" | → `Color.AppTheme.sage` |
-| `PlotView.swift` | 282 | `.foregroundColor(.orange)` for "Help! Bugs!" | → `Color.AppTheme.terracotta` |
-| `FamilySetupView.swift` | 512 | `.foregroundColor(.red)` error text | → `Color.AppTheme.terracotta` |
-| `SignInView.swift` | 96 | `.foregroundColor(.red)` error text | → `Color.AppTheme.terracotta` |
-| `ParentPINEntryView.swift` | 69 | `.foregroundColor(.red)` error text | → `Color.AppTheme.terracotta` |
-| `MigrationPINSetupView.swift` | 62 | `.foregroundColor(.red)` error text | → `Color.AppTheme.terracotta` |
-| `SiblingProfileView.swift` | 79 | `.foregroundColor(.red.opacity(0.7))` | → `Color.AppTheme.terracotta.opacity(0.7)` |
-| `PlayLearnView.swift` | 86 | `.red.opacity(0.7)` card color | → `Color.AppTheme.terracotta.opacity(0.7)` |
-| `GardenView.swift` | 655 | `.red.opacity(0.7)` | → `Color.AppTheme.terracotta.opacity(0.7)` |
-| `AskPipView.swift` | 119 | `.red.opacity(0.7)` | → `Color.AppTheme.terracotta.opacity(0.7)` |
-| `ParentDashboardView.swift` | 121, 204 | `.red.opacity(0.8)` delete buttons | → `Color.AppTheme.terracotta.opacity(0.8)` |
-| `KitchenView.swift` | 339, 693 | `.foregroundColor(.white)` | → `Color.AppTheme.cream` |
-| `CookingMiniGames.swift` | 75, 187 | `.orange` heat indicator | → `Color.AppTheme.terracotta` |
-| `AvatarCreatorView.swift` | 496 | `.white.opacity(0.9)` | → `Color.AppTheme.cream.opacity(0.9)` |
+**All clear!** Last audit: March 23, 2026.
+
+Remaining raw system colors are all in exempt categories:
+- WeatherOverlayView — weather visual effects (rain=blue, snow=white, sun=yellow)
+- SceneEditor — dev-only debug tool
+- SeedInfoView ColorChoice — educational (PencilKit color-to-nutrient mapping)
+- BodyBuddyView / CookingCompletionView — organ-specific educational colors
+- GardenWeatherService badge — weather indicator colors
+- `.shadow(color: .black.opacity(...))` — shadows require real black
+- DEBUG edit-mode pencil buttons (`.red` indicator)
 
 ---
 
@@ -177,4 +171,4 @@ Exception: One-off sizes in components like SeedBadge, PlotView where the size i
 
 ---
 
-*Last Updated: March 15, 2026*
+*Last Updated: March 23, 2026*

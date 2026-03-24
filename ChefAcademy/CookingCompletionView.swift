@@ -19,6 +19,7 @@ struct CookingCompletionView: View {
     @State private var showRewards = false
     @State private var showHealthBoost = false
     @State private var showButton = false
+    @State private var showGlucoseJourney = false
 
     var body: some View {
         ZStack {
@@ -103,18 +104,40 @@ struct CookingCompletionView: View {
 
                 Spacer()
 
-                // Back to Kitchen button
+                // Action buttons
                 if showButton {
-                    Button(action: onDismiss) {
-                        Text("Back to Kitchen")
+                    VStack(spacing: AppSpacing.sm) {
+                        // Glucose Journey button
+                        Button(action: { showGlucoseJourney = true }) {
+                            HStack(spacing: AppSpacing.xs) {
+                                Image(systemName: "waveform.path.ecg")
+                                Text("See how your food helps!")
+                            }
                             .font(.AppTheme.headline)
                             .foregroundColor(Color.AppTheme.cream)
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, AppSpacing.md)
-                            .background(Color.AppTheme.sage)
+                            .background(Color.AppTheme.goldenWheat)
                             .cornerRadius(16)
+                        }
+                        .buttonStyle(BouncyButtonStyle())
+
+                        // Back to Kitchen button
+                        Button(action: onDismiss) {
+                            Text("Back to Kitchen")
+                                .font(.AppTheme.headline)
+                                .foregroundColor(Color.AppTheme.darkBrown)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, AppSpacing.md)
+                                .background(Color.AppTheme.parchment)
+                                .cornerRadius(16)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(Color.AppTheme.sepia.opacity(0.3), lineWidth: 1.5)
+                                )
+                        }
+                        .buttonStyle(BouncyButtonStyle())
                     }
-                    .buttonStyle(BouncyButtonStyle())
                     .padding(.horizontal, AppSpacing.lg)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                 }
@@ -124,6 +147,9 @@ struct CookingCompletionView: View {
         }
         .onAppear {
             animateStars()
+        }
+        .fullScreenCover(isPresented: $showGlucoseJourney) {
+            GlucoseJourneyView(recipe: recipe)
         }
     }
 

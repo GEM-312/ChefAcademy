@@ -22,8 +22,8 @@ enum RecipeCategory: String, CaseIterable {
 // MARK: - Pantry Item
 /// Items always available in the kitchen — no need to grow these!
 enum PantryItem: String, CaseIterable, Identifiable {
-    // Basics
-    case salt, pepper, flour, cinnamon
+    // Basics & Spices
+    case salt, pepper, flour, cinnamon, paprika, cumin, garlicPowder, turmeric
     // Oils & Fats
     case butter, oliveOil, vegetableOil
     // Dairy & Eggs
@@ -31,8 +31,9 @@ enum PantryItem: String, CaseIterable, Identifiable {
     // Protein & Nuts
     case chicken, groundBeef, nuts
     // (Starch items removed — all recipes are now starch-free!)
+    // (Honey removed — it's pure sugar, contradicts Glucose Goddess principles)
     // Sauces & Condiments
-    case soySauce, tomatoSauce, vinegar, honey, lemon
+    case soySauce, tomatoSauce, vinegar, lemon
 
     var id: String { rawValue }
 
@@ -42,6 +43,10 @@ enum PantryItem: String, CaseIterable, Identifiable {
         case .pepper: return "Pepper"
         case .flour: return "Flour"
         case .cinnamon: return "Cinnamon"
+        case .paprika: return "Paprika"
+        case .cumin: return "Cumin"
+        case .garlicPowder: return "Garlic Powder"
+        case .turmeric: return "Turmeric"
         case .butter: return "Butter"
         case .oliveOil: return "Olive Oil"
         case .vegetableOil: return "Vegetable Oil"
@@ -56,7 +61,6 @@ enum PantryItem: String, CaseIterable, Identifiable {
         case .soySauce: return "Soy Sauce"
         case .tomatoSauce: return "Tomato Sauce"
         case .vinegar: return "Vinegar"
-        case .honey: return "Honey"
         case .lemon: return "Lemon"
         }
     }
@@ -67,6 +71,10 @@ enum PantryItem: String, CaseIterable, Identifiable {
         case .pepper: return "🌶️"
         case .flour: return "🌾"
         case .cinnamon: return "🫙"
+        case .paprika: return "🌶️"
+        case .cumin: return "🫙"
+        case .garlicPowder: return "🧄"
+        case .turmeric: return "🟡"
         case .butter: return "🧈"
         case .oliveOil, .vegetableOil: return "🫒"
         case .eggs: return "🥚"
@@ -80,7 +88,6 @@ enum PantryItem: String, CaseIterable, Identifiable {
         case .soySauce: return "🫙"
         case .tomatoSauce: return "🥫"
         case .vinegar: return "🫙"
-        case .honey: return "🍯"
         case .lemon: return "🍋"
         }
     }
@@ -92,6 +99,10 @@ enum PantryItem: String, CaseIterable, Identifiable {
         case .pepper: return "farm_pepper"
         case .flour: return "farm_flour"
         case .cinnamon: return "farm_cinnamon"
+        case .paprika: return "farm_paprika"
+        case .cumin: return "farm_cumin"
+        case .garlicPowder: return "farm_garlic"
+        case .turmeric: return "farm_turmeric"
         case .butter: return "farm_butter"
         case .oliveOil: return "farm_oliveOil"
         case .vegetableOil: return "farm_oliveOil"
@@ -106,7 +117,6 @@ enum PantryItem: String, CaseIterable, Identifiable {
         case .soySauce: return "farm_soySauce"
         case .tomatoSauce: return "farm_tomatoSauce"
         case .vinegar: return "farm_vinegar"
-        case .honey: return "farm_honey"
         case .lemon: return "farm_lemon"
         }
     }
@@ -145,6 +155,10 @@ enum PantryItem: String, CaseIterable, Identifiable {
         case .salt, .pepper: return 2
         case .flour: return 3
         case .cinnamon: return 2
+        case .paprika: return 3
+        case .cumin: return 3
+        case .garlicPowder: return 2
+        case .turmeric: return 3
         case .butter: return 5
         case .oliveOil, .vegetableOil: return 4
         case .eggs: return 5
@@ -158,7 +172,6 @@ enum PantryItem: String, CaseIterable, Identifiable {
         case .soySauce: return 3
         case .tomatoSauce: return 4
         case .vinegar: return 3
-        case .honey: return 6
         case .lemon: return 2
         }
     }
@@ -170,6 +183,10 @@ enum PantryItem: String, CaseIterable, Identifiable {
         case .pepper: return [.antioxidants, .vitaminC]
         case .flour: return [.carbs, .fiber, .iron]
         case .cinnamon: return [.antioxidants, .manganese]
+        case .paprika: return [.vitaminA, .antioxidants, .vitaminC]
+        case .cumin: return [.iron, .antioxidants, .manganese]
+        case .garlicPowder: return [.antioxidants, .vitaminC, .manganese]
+        case .turmeric: return [.antioxidants, .iron, .manganese]
         case .butter: return [.fat, .vitaminA]
         case .oliveOil: return [.healthyFats, .vitaminE, .antioxidants]
         case .vegetableOil: return [.healthyFats, .vitaminE]
@@ -184,7 +201,6 @@ enum PantryItem: String, CaseIterable, Identifiable {
         case .soySauce: return [.minerals, .protein]
         case .tomatoSauce: return [.vitaminC, .antioxidants]
         case .vinegar: return [.antioxidants, .minerals]
-        case .honey: return [.antioxidants, .carbs]
         case .lemon: return [.vitaminC, .antioxidants]
         }
     }
@@ -196,6 +212,10 @@ enum PantryItem: String, CaseIterable, Identifiable {
         case .pepper: return "Pepper was once so valuable it was called 'black gold'! In the Middle Ages, people used peppercorns as money."
         case .flour: return "It takes about 10,000 grains of wheat to make enough flour for one loaf of bread! Flour has been made for over 30,000 years."
         case .cinnamon: return "Cinnamon comes from the bark of a tree! Ancient Egyptians used it as a gift for kings. It has more antioxidants than most foods on Earth."
+        case .paprika: return "Paprika is made from dried sweet peppers! It gives food a beautiful orange-red color and is packed with Vitamin A — great for your eyes!"
+        case .cumin: return "Cumin has been used for over 5,000 years! Ancient Egyptians used it to preserve mummies. It helps your tummy digest food better."
+        case .garlicPowder: return "Garlic has been called 'the stinking rose'! Ancient warriors ate it before battle for strength. It contains allicin which fights germs!"
+        case .turmeric: return "Turmeric is the golden spice! It gives curry its yellow color. People in India have used it as medicine for 4,000 years."
         case .butter: return "It takes about 21 pounds of milk to make just 1 pound of butter! Butter has been made for over 4,000 years."
         case .oliveOil: return "Olive trees can live for thousands of years! The oldest known olive tree is over 3,000 years old and still produces olives in Greece."
         case .vegetableOil: return "Vegetable oil can be made from many plants — soybeans, sunflowers, corn, and more! It helps your body absorb vitamins from vegetables."
@@ -210,7 +230,6 @@ enum PantryItem: String, CaseIterable, Identifiable {
         case .soySauce: return "Soy sauce was invented in China over 2,000 years ago! It's made by fermenting soybeans — tiny living things break down the beans to create the flavor."
         case .tomatoSauce: return "Tomato sauce is actually MORE nutritious than raw tomatoes! Cooking tomatoes releases more lycopene, a powerful antioxidant that protects your heart."
         case .vinegar: return "Vinegar means 'sour wine' in French! People have used it for cooking, cleaning, and even medicine for over 5,000 years."
-        case .honey: return "Honey never goes bad — scientists found 3,000-year-old honey in Egyptian tombs that was still edible! Bees visit about 2 million flowers to make one jar."
         case .lemon: return "Lemons have more sugar than strawberries — the sour taste comes from citric acid hiding the sweetness! Lemon juice can be used as invisible ink."
         }
     }
@@ -218,7 +237,7 @@ enum PantryItem: String, CaseIterable, Identifiable {
     /// Shop category for grouping items
     var shopCategory: ShopCategory {
         switch self {
-        case .salt, .pepper, .flour, .cinnamon:
+        case .salt, .pepper, .flour, .cinnamon, .paprika, .cumin, .garlicPowder, .turmeric:
             return .basics
         case .butter, .oliveOil, .vegetableOil:
             return .oilsAndFats
@@ -226,7 +245,7 @@ enum PantryItem: String, CaseIterable, Identifiable {
             return .dairy
         case .chicken, .groundBeef, .nuts:
             return .protein
-        case .soySauce, .tomatoSauce, .vinegar, .honey, .lemon:
+        case .soySauce, .tomatoSauce, .vinegar, .lemon:
             return .sauces
         }
     }
@@ -410,7 +429,8 @@ struct GardenRecipes {
             pantryIngredients: [.greekYogurt, .nuts, .cinnamon],
             glucoseTip: "Greek yogurt is packed with protein! Cinnamon adds yummy flavor without any sugar. Smart swap!",
             steps: [
-                "Peel the carrot and grate it into thin shreds.",
+                "Peel the carrot with a peeler.",
+                "Grate the carrot into thin shreds.",
                 "Scoop Greek yogurt into a bowl.",
                 "Sprinkle cinnamon on top.",
                 "Add a handful of crunchy nuts.",
@@ -427,7 +447,7 @@ struct GardenRecipes {
             description: "Build-your-own veggie and chicken plate with lemon dressing — crunchy, fresh, and filling!",
             imageName: "recipe_chicken_veggie_platter",
             category: .lunch,
-            cookTime: 15,
+            cookTime: 5,
             difficulty: .easy,
             servings: 2,
             needsAdultHelp: false,
@@ -436,12 +456,13 @@ struct GardenRecipes {
             pantryIngredients: [.chicken, .cheese, .oliveOil, .lemon, .salt],
             glucoseTip: "No bread needed! Veggies + chicken + cheese give you protein, fiber, and healthy fats — the perfect energy trio.",
             steps: [
-                "Wash the lettuce, carrot, and cucumber.",
+                "Wash the lettuce under water.",
                 "Tear the lettuce into bite-sized pieces.",
-                "Peel and slice the carrot into sticks.",
+                "Wash the carrot and cucumber.",
+                "Peel the carrot with a peeler.",
+                "Slice the carrot into sticks.",
                 "Cut the cucumber into rounds.",
-                "Slice the chicken into strips (use pre-cooked chicken!).",
-                "Arrange everything on a big plate.",
+                "Arrange everything on a big plate with pre-cooked chicken.",
                 "Squeeze lemon juice and drizzle olive oil for dressing.",
                 "Sprinkle cheese and salt on top — done!"
             ]
@@ -452,23 +473,24 @@ struct GardenRecipes {
             description: "Crispy lettuce, juicy tomato, and cucumber with eggs, cheese, and olive oil dressing",
             imageName: "recipe_wrap_rainbow_veggie",
             category: .lunch,
-            cookTime: 10,
+            cookTime: 5,
             difficulty: .easy,
             servings: 2,
             needsAdultHelp: false,
             nutritionFacts: ["Vitamin C", "Protein", "Fiber"],
             gardenIngredients: [.lettuce, .tomato, .cucumber],
-            pantryIngredients: [.oliveOil, .vinegar, .eggs, .cheese, .salt],
-            glucoseTip: "Starting a meal with salad is a superpower! The fiber in veggies helps your body handle everything you eat after.",
+            pantryIngredients: [.oliveOil, .vinegar, .cheese, .salt],
+            glucoseTip: "Starting a meal with salad is a superpower! The fiber in veggies helps your body handle everything you eat after. Vinegar slows glucose too!",
             steps: [
-                "Boil 2 eggs for 10 minutes, then peel and slice them.",
-                "Wash and tear the lettuce into pieces.",
+                "Wash the lettuce under water.",
+                "Tear the lettuce into bite-sized pieces.",
+                "Wash the tomato and cucumber.",
                 "Chop the tomato into chunks.",
                 "Slice the cucumber into thin rounds.",
-                "Toss all the veggies into a big bowl.",
-                "Add the sliced eggs and crumbled cheese.",
+                "Toss the lettuce, tomato, and cucumber into a big bowl.",
+                "Add crumbled cheese on top.",
                 "Drizzle olive oil and a splash of vinegar.",
-                "Sprinkle salt, toss gently, and serve!"
+                "Sprinkle salt and serve!"
             ]
         ),
         Recipe(
@@ -486,7 +508,8 @@ struct GardenRecipes {
             pantryIngredients: [.chicken, .butter, .cream, .salt, .pepper],
             glucoseTip: "Adding chicken to soup gives it protein power! Your muscles love protein — it keeps you strong and full.",
             steps: [
-                "Peel the pumpkin and cut it into small cubes.",
+                "Peel the pumpkin with a peeler.",
+                "Cut the pumpkin into small cubes.",
                 "Chop the onion into tiny pieces.",
                 "Melt butter in a big pot over medium heat.",
                 "Cook the onion until it's soft and golden.",
@@ -564,11 +587,14 @@ struct GardenRecipes {
             pantryIngredients: [.chicken, .soySauce, .oliveOil, .salt, .pepper],
             glucoseTip: "All the sizzle, no rice needed! Your plate is full of protein and colorful veggies — that's real fuel.",
             steps: [
-                "Cut the chicken into bite-sized pieces.",
-                "Chop broccoli into florets, slice carrot and zucchini.",
+                "Wash the broccoli, carrot, and zucchini.",
+                "Peel the carrot with a peeler.",
+                "Chop the broccoli into small florets.",
+                "Slice the carrot into thin rounds.",
+                "Slice the zucchini into half-moons.",
                 "Heat olive oil in a big skillet over medium-high heat.",
                 "Cook the chicken pieces for 5 minutes until golden.",
-                "Add all the veggies to the skillet.",
+                "Add the broccoli, carrot, and zucchini to the skillet.",
                 "Stir and cook for 5 more minutes.",
                 "Pour soy sauce over everything and toss.",
                 "Season with salt and pepper, then serve hot!"
@@ -667,8 +693,9 @@ struct GardenRecipes {
             pantryIngredients: [.cheese],
             glucoseTip: "Savory snacks are the best! Cheese gives you protein which keeps you full way longer than sweet treats.",
             steps: [
-                "Wash and peel the carrots.",
-                "Cut them into long, thin sticks.",
+                "Wash the carrots under water.",
+                "Peel the carrots with a peeler.",
+                "Cut the carrots into long, thin sticks.",
                 "Put soft cheese in a small bowl.",
                 "Arrange carrot sticks around the cheese dip.",
                 "Dip, crunch, and enjoy!"
@@ -690,7 +717,7 @@ struct GardenRecipes {
             glucoseTip: "Veggies + cheese = the perfect snack! This combo gives you hydration, fiber, AND protein all at once.",
             steps: [
                 "Wash the cucumber.",
-                "Slice it into thick rounds.",
+                "Slice the cucumber into thick rounds.",
                 "Cut cheese into small squares.",
                 "Place a cheese square on each cucumber round.",
                 "Sprinkle a tiny bit of salt on top.",
@@ -753,7 +780,7 @@ struct GardenRecipes {
             description: "Crunchy lettuce cups with chopped carrot, tomato, and cheese",
             imageName: "recipe_veggie_lettuce_cups",
             category: .snacks,
-            cookTime: 10,
+            cookTime: 5,
             difficulty: .easy,
             servings: 2,
             needsAdultHelp: false,
@@ -763,9 +790,10 @@ struct GardenRecipes {
             glucoseTip: "Lettuce cups are a fiber-first snack! The veggies and cheese keep you going strong until dinner time.",
             steps: [
                 "Wash the lettuce and separate big leaves.",
-                "Peel and dice the carrot into tiny pieces.",
+                "Wash the carrot and tomato.",
+                "Peel the carrot with a peeler.",
+                "Dice the carrot into tiny pieces.",
                 "Chop the tomato into small cubes.",
-                "Cut cheese into small strips or crumbles.",
                 "Place carrot, tomato, and cheese inside each lettuce leaf.",
                 "Sprinkle a pinch of salt on top.",
                 "Roll them up or eat them open — your choice!"
@@ -776,97 +804,79 @@ struct GardenRecipes {
 
         Recipe(
             id: "buttered-carrots",
-            title: "Honey Butter Carrots",
-            description: "Sweet, tender carrots glazed with butter and a drizzle of honey",
+            title: "Cinnamon Butter Carrots",
+            description: "Sweet, tender carrots pan-fried in butter with warm cinnamon and a sprinkle of cumin",
             imageName: "recipe_honey_butter_carrots",
             category: .snacks,
             cookTime: 8,
             difficulty: .easy,
             servings: 2,
             needsAdultHelp: true,
-            nutritionFacts: ["Vitamin A", "Fiber", "Healthy Fats"],
+            nutritionFacts: ["Vitamin A", "Fiber", "Healthy Fats", "Antioxidants"],
             gardenIngredients: [.carrot],
-            pantryIngredients: [.butter, .honey],
-            glucoseTip: "Carrots are naturally sweet! The butter and honey make them extra yummy while the fiber keeps your tummy happy.",
+            pantryIngredients: [.butter, .cheese, .cinnamon, .cumin],
+            glucoseTip: "Carrots are naturally sweet — no sugar needed! Cinnamon adds sweetness, butter and cheese add protein and fat to keep glucose steady.",
             steps: [
-                "Wash and peel the carrots.",
-                "Cut them into thin sticks or coins.",
+                "Wash the carrots under water.",
+                "Peel the carrots with a peeler.",
+                "Cut the carrots into thin sticks or coins.",
                 "Melt a bit of butter in a pan.",
-                "Add the carrots and cook until tender.",
-                "Drizzle honey on top and stir.",
-                "Let them cool a bit and enjoy!"
+                "Add the carrots and stir gently until tender.",
+                "Sprinkle cinnamon and cumin on top.",
+                "Serve with cheese slices on the side!"
             ]
         ),
 
         Recipe(
             id: "buttered-zucchini",
-            title: "Butter Zucchini Bites",
-            description: "Golden pan-fried zucchini coins tossed in butter — simple and delicious!",
+            title: "Cheesy Garlic Zucchini Bites",
+            description: "Golden pan-fried zucchini coins with melted cheese, garlic, and paprika!",
             imageName: "recipe_butter_zucchini",
             category: .snacks,
             cookTime: 8,
             difficulty: .easy,
             servings: 2,
             needsAdultHelp: true,
-            nutritionFacts: ["Vitamin B6", "Potassium", "Healthy Fats"],
+            nutritionFacts: ["Vitamin B6", "Potassium", "Protein", "Calcium"],
             gardenIngredients: [.zucchini],
-            pantryIngredients: [.butter],
-            glucoseTip: "Zucchini is packed with vitamins! Cooking it in butter helps your body absorb all the good nutrients.",
+            pantryIngredients: [.butter, .cheese, .garlicPowder, .paprika, .salt],
+            glucoseTip: "Zucchini with cheese and garlic — protein AND flavor! The butter helps your body absorb all the vitamins.",
             steps: [
                 "Wash the zucchini.",
-                "Cut it into round coins.",
+                "Cut the zucchini into round coins.",
                 "Melt butter in a pan on medium heat.",
-                "Place zucchini coins in the pan.",
-                "Cook until golden on each side.",
-                "Let them cool and munch away!"
+                "Add the zucchini coins to the pan.",
+                "Sprinkle garlic powder, paprika, and salt on top.",
+                "Add cheese slices and let them melt. Yum!"
             ]
         ),
 
-        Recipe(
-            id: "garden-yogurt-bowl",
-            title: "Garden Yogurt Bowl",
-            description: "Creamy Greek yogurt topped with grated carrots, honey, and a sprinkle of cinnamon",
-            imageName: "recipe_garden_yogurt_bowl",
-            category: .breakfast,
-            cookTime: 5,
-            difficulty: .easy,
-            servings: 1,
-            needsAdultHelp: false,
-            nutritionFacts: ["Protein", "Vitamin A", "Calcium"],
-            gardenIngredients: [.carrot],
-            pantryIngredients: [.greekYogurt, .honey, .cinnamon],
-            glucoseTip: "Starting with yogurt gives you protein first! Adding carrots and cinnamon keeps your energy smooth all morning.",
-            steps: [
-                "Scoop Greek yogurt into a bowl.",
-                "Peel and grate the carrot into thin shreds.",
-                "Sprinkle the carrot shreds on top.",
-                "Drizzle a little honey over everything.",
-                "Add a pinch of cinnamon.",
-                "Mix and enjoy your garden bowl!"
-            ]
-        ),
+        // garden-yogurt-bowl removed — duplicate of yogurt-power-bowl
 
         Recipe(
             id: "lettuce-butter-wraps",
-            title: "Buttery Lettuce Wraps",
-            description: "Crisp lettuce leaves with warm buttered carrots and onions inside",
+            title: "Cheesy Veggie Lettuce Wraps",
+            description: "Crisp lettuce leaves stuffed with warm buttered carrots, onions, and melted cheese",
             imageName: "recipe_lettuce_butter_wraps",
             category: .lunch,
             cookTime: 10,
             difficulty: .easy,
             servings: 2,
             needsAdultHelp: true,
-            nutritionFacts: ["Vitamin A", "Fiber", "Vitamin K"],
+            nutritionFacts: ["Vitamin A", "Fiber", "Protein", "Calcium"],
             gardenIngredients: [.lettuce, .carrot, .onion],
-            pantryIngredients: [.butter],
-            glucoseTip: "Lettuce wraps are a smart choice! The veggies give you fiber first, which helps your body handle everything better.",
+            pantryIngredients: [.butter, .cheese, .cumin, .salt],
+            glucoseTip: "Lettuce instead of bread, cheese for protein, cumin for flavor — this wrap has everything your body needs with zero sugar!",
             steps: [
-                "Wash lettuce leaves and pat dry.",
-                "Peel and slice carrots into thin sticks.",
+                "Wash the lettuce leaves and pat dry.",
+                "Wash the carrot and onion.",
+                "Peel the carrot with a peeler.",
+                "Slice the carrot into thin sticks.",
                 "Dice the onion into small pieces.",
-                "Melt butter in a pan and cook carrots and onions until soft.",
-                "Scoop the warm veggies into lettuce leaves.",
-                "Roll up and take a big crunchy bite!"
+                "Melt butter in a pan.",
+                "Add the carrot and onion to the pan and stir until soft.",
+                "Sprinkle cumin and salt for extra flavor.",
+                "Add cheese slices, scoop into lettuce, and roll up!"
             ]
         ),
     ]

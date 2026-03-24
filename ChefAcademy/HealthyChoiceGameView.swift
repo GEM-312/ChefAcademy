@@ -285,7 +285,7 @@ struct HealthyChoiceGameView: View {
                     HStack(spacing: 4) {
                         ForEach(0..<maxBadChoices, id: \.self) { i in
                             Image(systemName: i < badChoices ? "heart.slash.fill" : "heart.fill")
-                                .foregroundColor(i < badChoices ? .gray : .red)
+                                .foregroundColor(i < badChoices ? Color.AppTheme.lightSepia : Color.AppTheme.terracotta)
                                 .font(.system(size: 16))
                         }
                     }

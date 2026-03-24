@@ -113,7 +113,7 @@ struct SplitScreenVersusView: View {
                                     if isP1 || isP2 {
                                         Text(isP1 ? "P1" : "P2")
                                             .font(.system(size: 10, weight: .bold))
-                                            .foregroundColor(.white)
+                                            .foregroundColor(Color.AppTheme.cream)
                                             .padding(3)
                                             .background(isP1 ? Color.AppTheme.sage : Color.AppTheme.terracotta)
                                             .clipShape(Circle())
@@ -389,7 +389,7 @@ struct SplitScreenVersusView: View {
                     HStack(spacing: 3) {
                         ForEach(0..<maxBadChoices, id: \.self) { i in
                             Image(systemName: i < badChoices ? "heart.slash.fill" : "heart.fill")
-                                .foregroundColor(i < badChoices ? .gray : .red)
+                                .foregroundColor(i < badChoices ? Color.AppTheme.lightSepia : Color.AppTheme.terracotta)
                                 .font(.system(size: 12))
                         }
                     }

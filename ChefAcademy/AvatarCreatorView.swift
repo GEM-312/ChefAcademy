@@ -212,43 +212,39 @@ struct HeadCoveringView: View {
 
     var body: some View {
         switch covering {
-        case .none:
-            EmptyView()
-
-        case .hijab:
-            // Draped hijab shape wrapping around head
+        case .chefHat:
+            // Tall chef hat (toque) — like Pip's!
             ZStack {
-                // Main drape
+                // Hat body
+                RoundedRectangle(cornerRadius: 12)
+                    .fill(Color.AppTheme.cream)
+                    .frame(width: 70, height: 50)
+                    .offset(y: -5)
+                // Hat puff (top)
                 Ellipse()
-                    .fill(Color.AppTheme.sage.opacity(0.5))
-                    .frame(width: 150, height: 70)
-                    .offset(y: 20)
-                // Side drape falling down
-                RoundedRectangle(cornerRadius: 15)
-                    .fill(Color.AppTheme.sage.opacity(0.5))
-                    .frame(width: 130, height: 60)
-                    .offset(y: 55)
+                    .fill(Color.AppTheme.cream)
+                    .frame(width: 80, height: 35)
+                    .offset(y: -28)
+                // Hat band
+                RoundedRectangle(cornerRadius: 4)
+                    .fill(Color.AppTheme.warmKhaki.opacity(0.4))
+                    .frame(width: 75, height: 8)
+                    .offset(y: 18)
             }
 
-        case .kippah:
-            // Small round cap on top of head
-            Ellipse()
-                .fill(Color.AppTheme.darkBrown.opacity(0.4))
-                .frame(width: 50, height: 20)
-                .offset(y: 10)
-
-        case .turban:
-            // Wrapped turban on top
+        case .kerchief:
+            // Kerchief / bandana tied at the back
             ZStack {
+                // Main triangle shape
                 Ellipse()
-                    .fill(Color.AppTheme.goldenWheat.opacity(0.5))
-                    .frame(width: 120, height: 50)
-                    .offset(y: 18)
-                // Wrap line
-                Capsule()
-                    .fill(Color.AppTheme.goldenWheat.opacity(0.7))
-                    .frame(width: 100, height: 12)
-                    .offset(y: 25)
+                    .fill(Color.AppTheme.sage.opacity(0.4))
+                    .frame(width: 130, height: 40)
+                    .offset(y: 15)
+                // Knot at back
+                Circle()
+                    .fill(Color.AppTheme.sage.opacity(0.5))
+                    .frame(width: 20, height: 20)
+                    .offset(x: 50, y: 25)
             }
         }
     }
@@ -268,12 +264,12 @@ struct OutfitView: View {
             if outfit.isApron {
                 // Apron pocket
                 RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.white.opacity(0.3))
+                    .fill(Color.AppTheme.cream.opacity(0.3))
                     .frame(width: 40, height: 25)
                     .offset(y: 10)
             } else {
                 // Chef coat — double-breasted buttons
-                let buttonColor = outfit == .chefWhite ? Color.AppTheme.darkBrown : Color.white.opacity(0.8)
+                let buttonColor = outfit == .chefWhite ? Color.AppTheme.darkBrown : Color.AppTheme.cream.opacity(0.8)
                 HStack(spacing: 14) {
                     VStack(spacing: 8) {
                         Circle().fill(buttonColor).frame(width: 7, height: 7)
@@ -436,19 +432,15 @@ struct HeadCoveringSelector: View {
 
     private func coveringIcon(_ covering: HeadCovering) -> String {
         switch covering {
-        case .none:   return "person.fill"
-        case .hijab:  return "person.crop.circle.fill"
-        case .kippah: return "circle.fill"
-        case .turban: return "person.crop.circle.badge.checkmark"
+        case .chefHat:  return "party.popper"
+        case .kerchief: return "leaf.fill"
         }
     }
 
     private func coveringColor(_ covering: HeadCovering) -> Color {
         switch covering {
-        case .none:   return Color.AppTheme.sepia
-        case .hijab:  return Color.AppTheme.sage
-        case .kippah: return Color.AppTheme.darkBrown
-        case .turban: return Color.AppTheme.goldenWheat
+        case .chefHat:  return Color.AppTheme.goldenWheat
+        case .kerchief: return Color.AppTheme.sage
         }
     }
 }

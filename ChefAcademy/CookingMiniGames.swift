@@ -33,8 +33,8 @@ struct HeatPanMiniGame: View {
                     .fill(
                         RadialGradient(
                             colors: [
-                                Color.red.opacity(panGlow * 0.6),
-                                Color.orange.opacity(panGlow * 0.3),
+                                Color.AppTheme.terracotta.opacity(panGlow * 0.6),
+                                Color.AppTheme.goldenWheat.opacity(panGlow * 0.3),
                                 Color.clear
                             ],
                             center: .center,
@@ -78,7 +78,7 @@ struct HeatPanMiniGame: View {
 
                 Image(systemName: isHolding ? "flame.fill" : "flame")
                     .font(.system(size: 28))
-                    .foregroundColor(isHolding ? .orange : Color.AppTheme.sepia)
+                    .foregroundColor(isHolding ? Color.AppTheme.terracotta : Color.AppTheme.sepia)
             }
 
             Text(isHolding ? "Heating up..." : "Hold to heat the pan!")
@@ -422,7 +422,7 @@ struct SeasonMiniGame: View {
     private func spawnParticle(for item: PantryItem) {
         let color: Color = {
             switch item {
-            case .salt: return .white
+            case .salt: return Color.AppTheme.cream
             case .pepper: return .brown
             case .cinnamon: return Color(red: 0.8, green: 0.5, blue: 0.2)
             default: return Color.AppTheme.sepia
@@ -629,7 +629,7 @@ struct CookTimerMiniGame: View {
 
                         // Indicator
                         Circle()
-                            .fill(.white)
+                            .fill(Color.AppTheme.cream)
                             .frame(width: 16, height: 16)
                             .shadow(radius: 2)
                             .offset(x: geo.size.width * fraction - 8)
@@ -737,7 +737,7 @@ struct WashMiniGame: View {
                 Ellipse()
                     .fill(
                         LinearGradient(
-                            colors: [Color.blue.opacity(0.2), Color.blue.opacity(0.1)],
+                            colors: [Color.AppTheme.sage.opacity(0.2), Color.AppTheme.sage.opacity(0.1)],
                             startPoint: .top,
                             endPoint: .bottom
                         )
@@ -747,7 +747,7 @@ struct WashMiniGame: View {
                 // Bubbles
                 ForEach(bubbles) { bubble in
                     Circle()
-                        .fill(Color.white.opacity(0.6))
+                        .fill(Color.AppTheme.cream.opacity(0.6))
                         .frame(width: bubble.size, height: bubble.size)
                         .offset(x: bubble.x, y: bubble.y)
                 }
@@ -771,7 +771,7 @@ struct WashMiniGame: View {
                     ZStack(alignment: .leading) {
                         Capsule().fill(Color.AppTheme.parchment)
                         Capsule()
-                            .fill(Color.blue.opacity(0.5))
+                            .fill(Color.AppTheme.sage.opacity(0.5))
                             .frame(width: geo.size.width * CGFloat(tapCount) / CGFloat(targetTaps))
                     }
                 }

@@ -454,3 +454,119 @@ struct WeatherBadge: View {
         }
     }
 }
+
+// MARK: - Seasonal Gradient Overlay
+
+/// Subtle gradient tint that shifts the garden's mood by season.
+/// Spring = soft green/pink, Summer = warm gold, Fall = amber/brown, Winter = icy blue.
+/// Overlaid on the garden background with low opacity for a natural look.
+struct SeasonalOverlayView: View {
+    let season: GardenSeason
+    let mapWidth: CGFloat
+    let mapHeight: CGFloat
+
+    @State private var particleOffset: CGFloat = 0
+    @State private var particleOpacity: Double = 1.0
+
+    var body: some View {
+        ZStack {
+            // Gradient tint
+            LinearGradient(
+                colors: season.gradientColors,
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(width: mapWidth, height: mapHeight)
+            .allowsHitTesting(false)
+
+            // Seasonal particles
+            switch season {
+            case .spring:
+                springParticles
+            case .summer:
+                summerParticles
+            case .fall:
+                fallParticles
+            case .winter:
+                winterParticles
+            }
+        }
+        .allowsHitTesting(false)
+        .onAppear { startParticleAnimation() }
+    }
+
+    // MARK: - Spring Particles (floating petals)
+
+    var springParticles: some View {
+        ForEach(0..<8, id: \.self) { i in
+            Text("🌸")
+                .font(.system(size: CGFloat.random(in: 10...16)))
+                .opacity(0.5)
+                .offset(
+                    x: CGFloat.random(in: -mapWidth/2...mapWidth/2),
+                    y: particleOffset + CGFloat(i * 60)
+                )
+                .rotationEffect(.degrees(Double(i) * 15 + Double(particleOffset) * 0.3))
+        }
+    }
+
+    // MARK: - Summer Particles (heat shimmer / floating dust)
+
+    var summerParticles: some View {
+        ForEach(0..<5, id: \.self) { i in
+            Circle()
+                .fill(Color.AppTheme.goldenWheat.opacity(0.15))
+                .frame(width: CGFloat.random(in: 40...80))
+                .blur(radius: 20)
+                .offset(
+                    x: CGFloat.random(in: -mapWidth/3...mapWidth/3),
+                    y: CGFloat.random(in: -mapHeight/4...mapHeight/4) + particleOffset * 0.2
+                )
+                .opacity(particleOpacity * 0.6)
+        }
+    }
+
+    // MARK: - Fall Particles (falling leaves)
+
+    var fallParticles: some View {
+        ForEach(0..<10, id: \.self) { i in
+            Text(["🍂", "🍁", "🍃"][i % 3])
+                .font(.system(size: CGFloat.random(in: 12...18)))
+                .opacity(0.6)
+                .offset(
+                    x: sin(CGFloat(i) * 0.8 + particleOffset * 0.02) * mapWidth * 0.3,
+                    y: particleOffset * 0.5 + CGFloat(i * 50) - mapHeight * 0.3
+                )
+                .rotationEffect(.degrees(Double(particleOffset) * 0.5 + Double(i) * 30))
+        }
+    }
+
+    // MARK: - Winter Particles (gentle frost sparkles)
+
+    var winterParticles: some View {
+        ForEach(0..<6, id: \.self) { i in
+            Image(systemName: "sparkle")
+                .font(.system(size: CGFloat.random(in: 8...14)))
+                .foregroundColor(Color(hex: "E3F2FD").opacity(0.5))
+                .offset(
+                    x: CGFloat.random(in: -mapWidth/2.5...mapWidth/2.5),
+                    y: CGFloat.random(in: -mapHeight/3...mapHeight/3)
+                )
+                .opacity(particleOpacity * 0.7)
+                .scaleEffect(particleOpacity > 0.5 ? 1.0 : 0.6)
+        }
+    }
+
+    // MARK: - Animation
+
+    private func startParticleAnimation() {
+        // Slow continuous drift
+        withAnimation(.linear(duration: 20).repeatForever(autoreverses: false)) {
+            particleOffset = mapHeight
+        }
+        // Gentle fade pulse
+        withAnimation(.easeInOut(duration: 3).repeatForever(autoreverses: true)) {
+            particleOpacity = 0.4
+        }
+    }
+}

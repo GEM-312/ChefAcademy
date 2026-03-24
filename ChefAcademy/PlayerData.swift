@@ -111,6 +111,9 @@ class PlayerData {
     var heartHealth: Int = 50
     var immuneHealth: Int = 50
     var energyLevel: Int = 50
+    var eyeHealth: Int = 50
+    var skinHealth: Int = 50
+    var digestiveHealth: Int = 50
 
     // Social
     var gardenLikes: Int = 0

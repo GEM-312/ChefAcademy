@@ -377,10 +377,10 @@ class SessionManager: ObservableObject {
         // Read legacy avatar data from UserDefaults
         let legacyName = UserDefaults.standard.string(forKey: "userName") ?? "Little Chef"
         let legacyGenderRaw = UserDefaults.standard.string(forKey: "userGender") ?? Gender.girl.rawValue
-        let legacyCoveringRaw = UserDefaults.standard.string(forKey: "userHeadCovering") ?? HeadCovering.none.rawValue
+        let legacyCoveringRaw = UserDefaults.standard.string(forKey: "userHeadCovering") ?? HeadCovering.chefHat.rawValue
 
         let legacyGender = Gender(rawValue: legacyGenderRaw) ?? .girl
-        let legacyCovering = HeadCovering(rawValue: legacyCoveringRaw) ?? .none
+        let legacyCovering = HeadCovering.fromRaw(legacyCoveringRaw)
 
         // Create child profile from legacy data
         let childProfile = UserProfile(
@@ -399,7 +399,7 @@ class SessionManager: ObservableObject {
             name: "Parent",
             role: .parent,
             gender: .girl,
-            headCovering: .none,
+            headCovering: .chefHat,
             outfit: .chefWhite
         )
 

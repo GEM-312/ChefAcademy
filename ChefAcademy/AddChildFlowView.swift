@@ -21,7 +21,7 @@ struct AddChildFlowView: View {
     @State private var childName: String = ""
     @State private var childGender: Gender = .girl
     @State private var childOutfit: Outfit = .apronRed
-    @State private var childHeadCovering: HeadCovering = .none
+    @State private var childHeadCovering: HeadCovering = .chefHat
     @State private var showDuplicateWarning: Bool = false
 
     /// Check if a child with this name already exists in the family

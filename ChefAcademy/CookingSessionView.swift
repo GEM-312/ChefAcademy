@@ -53,7 +53,7 @@ extension Recipe {
         let recipeFat = pantryIngredients.first(where: { fats.contains($0) })
 
         // --- Seasonings ---
-        let seasoningItems: [PantryItem] = [.salt, .pepper, .cinnamon, .soySauce]
+        let seasoningItems: [PantryItem] = [.salt, .pepper, .cinnamon, .soySauce, .cumin, .paprika, .garlicPowder, .turmeric]
         let recipeSeasonings = pantryIngredients.filter { seasoningItems.contains($0) }
 
         // --- Aromatics (go in pan first) ---

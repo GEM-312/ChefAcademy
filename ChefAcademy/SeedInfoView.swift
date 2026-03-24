@@ -25,7 +25,7 @@ enum ColorChoice: String, CaseIterable {
         case .red:    return "Lycopene"
         case .orange: return "Beta-carotene"
         case .yellow: return "Vitamin C"
-        case .green:  return "Chlorophyll & Folate"
+        case .green:  return "Folate & Fiber"
         case .purple: return "Anthocyanins"
         case .brown:  return "Allicin"
         }
@@ -36,7 +36,7 @@ enum ColorChoice: String, CaseIterable {
         case .red:    return "Red foods have lycopene — it keeps your heart strong!"
         case .orange: return "Orange means beta-carotene — super power for your skin and eyes!"
         case .yellow: return "Yellow foods are packed with Vitamin C to fight off germs!"
-        case .green:  return "Green is chlorophyll — it gives plants energy, and gives YOU energy too!"
+        case .green:  return "Green veggies are packed with folate and fiber — they help your cells grow and keep your tummy healthy!"
         case .purple: return "Purple foods have anthocyanins — brain boosters for super thinking!"
         case .brown:  return "White and brown foods have allicin — your immune system's best friend!"
         }

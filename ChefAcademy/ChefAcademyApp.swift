@@ -407,8 +407,8 @@ struct HomeView: View {
                             QuickActionCardWithBg(title: "Visit Garden", imageName: "bg_garden", color: Color.AppTheme.sage, action: { selectedTab = .garden })
                             QuickActionCardWithBg(title: "Cook Recipe", imageName: "bg_kitchen", color: Color.AppTheme.goldenWheat, action: { selectedTab = .kitchen })
                             QuickActionCard(icon: "🛒", title: "Farm Shop", color: Color.AppTheme.terracotta, action: { selectedTab = .shop })
-                            QuickActionCard(icon: "🫀", title: "Body Buddy", color: .red.opacity(0.7), action: { selectedTab = .bodyBuddy })
-                            QuickActionCard(icon: "🎮", title: "Play Games", color: .purple.opacity(0.7), action: { selectedTab = .playLearn })
+                            QuickActionCard(icon: "🫀", title: "Body Buddy", color: Color.AppTheme.terracotta.opacity(0.7), action: { selectedTab = .bodyBuddy })
+                            QuickActionCard(icon: "🎮", title: "Play Games", color: Color.AppTheme.sepia.opacity(0.7), action: { selectedTab = .playLearn })
                             QuickActionCard(icon: "💬", title: "Ask Pip!", color: Color.AppTheme.sage, action: { showAskPip = true })
                         }
                         .padding(.horizontal, AppSpacing.md)
@@ -450,27 +450,28 @@ struct HomeView: View {
                             .foregroundColor(Color.AppTheme.darkBrown)
 
                         ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: AppSpacing.sm) {
+                            HStack(spacing: AppSpacing.md) {
                                 ForEach(siblings, id: \.id) { sibling in
                                     Button(action: { selectedSibling = sibling }) {
-                                        VStack(spacing: 4) {
+                                        VStack(spacing: 6) {
                                             Image(sibling.gender == .boy ? "boy_card_frame_28" : "girl_card_frame_15")
                                                 .resizable()
-                                                .aspectRatio(contentMode: .fit)
-                                                .frame(width: 60, height: 60)
+                                                .aspectRatio(contentMode: .fill)
+                                                .frame(width: 90, height: 90)
                                                 .clipShape(Circle())
                                                 .overlay(
                                                     Circle()
-                                                        .stroke(Color.AppTheme.sage, lineWidth: 2)
+                                                        .stroke(Color.AppTheme.sage, lineWidth: 2.5)
                                                 )
                                             Text(sibling.name)
-                                                .font(.AppTheme.caption)
+                                                .font(.AppTheme.subheadline)
                                                 .foregroundColor(Color.AppTheme.darkBrown)
                                         }
                                     }
                                     .buttonStyle(.plain)
                                 }
                             }
+                            .padding(.vertical, 4)
                         }
                     }
                     .padding(.horizontal, AppSpacing.md)

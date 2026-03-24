@@ -197,7 +197,7 @@ struct DifficultyBadge: View {
             Text(level.rawValue)
                 .font(.AppTheme.caption)
         }
-        .foregroundColor(.white)
+        .foregroundColor(Color.AppTheme.cream)
         .padding(.horizontal, AppSpacing.xs)
         .padding(.vertical, AppSpacing.xxs)
         .background(level.color)

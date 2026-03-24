@@ -162,6 +162,7 @@ struct KitchenView: View {
                     .font(.system(size: isIPad ? 24 : 20))
                     .foregroundColor(editMode ? .red : Color.AppTheme.lightSepia)
             }
+            .buttonStyle(.plain)
             #endif
 
             // Cancel cooking button

@@ -126,6 +126,96 @@ extension Notification.Name {
     static let gardenRainEvent = Notification.Name("gardenRainEvent")
 }
 
+// MARK: - Garden Season
+
+enum GardenSeason: String, CaseIterable {
+    case spring, summer, fall, winter
+
+    /// Determine season from current date + hemisphere
+    static func current(latitude: Double? = nil) -> GardenSeason {
+        let month = Calendar.current.component(.month, from: Date())
+        let isSouthern = (latitude ?? 40) < 0  // Default to northern hemisphere
+
+        let northernSeason: GardenSeason = {
+            switch month {
+            case 3, 4, 5:   return .spring
+            case 6, 7, 8:   return .summer
+            case 9, 10, 11: return .fall
+            default:         return .winter
+            }
+        }()
+
+        // Southern hemisphere is 6 months offset
+        if isSouthern {
+            switch northernSeason {
+            case .spring: return .fall
+            case .summer: return .winter
+            case .fall:   return .spring
+            case .winter: return .summer
+            }
+        }
+        return northernSeason
+    }
+
+    var displayName: String {
+        switch self {
+        case .spring: return "Spring"
+        case .summer: return "Summer"
+        case .fall:   return "Fall"
+        case .winter: return "Winter"
+        }
+    }
+
+    var emoji: String {
+        switch self {
+        case .spring: return "🌸"
+        case .summer: return "☀️"
+        case .fall:   return "🍂"
+        case .winter: return "❄️"
+        }
+    }
+
+    /// Gradient colors for the seasonal overlay (top → bottom, subtle)
+    var gradientColors: [Color] {
+        switch self {
+        case .spring:
+            return [
+                Color(hex: "E8F5E9").opacity(0.25),  // Soft green
+                Color(hex: "FCE4EC").opacity(0.15),  // Cherry blossom pink
+                Color.clear
+            ]
+        case .summer:
+            return [
+                Color(hex: "FFF8E1").opacity(0.2),   // Warm golden
+                Color(hex: "FFF3E0").opacity(0.1),   // Light amber
+                Color.clear
+            ]
+        case .fall:
+            return [
+                Color(hex: "FBE9E7").opacity(0.3),   // Warm orange tint
+                Color(hex: "EFEBE9").opacity(0.2),   // Light brown
+                Color(hex: "FFF8E1").opacity(0.1)    // Golden bottom
+            ]
+        case .winter:
+            return [
+                Color(hex: "E3F2FD").opacity(0.3),   // Icy blue
+                Color(hex: "F3E5F5").opacity(0.15),  // Frosty lavender
+                Color(hex: "ECEFF1").opacity(0.2)    // Cold grey
+            ]
+        }
+    }
+
+    /// Pip tip about the season
+    var pipTip: String {
+        switch self {
+        case .spring: return "It's spring! Perfect time to plant leafy greens and herbs."
+        case .summer: return "Summer sunshine! Tomatoes, peppers, and berries grow super fast now."
+        case .fall:   return "Fall is here! Root veggies love this cool weather. Time to harvest!"
+        case .winter: return "Brrr, it's winter! Plants grow slower, but root veggies are still happy."
+        }
+    }
+}
+
 // MARK: - Garden Weather Service
 
 class GardenWeatherService: NSObject, ObservableObject, CLLocationManagerDelegate {
@@ -133,6 +223,7 @@ class GardenWeatherService: NSObject, ObservableObject, CLLocationManagerDelegat
 
     // Published state
     @Published var currentWeather: GardenWeather = .sunny
+    @Published var currentSeason: GardenSeason = GardenSeason.current()
     @Published var temperature: Int = 72  // Fahrenheit
     @Published var temperatureCelsius: Int = 22
     @Published var locationStatus: CLAuthorizationStatus = .notDetermined
@@ -264,6 +355,9 @@ class GardenWeatherService: NSObject, ObservableObject, CLLocationManagerDelegat
         }
         print("[Weather] Got location: \(location.coordinate.latitude), \(location.coordinate.longitude)")
         currentLocation = location
+
+        // Update season based on hemisphere
+        currentSeason = GardenSeason.current(latitude: location.coordinate.latitude)
 
         // Fetch weather with new location
         Task { @MainActor in

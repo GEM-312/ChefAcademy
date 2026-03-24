@@ -18,14 +18,14 @@ class FamilySetupManager: ObservableObject {
     @Published var parentName: String = ""
     @Published var parentGender: Gender = .girl
     @Published var parentOutfit: Outfit = .chefWhite
-    @Published var parentHeadCovering: HeadCovering = .none
+    @Published var parentHeadCovering: HeadCovering = .chefHat
     @Published var parentPIN: String = ""
 
     // Child data
     @Published var childName: String = ""
     @Published var childGender: Gender = .girl
     @Published var childOutfit: Outfit = .apronRed
-    @Published var childHeadCovering: HeadCovering = .none
+    @Published var childHeadCovering: HeadCovering = .chefHat
 
     enum SetupStep: Int, CaseIterable {
         case welcome = 0

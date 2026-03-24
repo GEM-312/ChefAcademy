@@ -4,6 +4,16 @@ Personal reference built from real code in Pip's Kitchen Garden. Newest lessons 
 
 ---
 
+## Session: March 23, 2026
+
+### Apple Developer Portal: Capabilities vs App Services
+**Where it came up:** WeatherKit JWT auth failure that persisted for weeks
+**What it is:** In the Apple Developer Portal, each App ID has TWO separate tabs: **Capabilities** and **App Services**. They look similar but do different things. **Capabilities** tells Xcode "this app is allowed to use this feature" (it controls the entitlements file). **App Services** tells Apple's servers "accept API requests from this bundle ID." You need BOTH checked for server-side services like WeatherKit.
+**In our code:** WeatherKit was enabled under Capabilities (so the app compiled and made requests), but NOT under App Services (so Apple's servers rejected every JWT token). The fix was one checkbox on the App Services tab.
+**Why it matters:** This is a 4-level activation system for Apple services: (1) Xcode entitlements file, (2) Capabilities tab in developer portal, (3) App Services tab in developer portal, (4) provisioning profile regeneration. Missing any ONE level causes cryptic failures. This specific gotcha (Capabilities vs App Services) is poorly documented and trips up even experienced developers.
+
+---
+
 ## Session: March 16, 2026
 
 ### GameKit & Real-Time Multiplayer

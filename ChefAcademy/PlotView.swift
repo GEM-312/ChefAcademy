@@ -2,12 +2,13 @@
 //  PlotView.swift
 //  ChefAcademy
 //
-//  An individual garden plot that can be:
-//  - Empty (tap to plant) — shows "+" icon
-//  - Growing (progress bar + small veggie)
-//  - Ready (full veggie illustration + harvest badge)
-//
-//  Clean style — no soil circles, just the content.
+//  An individual garden plot with interactive plant care:
+//  - Empty: tap to plant
+//  - Growing: progress bar + small veggie
+//  - Ready: full veggie + harvest badge
+//  - Needs Water: HOLD to water (watering can animates)
+//  - Needs Weeding: SWIPE UP to pull weeds
+//  - Has Bugs: TAP bugs, ladybugs fly in
 //
 
 import SwiftUI
@@ -19,21 +20,43 @@ struct PlotView: View {
     let plot: GardenPlot
     let onTap: () -> Void
     let onHarvest: () -> Void
+    let onCareComplete: () -> Void
 
     @State private var isAnimating = false
 
+    // Watering state
+    @State private var isWatering = false
+    @State private var waterProgress: CGFloat = 0
+    @State private var waterTimer: Timer?
+    @State private var showWateringCan = false
+    @State private var waterDropY: CGFloat = -20
+
+    // Weeding state
+    @State private var weedOffsets: [CGFloat] = [0, 0, 0]
+    @State private var weedsRemoved: [Bool] = [false, false, false]
+    @State private var currentWeedDrag: CGFloat = 0
+
+    // Bug rescue state
+    @State private var bugsRescued: [Bool] = [false, false, false]
+    @State private var ladybugOffsets: [CGFloat] = [100, 100, 100]
+
+    // Completion
+    @State private var xpRewardVisible = false
+
     var body: some View {
-        Button(action: {
-            if plot.state == .ready {
-                onHarvest()
-            } else {
-                onTap()
-            }
-        }) {
+        ZStack {
             plotContent
                 .frame(width: 100, height: 110)
+
+            // XP reward floating text
+            if xpRewardVisible {
+                Text("+2 XP")
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .foregroundColor(Color.AppTheme.goldenWheat)
+                    .offset(y: -60)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
-        .buttonStyle(PlotButtonStyle())
         .onAppear {
             if plot.state == .ready {
                 withAnimation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true)) {
@@ -49,6 +72,8 @@ struct PlotView: View {
             } else {
                 isAnimating = false
             }
+            // Reset care states when plot state changes
+            resetCareStates()
         }
     }
 
@@ -58,23 +83,25 @@ struct PlotView: View {
     var plotContent: some View {
         switch plot.state {
         case .empty:
-            emptyPlotContent
+            emptyPlot
+                .onTapGesture { onTap() }
         case .growing:
-            growingPlotContent
+            growingPlot
         case .ready:
-            readyPlotContent
+            readyPlot
+                .onTapGesture { onHarvest() }
         case .needsWater:
-            needsWaterContent
+            wateringPlot
         case .needsWeeding:
-            needsWeedingContent
+            weedingPlot
         case .hasBugs:
-            hasBugsContent
+            bugRescuePlot
         }
     }
 
-    // MARK: - Empty Plot — just a "+" and "Plant" label
+    // MARK: - Empty Plot
 
-    var emptyPlotContent: some View {
+    var emptyPlot: some View {
         VStack(spacing: 6) {
             ZStack {
                 Circle()
@@ -99,11 +126,10 @@ struct PlotView: View {
         }
     }
 
-    // MARK: - Growing Plot — veggie image + progress bar
+    // MARK: - Growing Plot
 
-    var growingPlotContent: some View {
+    var growingPlot: some View {
         VStack(spacing: 4) {
-            // Beige circle background with veggie illustration
             ZStack {
                 Circle()
                     .fill(Color.AppTheme.warmCream.opacity(0.85))
@@ -119,14 +145,12 @@ struct PlotView: View {
                 }
             }
 
-            // Progress bar
             VStack(spacing: 2) {
                 GeometryReader { geo in
                     ZStack(alignment: .leading) {
                         Capsule()
                             .fill(Color.AppTheme.parchment)
                             .frame(height: 6)
-
                         Capsule()
                             .fill(Color.AppTheme.sage)
                             .frame(width: geo.size.width * plot.growthProgress, height: 6)
@@ -141,12 +165,11 @@ struct PlotView: View {
         }
     }
 
-    // MARK: - Ready to Harvest — full veggie + sparkles
+    // MARK: - Ready Plot
 
-    var readyPlotContent: some View {
+    var readyPlot: some View {
         VStack(spacing: 4) {
             ZStack {
-                // Beige circle background
                 Circle()
                     .fill(Color.AppTheme.warmCream.opacity(0.9))
                     .frame(width: 85, height: 85)
@@ -159,7 +182,6 @@ struct PlotView: View {
                         .scaleEffect(isAnimating ? 1.08 : 1.0)
                 }
 
-                // Sparkles
                 Text("✨")
                     .font(.system(size: 14))
                     .opacity(isAnimating ? 1.0 : 0.3)
@@ -171,7 +193,6 @@ struct PlotView: View {
                     .offset(x: 38, y: -25)
             }
 
-            // Harvest badge
             Text("Harvest!")
                 .font(.system(size: 10, weight: .bold, design: .rounded))
                 .foregroundColor(Color.AppTheme.goldenWheat)
@@ -182,9 +203,9 @@ struct PlotView: View {
         }
     }
 
-    // MARK: - Needs Water
+    // MARK: - Watering Plot (HOLD to water)
 
-    var needsWaterContent: some View {
+    var wateringPlot: some View {
         VStack(spacing: 4) {
             ZStack {
                 Circle()
@@ -196,25 +217,58 @@ struct PlotView: View {
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 60, height: 60)
-                        .rotationEffect(.degrees(-5))
-                        .opacity(0.6)
+                        .rotationEffect(.degrees(isWatering ? 0 : -5))
+                        .opacity(0.5 + (Double(waterProgress) * 0.5))
+                        .scaleEffect(0.7 + (waterProgress * 0.3))
                 }
 
-                // Droopy water drops
-                Text("💧")
-                    .font(.system(size: 16))
-                    .offset(x: 30, y: -20)
+                // Watering can appears when holding
+                if showWateringCan {
+                    Text("🚿")
+                        .font(.system(size: 24))
+                        .offset(x: 25, y: -35)
+                        .transition(.scale.combined(with: .opacity))
+                }
+
+                // Water drops
+                if isWatering {
+                    ForEach(0..<3, id: \.self) { i in
+                        Text("💧")
+                            .font(.system(size: CGFloat(10 + i * 2)))
+                            .offset(
+                                x: CGFloat([-10, 5, 15][i]),
+                                y: waterDropY + CGFloat(i * 8)
+                            )
+                            .opacity(0.7)
+                    }
+                }
+
+                // Progress ring
+                Circle()
+                    .trim(from: 0, to: waterProgress)
+                    .stroke(Color.AppTheme.sage, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                    .frame(width: 85, height: 85)
+                    .rotationEffect(.degrees(-90))
             }
 
-            Text("Water me!")
+            Text(isWatering ? "Watering..." : "Hold me!")
                 .font(.system(size: 10, weight: .bold, design: .rounded))
                 .foregroundColor(Color.AppTheme.sage)
         }
+        .gesture(
+            DragGesture(minimumDistance: 0)
+                .onChanged { _ in
+                    if !isWatering { startWatering() }
+                }
+                .onEnded { _ in
+                    stopWatering()
+                }
+        )
     }
 
-    // MARK: - Needs Weeding
+    // MARK: - Weeding Plot (SWIPE UP to pull)
 
-    var needsWeedingContent: some View {
+    var weedingPlot: some View {
         VStack(spacing: 4) {
             ZStack {
                 Circle()
@@ -229,27 +283,62 @@ struct PlotView: View {
                         .opacity(0.7)
                 }
 
-                // Weeds around the plant
-                Text("🌿")
-                    .font(.system(size: 14))
-                    .offset(x: -28, y: 20)
-                Text("🌿")
-                    .font(.system(size: 12))
-                    .offset(x: 25, y: 22)
-                Text("🌿")
-                    .font(.system(size: 10))
-                    .offset(x: -5, y: 30)
+                // Weeds — swipe up to remove
+                ForEach(0..<3, id: \.self) { i in
+                    if !weedsRemoved[i] {
+                        Text("🌿")
+                            .font(.system(size: [14, 12, 10][i]))
+                            .offset(
+                                x: [-28, 25, -5][i],
+                                y: [20, 22, 30][i] + weedOffsets[i]
+                            )
+                            .opacity(weedOffsets[i] < -30 ? 0 : 1)
+                    }
+                }
             }
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        if value.translation.height < 0 {
+                            currentWeedDrag = value.translation.height
+                            // Move the first non-removed weed
+                            if let idx = weedsRemoved.firstIndex(of: false) {
+                                weedOffsets[idx] = value.translation.height
+                            }
+                        }
+                    }
+                    .onEnded { value in
+                        if let idx = weedsRemoved.firstIndex(of: false) {
+                            if value.translation.height < -40 {
+                                // Pulled out!
+                                withAnimation(.easeOut(duration: 0.3)) {
+                                    weedOffsets[idx] = -100
+                                }
+                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                    weedsRemoved[idx] = true
+                                    checkWeedingComplete()
+                                }
+                            } else {
+                                // Snap back
+                                withAnimation(.spring(response: 0.3)) {
+                                    weedOffsets[idx] = 0
+                                }
+                            }
+                        }
+                        currentWeedDrag = 0
+                    }
+            )
 
-            Text("Pull weeds!")
+            let remaining = weedsRemoved.filter { !$0 }.count
+            Text(remaining > 0 ? "Swipe up! (\(remaining) left)" : "Clean!")
                 .font(.system(size: 10, weight: .bold, design: .rounded))
                 .foregroundColor(Color.AppTheme.sage)
         }
     }
 
-    // MARK: - Has Bugs
+    // MARK: - Bug Rescue Plot (TAP each bug)
 
-    var hasBugsContent: some View {
+    var bugRescuePlot: some View {
         VStack(spacing: 4) {
             ZStack {
                 Circle()
@@ -264,23 +353,140 @@ struct PlotView: View {
                         .opacity(0.7)
                 }
 
-                // Bugs on the plant
-                Text("🐛")
-                    .font(.system(size: 12))
-                    .offset(x: -20, y: -15)
-                Text("🐛")
-                    .font(.system(size: 10))
-                    .offset(x: 22, y: 5)
-                Text("🐞")
-                    .font(.system(size: 14))
-                    .offset(x: 30, y: -25)
-                    .opacity(0.5)
+                // Bugs — tap to rescue
+                ForEach(0..<3, id: \.self) { i in
+                    if !bugsRescued[i] {
+                        Text("🐛")
+                            .font(.system(size: [12, 10, 11][i]))
+                            .offset(
+                                x: [-20, 22, 5][i],
+                                y: [-15, 5, 25][i]
+                            )
+                            .onTapGesture { rescueBug(index: i) }
+                    }
+                }
+
+                // Ladybugs flying in
+                ForEach(0..<3, id: \.self) { i in
+                    if bugsRescued[i] {
+                        Text("🐞")
+                            .font(.system(size: 14))
+                            .offset(
+                                x: ladybugOffsets[i] == 0 ? [-20, 22, 5][i] : ladybugOffsets[i],
+                                y: [-15, 5, 25][i]
+                            )
+                            .opacity(ladybugOffsets[i] == 0 ? 0.8 : 0)
+                    }
+                }
             }
 
-            Text("Help! Bugs!")
+            let remaining = bugsRescued.filter { !$0 }.count
+            Text(remaining > 0 ? "Tap bugs! (\(remaining) left)" : "Rescued!")
                 .font(.system(size: 10, weight: .bold, design: .rounded))
                 .foregroundColor(Color.AppTheme.terracotta)
         }
+    }
+
+    // MARK: - Watering Actions
+
+    private func startWatering() {
+        isWatering = true
+        withAnimation(.spring(response: 0.3)) {
+            showWateringCan = true
+        }
+        // Animate water drops
+        withAnimation(.easeInOut(duration: 0.6).repeatForever(autoreverses: true)) {
+            waterDropY = 10
+        }
+
+        waterTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
+            waterProgress += 0.015
+            if waterProgress >= 1.0 {
+                completeWatering()
+            }
+        }
+    }
+
+    private func stopWatering() {
+        isWatering = false
+        waterTimer?.invalidate()
+        waterTimer = nil
+        withAnimation(.spring(response: 0.3)) {
+            showWateringCan = false
+        }
+        // Drain a bit if not complete
+        if waterProgress < 1.0 {
+            withAnimation(.easeOut(duration: 0.3)) {
+                waterProgress = max(0, waterProgress - 0.05)
+            }
+        }
+    }
+
+    private func completeWatering() {
+        waterTimer?.invalidate()
+        waterTimer = nil
+        isWatering = false
+        showXPBadge()
+        onCareComplete()
+    }
+
+    // MARK: - Weeding Actions
+
+    private func checkWeedingComplete() {
+        if weedsRemoved.allSatisfy({ $0 }) {
+            showXPBadge()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                onCareComplete()
+            }
+        }
+    }
+
+    // MARK: - Bug Rescue Actions
+
+    private func rescueBug(index: Int) {
+        guard !bugsRescued[index] else { return }
+
+        // Ladybug flies in
+        withAnimation(.easeIn(duration: 0.3)) {
+            ladybugOffsets[index] = 0
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            bugsRescued[index] = true
+
+            // Check if all rescued
+            if bugsRescued.allSatisfy({ $0 }) {
+                showXPBadge()
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    onCareComplete()
+                }
+            }
+        }
+    }
+
+    // MARK: - Reward
+
+    private func showXPBadge() {
+        withAnimation(.spring(response: 0.4)) {
+            xpRewardVisible = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            withAnimation(.easeOut(duration: 0.3)) {
+                xpRewardVisible = false
+            }
+        }
+    }
+
+    // MARK: - Reset
+
+    private func resetCareStates() {
+        waterProgress = 0
+        isWatering = false
+        showWateringCan = false
+        waterDropY = -20
+        weedOffsets = [0, 0, 0]
+        weedsRemoved = [false, false, false]
+        bugsRescued = [false, false, false]
+        ladybugOffsets = [100, 100, 100]
     }
 }
 
@@ -296,47 +502,36 @@ struct PlotButtonStyle: ButtonStyle {
 
 // MARK: - Previews
 
-#Preview("Empty Plot") {
-    ZStack {
-        Color.AppTheme.cream
-        PlotView(
-            plot: GardenPlot(id: 0, state: .empty),
-            onTap: { print("Tapped!") },
-            onHarvest: { print("Harvested!") }
-        )
-    }
+#Preview("Empty") {
+    PlotView(plot: GardenPlot(id: 0), onTap: {}, onHarvest: {}, onCareComplete: {})
 }
 
-#Preview("Growing Plot") {
-    ZStack {
-        Color.AppTheme.cream
-        PlotView(
-            plot: {
-                var plot = GardenPlot(id: 1)
-                plot.state = .growing
-                plot.vegetable = .carrot
-                plot.plantedDate = Date().addingTimeInterval(-30)
-                return plot
-            }(),
-            onTap: { print("Tapped!") },
-            onHarvest: { print("Harvested!") }
-        )
-    }
+#Preview("Needs Water") {
+    let plot = {
+        var p = GardenPlot(id: 0)
+        p.plant(.tomato)
+        p.pauseForWater()
+        return p
+    }()
+    PlotView(plot: plot, onTap: {}, onHarvest: {}, onCareComplete: {})
 }
 
-#Preview("Ready Plot") {
-    ZStack {
-        Color.AppTheme.cream
-        PlotView(
-            plot: {
-                var plot = GardenPlot(id: 2)
-                plot.state = .ready
-                plot.vegetable = .tomato
-                plot.plantedDate = Date().addingTimeInterval(-100)
-                return plot
-            }(),
-            onTap: { print("Tapped!") },
-            onHarvest: { print("Harvested!") }
-        )
-    }
+#Preview("Needs Weeding") {
+    let plot = {
+        var p = GardenPlot(id: 0)
+        p.plant(.carrot)
+        p.triggerWeeds()
+        return p
+    }()
+    PlotView(plot: plot, onTap: {}, onHarvest: {}, onCareComplete: {})
+}
+
+#Preview("Has Bugs") {
+    let plot = {
+        var p = GardenPlot(id: 0)
+        p.plant(.broccoli)
+        p.triggerBugs()
+        return p
+    }()
+    PlotView(plot: plot, onTap: {}, onHarvest: {}, onCareComplete: {})
 }

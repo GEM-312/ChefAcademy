@@ -221,7 +221,7 @@ struct ChopMiniGame: View {
             .foregroundColor(resultColor)
             .padding(.horizontal, AppSpacing.lg)
             .padding(.vertical, AppSpacing.sm)
-            .background(Color.white.opacity(0.9))
+            .background(Color.AppTheme.cream.opacity(0.9))
             .cornerRadius(12)
             .scaleEffect(showResult ? 1.0 : 0.5)
             .opacity(showResult ? 1.0 : 0.0)

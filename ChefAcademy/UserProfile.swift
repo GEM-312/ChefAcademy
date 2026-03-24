@@ -32,7 +32,7 @@ class UserProfile {
         name: String = "",
         role: ProfileRole = .child,
         gender: Gender = .girl,
-        headCovering: HeadCovering = .none,
+        headCovering: HeadCovering = .chefHat,
         outfit: Outfit = .apronRed,
         createdDate: Date = Date(),
         lastPlayedDate: Date = Date(),
@@ -60,7 +60,7 @@ class UserProfile {
     }
 
     var headCovering: HeadCovering {
-        HeadCovering(rawValue: headCoveringRaw) ?? .none
+        HeadCovering.fromRaw(headCoveringRaw)
     }
 
     var outfit: Outfit {

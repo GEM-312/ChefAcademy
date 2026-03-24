@@ -399,7 +399,7 @@ struct LocalVersusView: View {
                     if let slot = slot {
                         Text(slot)
                             .font(.system(size: 12, weight: .bold))
-                            .foregroundColor(.white)
+                            .foregroundColor(Color.AppTheme.cream)
                             .padding(4)
                             .background(Color.AppTheme.sage)
                             .clipShape(Circle())
@@ -570,7 +570,7 @@ struct LocalVersusGameView: View {
                         HStack(spacing: 4) {
                             ForEach(0..<maxBadChoices, id: \.self) { i in
                                 Image(systemName: i < badChoices ? "heart.slash.fill" : "heart.fill")
-                                    .foregroundColor(i < badChoices ? .gray : .red)
+                                    .foregroundColor(i < badChoices ? Color.AppTheme.lightSepia : Color.AppTheme.terracotta)
                                     .font(.system(size: 16))
                             }
                         }

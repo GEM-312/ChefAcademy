@@ -787,6 +787,16 @@ struct GardenView: View {
                     }
                 }
             )
+            // Seasonal gradient overlay — shifts garden mood by season
+            .overlay(
+                GeometryReader { geo in
+                    SeasonalOverlayView(
+                        season: weatherService.currentSeason,
+                        mapWidth: geo.size.width,
+                        mapHeight: geo.size.height
+                    )
+                }
+            )
             // Weather overlay — rain, snow, sunshine effects!
             .overlay(
                 GeometryReader { geo in
@@ -811,6 +821,23 @@ struct GardenView: View {
                     },
                     onHarvest: {
                         harvestPlot(index: index)
+                    },
+                    onCareComplete: {
+                        // Care interaction handled inside PlotView — just apply state changes
+                        let state = gameState.gardenPlots[index].state
+                        switch state {
+                        case .needsWater:
+                            gameState.gardenPlots[index].water()
+                            gameState.gardenPlots[index].hasWatered = true
+                            gameState.addXP(2)
+                        case .needsWeeding:
+                            gameState.gardenPlots[index].weed()
+                            gameState.addXP(2)
+                        case .hasBugs:
+                            gameState.gardenPlots[index].releaseLadybugs()
+                            gameState.addXP(2)
+                        default: break
+                        }
                     }
                 )
                 .frame(width: isIPad ? 160 : 100, height: isIPad ? 160 : 100)
@@ -1013,21 +1040,9 @@ struct GardenView: View {
             // Harvest!
             harvestPlot(index: index)
 
-        case .needsWater:
-            // Water the plant! Resume growth.
-            gameState.gardenPlots[index].water()
-            gameState.gardenPlots[index].hasWatered = true
-            gameState.addXP(2)
-
-        case .needsWeeding:
-            // Pull the weeds! Resume growth.
-            gameState.gardenPlots[index].weed()
-            gameState.addXP(2)
-
-        case .hasBugs:
-            // Release ladybugs! Resume growth.
-            gameState.gardenPlots[index].releaseLadybugs()
-            gameState.addXP(2)
+        case .needsWater, .needsWeeding, .hasBugs:
+            // Handled by PlotView's built-in gestures (hold/swipe/tap)
+            break
         }
     }
 
@@ -1103,8 +1118,8 @@ struct GardenView: View {
     }
 
     func updateGrowthStates() {
-        // Sync weather multiplier to GardenPlot
-        GardenPlot.weatherMultiplier = weatherService.currentWeather.growthMultiplier
+        // Sync current weather to GardenPlot (per-veggie multipliers calculated inside)
+        GardenPlot.currentWeather = weatherService.currentWeather
 
         // Check if plants need water (no rain for 5+ minutes)
         let needsWateringCheck = weatherService.timeSinceLastRain > 300

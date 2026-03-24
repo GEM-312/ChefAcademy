@@ -121,7 +121,7 @@ struct ParentDashboardView: View {
                             .foregroundColor(Color.AppTheme.terracotta.opacity(0.8))
                             .padding(AppSpacing.md)
                             .frame(maxWidth: .infinity)
-                            .background(Color.red.opacity(0.1))
+                            .background(Color.AppTheme.terracotta.opacity(0.1))
                             .cornerRadius(AppSpacing.cardCornerRadius)
                         }
                         .buttonStyle(.plain)
@@ -203,7 +203,7 @@ struct ParentDashboardView: View {
                             .font(.AppTheme.body)
                             .foregroundColor(Color.AppTheme.terracotta.opacity(0.8))
                             .padding(AppSpacing.md)
-                            .background(Color.red.opacity(0.05))
+                            .background(Color.AppTheme.terracotta.opacity(0.05))
                             .cornerRadius(AppSpacing.cardCornerRadius)
                         }
                         .buttonStyle(.plain)
