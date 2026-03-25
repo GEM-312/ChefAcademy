@@ -292,6 +292,21 @@ struct HomeView: View {
     @State private var selectedSibling: UserProfile?
     @State private var showAskPip = false
 
+    // Unseen help messages for the current player
+    private var newHelpMessages: [HelpEntry]? {
+        guard let profile = sessionManager.activeProfile,
+              let data = profile.playerData(in: modelContext) else { return nil }
+        let unseen = Array(data.receivedHelp.dropFirst(data.lastSeenHelpCount))
+        return unseen.isEmpty ? nil : unseen
+    }
+
+    private func dismissHelpMessages() {
+        guard let profile = sessionManager.activeProfile,
+              let data = profile.playerData(in: modelContext) else { return }
+        data.lastSeenHelpCount = data.receivedHelp.count
+        try? modelContext.save()
+    }
+
     private var siblings: [UserProfile] {
         guard let family = sessionManager.familyProfile,
               let activeID = sessionManager.activeProfile?.id else { return [] }
@@ -442,6 +457,43 @@ struct HomeView: View {
                 }
                 .padding(.horizontal, AppSpacing.md)
 
+                // Help received messages
+                if let helpMessages = newHelpMessages, !helpMessages.isEmpty {
+                    VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                        Text("Garden Help!")
+                            .font(.AppTheme.headline)
+                            .foregroundColor(Color.AppTheme.darkBrown)
+
+                        ForEach(Array(helpMessages.enumerated()), id: \.offset) { _, entry in
+                            HStack(spacing: AppSpacing.sm) {
+                                Text(CareAction(rawValue: entry.actionRaw)?.emoji ?? "🌱")
+                                    .font(.system(size: 24))
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("\(entry.helperName) \(CareAction(rawValue: entry.actionRaw)?.displayVerb ?? "helped") your \(VegetableType(rawValue: entry.vegetableRaw)?.displayName ?? "plant")!")
+                                        .font(.AppTheme.subheadline)
+                                        .foregroundColor(Color.AppTheme.darkBrown)
+
+                                    Text(entry.timestamp, style: .relative)
+                                        .font(.AppTheme.caption)
+                                        .foregroundColor(Color.AppTheme.sepia)
+                                }
+                                Spacer()
+                            }
+                            .padding(AppSpacing.sm)
+                            .background(Color.AppTheme.warmCream)
+                            .cornerRadius(AppSpacing.cardCornerRadius)
+                        }
+
+                        Button("Dismiss") {
+                            dismissHelpMessages()
+                        }
+                        .font(.AppTheme.caption)
+                        .foregroundColor(Color.AppTheme.sage)
+                    }
+                    .padding(.horizontal, AppSpacing.md)
+                }
+
                 // Visit Sibling's Garden
                 if !siblings.isEmpty {
                     VStack(alignment: .leading, spacing: AppSpacing.sm) {
@@ -567,6 +619,7 @@ struct HomeView: View {
         .fullScreenCover(item: $selectedSibling) { sibling in
             SiblingProfileView(
                 sibling: sibling,
+                visitorGameState: gameState,
                 onBack: { selectedSibling = nil }
             )
         }

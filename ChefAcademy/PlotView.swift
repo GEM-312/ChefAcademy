@@ -21,6 +21,7 @@ struct PlotView: View {
     let onTap: () -> Void
     let onHarvest: () -> Void
     let onCareComplete: () -> Void
+    var rewardLabel: String = "+2 XP"
 
     @State private var isAnimating = false
 
@@ -50,7 +51,7 @@ struct PlotView: View {
 
             // XP reward floating text
             if xpRewardVisible {
-                Text("+2 XP")
+                Text(rewardLabel)
                     .font(.system(size: 12, weight: .bold, design: .rounded))
                     .foregroundColor(Color.AppTheme.goldenWheat)
                     .offset(y: -60)

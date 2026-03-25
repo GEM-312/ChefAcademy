@@ -19,31 +19,36 @@ struct HeatPanMiniGame: View {
     @State private var timer: Timer?
     @State private var isDone = false
     @State private var panGlow: Double = 0
-    @State private var flameFrame = 1
-    @State private var flameTimer: Timer?
 
     private let holdDuration: CGFloat = 3.0      // seconds to fill
-    private let totalFlameFrames = 15
 
     var body: some View {
         VStack(spacing: AppSpacing.lg) {
             Spacer()
 
-            // Pan + animated stove flame
+            // Pan visual
             ZStack {
-                // Animated stove flame (15 frames)
-                Image(String(format: "stove_flame_%02d", flameFrame))
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 220, height: 220)
-                    .opacity(isHolding ? 1.0 : 0.3)
-                    .animation(.easeInOut(duration: 0.3), value: isHolding)
+                // Stove burner
+                Circle()
+                    .fill(
+                        RadialGradient(
+                            colors: [
+                                Color.AppTheme.terracotta.opacity(panGlow * 0.6),
+                                Color.AppTheme.goldenWheat.opacity(panGlow * 0.3),
+                                Color.clear
+                            ],
+                            center: .center,
+                            startRadius: 30,
+                            endRadius: 80
+                        )
+                    )
+                    .frame(width: 160, height: 160)
 
-                // Pan image on top of flame
+                // Pan image
                 Image("frying_pan")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(width: 160, height: 160)
+                    .frame(width: 180, height: 180)
                     .shadow(color: Color.AppTheme.sepia.opacity(0.3), radius: 8, y: 4)
 
                 // Heat shimmer when warm
@@ -96,14 +101,7 @@ struct HeatPanMiniGame: View {
                     }
                 }
         )
-        .onAppear { startFlameAnimation() }
-        .onDisappear { timer?.invalidate(); flameTimer?.invalidate() }
-    }
-
-    private func startFlameAnimation() {
-        flameTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 10.0, repeats: true) { _ in
-            flameFrame = (flameFrame % totalFlameFrames) + 1
-        }
+        .onDisappear { timer?.invalidate() }
     }
 
     private func startHolding() {
@@ -125,7 +123,6 @@ struct HeatPanMiniGame: View {
 
     private func finishGame() {
         timer?.invalidate()
-        flameTimer?.invalidate()
         isDone = true
         // Score: 100 if held steadily, -10 per lift
         let score = max(0, 100 - liftCount * 10)

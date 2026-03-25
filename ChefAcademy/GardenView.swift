@@ -528,6 +528,7 @@ struct GardenView: View {
     var isVisiting: Bool = false
     var visitingName: String = ""
     var onLikeGarden: (() -> Void)? = nil
+    var onHelpWithCare: ((Int, CareAction) -> Void)? = nil
 
     // Adaptive: detect iPad
     private var isIPad: Bool { sizeClass != .compact }
@@ -825,20 +826,31 @@ struct GardenView: View {
                     onCareComplete: {
                         // Care interaction handled inside PlotView — just apply state changes
                         let state = gameState.gardenPlots[index].state
+                        let careAction: CareAction?
                         switch state {
                         case .needsWater:
                             gameState.gardenPlots[index].water()
                             gameState.gardenPlots[index].hasWatered = true
                             gameState.addXP(2)
+                            careAction = .water
                         case .needsWeeding:
                             gameState.gardenPlots[index].weed()
                             gameState.addXP(2)
+                            careAction = .weed
                         case .hasBugs:
                             gameState.gardenPlots[index].releaseLadybugs()
                             gameState.addXP(2)
-                        default: break
+                            careAction = .debug
+                        default:
+                            careAction = nil
                         }
-                    }
+
+                        // If visiting, notify parent view to reward the visitor
+                        if isVisiting, let action = careAction {
+                            onHelpWithCare?(index, action)
+                        }
+                    },
+                    rewardLabel: isVisiting ? "+5 🪙" : "+2 XP"
                 )
                 .frame(width: isIPad ? 160 : 100, height: isIPad ? 160 : 100)
                 .scaleEffect(isIPad ? 1.4 : 1.0)
@@ -1022,26 +1034,22 @@ struct GardenView: View {
     // MARK: - Actions
 
     func handlePlotTap(index: Int) {
-        // Visiting mode — no interactions allowed
-        guard !isVisiting else { return }
-
         let plot = gameState.gardenPlots[index]
 
         switch plot.state {
         case .empty:
-            // Open planting sheet — using sheet(item:) so it's always ready
+            guard !isVisiting else { return }  // Can't plant in sibling's garden
             selectedPlotIndex = SelectedPlot(index: index)
 
         case .growing:
-            // Can't do anything while growing
             break
 
         case .ready:
-            // Harvest!
+            guard !isVisiting else { return }  // Can't harvest sibling's plants
             harvestPlot(index: index)
 
         case .needsWater, .needsWeeding, .hasBugs:
-            // Handled by PlotView's built-in gestures (hold/swipe/tap)
+            // Allowed for visitors! PlotView's built-in gestures handle it
             break
         }
     }

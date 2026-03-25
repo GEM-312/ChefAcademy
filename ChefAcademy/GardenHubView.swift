@@ -108,6 +108,7 @@ struct GardenModeButton: View {
 struct SiblingPickerView: View {
     let siblings: [UserProfile]
     @Binding var selectedSibling: UserProfile?
+    @EnvironmentObject var gameState: GameState
     @Environment(\.modelContext) private var modelContext
 
     var body: some View {
@@ -117,6 +118,7 @@ struct SiblingPickerView: View {
             if let sibling = selectedSibling {
                 SiblingGardenView(
                     sibling: sibling,
+                    visitorGameState: gameState,
                     onBack: { selectedSibling = nil }
                 )
             } else {

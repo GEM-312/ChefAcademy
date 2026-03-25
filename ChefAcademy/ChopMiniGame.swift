@@ -103,21 +103,13 @@ struct ChopMiniGame: View {
 
     var gameArea: some View {
         ZStack {
-            // Background - cutting board
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color(red: 0.8, green: 0.65, blue: 0.45)) // Wood color
+            // Background - cutting board image
+            Image("cutting_board")
+                .resizable()
+                .aspectRatio(contentMode: .fill)
                 .frame(height: 250)
-                .overlay(
-                    // Wood grain lines
-                    VStack(spacing: 20) {
-                        ForEach(0..<5, id: \.self) { _ in
-                            Capsule()
-                                .fill(Color.brown.opacity(0.2))
-                                .frame(height: 2)
-                        }
-                    }
-                    .padding()
-                )
+                .clipShape(RoundedRectangle(cornerRadius: 20))
+                .shadow(color: Color.AppTheme.sepia.opacity(0.15), radius: 6, y: 3)
 
             VStack(spacing: 0) {
                 // MARK: Sweet Spot Indicator
@@ -176,9 +168,12 @@ struct ChopMiniGame: View {
 
     var knifeView: some View {
         GeometryReader { geometry in
-            Text("🔪")
-                .font(.system(size: 50))
+            Image("knife")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(height: 50)
                 .rotationEffect(.degrees(-45))
+                .shadow(color: Color.AppTheme.sepia.opacity(0.3), radius: 3, y: 2)
                 .offset(x: (knifePosition - 0.5) * (geometry.size.width - 60))
                 .offset(y: justChopped ? 20 : 0) // Chop animation
                 .animation(.easeOut(duration: 0.1), value: justChopped)

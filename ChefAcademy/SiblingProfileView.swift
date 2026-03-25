@@ -10,6 +10,7 @@ import SwiftData
 
 struct SiblingProfileView: View {
     let sibling: UserProfile
+    let visitorGameState: GameState
     let onBack: () -> Void
     @Environment(\.modelContext) private var modelContext
     @State private var showGarden = false
@@ -192,6 +193,7 @@ struct SiblingProfileView: View {
         .fullScreenCover(isPresented: $showGarden) {
             SiblingGardenView(
                 sibling: sibling,
+                visitorGameState: visitorGameState,
                 onBack: { showGarden = false }
             )
         }

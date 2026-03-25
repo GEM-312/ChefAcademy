@@ -4,6 +4,34 @@ Personal reference built from real code in Pip's Kitchen Garden. Newest lessons 
 
 ---
 
+## Session: March 24, 2026
+
+### Dual-Context Data Problem (In-Memory vs Persistent)
+**Where it came up:** SiblingGardenView.swift — rewarding the visitor while visiting a sibling's garden
+**What it is:** The app has two data layers: the in-memory `GameState` (what views read and render) and the persistent `PlayerData` (what SwiftData stores to disk). They must always agree. When you update PlayerData directly via `modelContext` but forget to also update the in-memory GameState, the autoSave timer (0.5s debounce) will overwrite your PlayerData changes with stale in-memory values.
+**In our code:** When a visitor helps in a sibling's garden, we write `visitorData.coins += 5` to PlayerData AND `visitorGameState.coins += 5` to the in-memory GameState. If we only did the PlayerData write, the autoSave would fire 0.5s later and save the old coin count from memory, erasing the reward.
+**Why it matters:** Any app with caching or in-memory state has this problem. The rule is: if you write to the database directly, also update the cache. Otherwise the cache overwrites your database change on the next sync. This is why we pass `visitorGameState` through the view hierarchy — so we can update both layers atomically.
+
+### Avoiding Unintended Side Effects from Helper Methods
+**Where it came up:** SiblingGardenView.swift — `addXP()` vs direct `xp += 3`
+**What it is:** `GameState.addXP(3)` looks simple, but internally it calls `checkLevelUp()` and `saveToStore()`. When you're in the middle of updating multiple properties and plan to save once at the end, calling a method that saves internally creates a partial-save problem — some properties are updated, others aren't yet, and the save captures this inconsistent state.
+**In our code:** We changed from `visitorGameState.addXP(3)` to `visitorGameState.xp += 3` because we didn't want the intermediate `saveToStore()`. We call `modelContext.save()` once at the very end after all updates are complete.
+**Why it matters:** Always check what helper methods do internally before calling them in a batch-update context. A method named `addCoins()` might just add coins, or it might also save, log, trigger animations, and post notifications. Read the implementation, don't assume from the name.
+
+### Claude Code Skills (Slash Commands)
+**Where it came up:** Setting up `/extract-frames`, `/add-asset`, `/export-procreate`, `/add-pantry-item`
+**What it is:** Claude Code lets you create custom slash commands by putting a `SKILL.md` file inside `.claude/skills/<skill-name>/SKILL.md`. The file has YAML frontmatter (`name`, `description`) and markdown instructions. Once created, typing `/skill-name` in Claude Code triggers the instructions automatically.
+**In our code:** We created 4 skills for common workflows: extracting video frames, adding image assets to Xcode, exporting for Procreate, and scaffolding new PantryItem enum cases.
+**Why it matters:** Skills turn multi-step repetitive tasks into one-line commands. The key gotcha: the file MUST be `SKILL.md` inside a folder (`.claude/skills/my-skill/SKILL.md`), not a flat `.md` file at the skills root. We debugged this exact issue today.
+
+### Xcode Asset Catalog: Image Assets vs Emojis
+**Where it came up:** ChopMiniGame.swift — replacing 🔪 emoji with `Image("knife")`
+**What it is:** Emojis are convenient placeholders but look out of place next to hand-illustrated assets. Real image assets (`.imageset` in Assets.xcassets) let you control size, rotation, shadow, and style consistency. Each imageset needs a `Contents.json` that maps the filename to the `universal` idiom.
+**In our code:** ChopMiniGame had a 🔪 emoji and a programmatic brown rectangle for the cutting board. We replaced both with real `Image("knife")` and `Image("cutting_board")` assets that match the botanical watercolor style. The gameplay (sweet spot timing, scoring) stayed identical — only the visuals changed.
+**Why it matters:** Visual consistency matters for a polished app. When you have a defined art style (botanical watercolor), every visual element should match. Emojis are system-rendered and can't be styled — they'll always look like emojis, not like your art.
+
+---
+
 ## Session: March 23, 2026
 
 ### Apple Developer Portal: Capabilities vs App Services

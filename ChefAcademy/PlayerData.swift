@@ -76,6 +76,16 @@ struct PantryData: Codable {
     var quantity: Int
 }
 
+// MARK: - Sibling Help Tracking
+
+struct HelpEntry: Codable {
+    var helperName: String
+    var helperProfileID: String   // UUID string
+    var actionRaw: String         // "water", "weed", "debug"
+    var vegetableRaw: String      // VegetableType.rawValue
+    var timestamp: Date
+}
+
 struct RecipeStarData: Codable {
     var recipeID: String
     var stars: Int
@@ -124,6 +134,15 @@ class PlayerData {
 
     // Achievements
     var completedBadgeIDs: [String] = []
+
+    // Sibling Help — given (as visitor)
+    var helpGivenCount: Int = 0
+    var helpStreak: Int = 0
+    var lastHelpDateRaw: Double = 0   // timeIntervalSince1970, 0 = never
+
+    // Sibling Help — received (as garden owner)
+    var receivedHelp: [HelpEntry] = []
+    var lastSeenHelpCount: Int = 0    // tracks which help entries owner has dismissed
 
     // Timestamp
     var lastSaved: Date = Date()

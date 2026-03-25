@@ -19,6 +19,30 @@ import Combine
 // "ObservableObject" lets SwiftUI watch for changes and react automatically.
 //
 
+// MARK: - Care Action (for sibling help tracking)
+
+enum CareAction: String, Codable {
+    case water
+    case weed
+    case debug  // ladybug rescue
+
+    var displayVerb: String {
+        switch self {
+        case .water: return "watered"
+        case .weed: return "weeded"
+        case .debug: return "rescued bugs from"
+        }
+    }
+
+    var emoji: String {
+        switch self {
+        case .water: return "💧"
+        case .weed: return "🌿"
+        case .debug: return "🐞"
+        }
+    }
+}
+
 class GameState: ObservableObject {
 
     // ============================================
@@ -106,6 +130,11 @@ class GameState: ObservableObject {
     // ============================================
 
     @Published var gardenLikes: Int = 0
+
+    // Sibling Help tracking (for active player as visitor)
+    @Published var helpGivenCount: Int = 0
+    @Published var helpStreak: Int = 0
+    @Published var lastHelpDate: Date? = nil
 
     // ============================================
     // KNOWLEDGE REWARDS (one-time coin earnings)
@@ -417,6 +446,11 @@ class GameState: ObservableObject {
         // Social
         gardenLikes = saved.gardenLikes
 
+        // Sibling Help
+        helpGivenCount = saved.helpGivenCount
+        helpStreak = saved.helpStreak
+        lastHelpDate = saved.lastHelpDateRaw > 0 ? Date(timeIntervalSince1970: saved.lastHelpDateRaw) : nil
+
         // Knowledge rewards
         claimedKnowledgeIDs = Set(saved.claimedKnowledgeIDs)
 
@@ -521,6 +555,11 @@ class GameState: ObservableObject {
         // Social
         saved.gardenLikes = gardenLikes
 
+        // Sibling Help
+        saved.helpGivenCount = helpGivenCount
+        saved.helpStreak = helpStreak
+        saved.lastHelpDateRaw = lastHelpDate?.timeIntervalSince1970 ?? 0
+
         // Knowledge rewards
         saved.claimedKnowledgeIDs = Array(claimedKnowledgeIDs)
 
@@ -558,6 +597,9 @@ class GameState: ObservableObject {
         skinHealth = 50
         digestiveHealth = 50
         gardenLikes = 0
+        helpGivenCount = 0
+        helpStreak = 0
+        lastHelpDate = nil
         claimedKnowledgeIDs = []
         dailyQuests = Quest.generateDailyQuests()
         completedBadgeIDs = []
