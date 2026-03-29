@@ -331,6 +331,7 @@ struct FamilyAvatarStep: View {
     @StateObject private var tempAvatar = AvatarModel()
     @State private var genderChosen = false
     @State private var outfitVideoKey: String = ""
+    @Environment(\.verticalSizeClass) private var verticalSizeClass
 
     /// Video name for the current gender's outfit animation
     private var outfitVideoName: String? {
@@ -338,21 +339,35 @@ struct FamilyAvatarStep: View {
         return Bundle.main.url(forResource: name, withExtension: "mp4") != nil ? name : nil
     }
 
+    // TEACHING MOMENT: verticalSizeClass tells us the orientation:
+    //   .regular = portrait (tall) — lots of vertical space
+    //   .compact = landscape (wide) — limited vertical space
+    // In landscape on iPad, the avatar was 60% of screen width (~716pt)
+    // leaving NO room for outfit selectors. Now we cap it.
+    private var isLandscape: Bool {
+        verticalSizeClass == .compact
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             Text(title)
                 .font(.AppTheme.title)
                 .foregroundColor(Color.AppTheme.darkBrown)
-                .padding(.top, AppSpacing.lg)
+                .padding(.top, isLandscape ? AppSpacing.sm : AppSpacing.lg)
 
             // Gender selection
             GeometryReader { geo in
                 let screenW = geo.size.width
-                let bigSize = screenW * 0.55  // 55% of screen when chosen
-                let smallSize: CGFloat = 140  // Initial size (2x bigger than before)
+                let screenH = geo.size.height
+                // In landscape, use height-based sizing so avatar doesn't eat all space
+                // In portrait, use width-based sizing as before
+                let bigSize = isLandscape
+                    ? min(screenH * 0.7, 280)   // Cap at 280pt in landscape
+                    : screenW * 0.55
+                let smallSize: CGFloat = isLandscape ? 100 : 140
 
                 if !genderChosen {
-                    // Show BOTH avatars side by side — big!
+                    // Show BOTH avatars side by side
                     HStack(spacing: AppSpacing.lg) {
                         Spacer()
                         ForEach(Gender.allCases) { g in
@@ -384,7 +399,7 @@ struct FamilyAvatarStep: View {
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
-                    // Show CHOSEN avatar — big, centered
+                    // Show CHOSEN avatar — responsive size
                     VStack(spacing: 6) {
                         let img = gender == .boy ? "boy_card_frame_28" : "girl_card_frame_15"
 
@@ -427,7 +442,10 @@ struct FamilyAvatarStep: View {
                     .transition(.scale.combined(with: .opacity))
                 }
             }
-            .frame(height: genderChosen ? UIScreen.main.bounds.width * 0.6 : 200)
+            // Responsive height: landscape gets much less space so outfit selectors are visible
+            .frame(height: genderChosen
+                ? (isLandscape ? 220 : UIScreen.main.bounds.width * 0.6)
+                : (isLandscape ? 140 : 200))
             .padding(.vertical, AppSpacing.xs)
 
             // Outfit + Covering selectors

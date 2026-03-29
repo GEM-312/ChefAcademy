@@ -409,17 +409,25 @@ struct SeedInfoView: View {
 
     // MARK: - Drawable Veggie Section (image + canvas overlay)
 
+    // TEACHING MOMENT: Why a fixed canvas size?
+    // PencilKit stores drawing coordinates as absolute pixel positions.
+    // If the canvas resizes on rotation (landscape ↔ portrait), the
+    // coordinates don't move with it — so the drawing "slides away."
+    // By using a FIXED size (320×280), the drawing always stays aligned
+    // with the veggie image regardless of device orientation.
+    private let canvasSize = CGSize(width: 320, height: 280)
+
     private var drawableVeggieSection: some View {
         VStack(spacing: AppSpacing.sm) {
             ZStack {
-                // The veggie image — constrained to prevent horizontal scroll
+                // The veggie image — FIXED size so drawing stays aligned on rotation
                 Image(veggie.imageName)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(width: UIScreen.main.bounds.width - 60, height: 280)
+                    .frame(width: canvasSize.width, height: canvasSize.height)
                     .clipped()
 
-                // PencilKit canvas overlay (transparent, same size)
+                // PencilKit canvas overlay (same FIXED size as image)
                 VeggieCanvasView(
                     onColorChange: { uiColor in
                         let newChoice = ColorChoice.closest(to: uiColor)
@@ -450,6 +458,7 @@ struct SeedInfoView: View {
                     clearToggle: $clearCanvas,
                     showToolPicker: $showToolPicker
                 )
+                .frame(width: canvasSize.width, height: canvasSize.height)
 
                 // Paintbrush toggle button (bottom-right of image)
                 VStack {
@@ -473,7 +482,7 @@ struct SeedInfoView: View {
                     }
                 }
             }
-            .frame(height: 320)
+            .frame(width: canvasSize.width, height: canvasSize.height + 40)
             .clipped()
             .padding(.horizontal, AppSpacing.md)
 
