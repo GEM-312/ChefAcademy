@@ -339,32 +339,30 @@ struct FamilyAvatarStep: View {
         return Bundle.main.url(forResource: name, withExtension: "mp4") != nil ? name : nil
     }
 
-    // TEACHING MOMENT: verticalSizeClass tells us the orientation:
-    //   .regular = portrait (tall) — lots of vertical space
-    //   .compact = landscape (wide) — limited vertical space
-    // In landscape on iPad, the avatar was 60% of screen width (~716pt)
-    // leaving NO room for outfit selectors. Now we cap it.
-    private var isLandscape: Bool {
-        verticalSizeClass == .compact
-    }
+    // TEACHING MOMENT: Why not use verticalSizeClass for landscape detection?
+    // iPad in landscape STILL has verticalSizeClass == .regular!
+    // Only iPhones get .compact in landscape. For iPads, we must compare
+    // actual width vs height using GeometryReader. This is a common gotcha.
+    @State private var isLandscape = false
 
     var body: some View {
-        VStack(spacing: 0) {
-            Text(title)
-                .font(.AppTheme.title)
-                .foregroundColor(Color.AppTheme.darkBrown)
-                .padding(.top, isLandscape ? AppSpacing.sm : AppSpacing.lg)
+        GeometryReader { outerGeo in
+            let landscape = outerGeo.size.width > outerGeo.size.height
 
-            // Gender selection
-            GeometryReader { geo in
-                let screenW = geo.size.width
-                let screenH = geo.size.height
-                // In landscape, use height-based sizing so avatar doesn't eat all space
-                // In portrait, use width-based sizing as before
-                let bigSize = isLandscape
-                    ? min(screenH * 0.7, 280)   // Cap at 280pt in landscape
-                    : screenW * 0.55
-                let smallSize: CGFloat = isLandscape ? 100 : 140
+            VStack(spacing: 0) {
+                Text(title)
+                    .font(.AppTheme.title)
+                    .foregroundColor(Color.AppTheme.darkBrown)
+                    .padding(.top, landscape ? AppSpacing.sm : AppSpacing.lg)
+
+                // Gender selection
+                GeometryReader { geo in
+                    let screenW = geo.size.width
+                    // In landscape, cap the image so outfit selectors are visible
+                    let bigSize: CGFloat = landscape
+                        ? min(outerGeo.size.height * 0.35, 250)
+                        : screenW * 0.55
+                    let smallSize: CGFloat = landscape ? 100 : 140
 
                 if !genderChosen {
                     // Show BOTH avatars side by side
@@ -442,49 +440,50 @@ struct FamilyAvatarStep: View {
                     .transition(.scale.combined(with: .opacity))
                 }
             }
-            // Responsive height: landscape gets much less space so outfit selectors are visible
-            .frame(height: genderChosen
-                ? (isLandscape ? 220 : UIScreen.main.bounds.width * 0.6)
-                : (isLandscape ? 140 : 200))
-            .padding(.vertical, AppSpacing.xs)
+                // Responsive height: landscape caps at 35% of screen height
+                .frame(height: genderChosen
+                    ? (landscape ? min(outerGeo.size.height * 0.35, 250) + 40 : UIScreen.main.bounds.width * 0.6)
+                    : (landscape ? 140 : 200))
+                .padding(.vertical, AppSpacing.xs)
 
-            // Outfit + Covering selectors
-            ScrollView {
-                VStack(spacing: AppSpacing.md) {
-                    OutfitSelector(selectedOutfit: Binding(
-                        get: { outfit },
-                        set: { newOutfit in
-                            outfit = newOutfit
-                            // Trigger video replay
-                            outfitVideoKey = "\(newOutfit.rawValue)_\(UUID().uuidString)"
+                // Outfit + Covering selectors — takes remaining space
+                ScrollView {
+                    VStack(spacing: AppSpacing.md) {
+                        OutfitSelector(selectedOutfit: Binding(
+                            get: { outfit },
+                            set: { newOutfit in
+                                outfit = newOutfit
+                                // Trigger video replay
+                                outfitVideoKey = "\(newOutfit.rawValue)_\(UUID().uuidString)"
+                            }
+                        ), gender: gender)
+                        HeadCoveringSelector(selectedCovering: $headCovering)
+                    }
+                    .padding(AppSpacing.md)
+                }
+                .cornerRadius(AppSpacing.cardCornerRadius, corners: [.topLeft, .topRight])
+
+                HStack(spacing: AppSpacing.md) {
+                    Button(action: onBack) {
+                        HStack {
+                            Image(systemName: "arrow.left")
+                            Text("Back")
                         }
-                    ), gender: gender)
-                    HeadCoveringSelector(selectedCovering: $headCovering)
+                    }
+                    .buttonStyle(SecondaryButtonStyle())
+
+                    Button(action: onNext) {
+                        HStack {
+                            Text("Next")
+                            Image(systemName: "arrow.right")
+                        }
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
                 }
                 .padding(AppSpacing.md)
-            }
-            .cornerRadius(AppSpacing.cardCornerRadius, corners: [.topLeft, .topRight])
-
-            HStack(spacing: AppSpacing.md) {
-                Button(action: onBack) {
-                    HStack {
-                        Image(systemName: "arrow.left")
-                        Text("Back")
-                    }
-                }
-                .buttonStyle(SecondaryButtonStyle())
-
-                Button(action: onNext) {
-                    HStack {
-                        Text("Next")
-                        Image(systemName: "arrow.right")
-                    }
-                }
-                .buttonStyle(PrimaryButtonStyle())
-            }
-            .padding(AppSpacing.md)
-            .background(Color.AppTheme.cream)
-        }
+                .background(Color.AppTheme.cream)
+            } // end VStack
+        } // end GeometryReader
         .onAppear {
             tempAvatar.gender = gender
         }
