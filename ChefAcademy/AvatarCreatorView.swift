@@ -211,40 +211,28 @@ struct HeadCoveringView: View {
     let covering: HeadCovering
 
     var body: some View {
-        switch covering {
-        case .chefHat:
-            // Tall chef hat (toque) — like Pip's!
+        if covering == .none {
+            // No hat — empty
+            Color.clear.frame(width: 80, height: 50)
+        } else {
+            // Chef hat (toque) in the selected color
+            let hatColor = covering.color
             ZStack {
                 // Hat body
                 RoundedRectangle(cornerRadius: 12)
-                    .fill(Color.AppTheme.cream)
+                    .fill(hatColor.opacity(0.9))
                     .frame(width: 70, height: 50)
                     .offset(y: -5)
                 // Hat puff (top)
                 Ellipse()
-                    .fill(Color.AppTheme.cream)
+                    .fill(hatColor.opacity(0.85))
                     .frame(width: 80, height: 35)
                     .offset(y: -28)
-                // Hat band
+                // Hat band (slightly darker)
                 RoundedRectangle(cornerRadius: 4)
-                    .fill(Color.AppTheme.warmKhaki.opacity(0.4))
+                    .fill(hatColor.opacity(0.5))
                     .frame(width: 75, height: 8)
                     .offset(y: 18)
-            }
-
-        case .kerchief:
-            // Kerchief / bandana tied at the back
-            ZStack {
-                // Main triangle shape
-                Ellipse()
-                    .fill(Color.AppTheme.sage.opacity(0.4))
-                    .frame(width: 130, height: 40)
-                    .offset(y: 15)
-                // Knot at back
-                Circle()
-                    .fill(Color.AppTheme.sage.opacity(0.5))
-                    .frame(width: 20, height: 20)
-                    .offset(x: 50, y: 25)
             }
         }
     }
@@ -383,16 +371,15 @@ struct HeadCoveringSelector: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("Head covering")
+            Text("Chef hat")
                 .font(.AppTheme.headline)
                 .foregroundColor(Color.AppTheme.darkBrown)
 
-            Text("This also sets your dietary preference")
+            Text("Pick your style!")
                 .font(.AppTheme.caption)
                 .foregroundColor(Color.AppTheme.sepia)
 
             LazyVGrid(columns: [
-                GridItem(.flexible()),
                 GridItem(.flexible()),
                 GridItem(.flexible()),
                 GridItem(.flexible())
@@ -400,20 +387,27 @@ struct HeadCoveringSelector: View {
                 ForEach(HeadCovering.allCases) { covering in
                     Button(action: { selectedCovering = covering }) {
                         VStack(spacing: 4) {
-                            Image(systemName: coveringIcon(covering))
-                                .font(.system(size: 22))
-                                .foregroundColor(coveringColor(covering))
-                                .frame(width: 44, height: 44)
+                            // Color circle for hats, X for none
+                            if covering == .none {
+                                Image(systemName: "xmark.circle")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(Color.AppTheme.sepia.opacity(0.5))
+                                    .frame(width: 44, height: 44)
+                            } else {
+                                // Chef hat icon with the hat's color
+                                Image(systemName: "party.popper")
+                                    .font(.system(size: 22))
+                                    .foregroundColor(.white)
+                                    .frame(width: 44, height: 44)
+                                    .background(covering.color)
+                                    .clipShape(Circle())
+                            }
 
-                            Text(covering.rawValue)
+                            Text(covering.displayName)
                                 .font(.AppTheme.caption)
                                 .foregroundColor(Color.AppTheme.darkBrown)
-
-                            if covering.dietaryPreference != .none {
-                                Text(covering.dietaryPreference.displayName)
-                                    .font(.system(size: 9))
-                                    .foregroundColor(Color.AppTheme.sage)
-                            }
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.8)
                         }
                         .padding(AppSpacing.xs)
                         .background(selectedCovering == covering ? Color.AppTheme.goldenWheat.opacity(0.3) : Color.clear)
@@ -428,20 +422,6 @@ struct HeadCoveringSelector: View {
             }
         }
         .padding(.horizontal, AppSpacing.md)
-    }
-
-    private func coveringIcon(_ covering: HeadCovering) -> String {
-        switch covering {
-        case .chefHat:  return "party.popper"
-        case .kerchief: return "leaf.fill"
-        }
-    }
-
-    private func coveringColor(_ covering: HeadCovering) -> Color {
-        switch covering {
-        case .chefHat:  return Color.AppTheme.goldenWheat
-        case .kerchief: return Color.AppTheme.sage
-        }
     }
 }
 

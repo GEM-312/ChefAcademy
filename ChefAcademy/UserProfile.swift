@@ -32,7 +32,7 @@ class UserProfile {
         name: String = "",
         role: ProfileRole = .child,
         gender: Gender = .girl,
-        headCovering: HeadCovering = .chefHat,
+        headCovering: HeadCovering = .chefHatWhite,
         outfit: Outfit = .apronRed,
         createdDate: Date = Date(),
         lastPlayedDate: Date = Date(),

@@ -377,7 +377,7 @@ class SessionManager: ObservableObject {
         // Read legacy avatar data from UserDefaults
         let legacyName = UserDefaults.standard.string(forKey: "userName") ?? "Little Chef"
         let legacyGenderRaw = UserDefaults.standard.string(forKey: "userGender") ?? Gender.girl.rawValue
-        let legacyCoveringRaw = UserDefaults.standard.string(forKey: "userHeadCovering") ?? HeadCovering.chefHat.rawValue
+        let legacyCoveringRaw = UserDefaults.standard.string(forKey: "userHeadCovering") ?? HeadCovering.chefHatWhite.rawValue
 
         let legacyGender = Gender(rawValue: legacyGenderRaw) ?? .girl
         let legacyCovering = HeadCovering.fromRaw(legacyCoveringRaw)
@@ -399,7 +399,7 @@ class SessionManager: ObservableObject {
             name: "Parent",
             role: .parent,
             gender: .girl,
-            headCovering: .chefHat,
+            headCovering: .chefHatWhite,
             outfit: .chefWhite
         )
 

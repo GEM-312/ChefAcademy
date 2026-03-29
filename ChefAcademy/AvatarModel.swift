@@ -14,7 +14,7 @@ class AvatarModel: ObservableObject {
     @Published var gender: Gender = .girl
     @Published var hairStyle: HairStyle = .medium
     @Published var outfit: Outfit = .none
-    @Published var headCovering: HeadCovering = .chefHat
+    @Published var headCovering: HeadCovering = .chefHatWhite
 
     // Dietary preference derived from head covering
     var dietaryPreference: DietaryPreference {
@@ -71,29 +71,56 @@ enum Gender: String, CaseIterable, Identifiable {
 // MARK: - Head Covering
 
 enum HeadCovering: String, CaseIterable, Identifiable {
-    case chefHat = "Chef Hat"
-    case kerchief = "Kerchief"
+    case none = "None"
+    case chefHatWhite = "White Chef Hat"
+    case chefHatSage = "Sage Chef Hat"
+    case chefHatGold = "Gold Chef Hat"
+    case chefHatTerracotta = "Terracotta Chef Hat"
+    case chefHatBrown = "Brown Chef Hat"
 
     var id: String { rawValue }
 
-    /// For backwards compatibility — old saves may have "None", "Hijab", "Kippah", "Turban"
+    /// For backwards compatibility — old saves may have "Chef Hat", "Kerchief", "Hijab", etc.
     static func fromRaw(_ raw: String) -> HeadCovering {
         if let valid = HeadCovering(rawValue: raw) { return valid }
-        return .chefHat
+        // Map old values to new
+        if raw == "Chef Hat" { return .chefHatWhite }
+        if raw == "Kerchief" { return .none }
+        if raw == "Hijab" || raw == "Kippah" || raw == "Turban" { return .none }
+        return .none
+    }
+
+    var displayName: String {
+        switch self {
+        case .none: return "None"
+        case .chefHatWhite: return "Classic White"
+        case .chefHatSage: return "Garden Sage"
+        case .chefHatGold: return "Golden Chef"
+        case .chefHatTerracotta: return "Warm Terra"
+        case .chefHatBrown: return "Cocoa"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .none: return Color.AppTheme.lightSepia
+        case .chefHatWhite: return Color(hex: "F7FAFC")
+        case .chefHatSage: return Color.AppTheme.sage
+        case .chefHatGold: return Color.AppTheme.goldenWheat
+        case .chefHatTerracotta: return Color.AppTheme.terracotta
+        case .chefHatBrown: return Color.AppTheme.darkBrown
+        }
     }
 
     var iconName: String {
         switch self {
-        case .chefHat: return "party.popper"
-        case .kerchief: return "leaf.fill"
+        case .none: return "xmark.circle"
+        default: return "party.popper"
         }
     }
 
     var dietaryPreference: DietaryPreference {
-        switch self {
-        case .chefHat: return .none
-        case .kerchief: return .none
-        }
+        .none  // Chef hats have no dietary association
     }
 }
 
