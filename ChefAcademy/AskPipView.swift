@@ -3,7 +3,9 @@
 //  ChefAcademy
 //
 //  Chat screen where kids talk to Pip about food and gardening.
-//  Uses Claude Haiku API — Pip remembers the whole conversation!
+//  Supports TWO AI backends (chosen automatically):
+//    - On-device (iOS 26+): Free, private, unlimited, works offline
+//    - Cloud (Claude Haiku): Works on any iOS, needs internet
 //
 //  DESIGN:
 //  - Starter questions for young kids who can't type
@@ -102,13 +104,21 @@ struct AskPipView: View {
                             }
                         }
 
-                        // Loading indicator
-                        if aiService.isLoading {
+                        // Streaming text — shows words appearing in real-time!
+                        // TEACHING MOMENT: When the on-device model is streaming,
+                        // we show partial text instead of bouncing dots. This
+                        // makes the response feel instant even though the model
+                        // is still generating. It's the same trick ChatGPT uses.
+                        if let streamingText = aiService.streamingText {
+                            pipBubble(streamingText)
+                                .id("streaming")
+                        } else if aiService.isLoading {
+                            // Fallback: bouncing dots for cloud mode (no streaming)
                             pipTypingIndicator
                         }
 
-                        // Rate limit message — kid-friendly "Pip is resting"
-                        if aiService.isRateLimited {
+                        // Rate limit message — only for cloud mode (on-device is unlimited!)
+                        if aiService.isRateLimited && !aiService.isOnDevice {
                             pipBubble("Whew, I talked a LOT today! My voice needs a little rest. Come back tomorrow and I'll have new fun facts for you! Sweet dreams! 😴")
                         }
 
@@ -155,6 +165,8 @@ struct AskPipView: View {
         .background(Color.AppTheme.cream)
         .onAppear {
             injectGameContext()
+            // Prewarm the on-device model so the first response is faster
+            aiService.prewarmIfOnDevice()
         }
     }
 
@@ -169,6 +181,9 @@ struct AskPipView: View {
         let growingCount = gameState.gardenPlots.filter { $0.state == .growing }.count
         if growingCount > 0 {
             return "Hey \(name)! I see you're growing \(growingCount) plants in your garden — awesome! Ask me anything about veggies, cooking, or gardening! 🌱"
+        } else if aiService.isOnDevice {
+            // On-device: mention it works anywhere (no internet needed!)
+            return "Hey \(name)! I'm Pip, your garden buddy! I work right on your phone — no internet needed! Ask me anything about food! 🌱"
         } else {
             return "Hey \(name)! I'm Pip, your garden buddy! Ask me anything about veggies, cooking, or gardening — I love talking about food! 🌱"
         }
@@ -203,16 +218,24 @@ struct AskPipView: View {
                     .foregroundColor(Color.AppTheme.sage)
                 }
 
-                // Show remaining questions — creates anticipation!
-                let remaining = aiService.questionsRemainingToday
-                if remaining <= 5 && remaining > 0 {
-                    Text("\(remaining) questions left today")
+                // On-device: show privacy badge (no rate limits!)
+                // Cloud: show remaining questions counter
+                if aiService.isOnDevice {
+                    Label("On-Device", systemImage: "lock.shield.fill")
                         .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(Color.AppTheme.goldenWheat)
-                } else if remaining == 0 {
-                    Text("Pip is resting until tomorrow")
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundColor(Color.AppTheme.terracotta)
+                        .foregroundColor(Color.AppTheme.sage)
+                } else {
+                    // Show remaining questions — creates anticipation!
+                    let remaining = aiService.questionsRemainingToday
+                    if remaining <= 5 && remaining > 0 {
+                        Text("\(remaining) questions left today")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(Color.AppTheme.goldenWheat)
+                    } else if remaining == 0 {
+                        Text("Pip is resting until tomorrow")
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(Color.AppTheme.terracotta)
+                    }
                 }
             }
 
@@ -401,15 +424,17 @@ struct AskPipView: View {
                 .onSubmit { sendTypedQuestion() }
 
             Button(action: sendTypedQuestion) {
+                let isEmpty = inputText.trimmingCharacters(in: .whitespaces).isEmpty
+                let isCloudRateLimited = aiService.isRateLimited && !aiService.isOnDevice
                 Image(systemName: "arrow.up.circle.fill")
                     .font(.system(size: 34))
                     .foregroundColor(
-                        inputText.trimmingCharacters(in: .whitespaces).isEmpty || aiService.isRateLimited
+                        isEmpty || isCloudRateLimited
                             ? Color.AppTheme.sepia.opacity(0.3)
                             : Color.AppTheme.sage
                     )
             }
-            .disabled(inputText.trimmingCharacters(in: .whitespaces).isEmpty || aiService.isLoading || aiService.isRateLimited)
+            .disabled(inputText.trimmingCharacters(in: .whitespaces).isEmpty || aiService.isLoading || (aiService.isRateLimited && !aiService.isOnDevice))
         }
         .padding(.horizontal, AppSpacing.md)
         .padding(.vertical, AppSpacing.sm)
@@ -459,9 +484,24 @@ struct AskPipView: View {
                 let pipMessage = PipChatMessage(text: response, isFromPip: true)
                 await MainActor.run {
                     messages.append(pipMessage)
-                    // Generate follow-up suggestions based on Pip's response
+
+                    // Generate follow-up suggestions
+                    // On-device: use the model-generated follow-up (from @Generable)
+                    // Cloud: use local keyword matching (free, no extra API call)
                     withAnimation(.easeIn(duration: 0.3).delay(0.5)) {
-                        followUpQuestions = generateFollowUps(from: response, question: question)
+                        if let modelFollowUp = aiService.modelFollowUp {
+                            // On-device model gave us a contextual follow-up!
+                            let wildcards = [
+                                "Tell me a fun food fact!",
+                                "What's the weirdest veggie ever?",
+                                "Surprise me with something cool!",
+                                "What should I grow next?",
+                                "Tell me a food joke!"
+                            ]
+                            followUpQuestions = [modelFollowUp, wildcards.randomElement()!]
+                        } else {
+                            followUpQuestions = generateFollowUps(from: response, question: question)
+                        }
                     }
                 }
             }
@@ -559,4 +599,5 @@ struct AskPipView: View {
 #Preview {
     AskPipView()
         .environmentObject(GameState.preview)
+        .environmentObject(SessionManager())
 }

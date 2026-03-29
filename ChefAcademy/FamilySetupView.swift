@@ -8,6 +8,7 @@
 import SwiftUI
 import SwiftData
 import Combine
+import AVFoundation
 
 // MARK: - Family Setup Manager
 
@@ -34,8 +35,9 @@ class FamilySetupManager: ObservableObject {
         case setPIN = 3
         case childName = 4
         case childAvatar = 5
-        case meetPip = 6
-        case ready = 7
+        case choosePipVoice = 6
+        case meetPip = 7
+        case ready = 8
     }
 
     func nextStep() {
@@ -124,6 +126,15 @@ struct FamilySetupView: View {
                     gender: $setupManager.childGender,
                     outfit: $setupManager.childOutfit,
                     headCovering: $setupManager.childHeadCovering,
+                    onNext: { setupManager.nextStep() },
+                    onBack: { setupManager.previousStep() }
+                )
+
+            case .choosePipVoice:
+                // TEACHING MOMENT: Voice picker goes BEFORE Meet Pip so
+                // when Pip introduces himself, he already uses the chosen voice.
+                // This makes the "Meet Pip" moment feel personal and magical!
+                FamilyVoiceStep(
                     onNext: { setupManager.nextStep() },
                     onBack: { setupManager.previousStep() }
                 )
@@ -729,6 +740,142 @@ struct FamilyReadyStep: View {
         .background(Color.AppTheme.cream)
         .onAppear {
             withAnimation(.easeOut(duration: 0.8)) { showContent = true }
+        }
+    }
+}
+
+// MARK: - Voice Picker Step (Onboarding)
+//
+// TEACHING MOMENT: This step goes BEFORE "Meet Pip" in onboarding.
+// The kid picks how Pip sounds, then immediately hears that voice
+// when Pip introduces himself. This creates a personal connection —
+// "I chose how my friend sounds!" — which increases engagement.
+//
+
+struct FamilyVoiceStep: View {
+    let onNext: () -> Void
+    let onBack: () -> Void
+
+    @ObservedObject private var pipVoice = PipVoice.shared
+    @State private var showContent = false
+    @State private var previewingID: String?
+    @State private var showSettingsGuide = false
+
+    var body: some View {
+        VStack(spacing: 0) {
+            // Back button
+            HStack {
+                Button(action: onBack) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "chevron.left")
+                        Text("Back")
+                    }
+                    .font(.AppTheme.body)
+                    .foregroundColor(Color.AppTheme.sage)
+                }
+                Spacer()
+            }
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.top, AppSpacing.sm)
+
+            ScrollView {
+                VStack(spacing: AppSpacing.lg) {
+
+                    // Pip + title
+                    VStack(spacing: AppSpacing.sm) {
+                        Image("pip_waving")
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: 100, height: 100)
+                            .scaleEffect(showContent ? 1 : 0.5)
+                            .opacity(showContent ? 1 : 0)
+
+                        Text("How should I sound?")
+                            .font(.AppTheme.title2)
+                            .foregroundColor(Color.AppTheme.darkBrown)
+                            .opacity(showContent ? 1 : 0)
+
+                        Text("Tap a voice to hear me!")
+                            .font(.AppTheme.body)
+                            .foregroundColor(Color.AppTheme.sepia)
+                            .opacity(showContent ? 1 : 0)
+                    }
+                    .padding(.top, AppSpacing.md)
+
+                    // Voice list — top 5 English voices
+                    VStack(spacing: AppSpacing.sm) {
+                        ForEach(pipVoice.availableEnglishVoices.prefix(5), id: \.identifier) { voice in
+                            VoiceCard(
+                                name: voice.name,
+                                quality: qualityLabel(voice.quality),
+                                qualityColor: qualityColor(voice.quality),
+                                isSelected: pipVoice.selectedAppleVoiceID == voice.identifier,
+                                isLocked: false,
+                                onTap: {
+                                    pipVoice.voiceMode = .appleTTS
+                                    pipVoice.selectedAppleVoiceID = voice.identifier
+                                },
+                                onPreview: {
+                                    previewingID = voice.identifier
+                                    pipVoice.previewAppleVoice(voice)
+                                },
+                                isPreviewing: previewingID == voice.identifier && pipVoice.isSpeaking
+                            )
+                        }
+                    }
+                    .opacity(showContent ? 1 : 0)
+
+                    // Download prompt if only default voices
+                    if pipVoice.onlyDefaultVoicesAvailable {
+                        Button(action: { showSettingsGuide = true }) {
+                            HStack(spacing: AppSpacing.sm) {
+                                Image(systemName: "arrow.down.circle")
+                                Text("Get better voices")
+                            }
+                            .font(.AppTheme.caption)
+                            .foregroundColor(Color.AppTheme.sage)
+                        }
+                    }
+
+                    // Next button
+                    Button(action: onNext) {
+                        HStack {
+                            Text("Next")
+                            Image(systemName: "arrow.right")
+                        }
+                    }
+                    .buttonStyle(PrimaryButtonStyle())
+                    .padding(.horizontal, AppSpacing.xl)
+                    .opacity(showContent ? 1 : 0)
+
+                    Spacer(minLength: AppSpacing.xxl)
+                }
+                .padding(.horizontal, AppSpacing.md)
+            }
+        }
+        .sheet(isPresented: $showSettingsGuide) {
+            SettingsGuideSheet()
+        }
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.6)) {
+                showContent = true
+            }
+        }
+    }
+
+    private func qualityLabel(_ quality: AVSpeechSynthesisVoiceQuality) -> String {
+        switch quality {
+        case .premium: return "Premium"
+        case .enhanced: return "Enhanced"
+        default: return "Standard"
+        }
+    }
+
+    private func qualityColor(_ quality: AVSpeechSynthesisVoiceQuality) -> Color {
+        switch quality {
+        case .premium: return Color.AppTheme.goldenWheat
+        case .enhanced: return Color.AppTheme.sage
+        default: return Color.AppTheme.sepia
         }
     }
 }

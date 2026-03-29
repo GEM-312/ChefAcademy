@@ -30,12 +30,43 @@ import Foundation
 import Combine
 
 // MARK: - Pip AI Service
+//
+// TEACHING MOMENT: Strategy Pattern — this class now supports TWO
+// AI backends behind one interface:
+//   1. On-device (iOS 26+) — free, private, unlimited, offline
+//   2. Cloud (Claude Haiku) — works on any iOS, needs internet + API key
+//
+// AskPipView doesn't care which is used — it calls askPip() and gets
+// a response. The "strategy" (on-device vs cloud) is chosen at init
+// based on what the device supports. This is called "graceful degradation."
+//
 
 class PipAIService: ObservableObject {
 
     @Published var isLoading = false
     @Published var lastError: String?
     @Published var isRateLimited = false
+
+    /// True when using Apple's on-device Foundation Models (iOS 26+)
+    @Published var isOnDevice = false
+
+    /// Model-generated follow-up question (on-device only).
+    /// Cloud mode uses local keyword matching instead.
+    @Published var modelFollowUp: String?
+
+    /// Partial streaming text — updates live as the model generates tokens.
+    /// AskPipView can observe this to show text appearing in real-time.
+    @Published var streamingText: String?
+
+    // On-device service (iOS 26+ only, stored as AnyObject for backward compat)
+    //
+    // TEACHING MOMENT: We store this as AnyObject? because the type
+    // PipFoundationModelService is marked @available(iOS 26, *).
+    // If we used the concrete type here, the compiler would require
+    // an @available annotation on the ENTIRE class. By using AnyObject,
+    // we can reference it only inside #available blocks.
+    //
+    private var _onDeviceService: AnyObject?
 
     // Conversation history — sent to Claude each time so Pip remembers
     // Each entry is a dict like {"role": "user", "content": "..."}
@@ -68,6 +99,9 @@ class PipAIService: ObservableObject {
     private let questionsDateKey = "com.chefacademy.pip.dailyQuestionDate"
 
     var questionsRemainingToday: Int {
+        // On-device AI has no rate limits — it's free!
+        if isOnDevice { return Int.max }
+
         resetCountIfNewDay()
         let used = UserDefaults.standard.integer(forKey: questionsCountKey)
         return max(0, dailyQuestionLimit - used)
@@ -122,11 +156,47 @@ class PipAIService: ObservableObject {
 
     // MARK: - Init
     //
-    // Now fetches the API key from CloudKit asynchronously.
-    // The key is cached locally so subsequent launches are instant.
+    // TEACHING MOMENT: "Graceful Degradation" — we try the BEST option
+    // first (on-device, free + private), and fall back to the next best
+    // (cloud API) if it's not available. The user gets the best experience
+    // their device supports without knowing the difference.
     //
 
     init() {
+        // Step 1: Try on-device AI (iOS 26+, zero cost, unlimited)
+        #if canImport(FoundationModels)
+        if #available(iOS 26, macOS 26, *) {
+            setupOnDeviceIfAvailable()
+        }
+        #endif
+
+        // Step 2: Fall back to cloud if on-device isn't available
+        if !isOnDevice {
+            setupCloudService()
+        }
+    }
+
+    #if canImport(FoundationModels)
+    @available(iOS 26, macOS 26, *)
+    private func setupOnDeviceIfAvailable() {
+        guard PipFoundationModelService.isModelAvailable else { return }
+
+        let service = PipFoundationModelService()
+        _onDeviceService = service
+        isOnDevice = true
+
+        // Forward the on-device service's loading state to our published properties.
+        // This way AskPipView's UI reacts to loading/errors from either backend.
+        service.$isLoading
+            .receive(on: RunLoop.main)
+            .assign(to: &$isLoading)
+        service.$lastError
+            .receive(on: RunLoop.main)
+            .assign(to: &$lastError)
+    }
+    #endif
+
+    private func setupCloudService() {
         // Start with the bundled key for immediate use (development)
         // CloudKit will override this once it loads
         self.apiKey = APIKeys.claudeAPIKey
@@ -154,6 +224,21 @@ class PipAIService: ObservableObject {
         cookedRecipes: [String],
         coins: Int
     ) {
+        // Forward to on-device service (it uses Tools to access this data)
+        #if canImport(FoundationModels)
+        if #available(iOS 26, macOS 26, *),
+           let service = _onDeviceService as? PipFoundationModelService {
+            service.updateGameContext(
+                playerName: playerName,
+                growingVeggies: growingVeggies,
+                harvestedVeggies: harvestedVeggies,
+                cookedRecipes: cookedRecipes,
+                coins: coins
+            )
+        }
+        #endif
+
+        // Also update cloud context string (used if cloud is active)
         var context = "GAME CONTEXT (use this to personalize your responses):\n"
         context += "- The kid's name is \(playerName).\n"
 
@@ -175,6 +260,30 @@ class PipAIService: ObservableObject {
 
     func clearConversation() {
         conversationHistory = []
+        modelFollowUp = nil
+
+        #if canImport(FoundationModels)
+        if #available(iOS 26, macOS 26, *),
+           let service = _onDeviceService as? PipFoundationModelService {
+            service.clearConversation()
+        }
+        #endif
+    }
+
+    // MARK: - Prewarm On-Device Model
+    //
+    // TEACHING MOMENT: Call this when the chat screen appears.
+    // It loads model weights into the Neural Engine before the kid
+    // types anything, so the first response is faster.
+    //
+
+    func prewarmIfOnDevice() {
+        #if canImport(FoundationModels)
+        if #available(iOS 26, macOS 26, *),
+           let service = _onDeviceService as? PipFoundationModelService {
+            service.prewarm()
+        }
+        #endif
     }
 
     // MARK: - Ask Pip (Multi-Turn)
@@ -186,6 +295,65 @@ class PipAIService: ObservableObject {
     //
 
     func askPip(_ question: String) async -> String? {
+        // Route to on-device or cloud based on what's available
+        #if canImport(FoundationModels)
+        if #available(iOS 26, macOS 26, *),
+           let service = _onDeviceService as? PipFoundationModelService {
+            return await askOnDevice(question, service: service)
+        }
+        #endif
+        return await askCloud(question)
+    }
+
+    // MARK: - On-Device Path (iOS 26+)
+    //
+    // TEACHING MOMENT: The on-device path is much simpler than cloud:
+    //   - No API key check
+    //   - No rate limiting (it's free!)
+    //   - No HTTP request building
+    //   - No JSON parsing
+    //   - Structured response gives us follow-ups for free
+    //
+    // The LanguageModelSession handles everything internally.
+    //
+
+    #if canImport(FoundationModels)
+    @available(iOS 26, macOS 26, *)
+    private func askOnDevice(_ question: String, service: PipFoundationModelService) async -> String? {
+        // isLoading is forwarded from service via Combine (set up in init)
+        await MainActor.run {
+            modelFollowUp = nil
+            streamingText = nil
+        }
+
+        // Use streaming for real-time text updates in the UI.
+        // The onPartial callback fires each time new tokens are generated,
+        // updating streamingText so AskPipView can show text appearing live.
+        let response = await service.askStreaming(question) { partialText in
+            Task { @MainActor in
+                self.streamingText = partialText
+            }
+        }
+
+        guard let response else { return nil }
+
+        // Track in our history format (for compatibility with chat UI)
+        conversationHistory.append(["role": "user", "content": question])
+        conversationHistory.append(["role": "assistant", "content": response.message])
+
+        // Surface the model-generated follow-up to the view
+        await MainActor.run {
+            self.modelFollowUp = response.followUpQuestion
+            self.streamingText = nil  // Clear streaming — final message takes over
+        }
+
+        return response.message
+    }
+    #endif
+
+    // MARK: - Cloud Path (Claude Haiku)
+
+    private func askCloud(_ question: String) async -> String? {
         // Check rate limit FIRST — no API call if limit reached
         //
         // TEACHING MOMENT: Always check limits BEFORE doing expensive work.
@@ -212,6 +380,7 @@ class PipAIService: ObservableObject {
             isLoading = true
             lastError = nil
             isRateLimited = false
+            modelFollowUp = nil
         }
 
         defer {
