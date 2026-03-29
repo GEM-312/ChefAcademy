@@ -358,11 +358,14 @@ struct FamilyAvatarStep: View {
                 // Gender selection
                 GeometryReader { geo in
                     let screenW = geo.size.width
-                    // In landscape, cap the image so outfit selectors are visible
+                    let screenH = geo.size.height
+                    // Scale avatars to fill available space — not tiny fixed values!
+                    // Two avatars side by side: each gets ~35% of width (with spacing)
+                    // Cap by height too so they don't overflow
                     let bigSize: CGFloat = landscape
-                        ? min(outerGeo.size.height * 0.35, 250)
+                        ? min(outerGeo.size.height * 0.35, 280)
                         : screenW * 0.55
-                    let smallSize: CGFloat = landscape ? 100 : 140
+                    let smallSize: CGFloat = min(screenW * 0.3, screenH * 0.8, 300)
 
                 if !genderChosen {
                     // Show BOTH avatars side by side
@@ -440,10 +443,12 @@ struct FamilyAvatarStep: View {
                     .transition(.scale.combined(with: .opacity))
                 }
             }
-                // Responsive height: landscape caps at 35% of screen height
+                // Avatar area takes proportional height:
+                // Not chosen yet: bigger area (avatars fill it)
+                // Chosen: smaller area (make room for outfit/covering scroll)
                 .frame(height: genderChosen
-                    ? (landscape ? min(outerGeo.size.height * 0.35, 250) + 40 : UIScreen.main.bounds.width * 0.6)
-                    : (landscape ? 140 : 200))
+                    ? (landscape ? outerGeo.size.height * 0.4 : outerGeo.size.height * 0.45)
+                    : (landscape ? outerGeo.size.height * 0.55 : outerGeo.size.height * 0.45))
                 .padding(.vertical, AppSpacing.xs)
 
                 // Outfit + Covering selectors — takes remaining space
