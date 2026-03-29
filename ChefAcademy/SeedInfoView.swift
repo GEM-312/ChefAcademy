@@ -545,39 +545,16 @@ struct SeedInfoView: View {
 
     // MARK: - Pip Color Tip
     //
-    // TEACHING MOMENT: Before this fix, coloring a beet red showed "Lycopene"
-    // because ALL red colors mapped to lycopene. But beets don't have lycopene!
-    // Now Pip shows the veggie's REAL top nutrient from USDA data when available,
-    // and only falls back to color-based tips while USDA is loading.
-    // Tomato → "Lycopene + Vitamin C", Beet → "Anthocyanins + Folate"
+    // TEACHING MOMENT: The color→nutrient system teaches kids about PLANT PIGMENTS.
+    // Red = lycopene (the actual red pigment), purple = anthocyanins (actual purple
+    // pigment), orange = beta-carotene (actual orange pigment). This is CORRECT
+    // science — don't replace with generic USDA nutrients like "potassium 325mg"
+    // which have nothing to do with color and mean nothing to a 6-year-old.
     //
-
-    /// The actual top nutrient for THIS specific veggie (from real USDA data).
-    /// Returns nil while loading, so we fall back to color-based tip.
-    private var specificNutrientTip: (name: String, tip: String, icon: String, color: Color)? {
-        guard let profile = nutrientProfile else { return nil }
-        let topNutrients = profile.topNutrients(count: 1)
-        guard let top = topNutrients.first else { return nil }
-
-        // Map organ name to SF Symbol and color
-        let icon: String
-        let color: Color
-        switch top.organ {
-        case "Eyes":          icon = "eye.fill";               color = .orange
-        case "Immune System": icon = "shield.fill";            color = .yellow
-        case "Bones":         icon = "figure.stand";           color = Color.AppTheme.sepia
-        case "Blood":         icon = "heart.fill";             color = .red
-        case "Heart":         icon = "heart.fill";             color = .red
-        case "Tummy":         icon = "leaf.fill";              color = .green
-        case "Muscles":       icon = "figure.strengthtraining.traditional"; color = .orange
-        case "Brain":         icon = "brain.head.profile";     color = .purple
-        case "Skin":          icon = "sparkles";               color = .pink
-        default:              icon = "star.fill";              color = Color.AppTheme.sage
-        }
-
-        let tip = "\(veggie.displayName) is packed with \(top.name) (\(top.value)) — great for your \(top.organ.lowercased())! \(top.emoji)"
-        return (name: top.name, tip: tip, icon: icon, color: color)
-    }
+    // The USDA data is used elsewhere (What's Inside section, Body Buddy) for
+    // detailed nutrition. The Pip color tip is specifically about the visual
+    // science of WHY foods are different colors.
+    //
 
     private var pipColorTip: some View {
         HStack(alignment: .top, spacing: AppSpacing.sm) {
@@ -592,18 +569,18 @@ struct SeedInfoView: View {
                         .stroke(Color.AppTheme.sage, lineWidth: 2)
                 )
 
-            // Speech bubble — USDA-specific nutrient if available, color-based fallback
+            // Speech bubble — color-based pigment science (NOT generic USDA nutrients)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 4) {
-                    Image(systemName: specificNutrientTip?.icon ?? detectedColorChoice.organIcon)
+                    Image(systemName: detectedColorChoice.organIcon)
                         .font(.system(size: 12))
-                        .foregroundColor(specificNutrientTip?.color ?? detectedColorChoice.swiftUIColor)
-                    Text(specificNutrientTip?.name ?? detectedColorChoice.nutrientName)
+                        .foregroundColor(detectedColorChoice.swiftUIColor)
+                    Text(detectedColorChoice.nutrientName)
                         .font(.system(size: 13, weight: .semibold, design: .rounded))
                         .foregroundColor(Color.AppTheme.darkBrown)
                 }
 
-                Text(specificNutrientTip?.tip ?? detectedColorChoice.pipTip)
+                Text(detectedColorChoice.pipTip)
                     .font(.system(size: 14, weight: .regular, design: .rounded))
                     .foregroundColor(Color.AppTheme.sepia)
                     .fixedSize(horizontal: false, vertical: true)
