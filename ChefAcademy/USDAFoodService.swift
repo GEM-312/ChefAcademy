@@ -30,23 +30,42 @@ struct NutrientProfile: Codable {
     let vitaminE: Double        // mg
     let servingSizeGrams: Double
 
+    // MARK: - Plant Pigments (USDA tracks these!)
+    //
+    // TEACHING MOMENT: These are the actual color compounds in plants.
+    // USDA FoodData Central has nutrient numbers for them:
+    //   321 = Beta-carotene (orange pigment → converts to Vitamin A)
+    //   337 = Lycopene (red pigment → heart/prostate health)
+    //   338 = Lutein + Zeaxanthin (yellow/green → eye health)
+    // Anthocyanins (purple) are NOT in standard USDA — they're phytochemicals
+    // tracked in separate research databases.
+    //
+    var betaCarotene: Double = 0  // mcg — USDA #321 (orange pigment)
+    var lycopene: Double = 0      // mcg — USDA #337 (red pigment)
+    var lutein: Double = 0        // mcg — USDA #338 (yellow/green pigment)
+
     /// Top nutrients for display (sorted by how "impressive" they are for kids)
     func topNutrients(count: Int = 4) -> [(name: String, value: String, organ: String, emoji: String)] {
         var results: [(name: String, value: String, organ: String, emoji: String)] = []
 
-        // Only include nutrients with meaningful amounts
-        if vitaminA > 100 { results.append(("Vitamin A", "\(Int(vitaminA)) IU", "Eyes", "👁️")) }
-        if vitaminC > 2 { results.append(("Vitamin C", "\(Int(vitaminC)) mg", "Immune System", "🛡️")) }
-        if calcium > 10 { results.append(("Calcium", "\(Int(calcium)) mg", "Bones", "🦴")) }
-        if iron > 0.3 { results.append(("Iron", String(format: "%.1f mg", iron), "Blood", "❤️")) }
-        if potassium > 50 { results.append(("Potassium", "\(Int(potassium)) mg", "Heart", "💪")) }
-        if fiber > 0.5 { results.append(("Fiber", String(format: "%.1f g", fiber), "Tummy", "🌿")) }
-        if protein > 1 { results.append(("Protein", String(format: "%.1f g", protein), "Muscles", "💪")) }
-        if vitaminK > 5 { results.append(("Vitamin K", "\(Int(vitaminK)) mcg", "Blood", "🩸")) }
-        if magnesium > 5 { results.append(("Magnesium", "\(Int(magnesium)) mg", "Muscles", "⚡")) }
-        if zinc > 0.3 { results.append(("Zinc", String(format: "%.1f mg", zinc), "Immune System", "🛡️")) }
-        if vitaminE > 0.3 { results.append(("Vitamin E", String(format: "%.1f mg", vitaminE), "Skin", "✨")) }
-        if vitaminB6 > 0.05 { results.append(("Vitamin B6", String(format: "%.2f mg", vitaminB6), "Brain", "🧠")) }
+        // COLOR PIGMENTS FIRST — these connect to our color education system!
+        if lycopene > 100 { results.append(("Lycopene", "Red power!", "Heart", "❤️")) }
+        if betaCarotene > 100 { results.append(("Beta-carotene", "Orange power!", "Eyes & Skin", "👁️")) }
+        if lutein > 100 { results.append(("Lutein", "Yellow-green power!", "Eyes", "👁️")) }
+
+        // Standard nutrients
+        if vitaminA > 100 { results.append(("Vitamin A", "Eye superpower!", "Eyes", "👁️")) }
+        if vitaminC > 2 { results.append(("Vitamin C", "Germ-fighting superpower!", "Immune System", "🛡️")) }
+        if calcium > 10 { results.append(("Calcium", "Bone-building superpower!", "Bones", "🦴")) }
+        if iron > 0.3 { results.append(("Iron", "Energy superpower!", "Blood", "❤️")) }
+        if potassium > 50 { results.append(("Potassium", "Heart-pumping superpower!", "Heart", "💪")) }
+        if fiber > 0.5 { results.append(("Fiber", "Tummy-helping superpower!", "Tummy", "🌿")) }
+        if protein > 1 { results.append(("Protein", "Muscle-building superpower!", "Muscles", "💪")) }
+        if vitaminK > 5 { results.append(("Vitamin K", "Healing superpower!", "Blood", "🩸")) }
+        if magnesium > 5 { results.append(("Magnesium", "Relaxation superpower!", "Muscles", "⚡")) }
+        if zinc > 0.3 { results.append(("Zinc", "Shield superpower!", "Immune System", "🛡️")) }
+        if vitaminE > 0.3 { results.append(("Vitamin E", "Skin-glowing superpower!", "Skin", "✨")) }
+        if vitaminB6 > 0.05 { results.append(("Vitamin B6", "Brain-boosting superpower!", "Brain", "🧠")) }
 
         return Array(results.prefix(count))
     }
@@ -287,7 +306,11 @@ class USDAFoodService: ObservableObject {
             magnesium: nutrientValue("304"),
             zinc: nutrientValue("309"),
             vitaminE: nutrientValue("323"),
-            servingSizeGrams: servingGrams
+            servingSizeGrams: servingGrams,
+            // Plant pigments — the color compounds!
+            betaCarotene: nutrientValue("321"),  // Orange pigment
+            lycopene: nutrientValue("337"),       // Red pigment
+            lutein: nutrientValue("338")          // Yellow/green pigment
         )
     }
 
