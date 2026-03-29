@@ -262,8 +262,11 @@ struct SeedInfoView: View {
     // Appear animation
     @State private var appeared = false
 
-    // Coloring state
-    @State private var detectedColorChoice: ColorChoice = .green
+    // Coloring state — initial color matches the veggie's actual color
+    // TEACHING MOMENT: Before this fix, ALL veggies defaulted to .green
+    // which meant Pip said "Folate & Fiber" even for beets (purple/anthocyanins).
+    // Now Pip's initial tip matches the veggie's real nutrient color.
+    @State private var detectedColorChoice: ColorChoice = .green  // set in .onAppear
     @State private var clearCanvas = false
     @State private var showPipTip = false
     @State private var showToolPicker = false
@@ -278,6 +281,32 @@ struct SeedInfoView: View {
 
     private var veggie: VegetableType { seed.vegetableType }
     private var colorKnowledgeID: String { "seed_\(veggie.rawValue)_color" }
+
+    /// Maps each veggie to its correct nutrient color so Pip's initial tip is accurate.
+    /// Beets = purple (anthocyanins/brain), NOT red (lycopene/heart).
+    private func initialColorForVeggie(_ veg: VegetableType) -> ColorChoice {
+        switch veg {
+        // Red veggies (lycopene — heart)
+        case .tomato, .bellPepperRed, .strawberry, .raspberry, .watermelon:
+            return .red
+        // Orange veggies (beta-carotene — eyes/skin)
+        case .carrot, .sweetPotato, .pumpkin:
+            return .orange
+        // Yellow veggies (vitamin C — immune)
+        case .bellPepperYellow, .corn, .lemon:
+            return .yellow
+        // Green veggies (folate & fiber — energy/digestion)
+        case .lettuce, .cucumber, .broccoli, .zucchini, .spinach, .kale,
+             .basil, .mint, .greenBeans, .avocado:
+            return .green
+        // Purple veggies (anthocyanins — brain)
+        case .beet, .eggplant, .blueberry, .blackberry:
+            return .purple
+        // Brown/white (allicin — immune)
+        case .onion, .radish:
+            return .brown
+        }
+    }
     private func nutrientKnowledgeID(_ nutrient: NutrientType) -> String {
         "seed_\(veggie.rawValue)_\(nutrient.rawValue)"
     }
@@ -380,6 +409,9 @@ struct SeedInfoView: View {
             }
         }
         .onAppear {
+            // Set initial Pip tip to match the veggie's real color/nutrient
+            detectedColorChoice = initialColorForVeggie(veggie)
+
             coloringRewardClaimed = gameState.isKnowledgeClaimed(colorKnowledgeID)
             withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
                 appeared = true
