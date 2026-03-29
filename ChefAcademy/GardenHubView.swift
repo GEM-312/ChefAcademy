@@ -140,7 +140,7 @@ struct SiblingPickerView: View {
                         ForEach(siblings, id: \.id) { sibling in
                             Button(action: { selectedSibling = sibling }) {
                                 VStack(spacing: AppSpacing.xs) {
-                                    Image(sibling.gender == .boy ? "boy_card_frame_28" : "girl_card_frame_15")
+                                    Image(sibling.gender == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06")
                                         .resizable()
                                         .aspectRatio(contentMode: .fit)
                                         .frame(width: 80, height: 80)

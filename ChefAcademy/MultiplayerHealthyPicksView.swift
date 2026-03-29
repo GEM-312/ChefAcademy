@@ -329,7 +329,7 @@ struct MultiplayerHealthyPicksView: View {
     private var opponentScoreBar: some View {
         HStack(spacing: AppSpacing.sm) {
             // Opponent avatar (small)
-            Image(manager.opponentGender == .boy ? "boy_card_frame_28" : "girl_card_frame_15")
+            Image(manager.opponentGender == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 30, height: 30)
@@ -562,7 +562,7 @@ struct MultiplayerHealthyPicksView: View {
 
     private func playerAvatar(isLocal: Bool) -> some View {
         let gender: Gender = isLocal ? avatarModel.gender : manager.opponentGender
-        let imageName = gender == .boy ? "boy_card_frame_28" : "girl_card_frame_15"
+        let imageName = gender == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06"
 
         return ZStack {
             Circle()

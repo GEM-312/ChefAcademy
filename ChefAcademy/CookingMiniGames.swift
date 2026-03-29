@@ -437,6 +437,10 @@ struct SeasonMiniGame: View {
             )
             particles.append(particle)
         }
+        // Cap particles to prevent unbounded growth from rapid tapping
+        if particles.count > 20 {
+            particles.removeFirst(particles.count - 20)
+        }
 
         // Animate particles down
         withAnimation(.easeIn(duration: 0.6)) {

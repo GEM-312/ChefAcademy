@@ -107,7 +107,7 @@ struct SplitScreenVersusView: View {
                                     Circle()
                                         .fill(isP1 || isP2 ? Color.AppTheme.sage.opacity(0.2) : Color.AppTheme.parchment)
                                         .frame(width: 60, height: 60)
-                                    Image(child.gender == .boy ? "boy_card_frame_28" : "girl_card_frame_15")
+                                    Image(child.gender == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06")
                                         .resizable().aspectRatio(contentMode: .fit)
                                         .frame(width: 50, height: 50).clipShape(Circle())
                                     if isP1 || isP2 {
@@ -190,7 +190,7 @@ struct SplitScreenVersusView: View {
                         .font(.system(size: 24))
                         .foregroundColor(Color.AppTheme.sage)
                     if let p1 = player1 {
-                        Image(p1.gender == .boy ? "boy_card_frame_28" : "girl_card_frame_15")
+                        Image(p1.gender == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06")
                             .resizable().aspectRatio(contentMode: .fit)
                             .frame(width: 50, height: 50).clipShape(Circle())
                         Text(p1.name)
@@ -211,7 +211,7 @@ struct SplitScreenVersusView: View {
                         .font(.system(size: 24))
                         .foregroundColor(Color.AppTheme.terracotta)
                     if let p2 = player2 {
-                        Image(p2.gender == .boy ? "boy_card_frame_28" : "girl_card_frame_15")
+                        Image(p2.gender == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06")
                             .resizable().aspectRatio(contentMode: .fit)
                             .frame(width: 50, height: 50).clipShape(Circle())
                         Text(p2.name)

@@ -111,7 +111,7 @@ struct AvatarPreviewView: View {
 
     /// Last frame of the chosen gender's animation — the final pose
     private var characterImage: String {
-        avatarModel.gender == .boy ? "boy_card_frame_28" : "girl_card_frame_15"
+        avatarModel.gender == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06"
     }
 
     var body: some View {

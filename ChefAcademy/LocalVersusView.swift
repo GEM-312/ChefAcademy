@@ -196,7 +196,7 @@ struct LocalVersusView: View {
                     .fill(Color.AppTheme.parchment)
                     .frame(width: 120, height: 120)
 
-                Image(player.gender == .boy ? "boy_card_frame_28" : "girl_card_frame_15")
+                Image(player.gender == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 100, height: 100)
@@ -390,7 +390,7 @@ struct LocalVersusView: View {
                         .fill(isSelected ? Color.AppTheme.sage.opacity(0.2) : Color.AppTheme.parchment)
                         .frame(width: 70, height: 70)
 
-                    Image(child.gender == .boy ? "boy_card_frame_28" : "girl_card_frame_15")
+                    Image(child.gender == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 60, height: 60)
@@ -422,7 +422,7 @@ struct LocalVersusView: View {
     private func selectedPlayerChip(player: UserProfile?, label: String) -> some View {
         VStack(spacing: 4) {
             if let player = player {
-                Image(player.gender == .boy ? "boy_card_frame_28" : "girl_card_frame_15")
+                Image(player.gender == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 40, height: 40)
@@ -448,7 +448,7 @@ struct LocalVersusView: View {
                 .fill(Color.AppTheme.parchment)
                 .frame(width: 60, height: 60)
             if let player = player {
-                Image(player.gender == .boy ? "boy_card_frame_28" : "girl_card_frame_15")
+                Image(player.gender == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 50, height: 50)

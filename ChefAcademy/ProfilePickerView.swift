@@ -155,7 +155,7 @@ struct ProfileCard: View {
     private var cardWidth: CGFloat { isIPad ? 280 : 120 }
 
     private var characterImage: String {
-        profile.gender == .boy ? "boy_card_frame_28" : "girl_card_frame_15"
+        profile.gender == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06"
     }
 
     var body: some View {

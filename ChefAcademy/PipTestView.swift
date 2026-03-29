@@ -183,6 +183,13 @@ struct PipGridItem: View {
         case .cooking: return "👨‍🍳"
         case .thinking: return "🤔"
         case .celebrating: return "🏆"
+        case .gotIdea: return "💡"
+        case .important: return "❗"
+        case .missesYou: return "🥺"
+        case .pointsRight: return "👉"
+        case .pointsUpLeft: return "↖️"
+        case .pointsUpRight: return "↗️"
+        case .upset: return "😢"
         }
     }
 }

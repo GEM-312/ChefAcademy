@@ -386,6 +386,10 @@ struct WalkingPipView: View {
                 idleBounce = true
             }
         }
+        .onDisappear {
+            // Stop walk timer when leaving garden — prevents background CPU drain
+            stopWalking()
+        }
         .onChange(of: isGrowing) { growing in
             if growing {
                 startWalking()
@@ -535,7 +539,10 @@ struct GardenView: View {
 
     // @State is for LOCAL view state - things only this view cares about
     @State private var selectedPlotIndex: SelectedPlot?
-    @State private var timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+    // Growth timer — manually connected/disconnected on appear/disappear
+    // to avoid running in background when user is on other tabs
+    private let growthTimerPublisher = Timer.publish(every: 1, on: .main, in: .common)
+    @State private var growthTimerCancellable: (any Cancellable)?
     @State private var suggestedRecipe: Recipe?
     @State private var showRecipeSuggestion = false
 
@@ -612,8 +619,8 @@ struct GardenView: View {
             )
             .environmentObject(gameState)
         }
-        // Update growth progress every second
-        .onReceive(timer) { _ in
+        // Update growth progress every second (only while view is visible)
+        .onReceive(growthTimerPublisher) { _ in
             updateGrowthStates()
         }
         // Rain auto-waters all thirsty plants!
@@ -627,6 +634,9 @@ struct GardenView: View {
         // Recipe suggestion is now handled inline by PipGardenMessage in bottomPanel
         // Visitor greeting is now handled inline by PipGardenMessage in bottomPanel
         .onAppear {
+            // Start growth timer when garden becomes visible
+            growthTimerCancellable = growthTimerPublisher.connect()
+
             if isVisiting {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     showVisitorGreeting = true
@@ -635,6 +645,11 @@ struct GardenView: View {
             // Fetch weather & request location on first garden visit
             weatherService.requestLocationPermission()
             Task { await weatherService.fetchWeather() }
+        }
+        .onDisappear {
+            // Stop growth timer when leaving garden — saves CPU & battery
+            growthTimerCancellable?.cancel()
+            growthTimerCancellable = nil
         }
     }
 
@@ -1093,15 +1108,19 @@ struct GardenView: View {
         // Award XP
         gameState.addXP(10)
 
-        // Check if any recipe can now be cooked (try full match first, then garden-only)
+        // Check if any recipe can now be cooked — prefer recipes using MOST harvested veggies
+        let harvested = gameState.harvestedIngredients
+        let pantry = gameState.pantryInventory
         let fullMatch = GardenRecipes.fullyAvailableRecipes(
-            harvestedIngredients: gameState.harvestedIngredients,
-            pantryInventory: gameState.pantryInventory
+            harvestedIngredients: harvested,
+            pantryInventory: pantry
         )
         let gardenMatch = fullMatch.isEmpty
-            ? GardenRecipes.availableRecipes(with: gameState.harvestedIngredients)
+            ? GardenRecipes.availableRecipes(with: harvested)
             : []
-        let availableRecipes = fullMatch.isEmpty ? gardenMatch : fullMatch
+        // Sort by most garden ingredients used — suggest the recipe that uses the most of what you grew
+        let availableRecipes = (fullMatch.isEmpty ? gardenMatch : fullMatch)
+            .sorted { $0.gardenIngredients.count > $1.gardenIngredients.count }
         if let recipe = availableRecipes.first {
             suggestedRecipe = recipe
             // Small delay so harvest animation plays first

@@ -170,18 +170,18 @@ enum HairStyle: String, CaseIterable, Identifiable {
 
 enum Outfit: String, CaseIterable, Identifiable {
     case none = "None"
-    // Aprons (for girls)
-    case apronRed = "Red Apron"
-    case apronBlue = "Blue Apron"
-    case apronGreen = "Green Apron"
-    case apronYellow = "Yellow Apron"
-    case apronPink = "Pink Apron"
-    // Chef Coats (for boys)
-    case chefWhite = "White Coat"
-    case chefBlue = "Blue Coat"
-    case chefBlack = "Black Coat"
-    case chefGreen = "Green Coat"
-    case chefRed = "Red Coat"
+    // Aprons (for girls) — named after AppTheme colors
+    case apronRed = "Terracotta Apron"
+    case apronBlue = "Sage Apron"
+    case apronGreen = "Olive Apron"
+    case apronYellow = "Golden Apron"
+    case apronPink = "Khaki Apron"
+    // Chef Coats (for boys) — named after AppTheme colors
+    case chefWhite = "Parchment Coat"
+    case chefBlue = "Sage Coat"
+    case chefBlack = "Dark Brown Coat"
+    case chefGreen = "Olive Coat"
+    case chefRed = "Terracotta Coat"
 
     var id: String { rawValue }
 
@@ -201,16 +201,16 @@ enum Outfit: String, CaseIterable, Identifiable {
     var color: Color {
         switch self {
         case .none:        return Color.AppTheme.lightSepia
-        case .apronRed:    return Color(hex: "E53E3E")
-        case .apronBlue:   return Color(hex: "3182CE")
-        case .apronGreen:  return Color(hex: "38A169")
+        case .apronRed:    return Color.AppTheme.terracotta
+        case .apronBlue:   return Color.AppTheme.sage
+        case .apronGreen:  return Color.AppTheme.softOlive
         case .apronYellow: return Color.AppTheme.goldenWheat
-        case .apronPink:   return Color(hex: "E91E8C")
-        case .chefWhite:   return Color(hex: "F7FAFC")
-        case .chefBlue:    return Color(hex: "2B6CB0")
-        case .chefBlack:   return Color(hex: "2D3748")
-        case .chefGreen:   return Color(hex: "276749")
-        case .chefRed:     return Color(hex: "C53030")
+        case .apronPink:   return Color.AppTheme.warmKhaki
+        case .chefWhite:   return Color.AppTheme.parchment
+        case .chefBlue:    return Color.AppTheme.sage
+        case .chefBlack:   return Color.AppTheme.darkBrown
+        case .chefGreen:   return Color.AppTheme.softOlive
+        case .chefRed:     return Color.AppTheme.terracotta
         }
     }
 

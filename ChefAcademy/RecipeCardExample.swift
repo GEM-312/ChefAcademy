@@ -910,8 +910,9 @@ struct RecipeCardView: View {
                     .resizable()
                     .aspectRatio(contentMode: .fill)
                     .frame(height: 160)
-                    .offset(y: recipe.imageYOffset)  // Adjust image position
+                    .offset(y: recipe.imageYOffset)
                     .clipped()
+                    .contentShape(Rectangle()) // Limit hit area to visible frame
 
                 // Adult help indicator
                 if recipe.needsAdultHelp {

@@ -260,7 +260,7 @@ struct NearbyVersusView: View {
             VStack(spacing: 4) {
                 // Opponent bar
                 HStack(spacing: AppSpacing.sm) {
-                    Image(manager.opponentGender == .boy ? "boy_card_frame_28" : "girl_card_frame_15")
+                    Image(manager.opponentGender == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 30, height: 30)
@@ -510,7 +510,7 @@ struct NearbyVersusView: View {
     private func playerAvatar(gender: Gender) -> some View {
         ZStack {
             Circle().fill(Color.AppTheme.parchment).frame(width: 70, height: 70)
-            Image(gender == .boy ? "boy_card_frame_28" : "girl_card_frame_15")
+            Image(gender == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06")
                 .resizable().aspectRatio(contentMode: .fit)
                 .frame(width: 60, height: 60).clipShape(Circle())
         }

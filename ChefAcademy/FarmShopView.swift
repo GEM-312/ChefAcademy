@@ -370,19 +370,22 @@ struct FarmTransitionView: View {
     let onComplete: () -> Void
 
     // ==========================================
-    // TWEAK THESE to adjust the farm camera:
+    // Camera params — adaptive for iPhone vs iPad landscape
     // ==========================================
 
-    /// How tall the farm scene is vs screen. Bigger = more zoom.
-    /// At 0.55 on iPhone, you see roughly the left half of the image (big barn).
-    private let sceneHeightRatio: CGFloat = 0.9
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
-    /// Pan the camera left/right. Negative = barn moves left on screen.
-    private let panX: CGFloat = -1.0
+    /// Detect landscape iPad (wide screen)
+    private var isWideScreen: Bool { sizeClass != .compact }
 
-    /// Pan the camera up/down. Negative = pull image up on screen.
-    /// Try -0.1, -0.2, etc. until the ground/fence is where you want it.
-    private let panY: CGFloat = -0.15
+    /// How tall the farm scene is vs screen height
+    private var sceneHeightRatio: CGFloat { isWideScreen ? 1.0 : 0.9 }
+
+    /// Pan camera left/right — less shift on wide screens
+    private var panX: CGFloat { isWideScreen ? -0.3 : -1.0 }
+
+    /// Pan camera up/down
+    private var panY: CGFloat { isWideScreen ? -0.05 : -0.15 }
 
     // ==========================================
 
@@ -392,7 +395,8 @@ struct FarmTransitionView: View {
     }
 
     private let walkSpeed: CGFloat = 2.2
-    private let pipSize: CGFloat = 110
+    /// Pip size — bigger on iPad
+    private var pipSize: CGFloat { isWideScreen ? 160 : 110 }
 
     // ==========================================
     // SCENE EDITOR: Pencil icon toggles edit mode.

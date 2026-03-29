@@ -106,6 +106,7 @@ struct KitchenView: View {
             NavigationView {
                 RecipeListView(selectedTab: .constant(.kitchen))
                     .environmentObject(gameState)
+                    .requestODR(.recipes)
                     .toolbar {
                         ToolbarItem(placement: .navigationBarTrailing) {
                             Button("Done") { showRecipeList = false }

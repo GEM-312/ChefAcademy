@@ -1,3 +1,4 @@
+import Combine
 import SwiftUI
 
 // MARK: - Pip Waving Frame Animation
@@ -12,7 +13,7 @@ struct PipWavingAnimatedView: View {
 
     @State private var currentFrame = 0
     @State private var timer: Timer?
-    @State private var isPaused = false
+    @State private var pauseTicksRemaining: Int = 0
 
     var body: some View {
         Image(frameNames[currentFrame])
@@ -25,33 +26,165 @@ struct PipWavingAnimatedView: View {
     }
 
     private func startAnimation() {
-        scheduleNextFrame()
+        guard timer == nil else { return }
+        // Single repeating timer at frame rate — no recursive allocation
+        let interval = 1.0 / fps
+        timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
+            if pauseTicksRemaining > 0 {
+                pauseTicksRemaining -= 1
+                return
+            }
+
+            let nextFrame = currentFrame + 1
+            if nextFrame >= frameNames.count {
+                // Wave finished — pause for N ticks before restarting
+                currentFrame = 0
+                pauseTicksRemaining = Int(pauseBetweenWaves * fps)
+            } else {
+                currentFrame = nextFrame
+            }
+        }
     }
 
     private func stopAnimation() {
         timer?.invalidate()
         timer = nil
     }
+}
 
-    private func scheduleNextFrame() {
-        let delay = isPaused ? pauseBetweenWaves : (1.0 / fps)
-        timer = Timer.scheduledTimer(withTimeInterval: delay, repeats: false) { _ in
-            if isPaused {
-                isPaused = false
-                currentFrame = 0
-                scheduleNextFrame()
+// MARK: - One-Shot Frame Animation
+
+/// Plays a sequence of frame images once, then holds on the last frame.
+/// Replaces OneShotVideoPlayer for cleaner, smaller frame-based animations.
+struct OneShotFrameAnimationView: View {
+    let frameNames: [String]
+    var fps: Double = 15.0
+
+    @State private var currentFrame = 0
+    @State private var timer: Timer?
+    @State private var finished = false
+
+    var body: some View {
+        Image(frameNames[currentFrame])
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .onAppear { startAnimation() }
+            .onDisappear { stopAnimation() }
+    }
+
+    private func startAnimation() {
+        guard frameNames.count > 1, timer == nil else { return }
+        currentFrame = 0
+        finished = false
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0 / fps, repeats: true) { _ in
+            guard !finished else { return }
+            let next = currentFrame + 1
+            if next >= frameNames.count {
+                finished = true
+                timer?.invalidate()
+                timer = nil
             } else {
-                let nextFrame = currentFrame + 1
-                if nextFrame >= frameNames.count {
-                    // Wave finished — pause before next wave
-                    isPaused = true
-                    scheduleNextFrame()
-                } else {
-                    currentFrame = nextFrame
-                    scheduleNextFrame()
-                }
+                currentFrame = next
             }
         }
+    }
+
+    private func stopAnimation() {
+        timer?.invalidate()
+        timer = nil
+    }
+}
+
+// MARK: - Avatar Animation Frame Sets
+
+/// Frame name generators for avatar onboarding animations.
+enum AvatarAnimation {
+    case boyCard, girlCard
+    case boyCoat, girlApron
+    case boyWearHat, girlWearHat
+
+    var frameNames: [String] {
+        switch self {
+        case .boyCard:
+            return (1...11).map { String(format: "boy_card_clean_frame_%02d", $0) }
+        case .girlCard:
+            return (1...6).map { String(format: "girl_card_clean_frame_%02d", $0) }
+        case .boyCoat:
+            return (1...38).map { String(format: "boy_coat_frame_%02d", $0) }
+        case .girlApron:
+            return (1...50).map { String(format: "girl_apron_frame_%02d", $0) }
+        case .boyWearHat:
+            return (1...51).map { String(format: "boy_wear_hat_frame_%02d", $0) }
+        case .girlWearHat:
+            return (1...51).map { String(format: "girl_wear_hat_frame_%02d", $0) }
+        }
+    }
+
+    var fps: Double {
+        switch self {
+        case .boyCard, .girlCard: return 10.0
+        case .boyCoat, .girlApron: return 24.0
+        case .boyWearHat, .girlWearHat: return 24.0
+        }
+    }
+}
+
+// MARK: - Avatar Animator (survives view re-creation)
+
+/// ObservableObject that drives avatar frame animations.
+/// Uses @StateObject in the view so the timer survives @Binding-triggered re-renders.
+@MainActor
+final class AvatarAnimator: ObservableObject {
+    @Published var currentImageName: String? = nil
+    @Published private(set) var isAnimating = false
+
+    private var timer: Timer?
+    private var frameIndex = 0
+    private var activeAnim: AvatarAnimation?
+
+    /// Play a one-shot animation — cycles through all frames, holds on last
+    func play(_ anim: AvatarAnimation) {
+        stop()
+        activeAnim = anim
+        frameIndex = 0
+        isAnimating = true
+        currentImageName = anim.frameNames[0]
+
+        timer = Timer.scheduledTimer(withTimeInterval: 1.0 / anim.fps, repeats: true) { [weak self] _ in
+            guard let self else { return }
+            let next = self.frameIndex + 1
+            if next >= anim.frameNames.count {
+                // Hold on last frame
+                self.isAnimating = false
+                self.timer?.invalidate()
+                self.timer = nil
+            } else {
+                self.frameIndex = next
+                self.currentImageName = anim.frameNames[next]
+            }
+        }
+    }
+
+    /// Show last frame of an animation (no playback)
+    func showLastFrame(of anim: AvatarAnimation) {
+        stop()
+        activeAnim = anim
+        frameIndex = anim.frameNames.count - 1
+        currentImageName = anim.frameNames.last
+    }
+
+    /// Stop animation and clear image (falls back to static avatar)
+    func stop() {
+        timer?.invalidate()
+        timer = nil
+        activeAnim = nil
+        currentImageName = nil
+        frameIndex = 0
+        isAnimating = false
+    }
+
+    deinit {
+        timer?.invalidate()
     }
 }
 
@@ -63,6 +196,14 @@ enum PipPose: String, CaseIterable {
     case cooking = "pip_cooking"
     case thinking = "pip_thinking"
     case celebrating = "pip_celebrating"
+    // New clean poses
+    case gotIdea = "pip_got_idea"
+    case important = "pip_important"
+    case missesYou = "pip_misses_you"
+    case pointsRight = "pip_points_right"
+    case pointsUpLeft = "Pip_points_up_left"
+    case pointsUpRight = "pip_points_up_right"
+    case upset = "pip_upset"
     
     /// Suggested use cases for each pose
     var description: String {
@@ -73,6 +214,13 @@ enum PipPose: String, CaseIterable {
         case .cooking: return "Recipe screens, cooking steps"
         case .thinking: return "Quiz questions, loading"
         case .celebrating: return "Badge earned, recipe complete"
+        case .gotIdea: return "Lightbulb moment, discovery"
+        case .important: return "Key info, pay attention"
+        case .missesYou: return "Return prompt, welcome back"
+        case .pointsRight: return "Directing to next step"
+        case .pointsUpLeft: return "Pointing to UI element above-left"
+        case .pointsUpRight: return "Pointing to UI element above-right"
+        case .upset: return "Wrong answer, mistake"
         }
     }
 }
@@ -408,6 +556,18 @@ struct PipAnimationDemoView: View {
             message = "Hmm, let me think about that... 🤔"
         case .celebrating:
             message = "You did it! I'm so proud of you! 🏆"
+        case .gotIdea:
+            message = "I just had a great idea!"
+        case .important:
+            message = "This is really important!"
+        case .missesYou:
+            message = "I missed you! Welcome back!"
+        case .pointsRight:
+            message = "Look over there!"
+        case .pointsUpLeft, .pointsUpRight:
+            message = "Check this out up here!"
+        case .upset:
+            message = "Oh no, that's not quite right..."
         }
     }
 }

@@ -100,6 +100,9 @@ struct ChefAcademyApp: App {
 
                     gameState.startAutoSave()
 
+                    // Prewarm ALL heavy images at launch — cached before user navigates
+                    ImagePrewarmer.prewarmAll()
+
                     // Start weather service for garden weather effects
                     weatherService.startPeriodicRefresh()
 
@@ -209,18 +212,30 @@ struct MainTabView: View {
     }
     
     var body: some View {
-        ZStack(alignment: .bottom) {
-            // Content
+        VStack(spacing: 0) {
+            // Content takes all available space
             Group {
                 switch selectedTab {
                 case .home:
                     HomeView(avatarModel: avatarModel, selectedTab: $selectedTab)
+                        .onAppear {
+                            ODRManager.shared.prefetch(.garden)
+                            ODRManager.shared.prefetch(.kitchen)
+                            ODRManager.shared.prefetch(.characterAnim)
+                            ODRManager.shared.prefetch(.recipes)
+                            ImagePrewarmer.prewarmHome()
+                        }
                 case .garden:
                     GardenView(selectedTab: $selectedTab, onShowFarmShop: { selectedTab = .shop })
+                        .requestODR(.garden, .characterAnim)
+                        .onAppear { ImagePrewarmer.prewarmGarden() }
                 case .shop:
                     FarmTabView()
+                        .requestODR(.farm)
+                        .onAppear { ImagePrewarmer.prewarmFarm() }
                 case .kitchen:
                     KitchenView()
+                        .requestODR(.kitchen, .characterAnim)
                 case .bodyBuddy:
                     BodyBuddyView(selectedTab: $selectedTab)
                 case .playLearn:
@@ -228,8 +243,8 @@ struct MainTabView: View {
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            
-            // Custom Tab Bar
+
+            // Tab bar at bottom — no overlap with content
             CustomTabBar(selectedTab: $selectedTab)
         }
         .ignoresSafeArea(.keyboard)
@@ -419,8 +434,8 @@ struct HomeView: View {
 
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: AppSpacing.md) {
-                            QuickActionCardWithBg(title: "Visit Garden", imageName: "bg_garden", color: Color.AppTheme.sage, action: { selectedTab = .garden })
-                            QuickActionCardWithBg(title: "Cook Recipe", imageName: "bg_kitchen", color: Color.AppTheme.goldenWheat, action: { selectedTab = .kitchen })
+                            QuickActionCard(icon: "🌱", title: "Visit Garden", color: Color.AppTheme.sage, action: { selectedTab = .garden })
+                            QuickActionCard(icon: "🍳", title: "Cook Recipe", color: Color.AppTheme.goldenWheat, action: { selectedTab = .kitchen })
                             QuickActionCard(icon: "🛒", title: "Farm Shop", color: Color.AppTheme.terracotta, action: { selectedTab = .shop })
                             QuickActionCard(icon: "🫀", title: "Body Buddy", color: Color.AppTheme.terracotta.opacity(0.7), action: { selectedTab = .bodyBuddy })
                             QuickActionCard(icon: "🎮", title: "Play Games", color: Color.AppTheme.sepia.opacity(0.7), action: { selectedTab = .playLearn })
@@ -452,8 +467,10 @@ struct HomeView: View {
                     }
 
                     let todaysRecipe = GardenRecipes.all.first(where: { $0.id == "chicken-veggie-platter" }) ?? GardenRecipes.all[0]
-                    RecipeCardView(recipe: todaysRecipe)
-                        .onTapGesture { selectedRecipe = todaysRecipe }
+                    Button(action: { selectedRecipe = todaysRecipe }) {
+                        RecipeCardView(recipe: todaysRecipe)
+                    }
+                    .buttonStyle(.plain)
                 }
                 .padding(.horizontal, AppSpacing.md)
 
@@ -506,7 +523,7 @@ struct HomeView: View {
                                 ForEach(siblings, id: \.id) { sibling in
                                     Button(action: { selectedSibling = sibling }) {
                                         VStack(spacing: 6) {
-                                            Image(sibling.gender == .boy ? "boy_card_frame_28" : "girl_card_frame_15")
+                                            Image(sibling.gender == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06")
                                                 .resizable()
                                                 .aspectRatio(contentMode: .fill)
                                                 .frame(width: 90, height: 90)
@@ -587,7 +604,7 @@ struct HomeView: View {
                 .padding(.horizontal, AppSpacing.md)
 
                 // Bottom spacing for tab bar
-                Spacer().frame(height: 100)
+                Spacer().frame(height: AppSpacing.lg)
             }
             .padding(.top, AppSpacing.md)
         }

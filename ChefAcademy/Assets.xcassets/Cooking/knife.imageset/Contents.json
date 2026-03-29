@@ -1,4 +1,17 @@
 {
-  "images" : [{ "filename" : "knife.png", "idiom" : "universal" }],
-  "info" : { "author" : "xcode", "version" : 1 }
+  "images": [
+    {
+      "filename": "knife.png",
+      "idiom": "universal"
+    }
+  ],
+  "info": {
+    "author": "xcode",
+    "version": 1
+  },
+  "properties": {
+    "on-demand-resource-tags": [
+      "kitchen"
+    ]
+  }
 }

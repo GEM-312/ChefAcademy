@@ -370,7 +370,7 @@ struct CookingSessionView: View {
                 }
             }
         }
-        .onAppear {
+        .task {
             steps = recipe.generateCookingSteps()
         }
     }

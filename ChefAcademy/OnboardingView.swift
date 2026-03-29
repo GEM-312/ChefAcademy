@@ -283,14 +283,14 @@ struct GenderCard: View {
 
     private var frameNames: [String] {
         if gender == .boy {
-            return (1...28).map { String(format: "boy_card_frame_%02d", $0) }
+            return (1...11).map { String(format: "boy_card_clean_frame_%02d", $0) }
         } else {
-            return (1...15).map { String(format: "girl_card_frame_%02d", $0) }
+            return (1...6).map { String(format: "girl_card_clean_frame_%02d", $0) }
         }
     }
 
     private var fps: Double {
-        // Boy: 28 frames over ~1.15s ≈ 24fps, Girl: 15 frames over ~0.59s ≈ 24fps
+        // Boy: 11 frames, Girl: 6 frames — ~10fps for smooth animation
         // Slow it down a bit for a gentle feel
         return 10
     }

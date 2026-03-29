@@ -216,41 +216,27 @@ class PipVoice: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
         let allVoices = AVSpeechSynthesisVoice.speechVoices()
         let englishVoices = allVoices.filter { $0.language.hasPrefix("en") }
 
-        // Preferred voices in order (most natural first)
-        let preferred = ["Samantha", "Ava", "Zoe", "Nicky", "Fiona"]
-
-        // Try premium quality first
-        for name in preferred {
-            if let voice = englishVoices.first(where: {
-                $0.name.contains(name) && $0.quality == .premium
-            }) {
-                bestVoice = voice
-                print("[PipVoice] Using premium voice: \(voice.name)")
-                return voice
-            }
-        }
-
-        // Try enhanced quality
-        for name in preferred {
-            if let voice = englishVoices.first(where: {
-                $0.name.contains(name) && $0.quality == .enhanced
-            }) {
-                bestVoice = voice
-                print("[PipVoice] Using enhanced voice: \(voice.name)")
-                return voice
-            }
-        }
-
-        // Any enhanced English voice
-        if let voice = englishVoices.first(where: { $0.quality == .enhanced }) {
+        // Prefer Siri voices ("Voice 1", "Voice 3" are male, best quality)
+        let siriVoices = englishVoices.filter { $0.name.hasPrefix("Voice") }
+        if let voice = siriVoices.first(where: { $0.name == "Voice 1" })
+            ?? siriVoices.first(where: { $0.name == "Voice 3" })
+            ?? siriVoices.first {
             bestVoice = voice
-            print("[PipVoice] Using enhanced voice: \(voice.name)")
+            print("[PipVoice] Using Siri voice: \(voice.name)")
             return voice
         }
 
-        // Fallback to default
+        // Fallback to any premium/enhanced
+        if let voice = englishVoices.first(where: { $0.quality == .premium })
+            ?? englishVoices.first(where: { $0.quality == .enhanced }) {
+            bestVoice = voice
+            print("[PipVoice] Using \(voice.name)")
+            return voice
+        }
+
+        // Last resort
         bestVoice = AVSpeechSynthesisVoice(language: "en-US")
-        print("[PipVoice] Using default voice (download better voices in Settings → Accessibility → Spoken Content → Voices)")
+        print("[PipVoice] Using default voice")
         return bestVoice
     }
 
@@ -274,11 +260,16 @@ class PipVoice: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
         bestAvailableQuality == .default
     }
 
-    /// All English voices grouped by quality for the picker
+    /// All English US voices — logged so we can see what iOS 26 actually provides.
     var availableEnglishVoices: [AVSpeechSynthesisVoice] {
-        AVSpeechSynthesisVoice.speechVoices()
+        let all = AVSpeechSynthesisVoice.speechVoices()
             .filter { $0.language.hasPrefix("en") }
             .sorted { $0.quality.rawValue > $1.quality.rawValue }
+        // Log EVERY voice so we know what to filter
+        for v in all {
+            print("[PipVoice] VOICE: '\(v.name)' lang=\(v.language) quality=\(v.quality.rawValue) id=\(v.identifier)")
+        }
+        return all
     }
 
     // MARK: - Stop / Pause / Resume

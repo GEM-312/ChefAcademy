@@ -131,7 +131,7 @@ struct VoicePickerView: View {
                 .font(.AppTheme.headline)
                 .foregroundColor(Color.AppTheme.darkBrown)
 
-            ForEach(pipVoice.availableEnglishVoices.prefix(8), id: \.identifier) { voice in
+            ForEach(pipVoice.availableEnglishVoices, id: \.identifier) { voice in
                 VoiceCard(
                     name: voice.name,
                     quality: qualityLabel(voice.quality),
@@ -296,7 +296,7 @@ struct SettingsGuideSheet: View {
     private let steps = [
         ("1", "Open Settings", "gear"),
         ("2", "Tap Accessibility", "figure.stand"),
-        ("3", "Tap Spoken Content", "text.bubble"),
+        ("3", "Tap Read & Speak", "text.bubble"),
         ("4", "Tap Voices", "speaker.wave.2"),
         ("5", "Tap English", "globe"),
         ("6", "Download a voice (tap the cloud icon)", "icloud.and.arrow.down")

@@ -20,6 +20,7 @@ struct ParentDashboardView: View {
     @State private var childToRemove: UserProfile?
     @State private var showChangePIN = false
     @State private var showAddChild = false
+    @State private var showVoiceSettings = false
     @State private var showSignOutConfirmation = false
     @State private var signInCoordinator: SignInCoordinator?
 
@@ -178,6 +179,21 @@ struct ParentDashboardView: View {
                     }
                     .buttonStyle(.plain)
 
+                    Button(action: { showVoiceSettings = true }) {
+                        HStack {
+                            Image(systemName: "speaker.wave.2.fill")
+                            Text("Pip's Voice")
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                        }
+                        .font(.AppTheme.body)
+                        .foregroundColor(Color.AppTheme.sepia)
+                        .padding(AppSpacing.md)
+                        .background(Color.AppTheme.warmCream)
+                        .cornerRadius(AppSpacing.cardCornerRadius)
+                    }
+                    .buttonStyle(.plain)
+
                     // Apple ID status + Link / Sign Out
                     if authManager.isAuthenticated {
                         // Signed in — show sign out option
@@ -287,6 +303,17 @@ struct ParentDashboardView: View {
                 .environmentObject(gameState)
                 .environmentObject(avatarModel)
         }
+        .sheet(isPresented: $showVoiceSettings) {
+            NavigationView {
+                VoicePickerView()
+                    .toolbar {
+                        ToolbarItem(placement: .navigationBarTrailing) {
+                            Button("Done") { showVoiceSettings = false }
+                                .foregroundColor(Color.AppTheme.sage)
+                        }
+                    }
+            }
+        }
         .alert("Sign Out?", isPresented: $showSignOutConfirmation) {
             Button("Cancel", role: .cancel) { }
             Button("Sign Out", role: .destructive) {
@@ -326,7 +353,7 @@ struct DashboardChildTab: View {
     let onTap: () -> Void
 
     private var characterImage: String {
-        profile.gender == .boy ? "boy_card_frame_28" : "girl_card_frame_15"
+        profile.gender == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06"
     }
 
     var body: some View {

@@ -20,7 +20,7 @@ struct SiblingProfileView: View {
     }
 
     private var characterImage: String {
-        sibling.gender == .boy ? "boy_card_frame_28" : "girl_card_frame_15"
+        sibling.gender == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06"
     }
 
     var body: some View {

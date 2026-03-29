@@ -498,10 +498,11 @@ struct SeasonalOverlayView: View {
     // MARK: - Spring Particles (floating petals)
 
     var springParticles: some View {
+        // Procedural petal shapes — cheaper than emoji font rendering
         ForEach(0..<8, id: \.self) { i in
-            Text("🌸")
-                .font(.system(size: CGFloat.random(in: 10...16)))
-                .opacity(0.5)
+            Ellipse()
+                .fill(Color.pink.opacity(0.35))
+                .frame(width: CGFloat(10 + i % 3 * 3), height: CGFloat(6 + i % 3 * 2))
                 .offset(
                     x: CGFloat.random(in: -mapWidth/2...mapWidth/2),
                     y: particleOffset + CGFloat(i * 60)
@@ -529,10 +530,12 @@ struct SeasonalOverlayView: View {
     // MARK: - Fall Particles (falling leaves)
 
     var fallParticles: some View {
-        ForEach(0..<10, id: \.self) { i in
-            Text(["🍂", "🍁", "🍃"][i % 3])
-                .font(.system(size: CGFloat.random(in: 12...18)))
-                .opacity(0.6)
+        // Procedural leaf shapes — 3 autumn colors, cheaper than emoji
+        ForEach(0..<8, id: \.self) { i in
+            let colors: [Color] = [.orange, Color(hex: "8B4513"), Color(hex: "DAA520")]
+            Ellipse()
+                .fill(colors[i % 3].opacity(0.5))
+                .frame(width: CGFloat(12 + i % 3 * 4), height: CGFloat(8 + i % 3 * 2))
                 .offset(
                     x: sin(CGFloat(i) * 0.8 + particleOffset * 0.02) * mapWidth * 0.3,
                     y: particleOffset * 0.5 + CGFloat(i * 50) - mapHeight * 0.3

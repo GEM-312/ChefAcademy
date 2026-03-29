@@ -28,6 +28,7 @@ class FamilySetupManager: ObservableObject {
     @Published var childOutfit: Outfit = .apronRed
     @Published var childHeadCovering: HeadCovering = .chefHatWhite
 
+
     enum SetupStep: Int, CaseIterable {
         case welcome = 0
         case parentName = 1
@@ -98,7 +99,7 @@ struct FamilySetupView: View {
                     outfit: $setupManager.parentOutfit,
                     headCovering: $setupManager.parentHeadCovering,
                     onNext: { setupManager.nextStep() },
-                    onBack: { setupManager.previousStep() }
+                    onBack: { setupManager.previousStep() },
                 )
 
             case .setPIN:
@@ -127,7 +128,7 @@ struct FamilySetupView: View {
                     outfit: $setupManager.childOutfit,
                     headCovering: $setupManager.childHeadCovering,
                     onNext: { setupManager.nextStep() },
-                    onBack: { setupManager.previousStep() }
+                    onBack: { setupManager.previousStep() },
                 )
 
             case .choosePipVoice:
@@ -330,13 +331,20 @@ struct FamilyAvatarStep: View {
     // Temporary avatar model for preview
     @StateObject private var tempAvatar = AvatarModel()
     @State private var genderChosen = false
-    @State private var outfitVideoKey: String = ""
+    @State private var activeAnimation: AvatarAnimation? = nil
+    @State private var animFrameIndex: Int = 0
+    @State private var animTimer: Timer? = nil
+    @State private var animFinished: Bool = false
     @Environment(\.verticalSizeClass) private var verticalSizeClass
 
-    /// Video name for the current gender's outfit animation
-    private var outfitVideoName: String? {
-        let name = gender == .boy ? "boy_chef_coat" : "girl_apron"
-        return Bundle.main.url(forResource: name, withExtension: "mp4") != nil ? name : nil
+    /// Frame animation for the current outfit selection
+    private var outfitAnimation: AvatarAnimation {
+        gender == .boy ? .boyCoat : .girlApron
+    }
+
+    /// Frame animation for the current hat/covering selection
+    private var hatAnimation: AvatarAnimation {
+        gender == .boy ? .boyWearHat : .girlWearHat
     }
 
     // TEACHING MOMENT: Why not use verticalSizeClass for landscape detection?
@@ -378,11 +386,11 @@ struct FamilyAvatarStep: View {
                                     tempAvatar.gender = g
                                     genderChosen = true
                                     outfit = .none
-                                    outfitVideoKey = ""
+                                    stopAnim()
                                 }
                             }) {
                                 VStack(spacing: 6) {
-                                    let img = g == .boy ? "boy_card_frame_28" : "girl_card_frame_15"
+                                    let img = g == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06"
                                     Image(img)
                                         .resizable()
                                         .aspectRatio(contentMode: .fit)
@@ -402,22 +410,11 @@ struct FamilyAvatarStep: View {
                 } else {
                     // Show CHOSEN avatar — responsive size
                     VStack(spacing: 6) {
-                        let img = gender == .boy ? "boy_card_frame_28" : "girl_card_frame_15"
-
-                        if outfit.isChosen, let videoName = outfitVideoName {
-                            // Outfit video replaces avatar
-                            OneShotVideoPlayer(videoName: videoName, fileExtension: "mp4")
-                                .frame(width: bigSize, height: bigSize)
-                                .clipShape(RoundedRectangle(cornerRadius: 24))
-                                .id(outfitVideoKey)
-                        } else {
-                            // Static avatar
-                            Image(img)
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: bigSize, height: bigSize)
-                                .clipShape(RoundedRectangle(cornerRadius: 24))
-                        }
+                        Image(avatarImageName)
+                            .resizable()
+                            .aspectRatio(contentMode: .fit)
+                            .frame(width: bigSize, height: bigSize)
+                            .clipShape(RoundedRectangle(cornerRadius: 24))
 
                         HStack(spacing: AppSpacing.sm) {
                             Text(gender.rawValue)
@@ -428,7 +425,7 @@ struct FamilyAvatarStep: View {
                                 withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
                                     genderChosen = false
                                     outfit = .none
-                                    outfitVideoKey = ""
+                                    stopAnim()
                                 }
                             }) {
                                 Text("Change")
@@ -458,11 +455,31 @@ struct FamilyAvatarStep: View {
                             get: { outfit },
                             set: { newOutfit in
                                 outfit = newOutfit
-                                // Trigger video replay
-                                outfitVideoKey = "\(newOutfit.rawValue)_\(UUID().uuidString)"
+                                headCovering = .none
+                                if newOutfit.isChosen {
+                                    playAnimation(outfitAnimation)
+                                } else {
+                                    stopAnim()
+                                }
                             }
                         ), gender: gender)
-                        HeadCoveringSelector(selectedCovering: $headCovering)
+                        // Chef Hat selector — only visible after choosing an apron/coat
+                        if outfit.isChosen {
+                            HeadCoveringSelector(selectedCovering: Binding(
+                                get: { headCovering },
+                                set: { newCovering in
+                                    headCovering = newCovering
+                                    if newCovering != .none {
+                                        playAnimation(hatAnimation)
+                                    } else {
+                                        stopAnim()
+                                        activeAnimation = outfitAnimation
+                                        animFrameIndex = outfitAnimation.frameNames.count - 1
+                                    }
+                                }
+                            ))
+                            .transition(.opacity.combined(with: .move(edge: .top)))
+                        }
                     }
                     .padding(AppSpacing.md)
                 }
@@ -492,7 +509,44 @@ struct FamilyAvatarStep: View {
         .onAppear {
             tempAvatar.gender = gender
         }
+        .onDisappear {
+            stopAnim()
+        }
     }
+
+    private func playAnimation(_ anim: AvatarAnimation) {
+        stopAnim()
+        activeAnimation = anim
+        animFrameIndex = 0
+        animFinished = false
+        animTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / anim.fps, repeats: true) { _ in
+            let next = animFrameIndex + 1
+            if next >= anim.frameNames.count {
+                animFinished = true
+                animTimer?.invalidate()
+                animTimer = nil
+            } else {
+                animFrameIndex = next
+            }
+        }
+    }
+
+    private func stopAnim() {
+        animTimer?.invalidate()
+        animTimer = nil
+        activeAnimation = nil
+        animFrameIndex = 0
+        animFinished = false
+    }
+
+    private var avatarImageName: String {
+        if let anim = activeAnimation {
+            let idx = min(animFrameIndex, anim.frameNames.count - 1)
+            return anim.frameNames[idx]
+        }
+        return gender == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06"
+    }
+
 }
 
 struct FamilyPINSetupStep: View {

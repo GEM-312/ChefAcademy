@@ -1,12 +1,17 @@
 {
-  "images" : [
+  "images": [
     {
-      "filename" : "stove_flame_07.png",
-      "idiom" : "universal"
+      "filename": "stove_flame_07.png",
+      "idiom": "universal"
     }
   ],
-  "info" : {
-    "author" : "xcode",
-    "version" : 1
+  "info": {
+    "author": "xcode",
+    "version": 1
+  },
+  "properties": {
+    "on-demand-resource-tags": [
+      "kitchen"
+    ]
   }
 }
