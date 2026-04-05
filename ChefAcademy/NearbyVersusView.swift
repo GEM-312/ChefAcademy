@@ -347,7 +347,7 @@ struct NearbyVersusView: View {
 
             VStack {
                 Spacer()
-                Image("pip_neutral")
+                Image("pip_got_idea")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 80 * pipScale, height: 80 * pipScale)
@@ -478,7 +478,7 @@ struct NearbyVersusView: View {
     private func errorView(message: String) -> some View {
         VStack(spacing: AppSpacing.lg) {
             Spacer()
-            Image("pip_neutral")
+            Image("pip_got_idea")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 100, height: 100)

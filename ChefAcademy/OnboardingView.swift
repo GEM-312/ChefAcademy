@@ -115,7 +115,7 @@ struct WelcomeView: View {
 
             // Pip Static Image - Neutral pose for welcome
             VStack(spacing: AppSpacing.sm) {
-                Image("pip_neutral")
+                Image("pip_got_idea")
                     .resizable()
                     .aspectRatio(contentMode: .fill)
                     .frame(

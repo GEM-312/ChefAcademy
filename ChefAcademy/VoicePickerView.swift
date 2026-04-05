@@ -102,7 +102,7 @@ struct VoicePickerView: View {
 
     private var pipHeader: some View {
         VStack(spacing: AppSpacing.sm) {
-            Image("pip_waving")
+            Image("pip_points_up_left")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 100, height: 100)

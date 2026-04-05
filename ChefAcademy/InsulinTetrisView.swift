@@ -606,7 +606,7 @@ struct InsulinTetrisView: View {
 
     private func pipToast(_ message: String) -> some View {
         HStack(spacing: AppSpacing.sm) {
-            Image("pip_neutral")
+            Image("pip_got_idea")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 36, height: 36)
@@ -633,7 +633,7 @@ struct InsulinTetrisView: View {
                 .font(.AppTheme.largeTitle)
                 .foregroundColor(Color.AppTheme.terracotta)
 
-            Image("pip_neutral")
+            Image("pip_got_idea")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 120, height: 120)

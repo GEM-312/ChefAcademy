@@ -96,7 +96,7 @@ struct DraggablePipView: View {
             }
 
             // Pip character
-            Image("pip_neutral")  // <-- Replace with walking sprite later!
+            Image("pip_got_idea")  // Clean pose — replace with walking sprite later
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: pipSize, height: pipSize)
@@ -416,7 +416,7 @@ struct WalkingPipView: View {
         if isWalking && !isDragging {
             return walkingFrames[walkingFrameIndex]
         }
-        return "pip_neutral"
+        return "pip_got_idea"
     }
 
     // MARK: - Walking Engine (TimelineView-Driven)

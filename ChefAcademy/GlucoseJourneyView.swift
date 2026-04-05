@@ -637,7 +637,7 @@ struct CellPhaseView: View {
     var body: some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: AppSpacing.md) {
-                PipJourneyMessage(message: pipMessage, pose: step == .bodyZoom ? "pip_thinking" : "pip_excited")
+                PipJourneyMessage(message: pipMessage, pose: step == .bodyZoom ? "pip_thinking" : "pip_got_idea")
                     .padding(.horizontal, AppSpacing.md)
 
                 // Body → Cell zoom
@@ -762,7 +762,7 @@ struct CellPhaseView: View {
                     VStack(spacing: AppSpacing.xs) {
                         // Pip with energy state
                         HStack(spacing: AppSpacing.md) {
-                            Image(spikeMode ? "pip_neutral" : (pipEnergy >= 5 ? "pip_celebrating" : (pipEnergy > 0 ? "pip_excited" : "pip_neutral")))
+                            Image(spikeMode ? "pip_upset" : (pipEnergy >= 5 ? "pip_points_up_right" : (pipEnergy > 0 ? "pip_got_idea" : "pip_thinking")))
                                 .resizable()
                                 .aspectRatio(contentMode: .fit)
                                 .frame(width: 70, height: 70)
@@ -1292,7 +1292,7 @@ struct SmartSnackQuizView: View {
                     message: selectedSnack == nil
                         ? "Pick the snack that would keep your glucose smooth!"
                         : selectedSnack!.pipExplanation,
-                    pose: selectedSnack == nil ? "pip_thinking" : (selectedSnack?.isHealthy == true ? "pip_celebrating" : "pip_cooking")
+                    pose: selectedSnack == nil ? "pip_thinking" : (selectedSnack?.isHealthy == true ? "pip_points_up_right" : "pip_upset")
                 )
                 .padding(.horizontal, AppSpacing.md)
 

@@ -307,7 +307,7 @@ struct HealthyChoiceGameView: View {
 
                 ZStack {
                     // Pip character
-                    Image("pip_neutral")
+                    Image("pip_got_idea")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 80 * pipScale, height: 80 * pipScale)
@@ -355,7 +355,7 @@ struct HealthyChoiceGameView: View {
                 .foregroundColor(Color.AppTheme.terracotta)
 
             // Pip floating away animation
-            Image("pip_neutral")
+            Image("pip_got_idea")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 120, height: 120)

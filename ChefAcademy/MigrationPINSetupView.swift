@@ -23,7 +23,7 @@ struct MigrationPINSetupView: View {
             Spacer()
 
             // Pip excited
-            Image("pip_excited")
+            Image("pip_got_idea")
                 .resizable()
                 .aspectRatio(contentMode: .fill)
                 .frame(width: 120, height: 120)

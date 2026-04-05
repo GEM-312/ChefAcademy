@@ -207,7 +207,7 @@ struct FamilyWelcomeStep: View {
         VStack(spacing: AppSpacing.xl) {
             Spacer()
 
-            Image("pip_neutral")
+            Image("pip_got_idea")
                 .resizable()
                 .aspectRatio(contentMode: .fill)
                 .frame(width: 160, height: 160)
@@ -859,7 +859,7 @@ struct FamilyVoiceStep: View {
 
                     // Pip + title
                     VStack(spacing: AppSpacing.sm) {
-                        Image("pip_waving")
+                        Image("pip_points_up_left")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: 100, height: 100)

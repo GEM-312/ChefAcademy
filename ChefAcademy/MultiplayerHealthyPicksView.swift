@@ -312,7 +312,7 @@ struct MultiplayerHealthyPicksView: View {
             // Pip at the bottom
             VStack {
                 Spacer()
-                Image("pip_neutral")
+                Image("pip_got_idea")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 80 * pipScale, height: 80 * pipScale)
@@ -388,7 +388,7 @@ struct MultiplayerHealthyPicksView: View {
                 if won {
                     PipWavingAnimatedView(size: 120)
                 } else {
-                    Image("pip_neutral")
+                    Image("pip_got_idea")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 100, height: 100)
@@ -523,7 +523,7 @@ struct MultiplayerHealthyPicksView: View {
         VStack(spacing: AppSpacing.lg) {
             Spacer()
 
-            Image("pip_neutral")
+            Image("pip_got_idea")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 100, height: 100)

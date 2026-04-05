@@ -214,7 +214,7 @@ enum PipPose: String, CaseIterable {
     case important = "pip_important"
     case missesYou = "pip_misses_you"
     case pointsRight = "pip_points_right"
-    case pointsUpLeft = "Pip_points_up_left"
+    case pointsUpLeft = "pip_points_up_left"
     case pointsUpRight = "pip_points_up_right"
     case upset = "pip_upset"
     

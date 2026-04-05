@@ -559,7 +559,7 @@ struct SeedInfoView: View {
     private var pipColorTip: some View {
         HStack(alignment: .top, spacing: AppSpacing.sm) {
             // Pip avatar
-            Image("pip_neutral")
+            Image("pip_got_idea")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 55, height: 55)

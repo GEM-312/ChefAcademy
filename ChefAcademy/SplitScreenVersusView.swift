@@ -400,7 +400,7 @@ struct SplitScreenVersusView: View {
                 Spacer()
 
                 // Mini Pip at bottom
-                Image("pip_neutral")
+                Image("pip_got_idea")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 40 * pipScale, height: 40 * pipScale)

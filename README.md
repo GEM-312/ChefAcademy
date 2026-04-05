@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="ChefAcademy/Assets.xcassets/Pip/pip_waving.imageset/pip_waving.png" width="200" alt="Pip the Chef Hedgehog"/>
+  <img src="docs/pip/pip_got_idea.png" width="200" alt="Pip the Chef Hedgehog"/>
 </p>
 
 <h1 align="center">Pip's Kitchen Garden</h1>
@@ -21,19 +21,21 @@
 
 ## Meet Pip
 
-Pip is your friendly hedgehog chef guide! With 6 adorable poses and a walking animation, Pip helps kids through every step of their cooking adventure.
+Pip is your friendly hedgehog chef guide! With 8 adorable poses and walking/waving animations, Pip helps kids through every step of their cooking adventure.
 
 <p align="center">
-  <img src="ChefAcademy/Assets.xcassets/Pip/pip_neutral.imageset/pip_neutral.png" width="120" alt="Pip Neutral"/>
-  <img src="ChefAcademy/Assets.xcassets/Pip/pip_waving.imageset/pip_waving.png" width="120" alt="Pip Waving"/>
-  <img src="ChefAcademy/Assets.xcassets/Pip/pip_cooking.imageset/pip_cooking.png" width="120" alt="Pip Cooking"/>
-  <img src="ChefAcademy/Assets.xcassets/Pip/pip_thinking.imageset/pip_thinking.png" width="120" alt="Pip Thinking"/>
-  <img src="ChefAcademy/Assets.xcassets/Pip/pip_excited.imageset/pip_excited.png" width="120" alt="Pip Excited"/>
-  <img src="ChefAcademy/Assets.xcassets/Pip/pip_celebrating.imageset/pip_celebrating.png" width="120" alt="Pip Celebrating"/>
+  <img src="docs/pip/pip_got_idea.png" width="100" alt="Pip Got Idea"/>
+  <img src="docs/pip/pip_important.png" width="100" alt="Pip Important"/>
+  <img src="docs/pip/pip_points_right.png" width="100" alt="Pip Points Right"/>
+  <img src="docs/pip/Pip_points_up_left.png" width="100" alt="Pip Points Up Left"/>
+  <img src="docs/pip/pip_points_up_right.png" width="100" alt="Pip Points Up Right"/>
+  <img src="docs/pip/pip_thinking.png" width="100" alt="Pip Thinking"/>
+  <img src="docs/pip/pip_misses_you.png" width="100" alt="Pip Misses You"/>
+  <img src="docs/pip/pip_upset.png" width="100" alt="Pip Upset"/>
 </p>
 
 <p align="center">
-  <em>Neutral - Waving - Cooking - Thinking - Excited - Celebrating</em>
+  <em>Got Idea - Important - Points Right - Points Left - Points Up - Thinking - Misses You - Upset</em>
 </p>
 
 ---
@@ -408,7 +410,7 @@ ChefAcademy/
 | Mini-game types | 10 |
 | API integrations | 3 (USDA, Claude AI, WeatherKit) |
 | Body organ systems | 9 |
-| Pip character poses | 6 + walking + waving animations |
+| Pip character poses | 8 + walking + waving animations |
 
 ---
 
@@ -488,7 +490,7 @@ My career goal is **iOS Developer** specializing in educational and family-focus
 ---
 
 <p align="center">
-  <img src="ChefAcademy/Assets.xcassets/Pip/pip_celebrating.imageset/pip_celebrating.png" width="150" alt="Pip Celebrating"/>
+  <img src="docs/pip/Pip_points_up_left.png" width="150" alt="Pip Waving"/>
   <br>
   <strong>Happy Cooking!</strong>
 </p>

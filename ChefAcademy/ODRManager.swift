@@ -229,6 +229,8 @@ enum ImagePrewarmer {
             // Pip frames
             "pip_neutral", "pip_waving", "pip_cooking", "pip_thinking",
             "pip_excited", "pip_celebrating",
+            "pip_got_idea", "pip_important", "pip_misses_you",
+            "pip_points_right", "pip_points_up_left", "pip_points_up_right", "pip_upset",
             // Recipe images
             "recipe_chicken_veggie_platter", "recipe_veggie_omelette",
             "recipe_scrambled_egg_bowl", "recipe_pumpkin_soup",

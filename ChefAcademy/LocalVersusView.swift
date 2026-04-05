@@ -588,7 +588,7 @@ struct LocalVersusGameView: View {
                 // Pip
                 VStack {
                     Spacer()
-                    Image("pip_neutral")
+                    Image("pip_got_idea")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 80 * pipScale, height: 80 * pipScale)

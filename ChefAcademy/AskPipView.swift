@@ -251,7 +251,7 @@ struct AskPipView: View {
 
     private func pipBubble(_ text: String) -> some View {
         HStack(alignment: .top, spacing: AppSpacing.sm) {
-            Image("pip_neutral")
+            Image("pip_got_idea")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 40, height: 40)
@@ -300,7 +300,7 @@ struct AskPipView: View {
 
     private var pipTypingIndicator: some View {
         HStack(alignment: .top, spacing: AppSpacing.sm) {
-            Image("pip_neutral")
+            Image("pip_got_idea")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 40, height: 40)
