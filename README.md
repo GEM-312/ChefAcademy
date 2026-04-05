@@ -24,14 +24,14 @@
 Pip is your friendly hedgehog chef guide! With 8 adorable poses and walking/waving animations, Pip helps kids through every step of their cooking adventure.
 
 <p align="center">
-  <img src="docs/pip/pip_got_idea.png" width="100" alt="Pip Got Idea"/>
-  <img src="docs/pip/pip_important.png" width="100" alt="Pip Important"/>
-  <img src="docs/pip/pip_points_right.png" width="100" alt="Pip Points Right"/>
-  <img src="docs/pip/Pip_points_up_left.png" width="100" alt="Pip Points Up Left"/>
-  <img src="docs/pip/pip_points_up_right.png" width="100" alt="Pip Points Up Right"/>
-  <img src="docs/pip/pip_thinking.png" width="100" alt="Pip Thinking"/>
-  <img src="docs/pip/pip_misses_you.png" width="100" alt="Pip Misses You"/>
-  <img src="docs/pip/pip_upset.png" width="100" alt="Pip Upset"/>
+  <img src="docs/pip/pip_got_idea.png" width="50" alt="Pip Got Idea"/>&nbsp;&nbsp;&nbsp;
+  <img src="docs/pip/pip_important.png" width="50" alt="Pip Important"/>&nbsp;&nbsp;&nbsp;
+  <img src="docs/pip/pip_points_right.png" width="50" alt="Pip Points Right"/>&nbsp;&nbsp;&nbsp;
+  <img src="docs/pip/Pip_points_up_left.png" width="50" alt="Pip Points Up Left"/>&nbsp;&nbsp;&nbsp;
+  <img src="docs/pip/pip_points_up_right.png" width="50" alt="Pip Points Up Right"/>&nbsp;&nbsp;&nbsp;
+  <img src="docs/pip/pip_thinking.png" width="50" alt="Pip Thinking"/>&nbsp;&nbsp;&nbsp;
+  <img src="docs/pip/pip_misses_you.png" width="50" alt="Pip Misses You"/>&nbsp;&nbsp;&nbsp;
+  <img src="docs/pip/pip_upset.png" width="50" alt="Pip Upset"/>
 </p>
 
 <p align="center">
