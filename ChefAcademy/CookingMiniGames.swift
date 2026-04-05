@@ -7,6 +7,36 @@
 //
 
 import SwiftUI
+import UIKit
+
+// MARK: - Haptic Helpers
+//
+// TEACHING MOMENT: UIKit Haptic Feedback
+//
+// iOS has three haptic generator types:
+//   1. UIImpactFeedbackGenerator — physical impacts (light/medium/heavy/rigid/soft)
+//   2. UINotificationFeedbackGenerator — success/warning/error
+//   3. UISelectionFeedbackGenerator — subtle tick for selection changes
+//
+// How it works under the hood:
+//   - The Taptic Engine is a linear actuator (tiny weighted motor)
+//   - .light = short, gentle pulse (like a tap on the shoulder)
+//   - .rigid = sharp, precise tap (like a click)
+//   - .heavy = deep thud (like dropping something)
+//   - .soft = gentle, cushioned feel (like pressing into foam)
+//
+// The system handles everything: if haptics are disabled in Settings,
+// or the device doesn't have a Taptic Engine, calls silently do nothing.
+// No need for feature checks or try/catch!
+
+private enum Haptic {
+    static func impact(_ style: UIImpactFeedbackGenerator.FeedbackStyle) {
+        UIImpactFeedbackGenerator(style: style).impactOccurred()
+    }
+    static func notify(_ type: UINotificationFeedbackGenerator.FeedbackType) {
+        UINotificationFeedbackGenerator().notificationOccurred(type)
+    }
+}
 
 // MARK: - A) Heat Pan Mini Game — Tap and Hold
 
@@ -106,6 +136,7 @@ struct HeatPanMiniGame: View {
 
     private func startHolding() {
         isHolding = true
+        Haptic.impact(.light) // gentle warmth starting
         timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
             progress += 0.05 / holdDuration
             panGlow = Double(progress)
@@ -124,7 +155,7 @@ struct HeatPanMiniGame: View {
     private func finishGame() {
         timer?.invalidate()
         isDone = true
-        // Score: 100 if held steadily, -10 per lift
+        Haptic.notify(.success) // pan is hot!
         let score = max(0, 100 - liftCount * 10)
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
             onComplete(score)
@@ -213,6 +244,8 @@ struct AddToPanMiniGame: View {
         // Check if item was dragged close enough to pan center
         let distance = sqrt(pow(offset.width - panCenter.x, 2) + pow(offset.height - panCenter.y, 2))
         let inTarget = distance < dropRadius + 40 // generous hit box
+
+        Haptic.impact(inTarget ? .medium : .soft) // sizzle thud on hit, soft miss
 
         withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
             dropped = true
@@ -321,7 +354,7 @@ struct StirMiniGame: View {
     private func finishGame() {
         guard !isDone else { return }
         isDone = true
-        // Score based on how smooth (fewer rotations = more circular)
+        Haptic.notify(.success) // well stirred!
         let score = min(100, Int(rotations / targetRotations * 100))
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             onComplete(score)
@@ -388,6 +421,7 @@ struct SeasonMiniGame: View {
 
         return Button {
             guard !isDone, !done else { return }
+            Haptic.impact(.light) // gentle sprinkle
             tapCounts[item.rawValue, default: 0] += 1
             spawnParticle(for: item)
             checkCompletion()
@@ -547,6 +581,7 @@ struct PeelMiniGame: View {
     }
 
     private func handleSwipe(accuracy: CGFloat) {
+        Haptic.impact(.medium) // peel strip ripping off
         if swipeCount < peelLayers.count {
             withAnimation(.easeOut(duration: 0.3)) {
                 peelLayers[swipeCount] = false
@@ -695,6 +730,11 @@ struct CookTimerMiniGame: View {
         guard !isDone else { return }
         isDone = true
         timer?.invalidate()
+
+        // Haptic: success if in green zone, warning if too early/late
+        let gs = CGFloat(totalSeconds) * 0.35
+        let ge = CGFloat(totalSeconds) * 0.65
+        Haptic.notify(elapsed >= gs && elapsed <= ge ? .success : .warning)
 
         let total = CGFloat(totalSeconds)
         let greenStart = total * 0.35
@@ -857,6 +897,7 @@ struct WashMiniGame: View {
 
     private func handleTap() {
         tapCount += 1
+        Haptic.impact(.soft) // water splash feel
 
         // Veggie bounces and rotates (like scrubbing)
         withAnimation(.spring(response: 0.15, dampingFraction: 0.4)) {
@@ -1014,6 +1055,7 @@ struct CrackEggMiniGame: View {
     private func handleTap() {
         tapCount += 1
         if tapCount >= targetTaps {
+            Haptic.impact(.heavy) // egg breaks open!
             withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
                 cracked = true
             }
@@ -1021,6 +1063,8 @@ struct CrackEggMiniGame: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
                 onComplete(100)
             }
+        } else {
+            Haptic.impact(.rigid) // sharp crack tap
         }
     }
 }
@@ -1103,9 +1147,12 @@ struct AssembleMiniGame: View {
 
         if progress >= 1.0 {
             isDone = true
+            Haptic.notify(.success) // beautiful plating!
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
                 onComplete(100)
             }
+        } else {
+            Haptic.impact(.light) // gentle placement
         }
     }
 

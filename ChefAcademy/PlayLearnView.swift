@@ -12,6 +12,8 @@ struct PlayLearnView: View {
     @EnvironmentObject var avatarModel: AvatarModel
     @EnvironmentObject var sessionManager: SessionManager
     @State private var selectedGame: MiniGameType?
+    @State private var showGameCenter = false
+    @ObservedObject private var gcService = GameCenterService.shared
 
     var body: some View {
         ZStack {
@@ -20,7 +22,7 @@ struct PlayLearnView: View {
             ScrollView(showsIndicators: false) {
                 VStack(spacing: AppSpacing.lg) {
 
-                    // Header
+                    // Header + Game Center button
                     HStack {
                         VStack(alignment: .leading) {
                             Text("Play & Learn")
@@ -31,6 +33,16 @@ struct PlayLearnView: View {
                                 .foregroundColor(Color.AppTheme.sepia)
                         }
                         Spacer()
+
+                        // Trophy button → Game Center dashboard
+                        if gcService.isAuthenticated {
+                            Button(action: { showGameCenter = true }) {
+                                Image(systemName: "trophy.fill")
+                                    .font(.system(size: 24))
+                                    .foregroundColor(Color.AppTheme.goldenWheat)
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
                     .padding(.horizontal, AppSpacing.md)
 
@@ -90,6 +102,14 @@ struct PlayLearnView: View {
                         ) { selectedGame = .healthyChoice }
 
                         MiniGameCard(
+                            title: "Insulin Tetris",
+                            icon: "arrow.down.to.line.compact",
+                            description: "Sort glucose into your body!",
+                            color: Color.AppTheme.goldenWheat,
+                            isLocked: false // TODO: restore to gameState.recipeStars.count < 3 after testing
+                        ) { selectedGame = .insulinTetris }
+
+                        MiniGameCard(
                             title: "Seed Sorting",
                             icon: "leaf.arrow.circlepath",
                             description: "Sort seeds by season!",
@@ -118,6 +138,9 @@ struct PlayLearnView: View {
                 .environmentObject(avatarModel)
                 .environmentObject(sessionManager)
         }
+        .sheet(isPresented: $showGameCenter) {
+            GameCenterDashboardView()
+        }
     }
 }
 
@@ -128,6 +151,7 @@ enum MiniGameType: String, Identifiable {
     case nutritionQuiz
     case chopChallenge
     case healthyChoice
+    case insulinTetris
     case bodyParts
     case seedSorting
     case gardenPuzzle
@@ -194,6 +218,9 @@ struct MiniGameRouterView: View {
             case .healthyChoice:
                 HealthyChoiceGameView()
                     .environmentObject(gameState)
+            case .insulinTetris:
+                InsulinTetrisView()
+                    .environmentObject(gameState)
             default:
                 placeholderView
             }
@@ -239,6 +266,7 @@ struct MiniGameRouterView: View {
         case .nutritionQuiz: return "Nutrition Quiz"
         case .chopChallenge: return "Chop Challenge"
         case .healthyChoice: return "Healthy Picks"
+        case .insulinTetris: return "Insulin Tetris"
         case .bodyParts: return "Body Parts"
         case .seedSorting: return "Seed Sorting"
         case .gardenPuzzle: return "Garden Puzzle"

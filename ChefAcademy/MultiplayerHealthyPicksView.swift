@@ -782,6 +782,12 @@ struct MultiplayerHealthyPicksView: View {
         let total = coinsEarned + bonus
         gameState.addCoins(total)
         gameState.addXP(goodChoices * 3)
+
+        // Report multiplayer achievements to Game Center
+        let gc = GameCenterService.shared
+        gc.reportAchievement(AchievementID.firstMultiplayer)
+        gc.reportScore(total, leaderboardID: LeaderboardID.healthyPicks)
+        gc.checkAchievements(gameState: gameState)
     }
 
     private func cleanupGame() {

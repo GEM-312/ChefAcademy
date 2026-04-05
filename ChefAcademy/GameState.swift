@@ -198,6 +198,14 @@ class GameState: ObservableObject {
         if xp >= xpNeeded {
             xp -= xpNeeded
             playerLevel += 1
+
+            // Report level milestone achievements to Game Center
+            if playerLevel >= 5 {
+                GameCenterService.shared.reportAchievement(AchievementID.level5)
+            }
+            if playerLevel >= 10 {
+                GameCenterService.shared.reportAchievement(AchievementID.level10)
+            }
         }
     }
 
@@ -209,6 +217,11 @@ class GameState: ObservableObject {
             harvestedIngredients.append(HarvestedIngredient(type: type, quantity: quantity))
         }
         saveToStore()
+
+        // Report harvest to Game Center (leaderboard + achievements)
+        let totalHarvested = harvestedIngredients.reduce(0) { $0 + $1.quantity }
+        GameCenterService.shared.reportScore(totalHarvested, leaderboardID: LeaderboardID.totalHarvested)
+        GameCenterService.shared.checkAchievements(gameState: self)
     }
 
     /// Check if player has enough of an ingredient

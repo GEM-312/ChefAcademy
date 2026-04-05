@@ -878,40 +878,49 @@ struct FamilyVoiceStep: View {
                     }
                     .padding(.top, AppSpacing.md)
 
-                    // Voice list — top 5 English voices
-                    VStack(spacing: AppSpacing.sm) {
-                        ForEach(pipVoice.availableEnglishVoices.prefix(5), id: \.identifier) { voice in
-                            VoiceCard(
-                                name: voice.name,
-                                quality: qualityLabel(voice.quality),
-                                qualityColor: qualityColor(voice.quality),
-                                isSelected: pipVoice.selectedAppleVoiceID == voice.identifier,
-                                isLocked: false,
-                                onTap: {
-                                    pipVoice.voiceMode = .appleTTS
-                                    pipVoice.selectedAppleVoiceID = voice.identifier
-                                },
-                                onPreview: {
-                                    previewingID = voice.identifier
-                                    pipVoice.previewAppleVoice(voice)
-                                },
-                                isPreviewing: previewingID == voice.identifier && pipVoice.isSpeaking
-                            )
+                    // Two options: Read Text (free) or Pip's Voice (subscription)
+                    VStack(spacing: AppSpacing.md) {
+                        VoiceOptionCard(
+                            icon: "text.bubble.fill",
+                            title: "Read Text",
+                            subtitle: "Read Pip's words on screen — no voice",
+                            color: Color.AppTheme.sage,
+                            isSelected: pipVoice.voiceMode == .readText
+                        ) {
+                            pipVoice.voiceMode = .readText
+                            pipVoice.stop()
                         }
+
+                        VoiceOptionCard(
+                            icon: "waveform.circle.fill",
+                            title: "Pip's Voice",
+                            subtitle: pipVoice.hasSubscription
+                                ? "Pip talks with a real character voice!"
+                                : "Custom character voice — Pip Plus $3.99/mo",
+                            color: Color.AppTheme.goldenWheat,
+                            isSelected: pipVoice.voiceMode == .elevenLabs,
+                            isLocked: !pipVoice.hasSubscription
+                        ) {
+                            if pipVoice.hasSubscription {
+                                pipVoice.voiceMode = .elevenLabs
+                            }
+                        }
+
+                        // Preview button
+                        Button(action: {
+                            pipVoice.previewElevenLabsVoice()
+                        }) {
+                            HStack(spacing: AppSpacing.xs) {
+                                Image(systemName: pipVoice.isSpeaking ? "speaker.wave.3.fill" : "play.circle.fill")
+                                    .symbolEffect(.pulse, isActive: pipVoice.isSpeaking)
+                                Text("Preview Pip's Voice")
+                            }
+                            .font(.AppTheme.subheadline)
+                            .foregroundColor(Color.AppTheme.goldenWheat)
+                        }
+                        .buttonStyle(.plain)
                     }
                     .opacity(showContent ? 1 : 0)
-
-                    // Download prompt if only default voices
-                    if pipVoice.onlyDefaultVoicesAvailable {
-                        Button(action: { showSettingsGuide = true }) {
-                            HStack(spacing: AppSpacing.sm) {
-                                Image(systemName: "arrow.down.circle")
-                                Text("Get better voices")
-                            }
-                            .font(.AppTheme.caption)
-                            .foregroundColor(Color.AppTheme.sage)
-                        }
-                    }
 
                     // Next button
                     Button(action: onNext) {
@@ -929,9 +938,6 @@ struct FamilyVoiceStep: View {
                 .padding(.horizontal, AppSpacing.md)
             }
         }
-        .sheet(isPresented: $showSettingsGuide) {
-            SettingsGuideSheet()
-        }
         .onAppear {
             withAnimation(.easeOut(duration: 0.6)) {
                 showContent = true
@@ -939,21 +945,6 @@ struct FamilyVoiceStep: View {
         }
     }
 
-    private func qualityLabel(_ quality: AVSpeechSynthesisVoiceQuality) -> String {
-        switch quality {
-        case .premium: return "Premium"
-        case .enhanced: return "Enhanced"
-        default: return "Standard"
-        }
-    }
-
-    private func qualityColor(_ quality: AVSpeechSynthesisVoiceQuality) -> Color {
-        switch quality {
-        case .premium: return Color.AppTheme.goldenWheat
-        case .enhanced: return Color.AppTheme.sage
-        default: return Color.AppTheme.sepia
-        }
-    }
 }
 
 #Preview {

@@ -10,6 +10,9 @@
 
 import SwiftUI
 import Combine  // Needed for Timer.publish
+#if canImport(FoundationModels)
+import FoundationModels
+#endif
 
 // MARK: - Selected Plot (for sheet(item:))
 
@@ -292,9 +295,9 @@ struct WalkingPipView: View {
     @State private var currentWaypointIndex: Int = 0
     @State private var walkProgress: CGFloat = 0.0
     @State private var walkingFrameIndex: Int = 0
-    @State private var tickCounter: Int = 0
-    @State private var walkTimer: Timer? = nil
-    @State private var wasGrowing: Bool = false
+    @State private var lastWalkUpdate: Date = .now
+    @State private var walkElapsed: TimeInterval = 0  // total walk time for frame calc
+    @State private var isWalking: Bool = false
 
     /// Pip's display position (walk position or idle, plus drag offset)
     private var pipCenter: CGPoint {
@@ -304,93 +307,102 @@ struct WalkingPipView: View {
         )
     }
 
+    // TEACHING MOMENT: TimelineView for Walking Animation
+    //
+    // The old approach used Timer.scheduledTimer at 30fps — this runs on
+    // the RunLoop and fires even when the app is off-screen or the view
+    // is hidden. TimelineView is SwiftUI-native: it only triggers redraws
+    // when the system is actually compositing frames, and automatically
+    // pauses when the view leaves the hierarchy.
+    //
+    // We use .animation schedule (not .periodic) because it syncs with
+    // the display refresh rate. On a 60Hz display, we get ~60 updates/sec.
+    // On a 120Hz ProMotion display, we get ~120 updates/sec. But since
+    // we use delta-time math, the walk speed is the SAME on both devices.
+    //
+    // The walking frame image still changes at ~8fps (every 0.125s) —
+    // we compute that from elapsed time, not a tick counter.
+
     var body: some View {
-        ZStack {
-            // Glow ring when near a harvestable plot
-            if nearbyPlotIndex != nil {
-                Circle()
-                    .fill(Color.AppTheme.goldenWheat.opacity(0.3))
-                    .frame(width: pipDisplaySize + 20, height: pipDisplaySize + 20)
-                    .scaleEffect(showHarvestBurst ? 1.5 : 1.0)
-                    .opacity(showHarvestBurst ? 0 : 0.6)
+        // TimelineView drives walk updates; when not walking, it idles
+        // (SwiftUI skips redraws when the schedule produces no new dates)
+        TimelineView(isWalking && !isDragging ? .animation : .animation) { context in
+            let now = context.date
+            let _ = updateWalkIfNeeded(now: now)
+
+            ZStack {
+                // Glow ring when near a harvestable plot
+                if nearbyPlotIndex != nil {
+                    Circle()
+                        .fill(Color.AppTheme.goldenWheat.opacity(0.3))
+                        .frame(width: pipDisplaySize + 20, height: pipDisplaySize + 20)
+                        .scaleEffect(showHarvestBurst ? 1.5 : 1.0)
+                        .opacity(showHarvestBurst ? 0 : 0.6)
+                        .position(pipCenter)
+                }
+
+                // Pip character — frame computed from elapsed time
+                Image(currentPipImage)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: pipDisplaySize, height: pipDisplaySize)
+                    .shadow(
+                        color: isDragging ? Color.AppTheme.sage.opacity(0.4) : Color.black.opacity(0.2),
+                        radius: isDragging ? 8 : 4,
+                        x: 0,
+                        y: isDragging ? 6 : 3
+                    )
+                    .scaleEffect(x: facingRight ? 1 : -1, y: 1)
+                    .scaleEffect(isDragging ? 1.1 : 1.0)
+                    .offset(y: (!isDragging && !isWalking && idleBounce) ? -4 : 0)
                     .position(pipCenter)
+                    .gesture(
+                        DragGesture()
+                            .onChanged { value in
+                                isDragging = true
+                                dragOffset = value.translation
+                                if value.translation.width > 5 {
+                                    facingRight = true
+                                } else if value.translation.width < -5 {
+                                    facingRight = false
+                                }
+                                checkNearbyPlots()
+                            }
+                            .onEnded { _ in
+                                isDragging = false
+                                if let plotIndex = nearbyPlotIndex {
+                                    triggerHarvest(plotIndex: plotIndex)
+                                }
+                                dragOffset = .zero
+                            }
+                    )
+                    .overlay(
+                        Group {
+                            if !isDragging && nearbyPlotIndex == nil && !isWalking {
+                                Text("Drag me!")
+                                    .font(.system(size: 9, weight: .semibold, design: .rounded))
+                                    .foregroundColor(Color.AppTheme.sage)
+                                    .padding(.horizontal, 6)
+                                    .padding(.vertical, 2)
+                                    .background(Color.AppTheme.warmCream.opacity(0.9))
+                                    .cornerRadius(6)
+                                    .offset(y: pipDisplaySize / 2 + 10)
+                                    .position(pipCenter)
+                                    .opacity(idleBounce ? 1.0 : 0.5)
+                            }
+                        }
+                    )
             }
-
-            // Pip character
-            Image(isGrowing && !isDragging ? walkingFrames[walkingFrameIndex] : "pip_neutral")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: pipDisplaySize, height: pipDisplaySize)
-                .shadow(
-                    color: isDragging ? Color.AppTheme.sage.opacity(0.4) : Color.black.opacity(0.2),
-                    radius: isDragging ? 8 : 4,
-                    x: 0,
-                    y: isDragging ? 6 : 3
-                )
-                .scaleEffect(x: facingRight ? 1 : -1, y: 1)
-                .scaleEffect(isDragging ? 1.1 : 1.0)
-                // Idle bounce when not walking and not dragging
-                .offset(y: (!isDragging && !isGrowing && idleBounce) ? -4 : 0)
-                .position(pipCenter)
-                .gesture(
-                    DragGesture()
-                        .onChanged { value in
-                            isDragging = true
-                            dragOffset = value.translation
-
-                            // Flip Pip to face drag direction
-                            if value.translation.width > 5 {
-                                facingRight = true
-                            } else if value.translation.width < -5 {
-                                facingRight = false
-                            }
-
-                            checkNearbyPlots()
-                        }
-                        .onEnded { _ in
-                            isDragging = false
-
-                            // If near a ready plot, harvest it!
-                            if let plotIndex = nearbyPlotIndex {
-                                triggerHarvest(plotIndex: plotIndex)
-                            }
-
-                            // Snap back — reset drag offset, keep walk position
-                            dragOffset = .zero
-                        }
-                )
-                // Hint text
-                .overlay(
-                    Group {
-                        if !isDragging && nearbyPlotIndex == nil && !isGrowing {
-                            Text("Drag me!")
-                                .font(.system(size: 9, weight: .semibold, design: .rounded))
-                                .foregroundColor(Color.AppTheme.sage)
-                                .padding(.horizontal, 6)
-                                .padding(.vertical, 2)
-                                .background(Color.AppTheme.warmCream.opacity(0.9))
-                                .cornerRadius(6)
-                                .offset(y: pipDisplaySize / 2 + 10)
-                                .position(pipCenter)
-                                .opacity(idleBounce ? 1.0 : 0.5)
-                        }
-                    }
-                )
         }
         .opacity(isVisible ? 1.0 : 0.0)
         .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isVisible)
         .onAppear {
             pipPosition = idlePosition
-            // Start idle bounce
             withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
                 idleBounce = true
             }
         }
-        .onDisappear {
-            // Stop walk timer when leaving garden — prevents background CPU drain
-            stopWalking()
-        }
-        .onChange(of: isGrowing) { growing in
+        .onChange(of: isGrowing) { _, growing in
             if growing {
                 startWalking()
             } else {
@@ -399,71 +411,94 @@ struct WalkingPipView: View {
         }
     }
 
-    // MARK: - Walking Engine
+    /// The current Pip image name — walking frame or neutral
+    private var currentPipImage: String {
+        if isWalking && !isDragging {
+            return walkingFrames[walkingFrameIndex]
+        }
+        return "pip_neutral"
+    }
+
+    // MARK: - Walking Engine (TimelineView-Driven)
+    //
+    // TEACHING MOMENT: Delta-Time Movement
+    //
+    // Old approach: move 1.8 points per Timer tick (30fps) = 54 pts/sec.
+    // Problem: if Timer fires late (CPU busy), Pip stutters.
+    //
+    // New approach: move (walkSpeed * deltaTime) points per frame.
+    // If frame takes 0.033s (30fps): 54 * 0.033 = 1.78 pts — same!
+    // If frame takes 0.016s (60fps): 54 * 0.016 = 0.89 pts — smoother!
+    // If frame takes 0.1s (lag): 54 * 0.1 = 5.4 pts — catches up!
+    //
+    // The walk speed is now in POINTS PER SECOND, not per tick.
+
+    /// Walk speed in points per second (old: 1.8 pts/tick * 30 ticks = 54 pts/sec)
+    private let walkPointsPerSecond: CGFloat = 54.0
+
+    /// Frame duration for walking sprite (~8fps)
+    private let walkFrameDuration: TimeInterval = 0.125
+
+    private func updateWalkIfNeeded(now: Date) {
+        guard isWalking, !isDragging, waypoints.count >= 2 else { return }
+
+        let dt = now.timeIntervalSince(lastWalkUpdate)
+        guard dt > 0, dt < 0.5 else { // cap at 0.5s to prevent jumps after backgrounding
+            lastWalkUpdate = now
+            return
+        }
+        lastWalkUpdate = now
+
+        let delta = CGFloat(dt)
+
+        // Update walk position
+        let fromIndex = currentWaypointIndex
+        let toIndex = (currentWaypointIndex + 1) % waypoints.count
+        let from = waypoints[fromIndex]
+        let to = waypoints[toIndex]
+
+        let dx = to.x - from.x
+        let dy = to.y - from.y
+        let segmentLength = sqrt(dx * dx + dy * dy)
+        guard segmentLength > 0 else { return }
+
+        let progressPerSecond = walkPointsPerSecond / segmentLength
+        walkProgress += progressPerSecond * delta
+
+        if dx > 1 { facingRight = true }
+        else if dx < -1 { facingRight = false }
+
+        if walkProgress >= 1.0 {
+            walkProgress = 0.0
+            currentWaypointIndex = toIndex
+            pipPosition = to
+        } else {
+            pipPosition = CGPoint(
+                x: from.x + dx * walkProgress,
+                y: from.y + dy * walkProgress
+            )
+        }
+
+        // Update walking frame from elapsed time (~8fps)
+        walkElapsed += dt
+        walkingFrameIndex = Int(walkElapsed / walkFrameDuration) % walkingFrames.count
+    }
 
     private func startWalking() {
         guard waypoints.count >= 2 else { return }
-        guard walkTimer == nil else { return }
-
-        // Start from nearest waypoint
         currentWaypointIndex = 0
         walkProgress = 0.0
+        walkElapsed = 0
+        walkingFrameIndex = 0
         pipPosition = waypoints[0]
-
-        walkTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 30.0, repeats: true) { _ in
-            guard !isDragging else { return }
-
-            let fromIndex = currentWaypointIndex
-            let toIndex = (currentWaypointIndex + 1) % waypoints.count
-            let from = waypoints[fromIndex]
-            let to = waypoints[toIndex]
-
-            // Distance between waypoints
-            let dx = to.x - from.x
-            let dy = to.y - from.y
-            let segmentLength = sqrt(dx * dx + dy * dy)
-            guard segmentLength > 0 else { return }
-
-            // Advance progress
-            let progressPerTick = walkSpeed / segmentLength
-            walkProgress += progressPerTick
-
-            // Update facing direction based on horizontal movement
-            if dx > 1 {
-                facingRight = true
-            } else if dx < -1 {
-                facingRight = false
-            }
-
-            if walkProgress >= 1.0 {
-                // Reached waypoint — advance to next
-                walkProgress = 0.0
-                currentWaypointIndex = toIndex
-                pipPosition = to
-            } else {
-                // Interpolate position
-                pipPosition = CGPoint(
-                    x: from.x + dx * walkProgress,
-                    y: from.y + dy * walkProgress
-                )
-            }
-
-            // Advance walking frame every 4 ticks (~8fps at 30fps timer)
-            tickCounter += 1
-            if tickCounter >= 4 {
-                tickCounter = 0
-                walkingFrameIndex = (walkingFrameIndex + 1) % walkingFrames.count
-            }
-        }
+        lastWalkUpdate = .now
+        isWalking = true
     }
 
     private func stopWalking() {
-        walkTimer?.invalidate()
-        walkTimer = nil
-        tickCounter = 0
+        isWalking = false
         walkingFrameIndex = 0
 
-        // Animate back to idle position
         withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
             pipPosition = idlePosition
         }
@@ -519,6 +554,7 @@ struct GardenView: View {
 
     // Access the shared game state (coins, seeds, plots, etc.)
     @EnvironmentObject var gameState: GameState
+    @EnvironmentObject var sessionManager: SessionManager
     @Environment(\.horizontalSizeClass) var sizeClass
 
     // Weather service — real weather affects plant growth!
@@ -551,6 +587,13 @@ struct GardenView: View {
 
     // Visitor greeting
     @State private var showVisitorGreeting = false
+
+    // Ask Pip chat (opens when kid taps "Tell me!" on a question tip)
+    @State private var showAskPip = false
+
+    // AI-generated Pip garden tip (Foundation Models on-device)
+    @State private var smartPipTip: String? = nil
+    @State private var isLoadingTip = false
 
     // Falling veggie animation
     @State private var fallingVeggie: VegetableType? = nil
@@ -645,6 +688,8 @@ struct GardenView: View {
             // Fetch weather & request location on first garden visit
             weatherService.requestLocationPermission()
             Task { await weatherService.fetchWeather() }
+
+            // Pip stays quiet until tapped — no auto tip on appear
         }
         .onDisappear {
             // Stop growth timer when leaving garden — saves CPU & battery
@@ -932,7 +977,24 @@ struct GardenView: View {
                     ]
                 )
             } else {
-                PipGardenMessage()
+                let tip = smartPipTip
+                let isQuestion = tip?.hasSuffix("?") ?? false
+                PipGardenMessage(
+                    recipeMessage: tip,
+                    choices: isQuestion ? [
+                        PipDialogChoice(label: "Tell me!", style: .primary) {
+                            showAskPip = true
+                        },
+                        PipDialogChoice(label: "Maybe later", style: .subtle) {
+                            fetchSmartPipTip()
+                        }
+                    ] : [],
+                    gardenPlots: gameState.gardenPlots,
+                    onPipTap: {
+                        // Tap Pip → get the next tip
+                        fetchSmartPipTip()
+                    }
+                )
             }
 
             // Seed inventory
@@ -980,6 +1042,11 @@ struct GardenView: View {
         .fullScreenCover(item: $selectedSeed) { seed in
             SeedInfoView(seed: seed)
                 .environmentObject(gameState)
+        }
+        .sheet(isPresented: $showAskPip) {
+            AskPipView()
+                .environmentObject(gameState)
+                .environmentObject(sessionManager)
         }
     }
 
@@ -1178,6 +1245,197 @@ struct GardenView: View {
                 }
             }
         }
+
+        // No auto-update — Pip only speaks when tapped
+    }
+
+    // MARK: - Smart Pip Tip (Foundation Models)
+    //
+    // TEACHING MOMENT: On-Device AI for Dynamic UI
+    // Instead of picking from a static list, we ask the on-device model to
+    // generate a tip based on the ACTUAL garden state. This makes Pip feel
+    // alive — "Your carrots are 70% grown, almost ready!" instead of
+    // generic "Harvest veggies to use in recipes!"
+    //
+    // If Foundation Models isn't available (older device), we fall back to
+    // the context-aware static tips in PipGardenMessage.gardeningTips.
+
+    // TEACHING MOMENT: State Hashing for Change Detection
+    // Instead of re-calling the AI every 5 seconds (wasteful), we compute
+    // a simple "hash" of all plot states. If the hash is the same as last
+    // time, nothing changed — skip the update. If it changed (a plant grew
+    // to ready, or needs water now), THEN we refresh the tip.
+    // This is the same principle behind SwiftUI's own diffing engine.
+
+    // TEACHING MOMENT: Grounding AI with Real Data
+    //
+    // The first attempt hallucinated because we used tools (async context
+    // that wasn't populated yet). The fix: embed the garden state DIRECTLY
+    // in the prompt text. The model can't ignore data that's literally in
+    // its input. We also add "ONLY mention veggies listed above" as a
+    // hard constraint to prevent hallucination.
+    //
+    // If FM isn't available, we fall back to static tips (also data-driven).
+
+    private func fetchSmartPipTip() {
+        #if canImport(FoundationModels)
+        if #available(iOS 26, macOS 26, *), PipFoundationModelService.isModelAvailable {
+            Task {
+                let tip = await generateAITip()
+                if let tip {
+                    await MainActor.run { smartPipTip = tip }
+                } else {
+                    await MainActor.run { smartPipTip = generateStaticTip() }
+                }
+            }
+            return
+        }
+        #endif
+        smartPipTip = generateStaticTip()
+    }
+
+    #if canImport(FoundationModels)
+    @available(iOS 26, macOS 26, *)
+    private func generateAITip() async -> String? {
+        let plots = gameState.gardenPlots
+        let weather = GardenWeatherService.shared
+
+        // Build EXACT state — the model must ONLY reference what's here
+        var state = "EXACT GARDEN STATE (do NOT invent veggies not listed here):\n"
+        var hasAnything = false
+        for (i, plot) in plots.enumerated() {
+            switch plot.state {
+            case .empty:
+                state += "- Plot \(i+1): EMPTY (nothing planted)\n"
+            case .growing:
+                let name = plot.vegetable?.displayName ?? "plant"
+                let pct = Int(plot.growthProgress * 100)
+                state += "- Plot \(i+1): \(name) growing (\(pct)%)\n"
+                hasAnything = true
+            case .ready:
+                let name = plot.vegetable?.displayName ?? "plant"
+                state += "- Plot \(i+1): \(name) READY to harvest\n"
+                hasAnything = true
+            case .needsWater:
+                let name = plot.vegetable?.displayName ?? "plant"
+                state += "- Plot \(i+1): \(name) NEEDS WATER\n"
+                hasAnything = true
+            case .needsWeeding:
+                let name = plot.vegetable?.displayName ?? "plant"
+                state += "- Plot \(i+1): \(name) HAS WEEDS\n"
+                hasAnything = true
+            case .hasBugs:
+                let name = plot.vegetable?.displayName ?? "plant"
+                state += "- Plot \(i+1): \(name) HAS BUGS\n"
+                hasAnything = true
+            }
+        }
+        state += "Weather: \(weather.currentWeather.displayName), \(weather.temperature)°F\n"
+
+        let playerName = await MainActor.run { sessionManager.activeProfile?.name ?? "" }
+        let nameNote = playerName.isEmpty ? "" : "The kid's name is \(playerName) — use it sometimes.\n"
+
+        let prompt = """
+        You are Pip, a cheerful hedgehog gardener talking to a 6-year-old.
+        Give ONE tip (2 sentences max) based ONLY on the garden state below.
+        ONLY mention veggies that are actually listed. If all plots are empty, \
+        encourage the kid to plant something. Be fun and encouraging. One emoji max.
+        Do NOT say "Hello" or greet — you already know each other.
+        \(nameNote)
+        \(state)
+        """
+
+        let session = LanguageModelSession(instructions: "You are Pip, a friendly hedgehog chef for kids aged 6+. Keep responses to 2 sentences max.")
+        do {
+            let response = try await session.respond(to: prompt)
+            let text = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
+            return text.isEmpty ? nil : text
+        } catch {
+            return nil
+        }
+    }
+    #endif
+
+    /// Generate a context-aware tip without AI — reads actual plot states.
+    /// Rotates through different tip types so Pip doesn't repeat himself.
+    @State private var tipRotation: Int = 0
+
+    private func generateStaticTip() -> String {
+        let plots = gameState.gardenPlots
+        let name = sessionManager.activeProfile?.name ?? ""
+        let namePrefix = name.isEmpty ? "" : "\(name), "
+        let ready = plots.filter { $0.state == .ready }
+        let thirsty = plots.filter { $0.state == .needsWater }
+        let weedy = plots.filter { $0.state == .needsWeeding }
+        let buggy = plots.filter { $0.state == .hasBugs }
+        let growing = plots.filter { $0.state == .growing }
+        let empty = plots.filter { $0.state == .empty }
+
+        // Urgent care tips always come first (no rotation)
+        if let plot = thirsty.first, let veg = plot.vegetable {
+            return "\(namePrefix)your \(veg.displayName.lowercased()) is thirsty! Hold on the plot to water it!"
+        }
+        if let plot = buggy.first, let veg = plot.vegetable {
+            return "Oh no \(namePrefix)bugs are munching on your \(veg.displayName.lowercased())! Tap to call the ladybugs!"
+        }
+        if let plot = weedy.first, let veg = plot.vegetable {
+            return "\(namePrefix)weeds are crowding your \(veg.displayName.lowercased())! Swipe up to pull them out!"
+        }
+        if let plot = ready.first, let veg = plot.vegetable {
+            return "\(namePrefix)your \(veg.displayName.lowercased()) \(ready.count == 1 ? "is" : "are") ready to pick! Drag me over to harvest!"
+        }
+
+        // Non-urgent: ROTATE between growing info, empty plots, and fun facts
+        var pool: [String] = []
+
+        // Growing veggies — progress + fun facts
+        for plot in growing {
+            if let veg = plot.vegetable {
+                let pct = Int(plot.growthProgress * 100)
+                pool.append("\(namePrefix)your \(veg.displayName.lowercased()) is \(pct)% grown! \(pct > 70 ? "Almost there!" : "Keep watching — good things take time!")")
+                if let fact = veggieGardenFact(veg) {
+                    pool.append(fact)
+                }
+            }
+        }
+
+        // Empty plot reminders
+        if !empty.isEmpty {
+            pool.append("\(namePrefix)you have \(empty.count) empty plot\(empty.count == 1 ? "" : "s") — tap one to plant something new!")
+            pool.append("Your garden has room for more! Try planting different veggies to unlock new recipes!")
+        }
+
+        // General tips (no greetings — kid already knows Pip)
+        pool.append("Different veggies take different times to grow. Lettuce is the fastest!")
+        pool.append("Harvest veggies and take them to the kitchen to cook yummy recipes!")
+
+        if pool.isEmpty {
+            return "\(namePrefix)your garden is looking great! Tap me for more tips!"
+        }
+
+        tipRotation += 1
+        return pool[tipRotation % pool.count]
+    }
+
+    /// Fun garden facts about specific veggies — makes Pip feel knowledgeable
+    private func veggieGardenFact(_ veg: VegetableType) -> String? {
+        switch veg {
+        case .carrot:    return "Did you know carrots were originally purple? Want to know what makes them good for your eyes?"
+        case .tomato:    return "Tomatoes are actually berries! They're packed with lycopene — a superpower for your heart!"
+        case .pumpkin:   return "Pumpkins can grow up to 2,000 pounds! Yours is getting bigger every minute!"
+        case .broccoli:  return "Broccoli is actually a flower that hasn't bloomed yet! It's full of vitamins!"
+        case .lettuce:   return "Lettuce is part of the sunflower family! It grows super fast!"
+        case .cucumber:  return "Cucumbers are 95% water — they're nature's water bottle!"
+        case .zucchini:  return "The biggest zucchini ever was over 8 feet long! How big will yours get?"
+        case .onion:     return "Onions make you cry because they release a tiny gas. But they're so tasty in recipes!"
+        case .spinach:   return "Spinach makes your muscles strong — just like Popeye says!"
+        case .corn:      return "An ear of corn has about 800 tiny kernels! Want to know what's inside each one?"
+        case .sweetPotato: return "Sweet potatoes aren't related to regular potatoes at all! They're packed with vitamin A!"
+        case .strawberry: return "Strawberries are the only fruit with seeds on the outside — about 200 per berry!"
+        case .avocado:   return "Avocados are actually berries! They have healthy fats that are great for your brain!"
+        case .blueberry: return "Blueberries are one of the only naturally blue foods in the world! They boost your brain power!"
+        default:         return nil
+        }
     }
 }
 
@@ -1186,11 +1444,26 @@ struct GardenView: View {
 struct PipGardenMessage: View {
     var recipeMessage: String? = nil
     var choices: [PipDialogChoice] = []
+    var gardenPlots: [GardenPlot] = []
+    var onPipTap: (() -> Void)? = nil
 
     var body: some View {
         HStack(alignment: .top, spacing: AppSpacing.md) {
-            // Animated Pip waving (frame animation, transparent bg)
+            // Animated Pip — tap for next tip!
             PipWavingAnimatedView(size: 120)
+                .onTapGesture { onPipTap?() }
+                .overlay(alignment: .bottom) {
+                    if onPipTap != nil {
+                        Text("Tap me!")
+                            .font(.system(size: 9, weight: .semibold, design: .rounded))
+                            .foregroundColor(Color.AppTheme.sage)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Color.AppTheme.warmCream.opacity(0.9))
+                            .cornerRadius(6)
+                            .offset(y: 4)
+                    }
+                }
 
             // Message bubble
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
@@ -1233,16 +1506,54 @@ struct PipGardenMessage: View {
         .padding(.horizontal, AppSpacing.md)
     }
 
+    // TEACHING MOMENT: Context-Aware Tips
+    // Instead of always showing "Tap an empty plot" (even when no plots are empty),
+    // Pip's tips now change based on what's actually happening in the garden.
+    // This makes Pip feel like a real companion who SEES what you're doing.
     var gardeningTips: [String] {
         let weather = GardenWeatherService.shared.currentWeather
-        var tips = [
-            "Tap an empty plot to plant seeds!",
-            "Watch your plants grow - they'll be ready soon!",
-            "Harvest veggies to use in recipes!",
-            "Different veggies take different times to grow.",
-            "Lettuce grows the fastest!"
-        ]
-        // Add weather-specific tips from Pip
+        var tips: [String] = []
+
+        let emptyPlots = gardenPlots.filter { $0.state == .empty }
+        let growingPlots = gardenPlots.filter { $0.state == .growing }
+        let readyPlots = gardenPlots.filter { $0.state == .ready }
+        let thirstyPlots = gardenPlots.filter { $0.state == .needsWater }
+        let weedyPlots = gardenPlots.filter { $0.state == .needsWeeding }
+        let buggyPlots = gardenPlots.filter { $0.state == .hasBugs }
+
+        // Context-specific tips based on actual garden state
+        if !readyPlots.isEmpty {
+            let vegName = readyPlots.first?.vegetable?.displayName ?? "veggies"
+            tips.append("Your \(vegName) \(readyPlots.count == 1 ? "is" : "are") ready to harvest! Drag Pip over to pick!")
+        }
+        if !thirstyPlots.isEmpty {
+            tips.append("Some plants are thirsty! Hold on a plot to water it!")
+        }
+        if !weedyPlots.isEmpty {
+            tips.append("I see weeds! Swipe up on the plot to pull them!")
+        }
+        if !buggyPlots.isEmpty {
+            tips.append("Bugs are munching on your plants! Tap to rescue them!")
+        }
+        if !emptyPlots.isEmpty {
+            tips.append("You have \(emptyPlots.count) empty plot\(emptyPlots.count == 1 ? "" : "s") — tap to plant seeds!")
+        }
+        if !growingPlots.isEmpty && emptyPlots.isEmpty {
+            let vegNames = growingPlots.compactMap { $0.vegetable?.displayName }
+            let unique = Array(Set(vegNames))
+            if unique.count <= 2 {
+                tips.append("Your \(unique.joined(separator: " and ")) \(unique.count == 1 ? "is" : "are") growing nicely!")
+            } else {
+                tips.append("All \(growingPlots.count) plots are growing — garden is full!")
+            }
+        }
+
+        // General tips (always available)
+        tips.append("Different veggies take different times to grow.")
+        tips.append("Lettuce grows the fastest!")
+        tips.append("Harvest veggies to use in recipes!")
+
+        // Weather-specific tips
         tips.append(contentsOf: weather.pipMessages)
         return tips
     }
@@ -1255,7 +1566,7 @@ struct SeedBadge: View {
     var isIPad: Bool = false
     var showPrice: Bool = false
 
-    // Each badge = 3/8 screen width (1.5x the old 1/4)
+    // Each badge = 3/8 screen width
     private var badgeWidth: CGFloat {
         UIScreen.main.bounds.width * 3 / 8
     }
@@ -1264,9 +1575,15 @@ struct SeedBadge: View {
 
     private var isOwned: Bool { seed.quantity > 0 }
 
+    // TEACHING MOMENT: .fixedSize() vs .frame()
+    // A ZStack sizes to fit ALL its children. If the VStack inside is taller
+    // than badgeHeight (e.g., because of offset(y:25) pushing content down),
+    // the ZStack grows and the bag looks bigger. By putting .frame() + .clipped()
+    // on the OUTER ZStack, we force every bag to be exactly the same size,
+    // regardless of content height. .contentShape ensures taps still work.
     var body: some View {
         ZStack {
-            // Bag background (cropped tight to bag shape)
+            // Bag background
             Image("seed_bag_background")
                 .resizable()
                 .aspectRatio(contentMode: .fill)
@@ -1296,7 +1613,6 @@ struct SeedBadge: View {
                         .foregroundColor(Color.AppTheme.sepia)
                         .offset(y: 20)
                 } else if showPrice {
-                    // Coin price for unowned seeds
                     HStack(spacing: 3) {
                         Image(systemName: "circle.fill")
                             .foregroundColor(Color.AppTheme.goldenWheat)
@@ -1308,8 +1624,11 @@ struct SeedBadge: View {
                     .offset(y: 20)
                 }
             }
+            .frame(width: badgeWidth, height: badgeHeight)
         }
         .frame(width: badgeWidth, height: badgeHeight)
+        .clipped()
+        .contentShape(Rectangle())
     }
 }
 

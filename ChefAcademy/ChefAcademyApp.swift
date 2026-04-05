@@ -9,6 +9,7 @@ import SwiftUI
 import SwiftData
 import Combine
 import WeatherKit
+import GameKit
 
 @main
 struct ChefAcademyApp: App {
@@ -102,6 +103,11 @@ struct ChefAcademyApp: App {
 
                     // Prewarm ALL heavy images at launch — cached before user navigates
                     ImagePrewarmer.prewarmAll()
+
+                    // Authenticate with Game Center as early as possible.
+                    // This shows the "Welcome back!" banner and enables
+                    // leaderboard/achievement reporting for the whole session.
+                    GameCenterService.shared.authenticate()
 
                     // Start weather service for garden weather effects
                     weatherService.startPeriodicRefresh()

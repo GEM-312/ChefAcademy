@@ -714,6 +714,17 @@ struct HealthyChoiceGameView: View {
         }
         gameState.addXP(goodChoices * 3)
 
+        // Report to Game Center leaderboard + achievements
+        let gc = GameCenterService.shared
+        gc.reportScore(coinsEarned, leaderboardID: LeaderboardID.healthyPicks)
+        if badChoices == 0 && won {
+            gc.reportAchievement(AchievementID.healthyPicksPerfect)
+        }
+        if coinsEarned >= 50 {
+            gc.reportAchievement(AchievementID.healthyPicks50)
+        }
+        gc.checkAchievements(gameState: gameState)
+
         // Build recipe suggestions from unlocked ingredients
         buildRecipeSuggestions()
 

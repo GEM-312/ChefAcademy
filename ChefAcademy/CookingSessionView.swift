@@ -589,6 +589,12 @@ struct CookingSessionView: View {
             coins: earnedCoins,
             xp: earnedXP
         )
+
+        // Report cooking progress to Game Center
+        let gc = GameCenterService.shared
+        let threeStarCount = gameState.recipeStars.values.filter { $0 >= 3 }.count
+        gc.reportScore(threeStarCount, leaderboardID: LeaderboardID.cookingMaster)
+        gc.checkAchievements(gameState: gameState)
     }
 }
 

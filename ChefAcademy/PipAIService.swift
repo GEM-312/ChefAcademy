@@ -256,6 +256,61 @@ class PipAIService: ObservableObject {
         gameContextString = context
     }
 
+    // MARK: - Extended Context (Pantry, Organs, Weather)
+    //
+    // TEACHING MOMENT: These methods forward rich game data to the
+    // on-device model's tools. The cloud fallback doesn't use tools
+    // (too expensive per API call), so we append to gameContextString
+    // instead — same data, different delivery mechanism.
+    //
+    // IMPORTANT: Always call updateGameContext() FIRST — it resets
+    // gameContextString. These methods APPEND to it. If called without
+    // the reset, duplicate lines accumulate, wasting Claude tokens.
+
+    func updatePantryContext(items: [String: Int]) {
+        #if canImport(FoundationModels)
+        if #available(iOS 26, macOS 26, *),
+           let service = _onDeviceService as? PipFoundationModelService {
+            service.updatePantryContext(items: items)
+        }
+        #endif
+
+        // Cloud fallback: append pantry info to context string
+        let available = items.filter { $0.value > 0 }
+        if !available.isEmpty {
+            let list = available.map { "\($0.key) x\($0.value)" }.joined(separator: ", ")
+            gameContextString += "\n- Pantry items: \(list)."
+        }
+    }
+
+    func updateOrganHealthContext(health: [String: Int]) {
+        #if canImport(FoundationModels)
+        if #available(iOS 26, macOS 26, *),
+           let service = _onDeviceService as? PipFoundationModelService {
+            service.updateOrganHealthContext(health: health)
+        }
+        #endif
+
+        // Cloud fallback: highlight weakest organ
+        if !health.isEmpty {
+            let sorted = health.sorted { $0.value < $1.value }
+            if let weakest = sorted.first {
+                gameContextString += "\n- Body Buddy weakest organ: \(weakest.key) (\(weakest.value)/100). Suggest foods that help it!"
+            }
+        }
+    }
+
+    func updateWeatherContext(condition: String, temperature: String) {
+        #if canImport(FoundationModels)
+        if #available(iOS 26, macOS 26, *),
+           let service = _onDeviceService as? PipFoundationModelService {
+            service.updateWeatherContext(condition: condition, temperature: temperature)
+        }
+        #endif
+
+        gameContextString += "\n- Current weather: \(condition)\(temperature.isEmpty ? "" : ", \(temperature)")."
+    }
+
     // MARK: - Clear Conversation
 
     func clearConversation() {

@@ -2,53 +2,66 @@ import Combine
 import SwiftUI
 
 // MARK: - Pip Waving Frame Animation
-/// Cycles through 15 transparent-background PNG frames for a natural waving animation.
-/// No circle, no border — Pip appears with transparent background.
+//
+// TEACHING MOMENT: TimelineView vs Timer for Animation
+//
+//   Timer.scheduledTimer:
+//     - Fires on the RunLoop even when NO pixels change (during pause)
+//     - Keeps a strong reference that can leak if you forget invalidate()
+//     - Doesn't participate in SwiftUI's rendering pipeline
+//
+//   TimelineView(.periodic):
+//     - Only triggers redraws when the system is actually rendering
+//     - Automatically pauses when the view is off-screen or app backgrounded
+//     - No manual start/stop — SwiftUI manages the lifecycle
+//
+// The key insight: TimelineView gives us a DATE for each frame. We use
+// elapsed time math instead of incrementing counters. This is MORE
+// accurate (no drift from timer coalescing) and SIMPLER (no state to reset).
+//
+// For Pip's wave: 15 frames at 6fps = 2.5s animation + 3s pause = 5.5s cycle.
+// We compute which frame to show from (elapsedTime % cycleDuration).
+
 struct PipWavingAnimatedView: View {
     var size: CGFloat = 200
 
     private let frameNames: [String] = (1...15).map { String(format: "pip_waving_frame_%02d", $0) }
-    private let fps: Double = 6.0 // smooth wave
+    private let fps: Double = 6.0
     private let pauseBetweenWaves: Double = 3.0
 
-    @State private var currentFrame = 0
-    @State private var timer: Timer?
-    @State private var pauseTicksRemaining: Int = 0
+    /// Total cycle: animation time + pause time
+    private var animDuration: Double { Double(frameNames.count) / fps }  // 15/6 = 2.5s
+    private var cycleDuration: Double { animDuration + pauseBetweenWaves } // 2.5 + 3 = 5.5s
+
+    // Store the start date so we can compute elapsed time
+    @State private var startDate: Date = .now
 
     var body: some View {
-        Image(frameNames[currentFrame])
+        // TimelineView redraws at ~6fps (matching our frame rate).
+        // During the pause phase, the computed frame stays at 0 —
+        // SwiftUI is smart enough to skip the redraw if nothing changed.
+        TimelineView(.periodic(from: .now, by: 1.0 / fps)) { context in
+            pipFrame(for: context.date)
+        }
+    }
+
+    /// Compute which frame to show from the current date.
+    /// TEACHING MOMENT: Extracting this into a @ViewBuilder method helps
+    /// the Swift type checker. Complex closures inside TimelineView can
+    /// confuse the compiler — breaking them out keeps builds fast.
+    @ViewBuilder
+    private func pipFrame(for date: Date) -> some View {
+        let elapsed = date.timeIntervalSince(startDate)
+        let cycleTime = elapsed.truncatingRemainder(dividingBy: cycleDuration)
+        let frameIndex = cycleTime < animDuration
+            ? min(Int(cycleTime * fps), frameNames.count - 1)
+            : 0
+
+        Image(frameNames[frameIndex])
             .resizable()
             .aspectRatio(contentMode: .fit)
             .frame(width: size, height: size)
             .opacity(0.9)
-            .onAppear { startAnimation() }
-            .onDisappear { stopAnimation() }
-    }
-
-    private func startAnimation() {
-        guard timer == nil else { return }
-        // Single repeating timer at frame rate — no recursive allocation
-        let interval = 1.0 / fps
-        timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) { _ in
-            if pauseTicksRemaining > 0 {
-                pauseTicksRemaining -= 1
-                return
-            }
-
-            let nextFrame = currentFrame + 1
-            if nextFrame >= frameNames.count {
-                // Wave finished — pause for N ticks before restarting
-                currentFrame = 0
-                pauseTicksRemaining = Int(pauseBetweenWaves * fps)
-            } else {
-                currentFrame = nextFrame
-            }
-        }
-    }
-
-    private func stopAnimation() {
-        timer?.invalidate()
-        timer = nil
     }
 }
 

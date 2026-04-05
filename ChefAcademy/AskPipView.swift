@@ -460,6 +460,7 @@ struct AskPipView: View {
 
         let name = sessionManager.activeProfile?.name ?? "Little Chef"
 
+        // Basic context (player, garden, recipes, coins)
         aiService.updateGameContext(
             playerName: name,
             growingVeggies: growing,
@@ -467,6 +468,33 @@ struct AskPipView: View {
             cookedRecipes: cooked,
             coins: gameState.coins
         )
+
+        // Pantry inventory — what's in the cupboard
+        var pantryItems: [String: Int] = [:]
+        for stock in gameState.pantryInventory where stock.quantity > 0 {
+            pantryItems[stock.item.displayName] = stock.quantity
+        }
+        aiService.updatePantryContext(items: pantryItems)
+
+        // Body Buddy organ health — so Pip can suggest foods for weak organs
+        let organHealth: [String: Int] = [
+            "Brain": gameState.brainHealth,
+            "Heart": gameState.heartHealth,
+            "Muscles": gameState.muscleHealth,
+            "Bones": gameState.boneHealth,
+            "Immune": gameState.immuneHealth,
+            "Energy": gameState.energyLevel,
+            "Eyes": gameState.eyeHealth,
+            "Skin": gameState.skinHealth,
+            "Digestion": gameState.digestiveHealth
+        ]
+        aiService.updateOrganHealthContext(health: organHealth)
+
+        // Weather — from WeatherKit for seasonal planting advice
+        let weather = GardenWeatherService.shared
+        let condition = weather.currentWeather.displayName
+        let temp = "\(weather.temperature)°F"
+        aiService.updateWeatherContext(condition: condition, temperature: temp)
     }
 
     // MARK: - Send Question

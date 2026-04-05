@@ -22,6 +22,7 @@ struct ParentDashboardView: View {
     @State private var showAddChild = false
     @State private var showVoiceSettings = false
     @State private var showSignOutConfirmation = false
+    @State private var showDeleteAllConfirmation = false
     @State private var signInCoordinator: SignInCoordinator?
 
     private var children: [UserProfile] {
@@ -245,6 +246,20 @@ struct ParentDashboardView: View {
                         }
                         .buttonStyle(.plain)
                     }
+                    // Delete all data & start fresh
+                    Button(action: { showDeleteAllConfirmation = true }) {
+                        HStack {
+                            Image(systemName: "trash.fill")
+                            Text("Delete All Data & Start Fresh")
+                            Spacer()
+                        }
+                        .font(.AppTheme.body)
+                        .foregroundColor(Color.AppTheme.terracotta)
+                        .padding(AppSpacing.md)
+                        .background(Color.AppTheme.terracotta.opacity(0.08))
+                        .cornerRadius(AppSpacing.cardCornerRadius)
+                    }
+                    .buttonStyle(.plain)
                 }
                 .padding(.horizontal, AppSpacing.md)
 
@@ -326,6 +341,45 @@ struct ParentDashboardView: View {
         } message: {
             Text("Your family data will stay saved. You can sign back in anytime to access it.")
         }
+        .alert("Delete Everything?", isPresented: $showDeleteAllConfirmation) {
+            Button("Cancel", role: .cancel) { }
+            Button("Delete All Data", role: .destructive) {
+                deleteAllDataAndRestart()
+            }
+        } message: {
+            Text("This will delete ALL profiles, gardens, recipes, coins — everything. The app will restart as if freshly installed. This cannot be undone.")
+        }
+    }
+
+    // MARK: - Delete All Data
+
+    private func deleteAllDataAndRestart() {
+        // 1. Delete all SwiftData records
+        let families = (try? modelContext.fetch(FetchDescriptor<FamilyProfile>())) ?? []
+        let profiles = (try? modelContext.fetch(FetchDescriptor<UserProfile>())) ?? []
+        let playerData = (try? modelContext.fetch(FetchDescriptor<PlayerData>())) ?? []
+
+        for item in playerData { modelContext.delete(item) }
+        for item in profiles { modelContext.delete(item) }
+        for item in families { modelContext.delete(item) }
+        try? modelContext.save()
+
+        // 2. Clear Keychain PIN
+        PINKeychain.delete()
+
+        // 3. Clear GameState
+        gameState.activeProfileID = nil
+        gameState.resetToDefaults()
+
+        // 4. Clear session
+        sessionManager.activeProfile = nil
+        sessionManager.familyProfile = nil
+
+        // 5. Sign out Apple ID
+        authManager.signOut()
+
+        // 6. Route back to sign-in (fresh start)
+        sessionManager.route = .signIn
     }
 
     // MARK: - Link Apple ID (for legacy users who didn't have auth)

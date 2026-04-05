@@ -23,21 +23,27 @@ import Combine
 // The .elevenLabs case requires an active subscription check.
 //
 
+// TEACHING MOMENT: Two clean options — no bad middle ground.
+// Apple TTS voices sound robotic and break the immersion for kids.
+// Better to have NO voice (kid reads text) than a bad voice.
+// Premium ElevenLabs voice is the only spoken option — this also
+// creates a clear value proposition for the Pip Plus subscription.
+
 enum PipVoiceMode: String, CaseIterable {
-    case appleTTS = "apple"
-    case elevenLabs = "elevenlabs"
+    case readText = "silent"        // No voice — kid reads on screen
+    case elevenLabs = "elevenlabs"  // Premium Pip voice (subscription)
 
     var displayName: String {
         switch self {
-        case .appleTTS: return "Standard Voice"
-        case .elevenLabs: return "Pip's Special Voice"
+        case .readText:    return "Read Text"
+        case .elevenLabs:  return "Pip's Voice"
         }
     }
 
     var description: String {
         switch self {
-        case .appleTTS: return "Built-in Apple voice (free)"
-        case .elevenLabs: return "Custom Pip character voice (Pip Plus)"
+        case .readText:    return "Read Pip's words on screen (free)"
+        case .elevenLabs:  return "Pip talks with a real character voice (Pip Plus)"
         }
     }
 }
@@ -94,8 +100,8 @@ class PipVoice: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
         // Load saved preferences
         self.isEnabled = UserDefaults.standard.object(forKey: "com.chefacademy.pipVoiceEnabled") as? Bool ?? true
 
-        let savedMode = UserDefaults.standard.string(forKey: "com.chefacademy.pipVoiceMode") ?? "apple"
-        self.voiceMode = PipVoiceMode(rawValue: savedMode) ?? .appleTTS
+        let savedMode = UserDefaults.standard.string(forKey: "com.chefacademy.pipVoiceMode") ?? "silent"
+        self.voiceMode = PipVoiceMode(rawValue: savedMode) ?? .readText
 
         self.selectedAppleVoiceID = UserDefaults.standard.string(forKey: "com.chefacademy.pipAppleVoiceID")
 
@@ -148,11 +154,13 @@ class PipVoice: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
     func speak(_ text: String) {
         guard isEnabled, !text.isEmpty else { return }
 
-        // Route based on voice mode
-        if voiceMode == .elevenLabs && hasSubscription {
+        switch voiceMode {
+        case .readText:
+            // Silent — kid reads text on screen. No audio.
+            return
+        case .elevenLabs:
+            guard hasSubscription else { return }
             speakWithElevenLabs(text)
-        } else {
-            speakWithAppleTTS(text)
         }
     }
 

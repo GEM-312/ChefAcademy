@@ -88,11 +88,22 @@ struct PipChatResponse {
 
 @available(iOS 26.0, macOS 26.0, *)
 actor PipGameContext {
+    // Basic player info
     var playerName: String = "friend"
     var growingVeggies: [String] = []
     var harvestedVeggies: [String] = []
     var cookedRecipes: [String] = []
     var coins: Int = 0
+
+    // Pantry inventory — what the player bought from the farm shop
+    var pantryItems: [String: Int] = [:]  // displayName → quantity
+
+    // Body Buddy organ health (0-100 scale)
+    var organHealth: [String: Int] = [:]
+
+    // Weather — from WeatherKit
+    var weatherCondition: String = "sunny"
+    var temperature: String = ""
 
     func update(
         playerName: String,
@@ -108,6 +119,23 @@ actor PipGameContext {
         self.coins = coins
     }
 
+    // TEACHING MOMENT: Separate update methods keep concerns clean.
+    // The caller decides WHAT data to push; the actor just stores it safely.
+    // This avoids a single giant update() with 15+ parameters.
+
+    func updatePantry(_ items: [String: Int]) {
+        self.pantryItems = items
+    }
+
+    func updateOrganHealth(_ health: [String: Int]) {
+        self.organHealth = health
+    }
+
+    func updateWeather(condition: String, temperature: String) {
+        self.weatherCondition = condition
+        self.temperature = temperature
+    }
+
     func summary() -> String {
         var parts: [String] = ["Player: \(playerName)"]
         if !growingVeggies.isEmpty {
@@ -121,6 +149,46 @@ actor PipGameContext {
         }
         parts.append("Coins: \(coins)")
         return parts.joined(separator: ". ")
+    }
+
+    func ingredientSummary() -> String {
+        var parts: [String] = []
+        if !harvestedVeggies.isEmpty {
+            parts.append("Garden veggies: \(harvestedVeggies.joined(separator: ", "))")
+        }
+        let available = pantryItems.filter { $0.value > 0 }
+        if !available.isEmpty {
+            let pantryList = available.map { "\($0.key) x\($0.value)" }.joined(separator: ", ")
+            parts.append("Pantry: \(pantryList)")
+        }
+        return parts.isEmpty ? "No ingredients yet — grow some veggies and visit the farm shop!" : parts.joined(separator: ". ")
+    }
+
+    func organHealthSummary() -> String {
+        if organHealth.isEmpty { return "No health data yet — cook recipes to power up your body!" }
+        let sorted = organHealth.sorted { $0.value < $1.value }
+        var parts: [String] = []
+        // Highlight the weakest and strongest organs
+        if let weakest = sorted.first {
+            parts.append("Needs attention: \(weakest.key) (\(weakest.value)/100)")
+        }
+        if let strongest = sorted.last, sorted.count > 1 {
+            parts.append("Strongest: \(strongest.key) (\(strongest.value)/100)")
+        }
+        let all = organHealth.map { "\($0.key): \($0.value)" }.joined(separator: ", ")
+        parts.append("All organs: \(all)")
+        return parts.joined(separator: ". ")
+    }
+
+    func weatherSummary() -> String {
+        var result = "Weather: \(weatherCondition)"
+        if !temperature.isEmpty { result += ", \(temperature)" }
+        // Add month for seasonal context
+        let month = Calendar.current.component(.month, from: Date())
+        let monthNames = ["January","February","March","April","May","June",
+                          "July","August","September","October","November","December"]
+        result += ". Month: \(monthNames[month - 1])"
+        return result
     }
 }
 
@@ -217,6 +285,222 @@ struct GetVeggieFactTool: Tool {
     ]
 }
 
+// MARK: - Tool: Get Nutrient Profile
+//
+// TEACHING MOMENT: This tool bridges AI to REAL nutrition data.
+// The on-device model knows general facts about food, but our USDA
+// integration has precise, kid-friendly nutrient profiles. When a
+// kid asks "what's in broccoli?", the model calls this tool and gets
+// back real science data — then translates it into kid-speak.
+//
+// The tool checks our local CACHE first (instant), then falls back
+// to the USDA API if uncached. This keeps tool calls fast — the model
+// waits for tool results before generating a response, so speed matters.
+//
+
+@available(iOS 26.0, macOS 26.0, *)
+struct GetNutrientProfileTool: Tool {
+    let name = "getNutrientProfile"
+    let description = "Get real nutrition data for a food (vitamins, minerals, fiber, protein). Use when a kid asks what's healthy about a food."
+
+    @Generable
+    struct Arguments {
+        @Guide(description: "Food name to look up, e.g. 'carrot', 'eggs', 'chicken'")
+        var foodName: String
+    }
+
+    // TEACHING MOMENT: Thread Safety with @Published Properties
+    //
+    // USDAFoodService.cache is @Published, which means it's meant to be
+    // read/written on the Main Actor (SwiftUI observes it from the main
+    // thread). But this tool runs on a background thread (@concurrent).
+    // Reading @Published from a background thread = data race.
+    //
+    // Fix: wrap the cache read in MainActor.run. This hops to the main
+    // thread just for the dictionary lookup (microseconds), then hops back.
+    // The actual USDA API fetch is async and already handles its own threading.
+
+    @concurrent func call(arguments: Arguments) async throws -> String {
+        let key = arguments.foodName.lowercased()
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        // Handle plurals: "carrots" → "carrot", but verify the result is a known key
+        let singular = key.hasSuffix("s") ? String(key.dropLast()) : key
+        let lookupKey = USDAFoodService.fdcIDMap.keys.contains(singular) ? singular : key
+
+        // Check USDA cache on MainActor (thread-safe access to @Published)
+        let cached: NutrientProfile? = await MainActor.run {
+            USDAFoodService.shared.cache[lookupKey]
+        }
+        if let profile = cached {
+            return formatProfile(profile)
+        }
+
+        // Fetch from USDA API (async, handles its own threading)
+        if let profile = await USDAFoodService.shared.nutrientProfile(for: lookupKey) {
+            return formatProfile(profile)
+        }
+
+        return "I don't have detailed nutrition data for \(arguments.foodName) yet, but it's part of a healthy diet!"
+    }
+
+    private func formatProfile(_ p: NutrientProfile) -> String {
+        let top = p.topNutrients(count: 5)
+        var parts = ["\(p.foodName) per kid serving (\(Int(p.servingSizeGrams))g):"]
+        parts.append("Calories: \(Int(p.calories))")
+        if p.protein > 0.5 { parts.append("Protein: \(String(format: "%.1f", p.protein))g") }
+        if p.fiber > 0.2 { parts.append("Fiber: \(String(format: "%.1f", p.fiber))g") }
+        for n in top {
+            parts.append("\(n.emoji) \(n.name): \(n.value) (\(n.organ))")
+        }
+        return parts.joined(separator: ". ")
+    }
+}
+
+// MARK: - Tool: Get Available Ingredients
+//
+// TEACHING MOMENT: This is a "what can I do?" tool. The model uses it
+// to answer questions like "what can I cook?" or "do I have enough to
+// make pancakes?". It reads the player's LIVE inventory — both garden
+// harvests and shop purchases. The model then cross-references this
+// with recipe requirements to give personalized suggestions.
+//
+
+@available(iOS 26.0, macOS 26.0, *)
+struct GetAvailableIngredientsTool: Tool {
+    let name = "getAvailableIngredients"
+    let description = "Get what ingredients the player currently has — harvested veggies and pantry items bought from the shop"
+
+    @Generable
+    struct Arguments {}
+
+    let context: PipGameContext
+
+    @concurrent func call(arguments: Arguments) async throws -> String {
+        await context.ingredientSummary()
+    }
+}
+
+// MARK: - Tool: Get Body Buddy Status
+//
+// TEACHING MOMENT: Personalized health advice! When a kid asks "how
+// is my body doing?" or "what should I eat?", the model calls this
+// tool to see which organs are weak. Then it suggests foods that
+// target the weakest organ. This creates a FEEDBACK LOOP:
+//   Cook recipe → organ health improves → Pip notices → suggests next goal
+// The kid feels like Pip is a real nutritionist paying attention to THEM.
+//
+
+@available(iOS 26.0, macOS 26.0, *)
+struct GetBodyBuddyStatusTool: Tool {
+    let name = "getBodyBuddyStatus"
+    let description = "Get the player's Body Buddy organ health levels (brain, heart, muscles, bones, immune, energy, eyes, skin, digestion). Use to give personalized nutrition advice."
+
+    @Generable
+    struct Arguments {}
+
+    let context: PipGameContext
+
+    @concurrent func call(arguments: Arguments) async throws -> String {
+        await context.organHealthSummary()
+    }
+}
+
+// MARK: - Generable Recipe Suggestion
+//
+// TEACHING MOMENT: @Generable here creates a TYPE-SAFE recipe output.
+// Instead of the model returning free-form text like "you could make
+// a salad with...", it fills a STRUCTURED recipe object. This means:
+//   - We can render it as a proper recipe card in the UI later
+//   - The model MUST provide all fields (no missing ingredients)
+//   - We validate at compile time, not runtime
+//
+// The @Guide descriptions help the model understand what each field expects.
+// Think of them as form labels on a recipe card the model is filling out.
+//
+
+@available(iOS 26.0, macOS 26.0, *)
+@Generable
+struct GeneratedRecipeSuggestion {
+    @Guide(description: "Fun kid-friendly recipe name like 'Rainbow Veggie Bowl' or 'Superhero Scramble'")
+    var name: String
+
+    @Guide(description: "What makes this recipe special, in 1 sentence")
+    var description: String
+
+    @Guide(description: "List of ingredients the player already has that go into this recipe")
+    var ingredients: [String]
+
+    @Guide(description: "One cool nutrition fact about this recipe for a 6-year-old")
+    var nutritionFact: String
+
+    @Guide(description: "3-4 simple cooking steps for a kid")
+    var steps: [String]
+}
+
+// MARK: - Tool: Generate Recipe
+//
+// TEACHING MOMENT: Tool chaining in action! The model might:
+//   1. Call getAvailableIngredients → sees "carrot, tomato, eggs, cheese"
+//   2. Call generateRecipe → suggests "Cheesy Veggie Scramble"
+// The model decides the order automatically — we don't code the flow.
+// Apple's framework handles multi-tool orchestration behind the scenes.
+//
+
+@available(iOS 26.0, macOS 26.0, *)
+struct GenerateRecipeTool: Tool {
+    let name = "generateRecipe"
+    let description = "Suggest a kid-friendly recipe using the player's available ingredients. Call getAvailableIngredients first to know what they have."
+
+    @Generable
+    struct Arguments {
+        @Guide(description: "Comma-separated list of available ingredients to use")
+        var availableIngredients: String
+    }
+
+    @concurrent func call(arguments: Arguments) async throws -> String {
+        // The model generates the recipe — this tool just provides
+        // constraints. We return the ingredients back so the model
+        // knows what to work with in its structured response.
+        let items = arguments.availableIngredients
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespaces) }
+            .filter { !$0.isEmpty }
+
+        if items.isEmpty {
+            return "No ingredients provided. Suggest the player grow some veggies or visit the farm shop first!"
+        }
+
+        return "Available ingredients: \(items.joined(separator: ", ")). Suggest a simple, healthy, kid-friendly recipe using some or all of these. Keep it Glucose Goddess approved — veggies first, protein included, minimal starch."
+    }
+}
+
+// MARK: - Tool: Get Seasonal Advice
+//
+// TEACHING MOMENT: This tool combines TWO data sources — WeatherKit
+// (current conditions) and the calendar (month/season). The model
+// uses both to give hyper-personalized planting advice like:
+//   "It's March and 45°F — perfect for starting indoor seedlings!"
+// vs "It's July and sunny — your tomatoes must be loving this!"
+//
+// Without this tool, the model would give GENERIC advice based on
+// its training data. WITH the tool, it knows YOUR weather RIGHT NOW.
+//
+
+@available(iOS 26.0, macOS 26.0, *)
+struct GetSeasonalAdviceTool: Tool {
+    let name = "getSeasonalAdvice"
+    let description = "Get current weather and season info for personalized planting and gardening advice"
+
+    @Generable
+    struct Arguments {}
+
+    let context: PipGameContext
+
+    @concurrent func call(arguments: Arguments) async throws -> String {
+        await context.weatherSummary()
+    }
+}
+
 // MARK: - Foundation Model Service
 //
 // TEACHING MOMENT: This class manages the on-device AI session.
@@ -249,6 +533,15 @@ class PipFoundationModelService: ObservableObject {
     //   - Trusting the model's training for basic behavior
     //
 
+    // TEACHING MOMENT: Tool Instructions — The model reads these descriptions
+    // to learn WHEN to call each tool. Good instructions = the model picks
+    // the right tool automatically. Bad instructions = wrong tool or no tool.
+    // We keep it concise because every token costs Neural Engine processing time.
+    //
+    // Notice the "Use X when..." pattern — this gives the model clear
+    // decision criteria. It's like teaching a new chef: "Use the big knife
+    // for chopping, the small one for peeling."
+
     private let pipInstructions = """
         You are Pip, a cheerful hedgehog chef in a kids' kitchen garden game (ages 6+).
         Be excited about veggies and cooking! Say "Ooh!" and "Wow!" naturally.
@@ -261,8 +554,19 @@ class PipFoundationModelService: ObservableObject {
         - One emoji per response max
         - End with something inviting: a question, teaser, or "wanna know more?"
 
-        Use getGardenStatus to see what the player is doing in their garden.
-        Use getVeggieFact to share accurate facts about specific plants.
+        Tools — use them to give personalized answers:
+        - getGardenStatus: what the player is growing and has done
+        - getVeggieFact: fun facts about a specific plant
+        - getNutrientProfile: real nutrition data (vitamins, minerals) for any food
+        - getAvailableIngredients: what ingredients the player has right now
+        - getBodyBuddyStatus: the player's organ health levels — suggest foods for weak organs
+        - generateRecipe: suggest a recipe from available ingredients
+        - getSeasonalAdvice: current weather and season for planting tips
+
+        Combine tools! If asked "what should I cook?":
+        1. getAvailableIngredients → see what they have
+        2. getBodyBuddyStatus → see what organs need help
+        3. generateRecipe → suggest something that uses their ingredients AND helps weak organs
 
         Example response WITH a follow-up question:
         message: "Ooh, carrots are amazing! They were actually purple before people in the Netherlands made them orange. 🥕"
@@ -345,15 +649,34 @@ class PipFoundationModelService: ObservableObject {
             return
         }
 
-        let gardenTool = GetGardenStatusTool(context: gameContext)
-        let veggieTool = GetVeggieFactTool()
-
         // TEACHING MOMENT: Tools are passed at session creation.
         // The model reads tool names + descriptions to learn what's
         // available, then autonomously decides when to call them
         // based on the kid's questions. We don't manually trigger tools.
+        //
+        // With 7 tools, the model becomes a real personal nutritionist:
+        //   - Garden + Veggie facts → knowledge base
+        //   - Nutrients + Body Buddy → personalized health advice
+        //   - Ingredients + Recipe gen → "what can I cook?" answers
+        //   - Seasonal advice → "what should I plant?" answers
+        //
+        // The model can CHAIN tools — e.g., check ingredients → check
+        // body health → suggest a recipe that fills both needs. We don't
+        // code this logic; the model figures it out from the descriptions.
+
+        let gardenTool = GetGardenStatusTool(context: gameContext)
+        let veggieTool = GetVeggieFactTool()
+        let nutrientTool = GetNutrientProfileTool()
+        let ingredientsTool = GetAvailableIngredientsTool(context: gameContext)
+        let bodyBuddyTool = GetBodyBuddyStatusTool(context: gameContext)
+        let recipeTool = GenerateRecipeTool()
+        let seasonalTool = GetSeasonalAdviceTool(context: gameContext)
+
         session = LanguageModelSession(
-            tools: [gardenTool, veggieTool],
+            tools: [
+                gardenTool, veggieTool, nutrientTool,
+                ingredientsTool, bodyBuddyTool, recipeTool, seasonalTool
+            ],
             instructions: pipInstructions
         )
     }
@@ -546,6 +869,12 @@ class PipFoundationModelService: ObservableObject {
     }
 
     // MARK: - Update Game Context
+    //
+    // TEACHING MOMENT: We have separate update methods now instead of
+    // one giant method with 15+ parameters. This follows the "Single
+    // Responsibility" principle — each method updates one concern.
+    // The AskPipView calls all of them on appear, but they could also
+    // be called independently (e.g., weather changes mid-session).
 
     func updateGameContext(
         playerName: String,
@@ -563,6 +892,18 @@ class PipFoundationModelService: ObservableObject {
                 coins: coins
             )
         }
+    }
+
+    func updatePantryContext(items: [String: Int]) {
+        Task { await gameContext.updatePantry(items) }
+    }
+
+    func updateOrganHealthContext(health: [String: Int]) {
+        Task { await gameContext.updateOrganHealth(health) }
+    }
+
+    func updateWeatherContext(condition: String, temperature: String) {
+        Task { await gameContext.updateWeather(condition: condition, temperature: temperature) }
     }
 }
 

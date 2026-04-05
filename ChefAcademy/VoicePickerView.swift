@@ -33,15 +33,52 @@ struct VoicePickerView: View {
                     // MARK: - Header
                     pipHeader
 
-                    // MARK: - Premium Voice (Pip Plus)
-                    premiumVoiceSection
+                    // MARK: - Two simple options
+                    VStack(spacing: AppSpacing.md) {
 
-                    // MARK: - Free Voices
-                    freeVoicesSection
+                        // Option 1: Read Text (free, silent)
+                        VoiceOptionCard(
+                            icon: "text.bubble.fill",
+                            title: "Read Text",
+                            subtitle: "Read Pip's words on screen — no voice",
+                            color: Color.AppTheme.sage,
+                            isSelected: pipVoice.voiceMode == .readText
+                        ) {
+                            pipVoice.voiceMode = .readText
+                            pipVoice.stop()
+                        }
 
-                    // MARK: - Download Better Voices
-                    if pipVoice.onlyDefaultVoicesAvailable {
-                        downloadPrompt
+                        // Option 2: Pip's Voice (subscription)
+                        VoiceOptionCard(
+                            icon: "waveform.circle.fill",
+                            title: "Pip's Voice",
+                            subtitle: pipVoice.hasSubscription
+                                ? "Pip talks with a real character voice!"
+                                : "Custom Pip character voice — Pip Plus $3.99/mo",
+                            color: Color.AppTheme.goldenWheat,
+                            isSelected: pipVoice.voiceMode == .elevenLabs,
+                            isLocked: !pipVoice.hasSubscription
+                        ) {
+                            if pipVoice.hasSubscription {
+                                pipVoice.voiceMode = .elevenLabs
+                            }
+                        }
+
+                        // Preview button for ElevenLabs
+                        if pipVoice.hasSubscription || true { // always show preview
+                            Button(action: {
+                                pipVoice.previewElevenLabsVoice()
+                            }) {
+                                HStack(spacing: AppSpacing.xs) {
+                                    Image(systemName: pipVoice.isSpeaking ? "speaker.wave.3.fill" : "play.circle.fill")
+                                        .symbolEffect(.pulse, isActive: pipVoice.isSpeaking)
+                                    Text("Preview Pip's Voice")
+                                }
+                                .font(.AppTheme.subheadline)
+                                .foregroundColor(Color.AppTheme.goldenWheat)
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
 
                     Spacer(minLength: AppSpacing.xxl)
@@ -58,9 +95,6 @@ struct VoicePickerView: View {
                         .fontWeight(.semibold)
                 }
             }
-        }
-        .sheet(isPresented: $showSettingsGuide) {
-            SettingsGuideSheet()
         }
     }
 
@@ -123,92 +157,6 @@ struct VoicePickerView: View {
         }
     }
 
-    // MARK: - Free Voices Section
-
-    private var freeVoicesSection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Label("Free Voices", systemImage: "speaker.wave.2.fill")
-                .font(.AppTheme.headline)
-                .foregroundColor(Color.AppTheme.darkBrown)
-
-            ForEach(pipVoice.availableEnglishVoices, id: \.identifier) { voice in
-                VoiceCard(
-                    name: voice.name,
-                    quality: qualityLabel(voice.quality),
-                    qualityColor: qualityColor(voice.quality),
-                    isSelected: pipVoice.voiceMode == .appleTTS
-                        && pipVoice.selectedAppleVoiceID == voice.identifier,
-                    isLocked: false,
-                    onTap: {
-                        pipVoice.voiceMode = .appleTTS
-                        pipVoice.selectedAppleVoiceID = voice.identifier
-                    },
-                    onPreview: {
-                        previewingVoiceID = voice.identifier
-                        pipVoice.previewAppleVoice(voice)
-                    },
-                    isPreviewing: previewingVoiceID == voice.identifier && pipVoice.isSpeaking
-                )
-            }
-        }
-    }
-
-    // MARK: - Download Better Voices Prompt
-    //
-    // TEACHING MOMENT: We can't trigger voice downloads programmatically.
-    // But we CAN guide the user with friendly instructions + a button
-    // that opens Settings. When they come back after downloading,
-    // availableVoicesDidChangeNotification fires and we auto-update.
-    //
-
-    private var downloadPrompt: some View {
-        VStack(spacing: AppSpacing.md) {
-            Image(systemName: "arrow.down.circle.fill")
-                .font(.system(size: 36))
-                .foregroundColor(Color.AppTheme.sage)
-
-            Text("Want Pip to sound even better?")
-                .font(.AppTheme.headline)
-                .foregroundColor(Color.AppTheme.darkBrown)
-
-            Text("Ask a grown-up to download a better voice in Settings!")
-                .font(.AppTheme.body)
-                .foregroundColor(Color.AppTheme.sepia)
-                .multilineTextAlignment(.center)
-
-            Button(action: { showSettingsGuide = true }) {
-                Label("Show Me How", systemImage: "gear")
-                    .font(.AppTheme.body)
-                    .fontWeight(.semibold)
-                    .foregroundColor(.white)
-                    .padding(.horizontal, AppSpacing.lg)
-                    .padding(.vertical, AppSpacing.sm)
-                    .background(Color.AppTheme.sage)
-                    .cornerRadius(24)
-            }
-        }
-        .padding(AppSpacing.lg)
-        .background(Color.AppTheme.warmCream)
-        .cornerRadius(16)
-    }
-
-    // MARK: - Helpers
-
-    private func qualityLabel(_ quality: AVSpeechSynthesisVoiceQuality) -> String {
-        switch quality {
-        case .premium: return "Premium"
-        case .enhanced: return "Enhanced"
-        default: return "Standard"
-        }
-    }
-
-    private func qualityColor(_ quality: AVSpeechSynthesisVoiceQuality) -> Color {
-        switch quality {
-        case .premium: return Color.AppTheme.goldenWheat
-        case .enhanced: return Color.AppTheme.sage
-        default: return Color.AppTheme.sepia
-        }
-    }
 }
 
 // MARK: - Voice Card
@@ -279,6 +227,63 @@ struct VoiceCard: View {
         )
         .contentShape(Rectangle())
         .onTapGesture { if !isLocked { onTap() } }
+    }
+}
+
+// MARK: - Voice Option Card (Simple 2-option picker)
+
+struct VoiceOptionCard: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+    let color: Color
+    let isSelected: Bool
+    var isLocked: Bool = false
+    let onTap: () -> Void
+
+    var body: some View {
+        Button(action: { if !isLocked { onTap() } }) {
+            HStack(spacing: AppSpacing.md) {
+                Image(systemName: icon)
+                    .font(.system(size: 28))
+                    .foregroundColor(color)
+                    .frame(width: 40)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.AppTheme.headline)
+                        .foregroundColor(Color.AppTheme.darkBrown)
+
+                    Text(subtitle)
+                        .font(.AppTheme.caption)
+                        .foregroundColor(Color.AppTheme.sepia)
+                }
+
+                Spacer()
+
+                if isLocked {
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(Color.AppTheme.goldenWheat)
+                } else if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 24))
+                        .foregroundColor(color)
+                } else {
+                    Circle()
+                        .stroke(Color.AppTheme.sepia.opacity(0.3), lineWidth: 2)
+                        .frame(width: 24, height: 24)
+                }
+            }
+            .padding(AppSpacing.md)
+            .background(isSelected ? color.opacity(0.1) : Color.AppTheme.warmCream)
+            .cornerRadius(AppSpacing.cardCornerRadius)
+            .overlay(
+                RoundedRectangle(cornerRadius: AppSpacing.cardCornerRadius)
+                    .stroke(isSelected ? color : Color.clear, lineWidth: 2)
+            )
+        }
+        .buttonStyle(.plain)
     }
 }
 

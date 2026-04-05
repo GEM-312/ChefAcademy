@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import AuthenticationServices
 
 struct ParentPINEntryView: View {
     let purpose: PINPurpose
@@ -14,11 +15,18 @@ struct ParentPINEntryView: View {
     let onCancel: () -> Void
 
     @EnvironmentObject var sessionManager: SessionManager
+    @EnvironmentObject var authManager: AuthManager
     @State private var enteredPIN: String = ""
     @State private var shake: Bool = false
     @State private var showError: Bool = false
     @State private var confirmPIN: String = ""
     @State private var isConfirming: Bool = false
+    @State private var showForgotPIN: Bool = false
+    @State private var isResettingPIN: Bool = false  // true after Apple ID verified
+    @State private var signInCoordinator: SignInCoordinator?
+
+    /// Effective setup mode — either passed in OR activated by PIN reset
+    private var effectiveSetupMode: Bool { isSetupMode || isResettingPIN }
 
     var body: some View {
         ZStack {
@@ -64,10 +72,28 @@ struct ParentPINEntryView: View {
 
             // Error message
             if showError {
-                Text(isSetupMode ? "PINs don't match. Try again." : "Wrong PIN. Try again!")
+                Text(effectiveSetupMode ? "PINs don't match. Try again." : "Wrong PIN. Try again!")
                     .font(.AppTheme.caption)
                     .foregroundColor(Color.AppTheme.terracotta)
                     .transition(.opacity)
+            }
+
+            // Forgot PIN — verify with Apple ID to reset
+            if !isSetupMode {
+                if isResettingPIN {
+                    // Show new PIN setup inline
+                    Text("Set your new PIN")
+                        .font(.AppTheme.caption)
+                        .foregroundColor(Color.AppTheme.sage)
+                } else {
+                    Button(action: { showForgotPIN = true }) {
+                        Text("Forgot PIN?")
+                            .font(.AppTheme.caption)
+                            .foregroundColor(Color.AppTheme.sage)
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.top, AppSpacing.xs)
+                }
             }
 
             Spacer()
@@ -111,6 +137,38 @@ struct ParentPINEntryView: View {
             .padding(.bottom, AppSpacing.xl)
         }
         }
+        .alert("Forgot PIN?", isPresented: $showForgotPIN) {
+            Button("Cancel", role: .cancel) { }
+            Button("Verify with Apple ID") {
+                startAppleIDVerification()
+            }
+        } message: {
+            Text("Sign in with your Apple ID to reset your PIN.")
+        }
+    }
+
+    // MARK: - Forgot PIN → Apple ID Verification
+    //
+    // TEACHING MOMENT: PIN Recovery Flow
+    // 1. Parent taps "Forgot PIN?"
+    // 2. Alert explains they need to verify with Apple ID
+    // 3. Apple's Sign in with Apple sheet appears (Face ID / password)
+    // 4. On success: switch to PIN setup mode so they pick a new PIN
+    // This is the same pattern banks use — verify identity, then reset.
+
+    private func startAppleIDVerification() {
+        let coordinator = SignInCoordinator(authManager: authManager) {
+            // Apple verified the parent's identity — switch to new PIN setup
+            DispatchQueue.main.async {
+                isResettingPIN = true  // effectiveSetupMode becomes true
+                enteredPIN = ""
+                confirmPIN = ""
+                isConfirming = false
+                showError = false
+            }
+        }
+        signInCoordinator = coordinator
+        coordinator.signIn()
     }
 
     // MARK: - Computed
@@ -120,14 +178,14 @@ struct ParentPINEntryView: View {
     }
 
     private var titleText: String {
-        if isSetupMode {
-            return isConfirming ? "Confirm Your PIN" : "Set a Parent PIN"
+        if effectiveSetupMode {
+            return isConfirming ? "Confirm Your PIN" : (isResettingPIN ? "Set a New PIN" : "Set a Parent PIN")
         }
         return "This is for grown-ups!"
     }
 
     private var subtitleText: String {
-        if isSetupMode {
+        if effectiveSetupMode {
             return isConfirming ? "Enter the same 4 digits again" : "Choose 4 digits you'll remember"
         }
         return "Enter the 4-digit parent PIN"
@@ -148,7 +206,7 @@ struct ParentPINEntryView: View {
             guard enteredPIN.count < 4 else { return }
             enteredPIN += digit
             if enteredPIN.count == 4 {
-                if isSetupMode {
+                if effectiveSetupMode {
                     // Move to confirm step
                     isConfirming = true
                 } else {
@@ -194,7 +252,7 @@ struct ParentPINEntryView: View {
         showError = true
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
             shake = false
-            if !isSetupMode {
+            if !effectiveSetupMode {
                 enteredPIN = ""
             }
         }
