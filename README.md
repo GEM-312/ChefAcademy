@@ -374,8 +374,8 @@ ChefAcademy/
 - [ ] Singing to plants, composting, sunshade mechanics
 - [ ] HomeView player stats (veggies grown, recipes cooked)
 - [ ] Sibling kitchen visits
-- [ ] ElevenLabs custom Pip voice (pre-recorded audio clips)
-- [ ] TestFlight deployment
+- [ ] ElevenLabs custom Pip voice (real-time TTS via API)
+- [x] TestFlight deployment (v2)
 
 ---
 
