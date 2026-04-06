@@ -54,7 +54,8 @@ struct GameCenterMatchmakerView: UIViewControllerRepresentable {
         }
 
         func matchmakerViewController(_ viewController: GKMatchmakerViewController, didFind match: GKMatch) {
-            viewController.dismiss(animated: true)
+            // Don't manually dismiss — let SwiftUI handle it via showMatchmaker binding
+            // Double-dismiss can tear down the GKMatch peer-to-peer connection
             DispatchQueue.main.async {
                 self.manager.didFindMatch(match)
             }

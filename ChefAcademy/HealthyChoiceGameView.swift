@@ -64,7 +64,7 @@ struct HealthyChoiceGameView: View {
     // Multiplayer
     @State private var showMultiplayer = false
     @State private var showLocalVersus = false
-    @State private var showNearby = false
+    // showNearby removed — replaced by Game Center online battle
     @State private var showSplitScreen = false
 
     // Game state
@@ -184,20 +184,22 @@ struct HealthyChoiceGameView: View {
             }
             .buttonStyle(BouncyButtonStyle())
 
-            // Nearby multiplayer button (2 devices, same room)
-            Button(action: { showNearby = true }) {
-                HStack(spacing: 8) {
-                    Image(systemName: "antenna.radiowaves.left.and.right")
-                    Text("Nearby Battle")
+            // Online multiplayer button (Game Center — any player worldwide)
+            if GameCenterService.shared.isAuthenticated {
+                Button(action: { showMultiplayer = true }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "globe")
+                        Text("Online Battle")
+                    }
+                    .font(.AppTheme.headline)
+                    .foregroundColor(Color.AppTheme.cream)
+                    .padding(.horizontal, AppSpacing.lg)
+                    .padding(.vertical, AppSpacing.sm)
+                    .background(Color.AppTheme.terracotta)
+                    .cornerRadius(AppSpacing.cardCornerRadius)
                 }
-                .font(.AppTheme.headline)
-                .foregroundColor(Color.AppTheme.cream)
-                .padding(.horizontal, AppSpacing.lg)
-                .padding(.vertical, AppSpacing.sm)
-                .background(Color.AppTheme.terracotta)
-                .cornerRadius(AppSpacing.cardCornerRadius)
+                .buttonStyle(BouncyButtonStyle())
             }
-            .buttonStyle(BouncyButtonStyle())
 
             Button(action: { dismiss() }) {
                 Text("Back")
@@ -218,11 +220,6 @@ struct HealthyChoiceGameView: View {
             SplitScreenVersusView()
                 .environmentObject(gameState)
                 .environmentObject(sessionManager)
-        }
-        .fullScreenCover(isPresented: $showNearby) {
-            NearbyVersusView()
-                .environmentObject(gameState)
-                .environmentObject(avatarModel)
         }
         .fullScreenCover(isPresented: $showMultiplayer) {
             MultiplayerHealthyPicksView()
@@ -324,7 +321,8 @@ struct HealthyChoiceGameView: View {
 
     func foodBubble(item: FlyingFood) -> some View {
         VStack(spacing: 2) {
-            if let imgName = item.food.imageName {
+            if let imgName = item.food.imageName,
+               UIImage(named: imgName) != nil {
                 Image(imgName)
                     .resizable()
                     .aspectRatio(contentMode: .fit)

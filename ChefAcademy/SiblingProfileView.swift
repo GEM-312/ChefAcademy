@@ -14,6 +14,9 @@ struct SiblingProfileView: View {
     let onBack: () -> Void
     @Environment(\.modelContext) private var modelContext
     @State private var showGarden = false
+    @State private var showGiftSheet = false
+    @State private var giftMessage: String? = nil
+    @State private var showGiftToast = false
 
     private var playerData: PlayerData? {
         sibling.playerData(in: modelContext)
@@ -106,6 +109,24 @@ struct SiblingProfileView: View {
                     .buttonStyle(.plain)
                     .padding(.horizontal, AppSpacing.md)
 
+                    // Gift Veggies button
+                    if !visitorGameState.harvestedIngredients.isEmpty {
+                        Button(action: { showGiftSheet = true }) {
+                            HStack {
+                                Image(systemName: "gift.fill")
+                                Text("Gift Veggies to \(sibling.name)")
+                            }
+                            .font(.AppTheme.headline)
+                            .foregroundColor(Color.AppTheme.cream)
+                            .frame(maxWidth: .infinity)
+                            .padding(AppSpacing.md)
+                            .background(Color.AppTheme.goldenWheat)
+                            .cornerRadius(AppSpacing.cardCornerRadius)
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, AppSpacing.md)
+                    }
+
                     if let data = playerData {
                         // Stats grid
                         LazyVGrid(columns: [
@@ -196,6 +217,153 @@ struct SiblingProfileView: View {
                 visitorGameState: visitorGameState,
                 onBack: { showGarden = false }
             )
+        }
+        .sheet(isPresented: $showGiftSheet) {
+            GiftVeggieSheet(
+                visitorGameState: visitorGameState,
+                sibling: sibling,
+                onGift: { vegType in
+                    giftVeggie(vegType)
+                }
+            )
+        }
+        .overlay {
+            if showGiftToast, let msg = giftMessage {
+                VStack {
+                    Spacer()
+                    HStack(spacing: AppSpacing.sm) {
+                        PipWavingAnimatedView(size: 36)
+                        Text(msg)
+                            .font(.AppTheme.headline)
+                            .foregroundColor(Color.AppTheme.darkBrown)
+                            .lineLimit(2)
+                    }
+                    .padding(AppSpacing.md)
+                    .background(Color.AppTheme.warmCream)
+                    .cornerRadius(AppSpacing.cardCornerRadius)
+                    .shadow(color: Color.AppTheme.sepia.opacity(0.15), radius: 8, y: 4)
+                    .padding(.horizontal, AppSpacing.lg)
+                    .padding(.bottom, 120)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+                }
+            }
+        }
+    }
+
+    // MARK: - Gift Veggie
+
+    private func giftVeggie(_ vegType: VegetableType) {
+        // Remove from visitor's inventory
+        if let idx = visitorGameState.harvestedIngredients.firstIndex(where: { $0.type == vegType && $0.quantity > 0 }) {
+            visitorGameState.harvestedIngredients[idx].quantity -= 1
+            if visitorGameState.harvestedIngredients[idx].quantity <= 0 {
+                visitorGameState.harvestedIngredients.remove(at: idx)
+            }
+        }
+
+        // Add to sibling's PlayerData
+        if let siblingData = sibling.playerData(in: modelContext) {
+            if let idx = siblingData.harvestedData.firstIndex(where: { $0.vegetableRawValue == vegType.rawValue }) {
+                siblingData.harvestedData[idx].quantity += 1
+            } else {
+                siblingData.harvestedData.append(HarvestedData(vegetableRawValue: vegType.rawValue, quantity: 1))
+            }
+        }
+
+        // Track gift count on visitor
+        visitorGameState.giftsGivenCount += 1
+
+        // Persist
+        visitorGameState.saveToStore()
+        try? modelContext.save()
+
+        // Report achievement
+        GameCenterService.shared.reportAchievement(AchievementID.generousChef)
+        GameCenterService.shared.checkAchievements(gameState: visitorGameState)
+
+        // Show toast
+        showGiftSheet = false
+        giftMessage = "You gave \(sibling.name) a \(vegType.displayName)!"
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+            showGiftToast = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
+            withAnimation(.easeOut(duration: 0.3)) {
+                showGiftToast = false
+            }
+        }
+    }
+}
+
+// MARK: - Gift Veggie Sheet
+
+struct GiftVeggieSheet: View {
+    let visitorGameState: GameState
+    let sibling: UserProfile
+    let onGift: (VegetableType) -> Void
+    @Environment(\.dismiss) private var dismiss
+
+    private var availableVeggies: [HarvestedIngredient] {
+        visitorGameState.harvestedIngredients.filter { $0.quantity > 0 }
+    }
+
+    var body: some View {
+        NavigationView {
+            ZStack {
+                Color.AppTheme.cream.ignoresSafeArea()
+
+                if availableVeggies.isEmpty {
+                    VStack(spacing: AppSpacing.md) {
+                        Image(systemName: "leaf.arrow.triangle.circlepath")
+                            .font(.system(size: 48))
+                            .foregroundColor(Color.AppTheme.sage.opacity(0.5))
+                        Text("No veggies to gift!")
+                            .font(.AppTheme.headline)
+                            .foregroundColor(Color.AppTheme.sepia)
+                        Text("Harvest some from your garden first.")
+                            .font(.AppTheme.body)
+                            .foregroundColor(Color.AppTheme.sepia.opacity(0.7))
+                    }
+                } else {
+                    ScrollView {
+                        LazyVGrid(columns: [
+                            GridItem(.flexible()),
+                            GridItem(.flexible()),
+                            GridItem(.flexible())
+                        ], spacing: AppSpacing.md) {
+                            ForEach(availableVeggies, id: \.type) { item in
+                                Button(action: { onGift(item.type) }) {
+                                    VStack(spacing: 4) {
+                                        Image(item.type.imageName)
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .frame(width: 60, height: 60)
+                                        Text(item.type.displayName)
+                                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                                            .foregroundColor(Color.AppTheme.darkBrown)
+                                        Text("x\(item.quantity)")
+                                            .font(.AppTheme.caption)
+                                            .foregroundColor(Color.AppTheme.sepia)
+                                    }
+                                    .padding(AppSpacing.sm)
+                                    .background(Color.AppTheme.warmCream)
+                                    .cornerRadius(AppSpacing.cardCornerRadius)
+                                }
+                                .buttonStyle(.plain)
+                            }
+                        }
+                        .padding(AppSpacing.md)
+                    }
+                }
+            }
+            .navigationTitle("Gift to \(sibling.name)")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                        .foregroundColor(Color.AppTheme.sage)
+                }
+            }
         }
     }
 }

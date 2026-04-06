@@ -115,7 +115,23 @@ class MultiplayerManager: NSObject, ObservableObject {
             print("[Multiplayer] Match found! Host: \(isHost), opponent: \(opponent.displayName)")
         }
 
+        // Don't send data yet — wait for didChangeConnectionState to confirm
+        // the peer-to-peer channel is actually ready (expectedPlayerCount == 0)
+        print("[Multiplayer] Waiting for peer-to-peer connection... expectedPlayerCount: \(match.expectedPlayerCount)")
+
+        // If all players are already connected, start immediately
+        if match.expectedPlayerCount == 0 {
+            beginDataExchange()
+        }
+        // Otherwise, didChangeConnectionState will call beginDataExchange
+    }
+
+    /// Called once the peer-to-peer data channel is confirmed ready
+    private func beginDataExchange() {
+        guard matchPhase != .connected else { return } // prevent double-fire
         matchPhase = .connected
+
+        print("[Multiplayer] Peer-to-peer ready — starting data exchange")
 
         // Send player info
         sendPlayerInfo()
@@ -148,7 +164,9 @@ class MultiplayerManager: NSObject, ObservableObject {
     var localLevel: Int = 1
 
     private func sendPlayerInfo() {
-        let name = localName.isEmpty ? GKLocalPlayer.local.displayName : localName
+        // Use Game Center display name so each device sends a unique identity
+        // (app profile names can be identical when CloudKit syncs family data)
+        let name = GKLocalPlayer.local.displayName
         sendMessage(.playerInfo(name: name, genderRaw: localGenderRaw, level: localLevel))
     }
 
@@ -277,16 +295,21 @@ extension MultiplayerManager: GKMatchDelegate {
 
     func match(_ match: GKMatch, player: GKPlayer, didChange state: GKPlayerConnectionState) {
         DispatchQueue.main.async { [weak self] in
+            guard let self = self else { return }
+
             switch state {
             case .connected:
-                print("[Multiplayer] Player connected: \(player.displayName)")
+                print("[Multiplayer] Player connected: \(player.displayName), expectedPlayerCount: \(match.expectedPlayerCount)")
+                // All players connected — peer-to-peer channel is ready
+                if match.expectedPlayerCount == 0 {
+                    self.beginDataExchange()
+                }
             case .disconnected:
                 print("[Multiplayer] Player disconnected: \(player.displayName)")
-                if self?.matchPhase == .playing {
-                    // Opponent left mid-game — end gracefully
-                    self?.matchPhase = .finished
-                } else {
-                    self?.matchPhase = .error("Your friend left the game.")
+                if self.matchPhase == .playing {
+                    self.matchPhase = .finished
+                } else if self.matchPhase == .connected || self.matchPhase == .countdown(0) {
+                    self.matchPhase = .error("Your friend left the game.")
                 }
             default:
                 break

@@ -63,6 +63,12 @@ enum AchievementID {
     static let level10            = "com.chefacademy.level_10"
     static let fullGarden         = "com.chefacademy.full_garden"
     static let plantWhisperer     = "com.chefacademy.plant_care"
+
+    // Social — helping & gifting
+    static let helpingHand        = "com.chefacademy.helping_hand"
+    static let gardenAngel        = "com.chefacademy.garden_angel"
+    static let generousChef       = "com.chefacademy.generous_chef"
+    static let helpStreakAch       = "com.chefacademy.help_streak"
 }
 
 // MARK: - Game Center Service
@@ -294,6 +300,22 @@ class GameCenterService: ObservableObject {
         // Coin milestone
         if gameState.coins >= 500 {
             reportAchievement(AchievementID.coinCollector)
+        }
+
+        // Social milestones — helping & gifting
+        if gameState.helpGivenCount >= 1 {
+            reportAchievement(AchievementID.helpingHand)
+        }
+        if gameState.helpGivenCount >= 10 {
+            reportAchievement(AchievementID.gardenAngel)
+        } else if gameState.helpGivenCount > 0 {
+            reportAchievement(AchievementID.gardenAngel, percentComplete: Double(gameState.helpGivenCount) / 10.0 * 100.0)
+        }
+        if gameState.helpStreak >= 3 {
+            reportAchievement(AchievementID.helpStreakAch)
+        }
+        if gameState.giftsGivenCount >= 1 {
+            reportAchievement(AchievementID.generousChef)
         }
 
         // Report cumulative leaderboard scores

@@ -178,6 +178,10 @@ struct SiblingGardenView: View {
 
         try? modelContext.save()
 
+        // Report social achievements to Game Center
+        GameCenterService.shared.reportAchievement(AchievementID.helpingHand)
+        GameCenterService.shared.checkAchievements(gameState: visitorGameState)
+
         // Show reward toast
         withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
             showHelpReward = true

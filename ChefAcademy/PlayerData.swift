@@ -139,6 +139,7 @@ class PlayerData {
     var helpGivenCount: Int = 0
     var helpStreak: Int = 0
     var lastHelpDateRaw: Double = 0   // timeIntervalSince1970, 0 = never
+    var giftsGivenCount: Int = 0
 
     // Sibling Help — received (as garden owner)
     var receivedHelp: [HelpEntry] = []

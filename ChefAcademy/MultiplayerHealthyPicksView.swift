@@ -476,6 +476,7 @@ struct MultiplayerHealthyPicksView: View {
                 // Buttons
                 HStack(spacing: AppSpacing.md) {
                     Button(action: {
+                        manager.disconnect()
                         resetForRematch()
                         manager.startMatchmaking()
                     }) {
@@ -581,7 +582,8 @@ struct MultiplayerHealthyPicksView: View {
 
     private func foodBubble(item: FlyingFood) -> some View {
         VStack(spacing: 2) {
-            if let imgName = item.food.imageName {
+            if let imgName = item.food.imageName,
+               UIImage(named: imgName) != nil {
                 Image(imgName)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
@@ -773,8 +775,17 @@ struct MultiplayerHealthyPicksView: View {
         // If opponent already finished, go to results
         if manager.opponentFinished {
             manager.matchPhase = .finished
+        } else {
+            // Safety timeout — if opponent never reports, end after 15 seconds
+            DispatchQueue.main.asyncAfter(deadline: .now() + 15) { [self] in
+                if localFinished && !manager.opponentFinished {
+                    print("[Multiplayer] Opponent timeout — ending game")
+                    manager.opponentFinalScore = manager.opponentScore
+                    manager.opponentFinished = true
+                    manager.matchPhase = .finished
+                }
+            }
         }
-        // Otherwise wait for opponent (onChange handler will catch it)
     }
 
     private func awardCoins(won: Bool, tied: Bool) {

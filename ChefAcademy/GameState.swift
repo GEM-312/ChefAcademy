@@ -135,6 +135,7 @@ class GameState: ObservableObject {
     @Published var helpGivenCount: Int = 0
     @Published var helpStreak: Int = 0
     @Published var lastHelpDate: Date? = nil
+    @Published var giftsGivenCount: Int = 0
 
     // ============================================
     // KNOWLEDGE REWARDS (one-time coin earnings)
@@ -463,6 +464,7 @@ class GameState: ObservableObject {
         helpGivenCount = saved.helpGivenCount
         helpStreak = saved.helpStreak
         lastHelpDate = saved.lastHelpDateRaw > 0 ? Date(timeIntervalSince1970: saved.lastHelpDateRaw) : nil
+        giftsGivenCount = saved.giftsGivenCount
 
         // Knowledge rewards
         claimedKnowledgeIDs = Set(saved.claimedKnowledgeIDs)
@@ -572,6 +574,7 @@ class GameState: ObservableObject {
         saved.helpGivenCount = helpGivenCount
         saved.helpStreak = helpStreak
         saved.lastHelpDateRaw = lastHelpDate?.timeIntervalSince1970 ?? 0
+        saved.giftsGivenCount = giftsGivenCount
 
         // Knowledge rewards
         saved.claimedKnowledgeIDs = Array(claimedKnowledgeIDs)
@@ -613,6 +616,7 @@ class GameState: ObservableObject {
         helpGivenCount = 0
         helpStreak = 0
         lastHelpDate = nil
+        giftsGivenCount = 0
         claimedKnowledgeIDs = []
         dailyQuests = Quest.generateDailyQuests()
         completedBadgeIDs = []
