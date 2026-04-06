@@ -83,7 +83,9 @@ Pip is your friendly hedgehog chef guide! With 8 adorable poses and walking/wavi
 | **Play & Learn** | Mini-game hub with veggie match, nutrition quiz, and chop challenges |
 | **Seed Info** | Educational veggie pages with PencilKit coloring and fun facts |
 | **Multi-User** | Family system with up to 4 children per device, parent PIN protection |
-| **Sibling Visits** | Visit your sibling's garden, see their progress, and leave likes! |
+| **Sibling Visits** | Visit your sibling's garden, help with care, and gift veggies! |
+| **Game Center** | 4 leaderboards, 26 achievements, and real-time online multiplayer |
+| **Multiplayer** | Online Healthy Picks battle via Game Center matchmaking |
 | **Progression** | Earn coins, XP, badges, and unlock new recipes |
 | **Quests** | Daily challenges to keep kids engaged |
 
@@ -217,6 +219,7 @@ All fonts use **SF Rounded** (system) for a friendly, approachable feel.
 - **Nutrition API:** USDA FoodData Central (real nutrient data with kid-friendly superpowers)
 - **Weather:** Apple WeatherKit (real weather affects garden growth)
 - **AI Chat:** Claude Haiku API (Pip answers kids' food questions)
+- **Game Center:** GameKit (leaderboards, achievements, real-time multiplayer)
 - **Auth:** Sign in with Apple (parent authentication)
 - **Minimum iOS:** 16.0
 - **Target Devices:** iPhone & iPad
@@ -260,9 +263,15 @@ ChefAcademy/
 |   +-- RecipeDetailView.swift   # Full-screen cookbook page
 |
 +-- Social/
-|   +-- SiblingProfileView.swift # Sibling stats, harvested veggies, visit garden
-|   +-- SiblingGardenView.swift  # Read-only garden visit with Pip greeting
+|   +-- SiblingProfileView.swift # Sibling stats, visit garden, gift veggies
+|   +-- SiblingGardenView.swift  # Garden visit with care help + rewards
 |   +-- PipDialogView.swift      # Game-style dialog overlay with choices
+|
++-- Multiplayer/
+|   +-- MultiplayerManager.swift         # GameKit matchmaking, peer-to-peer messaging
+|   +-- MultiplayerHealthyPicksView.swift # Online Healthy Picks battle
+|   +-- GameCenterMatchmakerView.swift   # UIKit wrapper for GKMatchmakerViewController
+|   +-- GameCenterService.swift          # Leaderboards, achievements, GKAccessPoint
 |
 +-- Body & Play/
 |   +-- BodyBuddyView.swift      # Organ health rings visualization
@@ -333,6 +342,9 @@ ChefAcademy/
 - [x] Landscape support with adaptive tab bar
 - [x] PipDialogView game-style dialog system
 - [x] Sign in with Apple (parent authentication)
+- [x] Game Center integration with leaderboards and achievements
+- [x] Real-time online multiplayer via GameKit
+- [x] Veggie gifting between siblings
 
 ### March 15, 2026 — New Features
 - [x] **PipVoice (AVSpeechSynthesizer)** — Pip reads instructions aloud for age 6+ audience. SpeakerButton component on cooking steps, seed info, fun facts
@@ -347,15 +359,23 @@ ChefAcademy/
 - [x] **Play Time Display** — Shows days/hours/minutes on profile picker cards
 - [x] **Profile Refresh** — ProfilePickerView now refreshes after adding a new child
 
+### April 5, 2026 — Game Center & Multiplayer
+- [x] **Game Center Service** — Singleton with authentication, score reporting, achievement reporting, and GKAccessPoint (floating trophy bubble)
+- [x] **4 Leaderboards** — Healthy Picks High Score, Insulin Tetris High Score, Cooking Master (3-star count), Total Veggies Harvested
+- [x] **26 Achievements** — Harvest milestones (First Harvest → Master Gardener), Cooking (First Recipe → Master Chef), Healthy Picks, Insulin Tetris, Social (Helping Hand, Garden Angel, Generous Chef, Help Streak), Progression (Week/Month Streak, Coin Collector, Level 5/10), Garden (Full Garden, Plant Whisperer, Seed Scholar)
+- [x] **Real-Time Online Multiplayer** — Game Center matchmaking for Healthy Picks battles between any players worldwide. Seeded RNG for deterministic food sequences, live opponent score bar, 3-2-1 countdown, VS lobby, win/lose/tie results
+- [x] **Multiplayer Connection Fix** — Wait for `expectedPlayerCount == 0` before data exchange (Apple's recommended pattern), safety timeout for unresponsive opponents
+- [x] **Veggie Gifting** — Gift harvested veggies to siblings via GiftVeggieSheet, tracked with giftsGivenCount, triggers Generous Chef achievement
+- [x] **Sibling Help Achievements** — Garden care actions (water/weed/debug) now report to Game Center (Helping Hand, Garden Angel, Help Streak)
+- [x] **ODR Image Fallback** — Food bubbles fall back to emoji when On Demand Resources assets haven't downloaded yet
+
 ### In Progress
-- [ ] Async social: visitor footprints, gifts, message board, veggie trading
-- [ ] Game Center multiplayer: real-time mini-game challenges between siblings
 - [ ] Plant care interactions: watering can drag, weeding swipe, bug rescue tap
 - [ ] Singing to plants, composting, sunshade mechanics
 - [ ] HomeView player stats (veggies grown, recipes cooked)
 - [ ] Sibling kitchen visits
-- [ ] WeatherKit activation (pending Apple server propagation)
 - [ ] ElevenLabs custom Pip voice (pre-recorded audio clips)
+- [ ] TestFlight deployment
 
 ---
 
@@ -372,13 +392,14 @@ ChefAcademy/
 │              Services Layer                   │
 │  PipVoice  USDAFoodService  GardenWeather    │
 │  PipAIService  CloudKeyManager               │
+│  GameCenterService  MultiplayerManager       │
 ├─────────────────────────────────────────────┤
 │           SwiftData + CloudKit                │
 │  FamilyProfile  UserProfile  PlayerData      │
 ├─────────────────────────────────────────────┤
 │           Apple Frameworks                    │
 │  WeatherKit  PencilKit  AVFoundation         │
-│  AuthenticationServices  GameKit (planned)    │
+│  AuthenticationServices  GameKit             │
 └─────────────────────────────────────────────┘
 ```
 
@@ -394,6 +415,8 @@ ChefAcademy/
 | **Silent data loss** | Replaced `try? context.save()` with `do/catch` logging to catch persistence failures |
 | **WeatherKit JWT auth** | Entitlements, provisioning profile regeneration, Apple server propagation handling |
 | **Kid-friendly nutrition** | USDA raw data (mg/IU) translated to superpowers ("Germ-fighting superpower!") via threshold logic |
+| **Game Center multiplayer** | Wait for `expectedPlayerCount == 0` before data exchange; seeded RNG for deterministic gameplay; safety timeout for disconnected opponents |
+| **ODR image fallback** | Check `UIImage(named:)` at runtime and fall back to emoji when asset packs haven't downloaded |
 
 ---
 
@@ -401,14 +424,16 @@ ChefAcademy/
 
 | Metric | Count |
 |--------|-------|
-| Swift source files | 40+ |
-| Lines of code | ~15,000+ |
+| Swift source files | 84+ |
+| Lines of code | ~20,000+ |
 | Image assets | 285 |
 | Vegetables/fruits | 27 |
 | Pantry items | 19 |
 | Recipes | 17 |
 | Mini-game types | 10 |
-| API integrations | 3 (USDA, Claude AI, WeatherKit) |
+| API integrations | 4 (USDA, Claude AI, WeatherKit, Game Center) |
+| Game Center leaderboards | 4 |
+| Game Center achievements | 26 |
 | Body organ systems | 9 |
 | Pip character poses | 8 + walking + waving animations |
 
@@ -436,10 +461,12 @@ ChefAcademy/
 - Built PipVoice text-to-speech for accessibility
 - Enforced visual consistency via STYLES.md design system
 
-### Phase 4: Social & Multiplayer (Planned: March-April 2026)
-- Async social features (gifts, trading, message boards)
-- Game Center real-time multiplayer mini-games
-- Family leaderboards and cooperative recipes
+### Phase 4: Social & Multiplayer (March-April 2026)
+- Game Center integration: 4 leaderboards + 26 achievements with progressive tracking
+- Real-time online multiplayer Healthy Picks via GameKit peer-to-peer
+- Veggie gifting between siblings with achievement rewards
+- Sibling garden help (water, weed, debug) with coin/XP/seed rewards
+- Sandbox testing with dual-device Game Center matchmaking
 
 ---
 
