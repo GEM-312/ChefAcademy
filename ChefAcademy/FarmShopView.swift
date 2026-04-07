@@ -178,7 +178,8 @@ struct FarmShopView: View {
                     },
                     onInfo: {
                         selectedInfoItem = item
-                    }
+                    },
+                    childAllergens: gameState.activeAllergens
                 )
             }
         }
@@ -237,6 +238,11 @@ struct ShopItemCard: View {
     let isBouncing: Bool
     let onBuy: () -> Void
     var onInfo: (() -> Void)? = nil
+    var childAllergens: [FoodAllergen] = []
+
+    private var hasAllergen: Bool {
+        !item.allergens.filter { childAllergens.contains($0) }.isEmpty
+    }
 
     var body: some View {
         Button(action: {
@@ -259,6 +265,17 @@ struct ShopItemCard: View {
                     .scaleEffect(isBouncing ? 1.1 : 1.0)
                     .animation(.spring(response: 0.3, dampingFraction: 0.5), value: isBouncing)
                     .padding(.top, 4)
+                    .overlay(alignment: .topLeading) {
+                        if hasAllergen {
+                            Image(systemName: "exclamationmark.triangle.fill")
+                                .font(.system(size: 12))
+                                .foregroundColor(.white)
+                                .padding(4)
+                                .background(Color.AppTheme.terracotta)
+                                .clipShape(Circle())
+                                .padding(4)
+                        }
+                    }
 
                 VStack(spacing: 1) {
                     Text(item.displayName)

@@ -42,6 +42,10 @@ struct KitchenView: View {
     @State private var itemsOnStove: Bool = false
     @State private var stoveFlameOn: Bool = false
 
+    // Allergen warning
+    @State private var showAllergenWarning = false
+    @State private var pendingAllergenRecipe: Recipe? = nil
+
     // Flying animation
     @State private var flyingImage: String? = nil
     @State private var flyingPosition: CGPoint = .zero
@@ -125,6 +129,22 @@ struct KitchenView: View {
             if !showing {
                 // Returned from mini-game — reset cooking
                 resetCookingMode()
+            }
+        }
+        .alert("Allergen Warning", isPresented: $showAllergenWarning) {
+            Button("A grown-up says it's OK!") {
+                if let recipe = pendingAllergenRecipe {
+                    pendingAllergenRecipe = nil
+                    proceedWithCooking(recipe: recipe)
+                }
+            }
+            Button("Pick a different recipe", role: .cancel) {
+                pendingAllergenRecipe = nil
+            }
+        } message: {
+            if let recipe = pendingAllergenRecipe {
+                let names = recipe.matchingAllergens(gameState.activeAllergens).map(\.displayName).joined(separator: " and ")
+                Text("Hold on! This recipe has \(names) in it. Ask a grown-up if it's OK to cook this one!")
             }
         }
     }
@@ -419,6 +439,17 @@ struct KitchenView: View {
     // MARK: - Cooking Flow
 
     func startCooking(recipe: Recipe) {
+        // Check for allergens first
+        let matching = recipe.matchingAllergens(gameState.activeAllergens)
+        if !matching.isEmpty {
+            pendingAllergenRecipe = recipe
+            showAllergenWarning = true
+            return
+        }
+        proceedWithCooking(recipe: recipe)
+    }
+
+    private func proceedWithCooking(recipe: Recipe) {
         cookingRecipe = recipe
 
         // Consume garden ingredients

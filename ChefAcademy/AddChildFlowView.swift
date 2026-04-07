@@ -22,6 +22,7 @@ struct AddChildFlowView: View {
     @State private var childGender: Gender = .girl
     @State private var childOutfit: Outfit = .apronRed
     @State private var childHeadCovering: HeadCovering = .chefHatWhite
+    @State private var childAllergens: [FoodAllergen] = []
     @State private var showDuplicateWarning: Bool = false
 
     /// Check if a child with this name already exists in the family
@@ -71,6 +72,15 @@ struct AddChildFlowView: View {
                 )
 
             case 2:
+                AllergenPickerStep(
+                    title: "Any food allergies?",
+                    subtitle: "Select any allergens for \(childName)",
+                    selectedAllergens: $childAllergens,
+                    onNext: { withAnimation { step = 3 } },
+                    onBack: { withAnimation { step = 1 } }
+                )
+
+            case 3:
                 // Quick Meet Pip
                 VStack(spacing: AppSpacing.xl) {
                     Spacer()
@@ -112,7 +122,8 @@ struct AddChildFlowView: View {
             name: childName,
             gender: childGender,
             headCovering: childHeadCovering,
-            outfit: childOutfit
+            outfit: childOutfit,
+            allergens: childAllergens
         )
 
         // Force SwiftData to persist immediately so ProfilePickerView

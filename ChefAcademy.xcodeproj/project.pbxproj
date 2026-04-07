@@ -263,7 +263,7 @@
 				CODE_SIGN_ENTITLEMENTS = ChefAcademy/ChefAcademy.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				ENABLE_ON_DEMAND_RESOURCES = YES;
+				ENABLE_ON_DEMAND_RESOURCES = NO;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSBonjourServices = "(_pip-healthy._tcp)";
@@ -300,7 +300,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
-				ENABLE_ON_DEMAND_RESOURCES = YES;
+				ENABLE_ON_DEMAND_RESOURCES = NO;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_NSBonjourServices = "(_pip-healthy._tcp)";

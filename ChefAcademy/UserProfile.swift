@@ -26,6 +26,8 @@ class UserProfile {
     var lastPlayedDate: Date = Date()
     var totalPlayTimeSeconds: Int = 0
     var familyID: UUID? = nil
+    var allergenRawValues: [String] = []
+    var allergenStrictMode: Bool = false
 
     init(
         id: UUID = UUID(),
@@ -69,6 +71,20 @@ class UserProfile {
 
     var isParent: Bool {
         profileRole == .parent
+    }
+
+    // MARK: - Allergen Helpers
+
+    var allergens: [FoodAllergen] {
+        allergenRawValues.compactMap { FoodAllergen(rawValue: $0) }
+    }
+
+    func setAllergens(_ allergens: [FoodAllergen]) {
+        allergenRawValues = allergens.map { $0.rawValue }
+    }
+
+    func hasAllergen(_ allergen: FoodAllergen) -> Bool {
+        allergenRawValues.contains(allergen.rawValue)
     }
 
     var formattedPlayTime: String {

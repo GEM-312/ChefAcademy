@@ -101,8 +101,10 @@ struct ChefAcademyApp: App {
 
                     gameState.startAutoSave()
 
-                    // Prewarm ALL heavy images at launch — cached before user navigates
+                    // Prewarm images — skip in debug builds (images are bundled, no need)
+                    #if !DEBUG
                     ImagePrewarmer.prewarmAll()
+                    #endif
 
                     // Authenticate with Game Center as early as possible.
                     // This shows the "Welcome back!" banner and enables
@@ -277,9 +279,10 @@ struct CustomTabBar: View {
                     }) {
                         VStack(spacing: 4) {
                             Image(systemName: tab.icon)
-                                .font(.system(size: 22))
+                                .font(.system(size: 20))
+                                .frame(width: 28, height: 28)
                             Text(tab.rawValue)
-                                .font(.AppTheme.caption)
+                                .font(.system(size: 10, weight: .medium, design: .rounded))
                         }
                         .foregroundColor(selectedTab == tab ? Color.AppTheme.goldenWheat : Color.AppTheme.lightSepia)
                         .frame(maxWidth: .infinity)

@@ -138,6 +138,15 @@ class GameState: ObservableObject {
     @Published var giftsGivenCount: Int = 0
 
     // ============================================
+    // ALLERGEN AWARENESS
+    // ============================================
+
+    /// Active child's allergens (loaded from UserProfile on selectProfile)
+    @Published var activeAllergens: [FoodAllergen] = []
+    /// If true, hide allergen recipes entirely instead of just warning
+    @Published var allergenStrictMode: Bool = false
+
+    // ============================================
     // KNOWLEDGE REWARDS (one-time coin earnings)
     // ============================================
 
@@ -617,6 +626,8 @@ class GameState: ObservableObject {
         helpStreak = 0
         lastHelpDate = nil
         giftsGivenCount = 0
+        // Note: activeAllergens and allergenStrictMode are NOT reset here —
+        // they come from UserProfile (identity), not PlayerData (progress)
         claimedKnowledgeIDs = []
         dailyQuests = Quest.generateDailyQuests()
         completedBadgeIDs = []

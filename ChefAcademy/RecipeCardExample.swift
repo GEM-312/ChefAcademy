@@ -234,6 +234,26 @@ enum PantryItem: String, CaseIterable, Identifiable {
         }
     }
 
+    /// Food allergens present in this item (FDA top 9)
+    var allergens: [FoodAllergen] {
+        switch self {
+        case .butter, .milk, .cheese, .cream, .greekYogurt:
+            return [.milk]
+        case .eggs:
+            return [.eggs]
+        case .flour:
+            return [.wheat]
+        case .nuts:
+            return [.peanuts, .treeNuts]
+        case .soySauce:
+            return [.soy]
+        case .salt, .pepper, .cinnamon, .paprika, .cumin, .garlicPowder, .turmeric,
+             .oliveOil, .vegetableOil, .chicken, .groundBeef,
+             .tomatoSauce, .vinegar, .lemon:
+            return []
+        }
+    }
+
     /// Shop category for grouping items
     var shopCategory: ShopCategory {
         switch self {
@@ -353,6 +373,23 @@ struct Recipe: Identifiable {
             let available = pantryInventory.first(where: { $0.item == item })?.quantity ?? 0
             return available < 1
         }
+    }
+
+    // MARK: - Allergen Helpers
+
+    /// All allergens present in this recipe (from pantry ingredients)
+    var allergens: Set<FoodAllergen> {
+        Set(pantryIngredients.flatMap { $0.allergens })
+    }
+
+    /// Returns allergens in this recipe that match the child's profile
+    func matchingAllergens(_ profileAllergens: [FoodAllergen]) -> [FoodAllergen] {
+        profileAllergens.filter { allergens.contains($0) }
+    }
+
+    /// True if recipe contains any of the child's allergens
+    func containsAllergens(_ profileAllergens: [FoodAllergen]) -> Bool {
+        !allergens.isDisjoint(with: profileAllergens)
     }
 }
 
@@ -900,6 +937,11 @@ struct GardenRecipes {
 // MARK: - Recipe Card View
 struct RecipeCardView: View {
     let recipe: Recipe
+    var childAllergens: [FoodAllergen] = []
+
+    private var matchingAllergens: [FoodAllergen] {
+        recipe.matchingAllergens(childAllergens)
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -926,6 +968,22 @@ struct RecipeCardView: View {
                     .padding(.vertical, 4)
                     .background(Color.AppTheme.terracotta)
                     .cornerRadius(8)
+                    .padding(8)
+                }
+
+                // Allergen badge (top-left corner)
+                if !matchingAllergens.isEmpty {
+                    HStack(spacing: 4) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                        Text("Allergen")
+                    }
+                    .font(.AppTheme.caption)
+                    .foregroundColor(.white)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(Color.AppTheme.terracotta.opacity(0.9))
+                    .cornerRadius(8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(8)
                 }
             }
@@ -994,10 +1052,17 @@ struct RecipeListView: View {
 
     // Filter recipes based on selected category
     var filteredRecipes: [Recipe] {
+        var result: [Recipe]
         if selectedCategory == .all {
-            return recipes
+            result = recipes
+        } else {
+            result = recipes.filter { $0.category == selectedCategory }
         }
-        return recipes.filter { $0.category == selectedCategory }
+        // Strict mode: hide recipes containing child's allergens
+        if gameState.allergenStrictMode && !gameState.activeAllergens.isEmpty {
+            result = result.filter { !$0.containsAllergens(gameState.activeAllergens) }
+        }
+        return result
     }
 
     var body: some View {
@@ -1050,7 +1115,7 @@ struct RecipeListView: View {
                     // Recipe Cards - Shows filtered recipes
                     VStack(spacing: AppSpacing.md) {
                         ForEach(filteredRecipes) { recipe in
-                            RecipeCardView(recipe: recipe)
+                            RecipeCardView(recipe: recipe, childAllergens: gameState.activeAllergens)
                                 .onTapGesture { selectedRecipe = recipe }
                                 .transition(.opacity.combined(with: .scale(scale: 0.95)))
                         }

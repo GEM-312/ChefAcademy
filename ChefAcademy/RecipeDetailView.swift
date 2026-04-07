@@ -4,7 +4,12 @@ import SwiftUI
 struct RecipeDetailView: View {
     let recipe: Recipe
     var onStartCooking: (() -> Void)? = nil
+    var childAllergens: [FoodAllergen] = []
     @Environment(\.dismiss) var dismiss
+
+    private var matchingAllergens: [FoodAllergen] {
+        recipe.matchingAllergens(childAllergens)
+    }
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -52,6 +57,27 @@ struct RecipeDetailView: View {
                                 .padding(.vertical, 5)
                                 .background(Color.AppTheme.terracotta)
                                 .cornerRadius(10)
+                            }
+
+                            // Allergen warning banner
+                            if !matchingAllergens.isEmpty {
+                                HStack(spacing: 8) {
+                                    Image(systemName: "exclamationmark.triangle.fill")
+                                        .foregroundColor(.white)
+                                    VStack(alignment: .leading, spacing: 2) {
+                                        Text("Allergen Warning")
+                                            .font(.AppTheme.caption)
+                                            .fontWeight(.semibold)
+                                        Text("Contains: \(matchingAllergens.map(\.displayName).joined(separator: ", "))")
+                                            .font(.AppTheme.caption)
+                                    }
+                                    .foregroundColor(.white)
+                                }
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .background(Color.AppTheme.terracotta)
+                                .cornerRadius(12)
                             }
 
                             Text(recipe.title)

@@ -257,6 +257,10 @@ class SessionManager: ObservableObject {
         // Load avatar data
         avatarModel.loadFrom(profile: profile)
 
+        // Load allergen data
+        gameState.activeAllergens = profile.allergens
+        gameState.allergenStrictMode = profile.allergenStrictMode
+
         // Load game data
         if let ctx = modelContext, let playerData = profile.playerData(in: ctx) {
             gameState.activeProfileID = profile.id
@@ -305,7 +309,8 @@ class SessionManager: ObservableObject {
         name: String,
         gender: Gender,
         headCovering: HeadCovering,
-        outfit: Outfit
+        outfit: Outfit,
+        allergens: [FoodAllergen] = []
     ) -> UserProfile? {
         guard let family = familyProfile, let context = modelContext,
               family.canAddChild(in: context) else {
@@ -319,6 +324,7 @@ class SessionManager: ObservableObject {
             headCovering: headCovering,
             outfit: outfit
         )
+        profile.setAllergens(allergens)
 
         context.insert(profile)
         family.addMember(profile)

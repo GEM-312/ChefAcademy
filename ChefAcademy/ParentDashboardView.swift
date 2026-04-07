@@ -23,6 +23,7 @@ struct ParentDashboardView: View {
     @State private var showVoiceSettings = false
     @State private var showSignOutConfirmation = false
     @State private var showDeleteAllConfirmation = false
+    @State private var showAllergenEditor = false
     @State private var signInCoordinator: SignInCoordinator?
 
     private var children: [UserProfile] {
@@ -195,6 +196,38 @@ struct ParentDashboardView: View {
                     }
                     .buttonStyle(.plain)
 
+                    // Food Allergies
+                    if let child = selectedChild {
+                        Button(action: { showAllergenEditor = true }) {
+                            HStack {
+                                Image(systemName: "exclamationmark.triangle.fill")
+                                    .foregroundColor(Color.AppTheme.terracotta)
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text("Food Allergies")
+                                        .font(.AppTheme.body)
+                                        .foregroundColor(Color.AppTheme.sepia)
+                                    if !child.allergens.isEmpty {
+                                        Text(child.allergens.map(\.displayName).joined(separator: ", "))
+                                            .font(.AppTheme.caption)
+                                            .foregroundColor(Color.AppTheme.lightSepia)
+                                            .lineLimit(2)
+                                    } else {
+                                        Text("None set")
+                                            .font(.AppTheme.caption)
+                                            .foregroundColor(Color.AppTheme.lightSepia)
+                                    }
+                                }
+                                Spacer()
+                                Image(systemName: "chevron.right")
+                                    .foregroundColor(Color.AppTheme.sepia)
+                            }
+                            .padding(AppSpacing.md)
+                            .background(Color.AppTheme.warmCream)
+                            .cornerRadius(AppSpacing.cardCornerRadius)
+                        }
+                        .buttonStyle(.plain)
+                    }
+
                     // Apple ID status + Link / Sign Out
                     if authManager.isAuthenticated {
                         // Signed in — show sign out option
@@ -327,6 +360,12 @@ struct ParentDashboardView: View {
                                 .foregroundColor(Color.AppTheme.sage)
                         }
                     }
+            }
+        }
+        .sheet(isPresented: $showAllergenEditor) {
+            if let child = selectedChild {
+                AllergenEditorSheet(profile: child)
+                    .environmentObject(gameState)
             }
         }
         .alert("Sign Out?", isPresented: $showSignOutConfirmation) {

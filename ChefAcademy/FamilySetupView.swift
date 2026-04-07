@@ -27,7 +27,7 @@ class FamilySetupManager: ObservableObject {
     @Published var childGender: Gender = .girl
     @Published var childOutfit: Outfit = .apronRed
     @Published var childHeadCovering: HeadCovering = .chefHatWhite
-
+    @Published var childAllergens: [FoodAllergen] = []
 
     enum SetupStep: Int, CaseIterable {
         case welcome = 0
@@ -36,9 +36,10 @@ class FamilySetupManager: ObservableObject {
         case setPIN = 3
         case childName = 4
         case childAvatar = 5
-        case choosePipVoice = 6
-        case meetPip = 7
-        case ready = 8
+        case childAllergens = 6
+        case choosePipVoice = 7
+        case meetPip = 8
+        case ready = 9
     }
 
     func nextStep() {
@@ -131,6 +132,15 @@ struct FamilySetupView: View {
                     onBack: { setupManager.previousStep() },
                 )
 
+            case .childAllergens:
+                AllergenPickerStep(
+                    title: "Any food allergies?",
+                    subtitle: "Select any allergens for \(setupManager.childName)",
+                    selectedAllergens: $setupManager.childAllergens,
+                    onNext: { setupManager.nextStep() },
+                    onBack: { setupManager.previousStep() }
+                )
+
             case .choosePipVoice:
                 // TEACHING MOMENT: Voice picker goes BEFORE Meet Pip so
                 // when Pip introduces himself, he already uses the chosen voice.
@@ -180,6 +190,9 @@ struct FamilySetupView: View {
             headCovering: setupManager.childHeadCovering,
             outfit: setupManager.childOutfit
         )
+
+        // Store child allergens
+        childProfile.setAllergens(setupManager.childAllergens)
 
         context.insert(family)
         context.insert(parentProfile)

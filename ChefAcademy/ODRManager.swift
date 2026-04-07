@@ -154,12 +154,13 @@ final class ODRManager: ObservableObject {
             availableTags.insert(tag)
             activeDownloads.remove(tag)
             progress[tag] = 1.0
+            print("[ODR] ✅ Tag '\(tag.rawValue)' loaded successfully")
             return true
         } catch {
             activeDownloads.remove(tag)
             activeRequests[tag] = nil
             errors[tag] = error.localizedDescription
-            print("[ODR] Failed to load \(tag.rawValue): \(error.localizedDescription)")
+            print("[ODR] ❌ Failed to load '\(tag.rawValue)': \(error.localizedDescription) | code: \((error as NSError).code) domain: \((error as NSError).domain)")
             return false
         }
     }
@@ -317,11 +318,21 @@ struct ODRRequestModifier: ViewModifier {
             // Check if already available first (instant)
             let allReady = tags.allSatisfy { odr.availableTags.contains($0) }
             if allReady {
+                print("[ODR] Tags already available: \(tags.map(\.rawValue))")
                 ready = true
                 return
             }
             // Download and wait
+            print("[ODR] Requesting tags: \(tags.map(\.rawValue))...")
             await odr.request(tags)
+            let succeeded = tags.filter { odr.availableTags.contains($0) }
+            let failed = tags.filter { !odr.availableTags.contains($0) }
+            if !failed.isEmpty {
+                print("[ODR] ⚠️ FAILED tags: \(failed.map(\.rawValue)) — images will be missing!")
+            }
+            if !succeeded.isEmpty {
+                print("[ODR] ✅ Loaded tags: \(succeeded.map(\.rawValue))")
+            }
             withAnimation(.easeInOut(duration: 0.3)) {
                 ready = true
             }
