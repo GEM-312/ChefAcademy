@@ -226,6 +226,45 @@ enum Outfit: String, CaseIterable, Identifiable {
     static func defaultOutfit(for gender: Gender) -> Outfit {
         .none
     }
+
+    /// Asset name for the colored frame (drawn by Marina in Procreate).
+    /// Returns nil for `.none` — no colored frame exists for "no outfit".
+    func coloredFrameName(for gender: Gender) -> String? {
+        switch self {
+        // Girl aprons
+        case .apronRed:    return "girl_apron_colored_terracotta"
+        case .apronBlue:   return "girl_apron_colored_sage"
+        case .apronGreen:  return "girl_apron_colored_olive"
+        case .apronYellow: return "girl_apron_colored_golden"
+        case .apronPink:   return "girl_apron_colored_khaki"
+        // Boy coats
+        case .chefWhite:   return "boy_coat_colored_parchment"
+        case .chefBlue:    return "boy_coat_colored_sage"
+        case .chefBlack:   return "boy_coat_colored_darkbrown"
+        case .chefGreen:   return "boy_coat_colored_olive"
+        case .chefRed:     return "boy_coat_colored_terracotta"
+        case .none:        return nil
+        }
+    }
+}
+
+// MARK: - HeadCovering Colored Frame Names
+
+extension HeadCovering {
+    /// Asset name for the colored hat frame (drawn by Marina in Procreate).
+    /// Returns nil for `.none`.
+    func coloredHatFrameName(for gender: Gender) -> String? {
+        guard self != .none else { return nil }
+        let prefix = gender == .girl ? "girl_hat_colored" : "boy_hat_colored"
+        switch self {
+        case .chefHatWhite:      return "\(prefix)_white"
+        case .chefHatSage:       return "\(prefix)_sage"
+        case .chefHatGold:       return "\(prefix)_gold"
+        case .chefHatTerracotta: return "\(prefix)_terracotta"
+        case .chefHatBrown:      return "\(prefix)_brown"
+        case .none:              return nil
+        }
+    }
 }
 
 // MARK: - Badge Model

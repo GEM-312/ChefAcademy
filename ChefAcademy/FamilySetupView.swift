@@ -341,30 +341,63 @@ struct FamilyAvatarStep: View {
     let onNext: () -> Void
     let onBack: () -> Void
 
-    // Temporary avatar model for preview
-    @StateObject private var tempAvatar = AvatarModel()
+    // MARK: - State
+
     @State private var genderChosen = false
+
+    // Animation state
     @State private var activeAnimation: AvatarAnimation? = nil
     @State private var animFrameIndex: Int = 0
     @State private var animTimer: Timer? = nil
-    @State private var animFinished: Bool = false
-    @Environment(\.verticalSizeClass) private var verticalSizeClass
 
-    /// Frame animation for the current outfit selection
+    // Color reveal phases
+    @State private var outfitAnimFinished = false   // outfit anim done → show color picker
+    @State private var hatAnimFinished = false       // hat anim done → show hat color picker
+    @State private var showColoredOutfit = false     // colored outfit frame visible
+    @State private var showColoredHat = false        // colored hat frame visible
+
+    // Ripple shader state
+    @State private var rippleTime: CGFloat = 0
+    @State private var rippleOrigin: CGPoint = CGPoint(x: 200, y: 200)
+    @State private var rippleTimer: Timer? = nil
+
+    /// Frame animation for the outfit
     private var outfitAnimation: AvatarAnimation {
         gender == .boy ? .boyCoat : .girlApron
     }
 
-    /// Frame animation for the current hat/covering selection
+    /// Frame animation for the hat
     private var hatAnimation: AvatarAnimation {
         gender == .boy ? .boyWearHat : .girlWearHat
     }
 
-    // TEACHING MOMENT: Why not use verticalSizeClass for landscape detection?
-    // iPad in landscape STILL has verticalSizeClass == .regular!
-    // Only iPhones get .compact in landscape. For iPads, we must compare
-    // actual width vs height using GeometryReader. This is a common gotcha.
-    @State private var isLandscape = false
+    /// Grayscale last frame name (held after animation finishes)
+    private var grayscaleLastFrame: String {
+        outfitAnimation.frameNames.last ?? (gender == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06")
+    }
+
+    /// Grayscale last frame for the hat animation
+    private var hatGrayscaleLastFrame: String {
+        hatAnimation.frameNames.last ?? grayscaleLastFrame
+    }
+
+    /// The current frame to display during animation, or the grayscale last frame
+    private var currentDisplayFrame: String {
+        if let anim = activeAnimation {
+            let idx = min(animFrameIndex, anim.frameNames.count - 1)
+            return anim.frameNames[idx]
+        }
+        // After hat anim finished, show hat last frame
+        if hatAnimFinished {
+            return hatGrayscaleLastFrame
+        }
+        // After outfit anim finished, show outfit last frame
+        if outfitAnimFinished {
+            return grayscaleLastFrame
+        }
+        // Default: static gender card
+        return gender == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06"
+    }
 
     var body: some View {
         GeometryReader { outerGeo in
@@ -376,128 +409,170 @@ struct FamilyAvatarStep: View {
                     .foregroundColor(Color.AppTheme.darkBrown)
                     .padding(.top, landscape ? AppSpacing.sm : AppSpacing.lg)
 
-                // Gender selection
+                // MARK: - Avatar Display Area
                 GeometryReader { geo in
                     let screenW = geo.size.width
                     let screenH = geo.size.height
-                    // Scale avatars to fill available space — not tiny fixed values!
-                    // Two avatars side by side: each gets ~35% of width (with spacing)
-                    // Cap by height too so they don't overflow
                     let bigSize: CGFloat = landscape
                         ? min(outerGeo.size.height * 0.35, 280)
                         : screenW * 0.55
                     let smallSize: CGFloat = min(screenW * 0.3, screenH * 0.8, 300)
 
-                if !genderChosen {
-                    // Show BOTH avatars side by side
-                    HStack(spacing: AppSpacing.lg) {
-                        Spacer()
-                        ForEach(Gender.allCases) { g in
-                            Button(action: {
-                                withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
-                                    gender = g
-                                    tempAvatar.gender = g
-                                    genderChosen = true
-                                    outfit = .none
-                                    stopAnim()
+                    if !genderChosen {
+                        // Phase 1: Show BOTH avatars side by side
+                        HStack(spacing: AppSpacing.lg) {
+                            Spacer()
+                            ForEach(Gender.allCases) { g in
+                                Button(action: {
+                                    withAnimation(AnimationConstants.springMedium) {
+                                        gender = g
+                                        genderChosen = true
+                                        outfit = .none
+                                        headCovering = .none
+                                        resetAllState()
+                                    }
+                                    // Auto-play outfit animation after gender pick
+                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                                        playOutfitAnimation()
+                                    }
+                                }) {
+                                    VStack(spacing: 6) {
+                                        let img = g == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06"
+                                        Image(img)
+                                            .resizable()
+                                            .aspectRatio(contentMode: .fit)
+                                            .frame(width: smallSize, height: smallSize)
+                                            .clipShape(RoundedRectangle(cornerRadius: 20))
+
+                                        Text(g.rawValue)
+                                            .font(.AppTheme.body)
+                                            .foregroundColor(Color.AppTheme.darkBrown)
+                                    }
                                 }
-                            }) {
-                                VStack(spacing: 6) {
-                                    let img = g == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06"
-                                    Image(img)
+                                .buttonStyle(.plain)
+                            }
+                            Spacer()
+                        }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    } else {
+                        // Phases 2-5: Chosen avatar with color reveal
+                        VStack(spacing: 6) {
+                            ZStack {
+                                // Base: grayscale frame (animation or held last frame)
+                                Image(currentDisplayFrame)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+
+                                // Colored outfit frame — appears with ripple when color picked
+                                if showColoredOutfit, let coloredName = outfit.coloredFrameName(for: gender) {
+                                    Image(coloredName)
                                         .resizable()
                                         .aspectRatio(contentMode: .fit)
-                                        .frame(width: smallSize, height: smallSize)
-                                        .clipShape(RoundedRectangle(cornerRadius: 20))
+                                        .layerEffect(
+                                            ShaderLibrary.Ripple(
+                                                .float2(rippleOrigin.x, rippleOrigin.y),
+                                                .float(rippleTime),
+                                                .float(12),     // amplitude
+                                                .float(15),     // frequency
+                                                .float(8),      // decay
+                                                .float(1400)    // speed
+                                            ),
+                                            maxSampleOffset: CGSize(width: 12, height: 12)
+                                        )
+                                        .transition(.identity)
+                                }
 
-                                    Text(g.rawValue)
-                                        .font(.AppTheme.body)
-                                        .foregroundColor(Color.AppTheme.darkBrown)
+                                // Colored hat frame — appears with ripple when hat color picked
+                                if showColoredHat, let hatName = headCovering.coloredHatFrameName(for: gender) {
+                                    Image(hatName)
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fit)
+                                        .layerEffect(
+                                            ShaderLibrary.Ripple(
+                                                .float2(rippleOrigin.x, rippleOrigin.y),
+                                                .float(rippleTime),
+                                                .float(12),
+                                                .float(15),
+                                                .float(8),
+                                                .float(1400)
+                                            ),
+                                            maxSampleOffset: CGSize(width: 12, height: 12)
+                                        )
+                                        .transition(.identity)
                                 }
                             }
-                            .buttonStyle(.plain)
-                        }
-                        Spacer()
-                    }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                } else {
-                    // Show CHOSEN avatar — responsive size
-                    VStack(spacing: 6) {
-                        Image(avatarImageName)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
                             .frame(width: bigSize, height: bigSize)
                             .clipShape(RoundedRectangle(cornerRadius: 24))
 
-                        HStack(spacing: AppSpacing.sm) {
-                            Text(gender.rawValue)
-                                .font(.AppTheme.body)
-                                .foregroundColor(Color.AppTheme.darkBrown)
+                            HStack(spacing: AppSpacing.sm) {
+                                Text(gender.rawValue)
+                                    .font(.AppTheme.body)
+                                    .foregroundColor(Color.AppTheme.darkBrown)
 
-                            Button(action: {
-                                withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                                    genderChosen = false
-                                    outfit = .none
-                                    stopAnim()
+                                Button(action: {
+                                    withAnimation(AnimationConstants.springMedium) {
+                                        genderChosen = false
+                                        outfit = .none
+                                        headCovering = .none
+                                        resetAllState()
+                                    }
+                                }) {
+                                    Text("Change")
+                                        .font(.AppTheme.caption)
+                                        .foregroundColor(Color.AppTheme.sage)
+                                        .underline()
                                 }
-                            }) {
-                                Text("Change")
-                                    .font(.AppTheme.caption)
-                                    .foregroundColor(Color.AppTheme.sage)
-                                    .underline()
+                                .buttonStyle(.plain)
                             }
-                            .buttonStyle(.plain)
                         }
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .transition(.scale.combined(with: .opacity))
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .transition(.scale.combined(with: .opacity))
                 }
-            }
-                // Avatar area takes proportional height:
-                // Not chosen yet: bigger area (avatars fill it)
-                // Chosen: smaller area (make room for outfit/covering scroll)
                 .frame(height: genderChosen
                     ? (landscape ? outerGeo.size.height * 0.4 : outerGeo.size.height * 0.45)
                     : (landscape ? outerGeo.size.height * 0.55 : outerGeo.size.height * 0.45))
                 .padding(.vertical, AppSpacing.xs)
 
-                // Outfit + Covering selectors — takes remaining space
+                // MARK: - Color Pickers (appear after animations finish)
                 ScrollView {
-                    VStack(spacing: AppSpacing.md) {
-                        OutfitSelector(selectedOutfit: Binding(
-                            get: { outfit },
-                            set: { newOutfit in
-                                outfit = newOutfit
-                                headCovering = .none
-                                if newOutfit.isChosen {
-                                    playAnimation(outfitAnimation)
-                                } else {
-                                    stopAnim()
+                    VStack(spacing: AppSpacing.lg) {
+                        // Outfit color picker — appears after outfit animation finishes
+                        if outfitAnimFinished {
+                            OutfitColorPicker(
+                                selectedOutfit: $outfit,
+                                gender: gender,
+                                onColorPicked: { origin in
+                                    headCovering = .none
+                                    showColoredHat = false
+                                    triggerRipple(from: origin)
+                                    showColoredOutfit = true
                                 }
-                            }
-                        ), gender: gender)
-                        // Chef Hat selector — only visible after choosing an apron/coat
+                            )
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                        }
+
+                        // Hat color picker — appears after outfit color is chosen
                         if outfit.isChosen {
-                            HeadCoveringSelector(selectedCovering: Binding(
-                                get: { headCovering },
-                                set: { newCovering in
-                                    headCovering = newCovering
-                                    if newCovering != .none {
-                                        playAnimation(hatAnimation)
-                                    } else {
-                                        stopAnim()
-                                        activeAnimation = outfitAnimation
-                                        animFrameIndex = outfitAnimation.frameNames.count - 1
-                                    }
+                            HatColorPicker(
+                                selectedCovering: $headCovering,
+                                onColorPicked: { origin in
+                                    // Play hat animation, then reveal colored hat
+                                    showColoredHat = false
+                                    hatAnimFinished = false
+                                    playHatAnimation(rippleOrigin: origin)
                                 }
-                            ))
-                            .transition(.opacity.combined(with: .move(edge: .top)))
+                            )
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
                         }
                     }
                     .padding(AppSpacing.md)
+                    .animation(AnimationConstants.springMedium, value: outfitAnimFinished)
+                    .animation(AnimationConstants.springMedium, value: outfit.isChosen)
                 }
                 .cornerRadius(AppSpacing.cardCornerRadius, corners: [.topLeft, .topRight])
 
+                // MARK: - Navigation
                 HStack(spacing: AppSpacing.md) {
                     Button(action: onBack) {
                         HStack {
@@ -517,27 +592,54 @@ struct FamilyAvatarStep: View {
                 }
                 .padding(AppSpacing.md)
                 .background(Color.AppTheme.cream)
-            } // end VStack
-        } // end GeometryReader
-        .onAppear {
-            tempAvatar.gender = gender
+            }
         }
         .onDisappear {
             stopAnim()
+            stopRipple()
         }
     }
 
-    private func playAnimation(_ anim: AvatarAnimation) {
+    // MARK: - Animation
+
+    private func playOutfitAnimation() {
         stopAnim()
+        let anim = outfitAnimation
         activeAnimation = anim
         animFrameIndex = 0
-        animFinished = false
+        outfitAnimFinished = false
         animTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / anim.fps, repeats: true) { _ in
             let next = animFrameIndex + 1
             if next >= anim.frameNames.count {
-                animFinished = true
+                // Animation done — hold last frame, show color picker
                 animTimer?.invalidate()
                 animTimer = nil
+                activeAnimation = nil
+                withAnimation(AnimationConstants.springMedium) {
+                    outfitAnimFinished = true
+                }
+            } else {
+                animFrameIndex = next
+            }
+        }
+    }
+
+    private func playHatAnimation(rippleOrigin origin: CGPoint) {
+        stopAnim()
+        let anim = hatAnimation
+        activeAnimation = anim
+        animFrameIndex = 0
+        hatAnimFinished = false
+        animTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / anim.fps, repeats: true) { _ in
+            let next = animFrameIndex + 1
+            if next >= anim.frameNames.count {
+                // Hat animation done — reveal colored hat with ripple
+                animTimer?.invalidate()
+                animTimer = nil
+                activeAnimation = nil
+                hatAnimFinished = true
+                triggerRipple(from: origin)
+                showColoredHat = true
             } else {
                 animFrameIndex = next
             }
@@ -549,17 +651,157 @@ struct FamilyAvatarStep: View {
         animTimer = nil
         activeAnimation = nil
         animFrameIndex = 0
-        animFinished = false
     }
 
-    private var avatarImageName: String {
-        if let anim = activeAnimation {
-            let idx = min(animFrameIndex, anim.frameNames.count - 1)
-            return anim.frameNames[idx]
+    // MARK: - Ripple Effect
+
+    private func triggerRipple(from origin: CGPoint) {
+        stopRipple()
+        rippleOrigin = origin
+        rippleTime = 0
+        Haptic.impact(.medium)
+
+        // Animate rippleTime from 0 to ~2 seconds over 60 steps
+        rippleTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 30.0, repeats: true) { timer in
+            rippleTime += 1.0 / 30.0
+            if rippleTime > 2.0 {
+                timer.invalidate()
+                rippleTimer = nil
+            }
         }
-        return gender == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06"
     }
 
+    private func stopRipple() {
+        rippleTimer?.invalidate()
+        rippleTimer = nil
+        rippleTime = 0
+    }
+
+    // MARK: - Reset
+
+    private func resetAllState() {
+        stopAnim()
+        stopRipple()
+        outfitAnimFinished = false
+        hatAnimFinished = false
+        showColoredOutfit = false
+        showColoredHat = false
+    }
+}
+
+// MARK: - Outfit Color Picker
+//
+// TEACHING MOMENT: This replaces the old OutfitSelector for the onboarding flow.
+// Instead of showing outfit names + icons, we show ONLY color circles.
+// The kid already sees the outfit shape from the animation — they just pick the color.
+// The GeometryReader on each circle captures the tap position for the ripple origin.
+
+struct OutfitColorPicker: View {
+    @Binding var selectedOutfit: Outfit
+    let gender: Gender
+    let onColorPicked: (CGPoint) -> Void
+
+    private var colorOptions: [Outfit] {
+        Outfit.options(for: gender).filter { $0.isChosen }
+    }
+
+    var body: some View {
+        VStack(spacing: AppSpacing.sm) {
+            Text("Pick a color!")
+                .font(.AppTheme.headline)
+                .foregroundColor(Color.AppTheme.darkBrown)
+
+            HStack(spacing: AppSpacing.md) {
+                ForEach(colorOptions) { option in
+                    GeometryReader { geo in
+                        Button(action: {
+                            selectedOutfit = option
+                            Haptic.selection()
+                            // Pass the center of this circle as ripple origin
+                            let frame = geo.frame(in: .global)
+                            onColorPicked(CGPoint(x: frame.midX, y: frame.midY))
+                        }) {
+                            Circle()
+                                .fill(option.color)
+                                .overlay(
+                                    Circle()
+                                        .stroke(Color.AppTheme.darkBrown, lineWidth: selectedOutfit == option ? 3 : 0)
+                                )
+                                .scaleEffect(selectedOutfit == option ? 1.15 : 1.0)
+                                .animation(AnimationConstants.springQuick, value: selectedOutfit)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .frame(width: 50, height: 50)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Hat Color Picker
+
+struct HatColorPicker: View {
+    @Binding var selectedCovering: HeadCovering
+    let onColorPicked: (CGPoint) -> Void
+
+    private var colorOptions: [HeadCovering] {
+        HeadCovering.allCases.filter { $0 != .none }
+    }
+
+    var body: some View {
+        VStack(spacing: AppSpacing.sm) {
+            Text("Chef hat color!")
+                .font(.AppTheme.headline)
+                .foregroundColor(Color.AppTheme.darkBrown)
+
+            HStack(spacing: AppSpacing.md) {
+                // "No hat" option
+                GeometryReader { geo in
+                    Button(action: {
+                        selectedCovering = .none
+                        Haptic.selection()
+                    }) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.AppTheme.parchment)
+                            Image(systemName: "xmark")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundColor(Color.AppTheme.sepia)
+                        }
+                        .overlay(
+                            Circle()
+                                .stroke(Color.AppTheme.darkBrown, lineWidth: selectedCovering == .none ? 3 : 0)
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+                .frame(width: 44, height: 44)
+
+                ForEach(colorOptions) { option in
+                    GeometryReader { geo in
+                        Button(action: {
+                            selectedCovering = option
+                            Haptic.selection()
+                            let frame = geo.frame(in: .global)
+                            onColorPicked(CGPoint(x: frame.midX, y: frame.midY))
+                        }) {
+                            Circle()
+                                .fill(option.color)
+                                .overlay(
+                                    Circle()
+                                        .stroke(Color.AppTheme.darkBrown, lineWidth: selectedCovering == option ? 3 : 0)
+                                )
+                                .scaleEffect(selectedCovering == option ? 1.15 : 1.0)
+                                .animation(AnimationConstants.springQuick, value: selectedCovering)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .frame(width: 44, height: 44)
+                }
+            }
+        }
+    }
 }
 
 struct FamilyPINSetupStep: View {
