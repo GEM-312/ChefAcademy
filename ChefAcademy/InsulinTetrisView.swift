@@ -21,18 +21,8 @@
 //  it only runs when the view is on-screen and syncs with the display.
 
 import SwiftUI
-import UIKit
 
-// MARK: - Haptic Helper (duplicated — private in CookingMiniGames)
-
-private enum Haptic {
-    static func impact(_ style: UIImpactFeedbackGenerator.FeedbackStyle) {
-        UIImpactFeedbackGenerator(style: style).impactOccurred()
-    }
-    static func notify(_ type: UINotificationFeedbackGenerator.FeedbackType) {
-        UINotificationFeedbackGenerator().notificationOccurred(type)
-    }
-}
+// Haptic enum is now shared in AppTheme.swift
 
 // MARK: - Block Type
 //

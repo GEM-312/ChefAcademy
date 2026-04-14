@@ -307,7 +307,8 @@ enum ShopCategory: String, CaseIterable {
 }
 
 // MARK: - Recipe Model
-struct Recipe: Identifiable {
+struct Recipe: Identifiable, Equatable {
+    static func == (lhs: Recipe, rhs: Recipe) -> Bool { lhs.id == rhs.id }
     let id: String  // Stable ID for tracking unlocks and stars
     let title: String
     let description: String
@@ -341,6 +342,30 @@ struct Recipe: Identifiable {
         self.pantryIngredients = pantryIngredients
         self.glucoseTip = glucoseTip
         self.steps = steps
+    }
+
+    /// Create a playable Recipe from AI-generated data (Foundation Models or cloud).
+    /// Uses sensible defaults for fields the AI doesn't provide (image, category, etc.).
+    static func fromAISuggestion(
+        name: String,
+        description: String,
+        ingredients: [String],
+        nutritionFact: String,
+        steps: [String]
+    ) -> Recipe {
+        Recipe(
+            id: "ai-\(UUID().uuidString)",
+            title: name,
+            description: description,
+            imageName: "pip_cooking",  // Pip cooking pose as placeholder
+            category: .lunch,
+            cookTime: 15,
+            difficulty: .easy,
+            servings: 1,
+            needsAdultHelp: false,
+            nutritionFacts: [nutritionFact],
+            steps: steps
+        )
     }
 
     /// Check if the player has all GARDEN ingredients for this recipe
@@ -1049,6 +1074,7 @@ struct RecipeListView: View {
     // Track which category is selected
     @State private var selectedCategory: RecipeCategory = .all
     @State private var selectedRecipe: Recipe? = nil
+    @Namespace private var recipeNamespace
 
     // Filter recipes based on selected category
     var filteredRecipes: [Recipe] {
@@ -1116,7 +1142,13 @@ struct RecipeListView: View {
                     VStack(spacing: AppSpacing.md) {
                         ForEach(filteredRecipes) { recipe in
                             RecipeCardView(recipe: recipe, childAllergens: gameState.activeAllergens)
-                                .onTapGesture { selectedRecipe = recipe }
+                                .morphSource(id: "recipe-\(recipe.id)", in: recipeNamespace, isActive: selectedRecipe == nil)
+                                .onTapGesture {
+                                    Haptic.impact(.light)
+                                    withAnimation(AnimationConstants.morphTransition) {
+                                        selectedRecipe = recipe
+                                    }
+                                }
                                 .transition(.opacity.combined(with: .scale(scale: 0.95)))
                         }
                     }
@@ -1129,9 +1161,23 @@ struct RecipeListView: View {
             .navigationBarHidden(true)
         }
         .navigationViewStyle(.stack)
-        .fullScreenCover(item: $selectedRecipe) { recipe in
-            RecipeDetailView(recipe: recipe) {
-                selectedTab = .kitchen
+        .overlay {
+            if let recipe = selectedRecipe {
+                RecipeDetailView(recipe: recipe, onStartCooking: {
+                    selectedTab = .kitchen
+                }, onDismiss: {
+                    withAnimation(AnimationConstants.morphTransition) {
+                        selectedRecipe = nil
+                    }
+                })
+                .morphDestination(id: "recipe-\(recipe.id)", in: recipeNamespace)
+                .dragToDismiss {
+                    withAnimation(AnimationConstants.morphTransition) {
+                        selectedRecipe = nil
+                    }
+                }
+                .transition(.opacity)
+                .zIndex(10)
             }
         }
     }

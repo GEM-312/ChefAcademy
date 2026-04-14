@@ -151,13 +151,20 @@ Exception: One-off sizes in components like SeedBadge, PlotView where the size i
 
 ## Animation Standards
 
-| Animation | Parameters | Use For |
-|-----------|-----------|---------|
-| Spring (default) | `.spring(response: 0.3, dampingFraction: 0.6)` | Button taps, bounces |
-| Spring (dialog) | `.spring(response: 0.5, dampingFraction: 0.7)` | Dialog appear, large elements |
-| Ease In/Out | `.easeInOut(duration: 0.3)` | Route transitions, tab switches |
-| Frame animation | Timer at 30fps (0.033s interval) | Walking Pip, waving Pip |
-| Pulse | `.easeInOut(duration: 0.5).repeatForever(autoreverses: true)` | Ready-to-harvest glow |
+**Full animation rules: See [`ANIMATIONS.md`](ANIMATIONS.md)**
+
+Quick reference — use `AnimationConstants` from AppTheme.swift:
+
+| Constant | Use For |
+|----------|---------|
+| `.springQuick` | Buttons, bounces |
+| `.springMedium` | Cards, dialogs |
+| `.springSlow` | Large elements, reveals |
+| `.morphTransition` | Card-to-detail morph |
+| `.routeTransition` | Tab/route changes |
+| `.fadeQuick` | Button press feedback |
+
+Haptics: Use shared `Haptic` enum (AppTheme.swift), never raw UIKit generators.
 
 ---
 
@@ -171,4 +178,4 @@ Exception: One-off sizes in components like SeedBadge, PlotView where the size i
 
 ---
 
-*Last Updated: March 23, 2026*
+*Last Updated: April 13, 2026*

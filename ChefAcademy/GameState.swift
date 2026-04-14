@@ -108,6 +108,9 @@ class GameState: ObservableObject {
     /// Which recipes are unlocked (by ID)
     @Published var unlockedRecipeIDs: Set<String> = ["veggie-wrap", "garden-salad"]
 
+    /// AI-generated recipe waiting to be cooked (set by AskPipView, consumed by KitchenView)
+    @Published var pendingAIRecipe: Recipe?
+
     /// Star ratings for completed recipes (recipeID: stars)
     @Published var recipeStars: [String: Int] = [:]
 
@@ -1125,6 +1128,40 @@ enum VegetableType: String, CaseIterable, Identifiable {
         case .blueberry: return [.antioxidants, .vitaminK]
         case .raspberry: return [.fiber, .vitaminC]
         case .blackberry: return [.antioxidants, .vitaminK, .fiber]
+        }
+    }
+
+    /// NPC greeting — each veggie introduces itself in first person.
+    /// Used in the planting sheet when a seed is selected.
+    var npcGreeting: String {
+        switch self {
+        case .lettuce:          return "Hi! I'm Lettuce! I keep your body cool and hydrated!"
+        case .carrot:           return "Hey! I'm Carrot! I help your eyes see super far!"
+        case .tomato:           return "Hiya! I'm Tomato! I'm actually a fruit — and I protect your heart!"
+        case .cucumber:         return "Hello! I'm Cucumber! I'm 95% water — super refreshing!"
+        case .broccoli:         return "Hi there! I'm Broccoli! I'm like a tiny tree full of vitamins!"
+        case .zucchini:         return "Hey! I'm Zucchini! I grow SO fast — watch me!"
+        case .onion:            return "Hi! I'm Onion! I might make you cry, but I fight germs!"
+        case .pumpkin:          return "Hello! I'm Pumpkin! I take a while, but I'm worth the wait!"
+        case .spinach:          return "Hi! I'm Spinach! I make your muscles super strong!"
+        case .bellPepperRed:    return "Hey! I'm Red Pepper! I have MORE vitamin C than an orange!"
+        case .bellPepperYellow: return "Hi! I'm Yellow Pepper! I'm sweet and full of sunshine vitamins!"
+        case .sweetPotato:      return "Hello! I'm Sweet Potato! I give you energy that lasts all day!"
+        case .corn:             return "Hey there! I'm Corn! Each of my kernels is actually a seed!"
+        case .beet:             return "Hi! I'm Beet! I turn things pink — and I'm great for your blood!"
+        case .eggplant:         return "Hello! I'm Eggplant! My purple color protects your brain!"
+        case .radish:           return "Hi! I'm Radish! I grow super quick and I'm a little bit spicy!"
+        case .kale:             return "Hey! I'm Kale! I'm a superfood — packed with EVERYTHING!"
+        case .basil:            return "Hi! I'm Basil! I smell amazing and I help your tummy feel good!"
+        case .mint:             return "Hello! I'm Mint! I make everything fresh and cool!"
+        case .greenBeans:       return "Hi! I'm Green Beans! I'm crunchy and full of fiber!"
+        case .strawberry:       return "Hey! I'm Strawberry! I have my seeds on the OUTSIDE!"
+        case .watermelon:       return "Hi! I'm Watermelon! I'm the biggest berry in the world!"
+        case .avocado:          return "Hello! I'm Avocado! I have healthy fats for your brain!"
+        case .lemon:            return "Hi! I'm Lemon! I'm sour but I boost your immune system!"
+        case .blueberry:        return "Hey! I'm Blueberry! I'm one of the only naturally blue foods!"
+        case .raspberry:        return "Hi! I'm Raspberry! I'm delicate but packed with antioxidants!"
+        case .blackberry:       return "Hello! I'm Blackberry! I grow on thorny bushes — but I'm so sweet!"
         }
     }
 }

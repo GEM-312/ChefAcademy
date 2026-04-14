@@ -197,6 +197,7 @@ struct RootRouterView: View {
 // MARK: - Main Tab View
 struct MainTabView: View {
     @ObservedObject var avatarModel: AvatarModel
+    @EnvironmentObject var gameState: GameState
     @State private var selectedTab: Tab = .home
 
     enum Tab: String, CaseIterable {
@@ -256,6 +257,12 @@ struct MainTabView: View {
             CustomTabBar(selectedTab: $selectedTab)
         }
         .ignoresSafeArea(.keyboard)
+        .onChange(of: gameState.pendingAIRecipe) { _, newRecipe in
+            // Pip suggested an AI recipe — switch to Kitchen tab so it auto-opens
+            if newRecipe != nil {
+                selectedTab = .kitchen
+            }
+        }
     }
 }
 
@@ -315,6 +322,7 @@ struct HomeView: View {
     @State private var showPINForDashboard = false
     @State private var selectedSibling: UserProfile?
     @State private var showAskPip = false
+    @Namespace private var homeRecipeNamespace
 
     // Unseen help messages for the current player
     private var newHelpMessages: [HelpEntry]? {
@@ -476,10 +484,16 @@ struct HomeView: View {
                     }
 
                     let todaysRecipe = GardenRecipes.all.first(where: { $0.id == "chicken-veggie-platter" }) ?? GardenRecipes.all[0]
-                    Button(action: { selectedRecipe = todaysRecipe }) {
+                    Button(action: {
+                        Haptic.impact(.light)
+                        withAnimation(AnimationConstants.morphTransition) {
+                            selectedRecipe = todaysRecipe
+                        }
+                    }) {
                         RecipeCardView(recipe: todaysRecipe)
                     }
                     .buttonStyle(.plain)
+                    .morphSource(id: "home-recipe-\(todaysRecipe.id)", in: homeRecipeNamespace, isActive: selectedRecipe == nil)
                 }
                 .padding(.horizontal, AppSpacing.md)
 
@@ -618,9 +632,23 @@ struct HomeView: View {
             .padding(.top, AppSpacing.md)
         }
         .background(Color.AppTheme.cream)
-        .fullScreenCover(item: $selectedRecipe) { recipe in
-            RecipeDetailView(recipe: recipe) {
-                selectedTab = .kitchen
+        .overlay {
+            if let recipe = selectedRecipe {
+                RecipeDetailView(recipe: recipe, onStartCooking: {
+                    selectedTab = .kitchen
+                }, onDismiss: {
+                    withAnimation(AnimationConstants.morphTransition) {
+                        selectedRecipe = nil
+                    }
+                })
+                .morphDestination(id: "home-recipe-\(recipe.id)", in: homeRecipeNamespace)
+                .dragToDismiss {
+                    withAnimation(AnimationConstants.morphTransition) {
+                        selectedRecipe = nil
+                    }
+                }
+                .transition(.opacity)
+                .zIndex(10)
             }
         }
         .alert("Switch Player?", isPresented: $showSwitchConfirm) {
@@ -701,11 +729,13 @@ struct StreakCard: View {
 struct PipMessageCard: View {
     let message: String
     @ObservedObject var avatarModel: AvatarModel
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var isIPad: Bool { sizeClass == .regular }
 
     var body: some View {
         HStack(alignment: .top, spacing: AppSpacing.md) {
-            // Animated Pip waving (frame animation, transparent bg)
-            PipWavingAnimatedView(size: 120)
+            // Animated Pip — 2x on iPad
+            PipWavingAnimatedView(size: isIPad ? 240 : 120)
 
             // Message bubble
             VStack(alignment: .leading, spacing: AppSpacing.xs) {

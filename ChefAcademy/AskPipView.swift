@@ -16,6 +16,16 @@
 
 import SwiftUI
 
+// MARK: - Parsed Recipe (from AI response)
+
+struct ParsedRecipeSuggestion: Equatable {
+    let name: String
+    let description: String
+    let ingredients: [String]
+    let nutritionFact: String
+    let steps: [String]
+}
+
 // MARK: - Chat Message
 
 struct PipChatMessage: Identifiable, Equatable {
@@ -23,6 +33,7 @@ struct PipChatMessage: Identifiable, Equatable {
     let text: String
     let isFromPip: Bool
     let timestamp = Date()
+    var recipeSuggestion: ParsedRecipeSuggestion? = nil
 }
 
 // MARK: - Ask Pip View
@@ -69,6 +80,11 @@ struct AskPipView: View {
             "What veggies can I eat raw?",
             "Which foods make you strong?",
             "What gives you the most energy?"
+        ]),
+        ("Create", [
+            "Invent me a recipe with what I have!",
+            "What can I cook right now?",
+            "Surprise me with a new recipe!"
         ])
     ]
 
@@ -98,7 +114,11 @@ struct AskPipView: View {
                         // Chat messages
                         ForEach(messages) { message in
                             if message.isFromPip {
-                                pipBubble(message.text)
+                                if let recipe = message.recipeSuggestion {
+                                    recipeSuggestionCard(recipe: recipe, pipMessage: message.text)
+                                } else {
+                                    pipBubble(message.text)
+                                }
                             } else {
                                 kidBubble(message.text)
                             }
@@ -294,6 +314,139 @@ struct AskPipView: View {
                 .cornerRadius(16)
                 .cornerRadius(4, corners: [.topRight])
         }
+    }
+
+    // MARK: - Recipe Suggestion Card
+
+    private func recipeSuggestionCard(recipe: ParsedRecipeSuggestion, pipMessage: String) -> some View {
+        VStack(alignment: .leading, spacing: AppSpacing.md) {
+            // Pip's intro message
+            HStack(alignment: .top, spacing: AppSpacing.sm) {
+                Image("pip_waving_frame_01")
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .frame(width: 40, height: 40)
+                    .clipShape(Circle())
+                    .background(
+                        Circle()
+                            .fill(Color.AppTheme.sage.opacity(0.2))
+                            .frame(width: 44, height: 44)
+                    )
+
+                Text(pipMessage)
+                    .font(.AppTheme.body)
+                    .foregroundColor(Color.AppTheme.darkBrown)
+                    .padding(AppSpacing.sm)
+                    .background(Color.AppTheme.warmCream)
+                    .cornerRadius(12)
+
+                Spacer(minLength: 20)
+            }
+
+            // Recipe card
+            VStack(alignment: .leading, spacing: AppSpacing.sm) {
+                // Recipe name
+                Text(recipe.name)
+                    .font(.AppTheme.title3)
+                    .foregroundColor(Color.AppTheme.darkBrown)
+
+                // Description
+                Text(recipe.description)
+                    .font(.AppTheme.subheadline)
+                    .foregroundColor(Color.AppTheme.sepia)
+
+                Divider()
+
+                // Ingredients
+                Text("Ingredients")
+                    .font(.AppTheme.caption)
+                    .foregroundColor(Color.AppTheme.sage)
+
+                FlowLayout(spacing: 6) {
+                    ForEach(recipe.ingredients, id: \.self) { ingredient in
+                        Text(ingredient)
+                            .font(.AppTheme.caption)
+                            .foregroundColor(Color.AppTheme.darkBrown)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 4)
+                            .background(Color.AppTheme.parchment)
+                            .cornerRadius(8)
+                    }
+                }
+
+                // Nutrition fact
+                HStack(spacing: AppSpacing.xs) {
+                    Image(systemName: "bolt.fill")
+                        .foregroundColor(Color.AppTheme.goldenWheat)
+                        .font(.system(size: 12))
+                    Text(recipe.nutritionFact)
+                        .font(.AppTheme.caption)
+                        .foregroundColor(Color.AppTheme.sepia)
+                }
+                .padding(AppSpacing.sm)
+                .background(Color.AppTheme.parchment.opacity(0.5))
+                .cornerRadius(8)
+
+                // Let's Cook button
+                Button("Let's Cook This!") {
+                    let tempRecipe = Recipe.fromAISuggestion(
+                        name: recipe.name,
+                        description: recipe.description,
+                        ingredients: recipe.ingredients,
+                        nutritionFact: recipe.nutritionFact,
+                        steps: recipe.steps
+                    )
+                    gameState.pendingAIRecipe = tempRecipe
+                    dismiss()
+                }
+                .texturedButton(tint: Color.AppTheme.sage)
+            }
+            .padding(AppSpacing.md)
+            .background(Color.AppTheme.warmCream)
+            .cornerRadius(AppSpacing.cardCornerRadius)
+            .shadow(color: Color.AppTheme.sepia.opacity(0.1), radius: 8, y: 4)
+        }
+    }
+
+    // MARK: - Recipe Parsing
+
+    /// Try to parse a recipe from Pip's text response.
+    /// Looks for patterns like recipe name, ingredients list, and numbered steps.
+    private func parseRecipe(from text: String) -> ParsedRecipeSuggestion? {
+        let lines = text.components(separatedBy: "\n").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty }
+        guard lines.count >= 4 else { return nil }
+
+        // Look for numbered steps (1., 2., 3.)
+        let stepLines = lines.filter { $0.hasPrefix("1.") || $0.hasPrefix("2.") || $0.hasPrefix("3.") || $0.hasPrefix("4.") || $0.hasPrefix("5.") || $0.hasPrefix("6.") }
+        guard stepLines.count >= 2 else { return nil }
+
+        // First non-step line is likely the recipe name/intro
+        let nonStepLines = lines.filter { !stepLines.contains($0) }
+
+        let name = nonStepLines.first ?? "Pip's Recipe"
+        let description = nonStepLines.count > 1 ? nonStepLines[1] : "A recipe created just for you!"
+
+        // Extract ingredient mentions (lines with commas or "and" before the steps)
+        let ingredientLine = nonStepLines.first(where: { $0.contains(",") || $0.lowercased().contains("ingredient") }) ?? ""
+        let ingredients = ingredientLine.components(separatedBy: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty && $0.count < 30 }
+
+        let steps = stepLines.map { line in
+            // Remove the "1. " prefix
+            if let dotIndex = line.firstIndex(of: ".") {
+                return String(line[line.index(after: dotIndex)...]).trimmingCharacters(in: .whitespaces)
+            }
+            return line
+        }
+
+        let nutritionFact = nonStepLines.last(where: { $0.lowercased().contains("vitamin") || $0.lowercased().contains("nutrient") || $0.lowercased().contains("healthy") || $0.lowercased().contains("energy") }) ?? "Packed with vitamins and goodness!"
+
+        return ParsedRecipeSuggestion(
+            name: name,
+            description: description,
+            ingredients: ingredients.isEmpty ? ["Fresh ingredients"] : ingredients,
+            nutritionFact: nutritionFact,
+            steps: steps
+        )
     }
 
     // MARK: - Typing Indicator
@@ -509,7 +662,9 @@ struct AskPipView: View {
 
         Task {
             if let response = await aiService.askPip(question) {
-                let pipMessage = PipChatMessage(text: response, isFromPip: true)
+                // Try to detect if Pip generated a recipe
+                let recipe = parseRecipe(from: response)
+                let pipMessage = PipChatMessage(text: response, isFromPip: true, recipeSuggestion: recipe)
                 await MainActor.run {
                     messages.append(pipMessage)
 

@@ -7,36 +7,17 @@
 //
 
 import SwiftUI
-import UIKit
 
-// MARK: - Haptic Helpers
+// Haptic enum is now shared in AppTheme.swift — see ANIMATIONS.md for conventions.
 //
-// TEACHING MOMENT: UIKit Haptic Feedback
-//
-// iOS has three haptic generator types:
-//   1. UIImpactFeedbackGenerator — physical impacts (light/medium/heavy/rigid/soft)
-//   2. UINotificationFeedbackGenerator — success/warning/error
-//   3. UISelectionFeedbackGenerator — subtle tick for selection changes
-//
-// How it works under the hood:
-//   - The Taptic Engine is a linear actuator (tiny weighted motor)
-//   - .light = short, gentle pulse (like a tap on the shoulder)
-//   - .rigid = sharp, precise tap (like a click)
-//   - .heavy = deep thud (like dropping something)
-//   - .soft = gentle, cushioned feel (like pressing into foam)
-//
-// The system handles everything: if haptics are disabled in Settings,
-// or the device doesn't have a Taptic Engine, calls silently do nothing.
-// No need for feature checks or try/catch!
-
-private enum Haptic {
-    static func impact(_ style: UIImpactFeedbackGenerator.FeedbackStyle) {
-        UIImpactFeedbackGenerator(style: style).impactOccurred()
-    }
-    static func notify(_ type: UINotificationFeedbackGenerator.FeedbackType) {
-        UINotificationFeedbackGenerator().notificationOccurred(type)
-    }
-}
+// Quick reference:
+//   Haptic.impact(.light)    — gentle tap (start action)
+//   Haptic.impact(.medium)   — solid tap (mini-game interaction)
+//   Haptic.impact(.heavy)    — deep thud (drop, slam)
+//   Haptic.impact(.rigid)    — sharp click (perfect hit)
+//   Haptic.notify(.success)  — completion buzz (3 stars, harvest)
+//   Haptic.notify(.warning)  — wrong answer
+//   Haptic.selection()       — subtle tick (picker change)
 
 // MARK: - A) Heat Pan Mini Game — Tap and Hold
 

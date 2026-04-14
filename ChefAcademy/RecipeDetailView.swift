@@ -5,6 +5,7 @@ struct RecipeDetailView: View {
     let recipe: Recipe
     var onStartCooking: (() -> Void)? = nil
     var childAllergens: [FoodAllergen] = []
+    var onDismiss: (() -> Void)? = nil
     @Environment(\.dismiss) var dismiss
 
     private var matchingAllergens: [FoodAllergen] {
@@ -29,7 +30,7 @@ struct RecipeDetailView: View {
                             .clipped()
 
                         // Dismiss button
-                        Button(action: { dismiss() }) {
+                        Button(action: { if let onDismiss { onDismiss() } else { dismiss() } }) {
                             Image(systemName: "xmark")
                                 .font(.system(size: 16, weight: .bold))
                                 .foregroundColor(Color.AppTheme.darkBrown)
@@ -267,7 +268,7 @@ struct RecipeDetailView: View {
 
                         // MARK: - Let's Cook Button
                         Button(action: {
-                            dismiss()
+                            if let onDismiss { onDismiss() } else { dismiss() }
                             onStartCooking?()
                         }) {
                             Text("Let's Cook!")

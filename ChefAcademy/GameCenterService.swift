@@ -121,7 +121,8 @@ class GameCenterService: ObservableObject {
 
                     // Show the Game Center access point (floating bubble)
                     // Kids can tap it to see leaderboards and achievements
-                    GKAccessPoint.shared.location = .topTrailing
+                    // Using .bottomTrailing to avoid overlapping close/X buttons in top corners
+                    GKAccessPoint.shared.location = .bottomTrailing
                     GKAccessPoint.shared.showHighlights = true
                     GKAccessPoint.shared.isActive = true
                 }

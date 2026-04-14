@@ -256,6 +256,7 @@ struct VeggieCanvasView: UIViewRepresentable {
 
 struct SeedInfoView: View {
     let seed: Seed
+    var onDismiss: (() -> Void)? = nil
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var gameState: GameState
 
@@ -383,7 +384,11 @@ struct SeedInfoView: View {
                     Spacer()
 
                     Button {
-                        dismiss()
+                        if let onDismiss {
+                            onDismiss()
+                        } else {
+                            dismiss()
+                        }
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 30))

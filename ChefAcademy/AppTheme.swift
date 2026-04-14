@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 // MARK: - Little Chef Academy Style Guide
 // Inspired by vintage botanical illustrations with a whimsical, handcrafted feel
@@ -102,6 +103,49 @@ struct AppSpacing {
     static let largeIconSize: CGFloat = 48
 }
 
+// MARK: - Animation Constants
+// Centralized timing values — use these instead of inline magic numbers.
+// See ANIMATIONS.md for the full rules on when to use each type.
+enum AnimationConstants {
+    // Springs — bouncy, natural feel for interactive elements
+    static let springQuick   = Animation.spring(response: 0.3, dampingFraction: 0.6)   // buttons, bounces
+    static let springMedium  = Animation.spring(response: 0.4, dampingFraction: 0.7)   // cards, dialogs
+    static let springSlow    = Animation.spring(response: 0.5, dampingFraction: 0.7)   // large elements, reveals
+    static let springBouncy  = Animation.spring(response: 0.3, dampingFraction: 0.5)   // celebrations, pose changes
+
+    // Easing — smooth transitions between states
+    static let routeTransition = Animation.easeInOut(duration: 0.3)   // tab switches, route changes
+    static let fadeQuick       = Animation.easeInOut(duration: 0.15)  // button press feedback
+    static let fadeMedium      = Animation.easeInOut(duration: 0.3)   // content appear/disappear
+
+    // Morph — card-to-detail matchedGeometryEffect transitions
+    static let morphTransition = Animation.spring(response: 0.45, dampingFraction: 0.85)
+
+    // Frame animation rates
+    static let walkingFPS: Double = 8.0       // ~0.125s per frame (walking characters)
+    static let wavingFPS: Double = 6.0        // ~0.167s per frame (idle wave loop)
+    static let walkSpeed: CGFloat = 54.0      // points per second (character movement)
+
+    // Button press scales
+    static let buttonPressScale: CGFloat = 0.97   // subtle squeeze (PrimaryButtonStyle)
+    static let bouncyPressScale: CGFloat = 0.9     // bigger bounce (BouncyButtonStyle)
+}
+
+// MARK: - Haptic Feedback
+// Shared haptic helpers — use these instead of creating UIKit generators directly.
+// Consolidated from CookingMiniGames, InsulinTetrisView, and ChopMiniGame.
+enum Haptic {
+    static func impact(_ style: UIImpactFeedbackGenerator.FeedbackStyle) {
+        UIImpactFeedbackGenerator(style: style).impactOccurred()
+    }
+    static func notify(_ type: UINotificationFeedbackGenerator.FeedbackType) {
+        UINotificationFeedbackGenerator().notificationOccurred(type)
+    }
+    static func selection() {
+        UISelectionFeedbackGenerator().selectionChanged()
+    }
+}
+
 // MARK: - Reusable View Modifiers
 
 // Card Style Modifier
@@ -125,8 +169,8 @@ struct PrimaryButtonStyle: ButtonStyle {
             .frame(height: AppSpacing.buttonHeight)
             .background(Color.AppTheme.goldenWheat)
             .cornerRadius(AppSpacing.cardCornerRadius)
-            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
-            .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
+            .scaleEffect(configuration.isPressed ? AnimationConstants.buttonPressScale : 1.0)
+            .animation(AnimationConstants.fadeQuick, value: configuration.isPressed)
     }
 }
 
@@ -144,8 +188,66 @@ struct SecondaryButtonStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: AppSpacing.cardCornerRadius)
                     .stroke(Color.AppTheme.sepia.opacity(0.3), lineWidth: 1.5)
             )
-            .scaleEffect(configuration.isPressed ? 0.97 : 1.0)
-            .animation(.easeInOut(duration: 0.15), value: configuration.isPressed)
+            .scaleEffect(configuration.isPressed ? AnimationConstants.buttonPressScale : 1.0)
+            .animation(AnimationConstants.fadeQuick, value: configuration.isPressed)
+    }
+}
+
+// Textured Button Style — wooden texture tinted with any AppTheme color.
+// The wood grain stays visible through the color overlay (multiply blend).
+// Text uses overlay blend so it looks embossed into the wood grain.
+//
+// TEACHING MOMENT: Blend Modes
+// .multiply — darkens: wood grain shows through the tint color
+// .overlay  — contrast: light areas brighten, dark areas darken
+// This makes text look like it's carved/printed on the wood, not floating on top.
+//
+// Usage:
+//   Button("Start") { }.texturedButton()                              — default sage, full width
+//   Button("Cook!")  { }.texturedButton(tint: .goldenWheat)           — golden, full width
+//   Button("Buy")   { }.buttonStyle(TexturedButtonStyle(height: 40))  — smaller button
+//   Button("OK")    { }.buttonStyle(TexturedButtonStyle(fullWidth: false)) — hug content
+//
+struct TexturedButtonStyle: ButtonStyle {
+    var tint: Color = Color.AppTheme.sage
+    var textColor: Color = Color.AppTheme.cream
+    var height: CGFloat = AppSpacing.buttonHeight
+    var fullWidth: Bool = true
+    var font: Font = .AppTheme.headline
+
+    func makeBody(configuration: Configuration) -> some View {
+        // Label drives the layout; texture fills behind via .background
+        ZStack {
+            // Label with overlay blend — text looks embossed into the wood
+            configuration.label
+                .font(font)
+                .foregroundColor(textColor)
+                .blendMode(.overlay)
+
+            // Second pass for readability (overlay alone can lose contrast)
+            configuration.label
+                .font(font)
+                .foregroundColor(textColor.opacity(0.7))
+        }
+        .frame(maxWidth: fullWidth ? .infinity : nil)
+        .frame(height: height)
+        .padding(.horizontal, fullWidth ? 0 : AppSpacing.lg)
+        .background(
+            ZStack {
+                // Wood grain texture — fills the capsule shape
+                Image("button_backround")
+                    .resizable()
+                    .scaledToFill()
+
+                // Color tint — multiply keeps the wood grain visible
+                tint.opacity(0.45)
+                    .blendMode(.multiply)
+            }
+        )
+        .clipShape(Capsule())
+        .shadow(color: Color.AppTheme.sepia.opacity(0.15), radius: 4, x: 0, y: 2)
+        .scaleEffect(configuration.isPressed ? AnimationConstants.bouncyPressScale : 1.0)
+        .animation(AnimationConstants.fadeQuick, value: configuration.isPressed)
     }
 }
 
@@ -154,13 +256,21 @@ extension View {
     func cardStyle() -> some View {
         modifier(CardStyle())
     }
-    
+
     func primaryButton() -> some View {
         self.buttonStyle(PrimaryButtonStyle())
     }
-    
+
     func secondaryButton() -> some View {
         self.buttonStyle(SecondaryButtonStyle())
+    }
+
+    func texturedButton() -> some View {
+        self.buttonStyle(TexturedButtonStyle())
+    }
+
+    func texturedButton(tint: Color) -> some View {
+        self.buttonStyle(TexturedButtonStyle(tint: tint))
     }
 }
 
@@ -224,7 +334,29 @@ struct DifficultyBadge: View {
             
             Button("Browse Recipes") {}
                 .secondaryButton()
-            
+
+            // Textured Buttons — same image, different tints & sizes
+            Button("Visit Garden") {}
+                .texturedButton()
+
+            Button("Let's Cook!") {}
+                .texturedButton(tint: Color.AppTheme.goldenWheat)
+
+            Button("Buy Seeds") {}
+                .texturedButton(tint: Color.AppTheme.terracotta)
+
+            // Smaller height
+            Button("Body Buddy") {}
+                .buttonStyle(TexturedButtonStyle(tint: Color.AppTheme.softOlive, height: 40))
+
+            // Compact (hug content, not full width)
+            HStack(spacing: AppSpacing.md) {
+                Button("OK") {}
+                    .buttonStyle(TexturedButtonStyle(height: 36, fullWidth: false, font: .AppTheme.subheadline))
+                Button("Cancel") {}
+                    .buttonStyle(TexturedButtonStyle(tint: Color.AppTheme.terracotta, height: 36, fullWidth: false, font: .AppTheme.subheadline))
+            }
+
             // Difficulty Badges
             HStack(spacing: AppSpacing.sm) {
                 DifficultyBadge(level: .easy)
@@ -258,10 +390,4 @@ struct DifficultyBadge: View {
         .padding(AppSpacing.md)
     }
     .background(Color.AppTheme.cream)
-}//
-//  AppTheme.swift
-//  ChefAcademy
-//
-//  Created by Pollak Marina on 1/26/26.
-//
-
+}

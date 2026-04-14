@@ -10,6 +10,7 @@ import SwiftUI
 
 struct PantryInfoView: View {
     let item: PantryItem
+    var onDismiss: (() -> Void)? = nil
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var gameState: GameState
 
@@ -97,7 +98,11 @@ struct PantryInfoView: View {
                     Spacer()
 
                     Button {
-                        dismiss()
+                        if let onDismiss {
+                            onDismiss()
+                        } else {
+                            dismiss()
+                        }
                     } label: {
                         Image(systemName: "xmark.circle.fill")
                             .font(.system(size: 30))

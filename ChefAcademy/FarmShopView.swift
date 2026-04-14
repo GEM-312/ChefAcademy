@@ -21,6 +21,7 @@ struct FarmShopView: View {
     @State private var purchasedItemName = ""
     @State private var bounceItem: PantryItem?
     @State private var selectedInfoItem: PantryItem?
+    @Namespace private var shopNamespace
 
     // Filter items by category
     var filteredItems: [PantryItem] {
@@ -75,9 +76,23 @@ struct FarmShopView: View {
         } message: {
             Text("You bought \(purchasedItemName)! Check your pantry.")
         }
-        .fullScreenCover(item: $selectedInfoItem) { item in
-            PantryInfoView(item: item)
-                .environmentObject(gameState)
+        // Morph overlay — replaces .fullScreenCover for smooth matched geometry
+        .overlay {
+            if let item = selectedInfoItem {
+                PantryInfoView(item: item, onDismiss: {
+                    withAnimation(AnimationConstants.morphTransition) {
+                        selectedInfoItem = nil
+                    }
+                })
+                .morphDestination(id: "pantry-\(item.rawValue)", in: shopNamespace)
+                .dragToDismiss {
+                    withAnimation(AnimationConstants.morphTransition) {
+                        selectedInfoItem = nil
+                    }
+                }
+                .transition(.opacity)
+                .zIndex(10)
+            }
         }
     }
 
@@ -177,9 +192,17 @@ struct FarmShopView: View {
                         buyItem(item)
                     },
                     onInfo: {
-                        selectedInfoItem = item
+                        Haptic.impact(.light)
+                        withAnimation(AnimationConstants.morphTransition) {
+                            selectedInfoItem = item
+                        }
                     },
                     childAllergens: gameState.activeAllergens
+                )
+                .morphSource(
+                    id: "pantry-\(item.rawValue)",
+                    in: shopNamespace,
+                    isActive: selectedInfoItem == nil
                 )
             }
         }
@@ -406,14 +429,8 @@ struct FarmTransitionView: View {
 
     // ==========================================
 
-    /// Walking frame asset names
-    private let walkingFrames: [String] = (1...15).map {
-        String(format: "pip_walking_frame_%02d", $0)
-    }
-
-    private let walkSpeed: CGFloat = 2.2
-    /// Pip size — bigger on iPad
-    private var pipSize: CGFloat { isWideScreen ? 160 : 110 }
+    /// Pip size — 2x on iPad
+    private var pipSize: CGFloat { isWideScreen ? 220 : 110 }
 
     // ==========================================
     // SCENE EDITOR: Pencil icon toggles edit mode.
@@ -430,14 +447,9 @@ struct FarmTransitionView: View {
         SceneItem(id: "walk3",  label: "Barn",   icon: "4️⃣", xPercent: 0.45, yPercent: 0.73),
     ]
 
-    @State private var pipPosition: CGPoint = .zero
-    @State private var walkingFrameIndex: Int = 0
-    @State private var tickCounter: Int = 0
-    @State private var currentSegment: Int = 0
-    @State private var segmentProgress: CGFloat = 0.0
-    @State private var walkTimer: Timer? = nil
     @State private var hasCompleted: Bool = false
     @State private var doorsOpen: Bool = false
+    @State private var walkStarted: Bool = false
 
     var body: some View {
         GeometryReader { screen in
@@ -475,7 +487,7 @@ struct FarmTransitionView: View {
                     if !editMode { skip() }
                 }
 
-                // Pip + Basket + Scene Editor — same frame, centered on screen
+                // Pip + Scene Editor — same frame, centered on screen
                 ZStack {
                     if editMode {
                         SceneEditorOverlay(
@@ -484,15 +496,17 @@ struct FarmTransitionView: View {
                             items: $farmSceneItems,
                             editMode: true
                         )
-                    } else {
-                        // Walking Pip
-                        Image(walkingFrames[walkingFrameIndex])
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: pipSize, height: pipSize)
-                            .scaleEffect(x: -1, y: 1) // Face left
-                            .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 3)
-                            .position(pipPosition)
+                    } else if !hasCompleted {
+                        // Walking Pip — uses CharacterWalkingView (TimelineView + delta-time)
+                        CharacterWalkingView(
+                            frameSet: .pipWalking,
+                            size: pipSize,
+                            waypoints: farmSceneItems.map { CGPoint(x: sceneWidth * $0.xPercent, y: sceneHeight * $0.yPercent) },
+                            autoStart: true,
+                            loop: false,
+                            speed: AnimationConstants.walkSpeed,
+                            onCompleted: { complete() }
+                        )
                     }
                 }
                 .frame(width: sceneWidth, height: sceneHeight)
@@ -505,18 +519,11 @@ struct FarmTransitionView: View {
                     HStack {
                         Spacer()
                         Button {
-                            if !editMode {
-                                // Entering edit: pause walk
-                                walkTimer?.invalidate()
-                                walkTimer = nil
-                            } else {
+                            if editMode {
                                 // Leaving edit: restart walk from beginning
                                 hasCompleted = false
-                                let start = farmSceneItems[0]
-                                pipPosition = CGPoint(x: sceneWidth * start.xPercent, y: sceneHeight * start.yPercent)
-                                startWalking(mapWidth: sceneWidth, mapHeight: sceneHeight)
                             }
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            withAnimation(AnimationConstants.springMedium) {
                                 editMode.toggle()
                             }
                         } label: {
@@ -543,83 +550,17 @@ struct FarmTransitionView: View {
                 }
             }
             .onAppear {
-                let start = farmSceneItems[0]
-                pipPosition = CGPoint(x: sceneWidth * start.xPercent, y: sceneHeight * start.yPercent)
-                startWalking(mapWidth: sceneWidth, mapHeight: sceneHeight)
-            }
-        }
-        .onDisappear {
-            walkTimer?.invalidate()
-            walkTimer = nil
-        }
-    }
-
-    private func startWalking(mapWidth w: CGFloat, mapHeight h: CGFloat) {
-        let waypoints = farmSceneItems
-        guard waypoints.count >= 2 else { return }
-
-        currentSegment = 0
-        segmentProgress = 0.0
-
-        walkTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 30.0, repeats: true) { _ in
-            let waypoints = farmSceneItems
-            guard currentSegment < waypoints.count - 1 else {
-                complete()
-                return
-            }
-
-            let from = waypoints[currentSegment]
-            let to = waypoints[currentSegment + 1]
-
-            let fromPt = CGPoint(x: w * from.xPercent, y: h * from.yPercent)
-            let toPt = CGPoint(x: w * to.xPercent, y: h * to.yPercent)
-
-            let dx = toPt.x - fromPt.x
-            let dy = toPt.y - fromPt.y
-            let segmentLength = sqrt(dx * dx + dy * dy)
-            guard segmentLength > 0 else { return }
-
-            let progressPerTick = walkSpeed / segmentLength
-            segmentProgress += progressPerTick
-
-            if segmentProgress >= 1.0 {
-                currentSegment += 1
-                segmentProgress = 0.0
-
-                if currentSegment >= waypoints.count - 1 {
-                    let final = waypoints[waypoints.count - 1]
-                    pipPosition = CGPoint(x: w * final.xPercent, y: h * final.yPercent)
-                    complete()
-                    return
-                }
-            }
-
-            // Interpolate current position
-            let curFrom = waypoints[currentSegment]
-            let curTo = waypoints[min(currentSegment + 1, waypoints.count - 1)]
-            let cfPt = CGPoint(x: w * curFrom.xPercent, y: h * curFrom.yPercent)
-            let ctPt = CGPoint(x: w * curTo.xPercent, y: h * curTo.yPercent)
-
-            pipPosition = CGPoint(
-                x: cfPt.x + (ctPt.x - cfPt.x) * segmentProgress,
-                y: cfPt.y + (ctPt.y - cfPt.y) * segmentProgress
-            )
-
-            // Advance walking frame every 4 ticks (~8fps at 30fps timer)
-            tickCounter += 1
-            if tickCounter >= 4 {
-                tickCounter = 0
-                walkingFrameIndex = (walkingFrameIndex + 1) % walkingFrames.count
+                walkStarted = true
             }
         }
     }
+
+    // Walking engine is now handled by CharacterWalkingView (TimelineView + delta-time).
+    // No more Timer.scheduledTimer — see ANIMATIONS.md for why Timer is banned.
 
     private func skip() {
         guard !hasCompleted else { return }
         hasCompleted = true
-        walkTimer?.invalidate()
-        walkTimer = nil
-        // Instant door open + transition when skipping
         doorsOpen = true
         onComplete()
     }
@@ -627,11 +568,9 @@ struct FarmTransitionView: View {
     private func complete() {
         guard !hasCompleted else { return }
         hasCompleted = true
-        walkTimer?.invalidate()
-        walkTimer = nil
 
         // Doors swing open, then after a beat transition to shop
-        withAnimation(.easeInOut(duration: 0.6)) {
+        withAnimation(AnimationConstants.springSlow) {
             doorsOpen = true
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {

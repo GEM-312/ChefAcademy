@@ -13,7 +13,7 @@
 //
 
 import SwiftUI
-import UIKit
+
 
 // MARK: - Chop Mini Game
 
@@ -301,19 +301,19 @@ struct ChopMiniGame: View {
         if distanceFromCenter <= 0.1 {
             chopScore = 100
             result = "Perfect!"
-            UIImpactFeedbackGenerator(style: .rigid).impactOccurred() // sharp perfect chop
+            Haptic.impact(.rigid)   // sharp perfect chop
         } else if distanceFromCenter <= 0.2 {
             chopScore = 75
             result = "Great!"
-            UIImpactFeedbackGenerator(style: .heavy).impactOccurred() // solid chop
+            Haptic.impact(.heavy)   // solid chop
         } else if distanceFromCenter <= 0.3 {
             chopScore = 50
             result = "Good!"
-            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            Haptic.impact(.medium)
         } else {
             chopScore = 25
             result = "Okay"
-            UIImpactFeedbackGenerator(style: .light).impactOccurred() // weak chop
+            Haptic.impact(.light)   // weak chop
         }
 
         // Update state

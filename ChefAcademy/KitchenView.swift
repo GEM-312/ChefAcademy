@@ -125,6 +125,22 @@ struct KitchenView: View {
                     .environmentObject(gameState)
             }
         }
+        .onAppear {
+            // Check if Pip sent us an AI-generated recipe to cook
+            if let aiRecipe = gameState.pendingAIRecipe {
+                gameState.pendingAIRecipe = nil
+                cookingRecipe = aiRecipe
+                showMiniGame = true
+            }
+        }
+        .onChange(of: gameState.pendingAIRecipe) { _, newRecipe in
+            // Also catch if set while KitchenView is already visible
+            if let aiRecipe = newRecipe {
+                gameState.pendingAIRecipe = nil
+                cookingRecipe = aiRecipe
+                showMiniGame = true
+            }
+        }
         .onChange(of: showMiniGame) { _, showing in
             if !showing {
                 // Returned from mini-game — reset cooking

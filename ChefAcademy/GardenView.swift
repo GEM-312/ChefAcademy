@@ -52,11 +52,11 @@ struct DraggablePipView: View {
     // TWEAK THESE:
     // ==========================================
 
-    /// Pip's size — bigger on iPad
-    private var pipSize: CGFloat { isIPad ? 80 : 55 }
+    /// Pip's size — 2x on iPad
+    private var pipSize: CGFloat { isIPad ? 160 : 55 }
 
     /// How close Pip needs to be to a plot to harvest — bigger on iPad
-    private var harvestRadius: CGFloat { isIPad ? 100 : 60 }
+    private var harvestRadius: CGFloat { isIPad ? 160 : 60 }
 
     // ==========================================
     // STATE
@@ -266,13 +266,13 @@ struct WalkingPipView: View {
     // TWEAK THESE:
     // ==========================================
 
-    private var pipSize: CGFloat { isIPad ? 80 : 55 }
-    private var harvestRadius: CGFloat { isIPad ? 100 : 60 }
+    private var pipSize: CGFloat { isIPad ? 160 : 55 }
+    private var harvestRadius: CGFloat { isIPad ? 160 : 60 }
 
     /// How many points Pip moves per tick (1/30s)
     private let walkSpeed: CGFloat = 1.8
 
-    private var pipDisplaySize: CGFloat { isIPad ? 160 : 110 }
+    private var pipDisplaySize: CGFloat { isIPad ? 220 : 110 }
 
     /// Walking frame names
     private let walkingFrames: [String] = (1...15).map {
@@ -822,29 +822,8 @@ struct GardenView: View {
                         gardenPlotSpot(index: 4)
                             .position(plotPositions[4])
 
-                        // Walking Pip — walks between waypoints when plants grow!
-                        let waypointPositions: [CGPoint] = (0...4).map { i in
-                            plotPos(for: "walk\(i)", w: w, h: h)
-                        }
-                        let pipIdlePos = plotPos(for: "pip", w: w, h: h)
-                        let anyGrowing = gameState.gardenPlots.contains(where: { $0.state == .growing })
-
-                        WalkingPipView(
-                            mapWidth: w,
-                            mapHeight: h,
-                            isVisible: gameState.gardenPlots.contains(where: { $0.state != .empty }),
-                            isIPad: isIPad,
-                            waypoints: waypointPositions,
-                            idlePosition: pipIdlePos,
-                            isGrowing: anyGrowing,
-                            plotPositions: plotPositions,
-                            readyPlotIndices: gameState.gardenPlots.indices.filter { gameState.gardenPlots[$0].state == .ready },
-                            onHarvestPlot: { index in
-                                harvestPlot(index: index)
-                            }
-                        )
-
-                        // Basket removed from map — now shown below in harvestedSection
+                        // Pip removed from map — one Pip only, shown in PipGardenMessage below
+                        // Walking/draggable Pip will return once speaking animation is ready
                     }
                 }
             )
@@ -1446,11 +1425,16 @@ struct PipGardenMessage: View {
     var choices: [PipDialogChoice] = []
     var gardenPlots: [GardenPlot] = []
     var onPipTap: (() -> Void)? = nil
+    @Environment(\.horizontalSizeClass) private var sizeClass
+    private var isIPad: Bool { sizeClass == .regular }
 
     var body: some View {
         HStack(alignment: .top, spacing: AppSpacing.md) {
-            // Animated Pip — tap for next tip!
-            PipWavingAnimatedView(size: 120)
+            // Static Pip (transparent bg) — will switch to speaking animation once ready
+            Image("pip_waving_frame_01")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: isIPad ? 200 : 100, height: isIPad ? 200 : 100)
                 .onTapGesture { onPipTap?() }
                 .overlay(alignment: .bottom) {
                     if onPipTap != nil {
@@ -1465,44 +1449,52 @@ struct PipGardenMessage: View {
                     }
                 }
 
-            // Message bubble
+            // Message bubble — compact, doesn't fill full width
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
                 Text("Pip")
                     .font(.AppTheme.caption)
                     .foregroundColor(Color.AppTheme.sage)
 
                 Text(recipeMessage ?? gardeningTips.randomElement() ?? "Happy gardening!")
-                    .font(.AppTheme.body)
+                    .font(isIPad ? .AppTheme.body : .AppTheme.subheadline)
                     .foregroundColor(Color.AppTheme.darkBrown)
 
                 // Action buttons (shown for recipe suggestions)
                 if !choices.isEmpty {
-                    VStack(spacing: AppSpacing.sm) {
-                        ForEach(choices.indices, id: \.self) { index in
-                            let choice = choices[index]
-                            Button(action: choice.action) {
-                                Text(choice.label)
-                                    .font(.AppTheme.headline)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, AppSpacing.sm)
-                                    .foregroundColor(choice.style == .primary ? Color.AppTheme.cream : choice.style == .secondary ? Color.AppTheme.darkBrown : Color.AppTheme.sepia)
-                                    .background(choice.style == .primary ? Color.AppTheme.sage : choice.style == .secondary ? Color.AppTheme.warmCream : Color.clear)
-                                    .cornerRadius(12)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: 12)
-                                            .stroke(choice.style == .secondary ? Color.AppTheme.sepia.opacity(0.3) : Color.clear, lineWidth: 1.5)
-                                    )
-                            }
-                            .buttonStyle(BouncyButtonStyle())
+                    let actionChoices = choices.filter { $0.style != .subtle }
+                    let subtleChoices = choices.filter { $0.style == .subtle }
+
+                    // Primary + secondary side by side with wood texture
+                    HStack(spacing: AppSpacing.xs) {
+                        ForEach(actionChoices.indices, id: \.self) { index in
+                            let choice = actionChoices[index]
+                            Button(choice.label, action: choice.action)
+                                .buttonStyle(TexturedButtonStyle(
+                                    tint: choice.style == .primary ? Color.AppTheme.sage : Color.AppTheme.warmKhaki,
+                                    height: 38,
+                                    font: .AppTheme.caption
+                                ))
                         }
                     }
                     .padding(.top, AppSpacing.xs)
+
+                    // "Keep gardening" as plain text link below
+                    ForEach(subtleChoices.indices, id: \.self) { index in
+                        let choice = subtleChoices[index]
+                        Button(action: choice.action) {
+                            Text(choice.label)
+                                .font(.AppTheme.caption)
+                                .foregroundColor(Color.AppTheme.sepia)
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
             }
-            .padding(AppSpacing.md)
+            .padding(isIPad ? AppSpacing.md : AppSpacing.sm)
             .background(Color.AppTheme.warmCream)
             .cornerRadius(AppSpacing.cardCornerRadius)
         }
+        .frame(maxWidth: isIPad ? 500 : .infinity)
         .padding(.horizontal, AppSpacing.md)
     }
 
@@ -1566,9 +1558,10 @@ struct SeedBadge: View {
     var isIPad: Bool = false
     var showPrice: Bool = false
 
-    // Each badge = 3/8 screen width
+    // Badge size — 1.5x on iPad, capped so it doesn't blow up on huge screens
     private var badgeWidth: CGFloat {
-        UIScreen.main.bounds.width * 3 / 8
+        let screenBased = UIScreen.main.bounds.width * 3 / 8
+        return isIPad ? min(screenBased, 240) : screenBased
     }
     private var imgSize: CGFloat { badgeWidth * 0.43 }
     private var badgeHeight: CGFloat { badgeWidth * 1.5 }
