@@ -75,13 +75,22 @@ extension Font {
         
         static let callout = Font.system(size: 16, weight: .regular, design: .rounded)
         static let subheadline = Font.system(size: 15, weight: .regular, design: .rounded)
+        static let captionLarge = Font.system(size: 14, weight: .regular, design: .rounded)
         static let footnote = Font.system(size: 13, weight: .regular, design: .rounded)
         static let caption = Font.system(size: 12, weight: .regular, design: .rounded)
-        
+        static let microLarge = Font.system(size: 11, weight: .regular, design: .rounded)
+        static let micro = Font.system(size: 10, weight: .regular, design: .rounded)
+
         // Special styles
         static let recipeStep = Font.system(size: 18, weight: .medium, design: .rounded)
         static let ingredientItem = Font.system(size: 16, weight: .regular, design: .rounded)
         static let timerDisplay = Font.system(size: 48, weight: .light, design: .rounded)
+
+        // Escape hatch for one-off sizes/weights not covered by named tokens.
+        // Always rounded — enforces design-system consistency.
+        static func rounded(size: CGFloat, weight: Font.Weight = .regular) -> Font {
+            Font.system(size: size, weight: weight, design: .rounded)
+        }
     }
 }
 
@@ -98,9 +107,19 @@ struct AppSpacing {
     // Kid-friendly tap targets (minimum 44pt for accessibility)
     static let minTapTarget: CGFloat = 44
     static let buttonHeight: CGFloat = 52
-    static let cardCornerRadius: CGFloat = 16
     static let iconSize: CGFloat = 24
     static let largeIconSize: CGFloat = 48
+
+    // Corner radii — scale: pill (8) → small (12) → card (16) → large (20)
+    static let pillCornerRadius: CGFloat = 8      // badges, chips, small buttons
+    static let smallCornerRadius: CGFloat = 12    // inline cards, seed bags
+    static let cardCornerRadius: CGFloat = 16     // standard cards (default)
+    static let largeCornerRadius: CGFloat = 20    // hero cards, full-screen panels
+
+    // Stroke widths — for borders and outlines
+    static let strokeThin: CGFloat = 1
+    static let strokeMedium: CGFloat = 2
+    static let strokeBold: CGFloat = 3
 }
 
 // MARK: - Animation Constants
@@ -114,9 +133,12 @@ enum AnimationConstants {
     static let springBouncy  = Animation.spring(response: 0.3, dampingFraction: 0.5)   // celebrations, pose changes
 
     // Easing — smooth transitions between states
-    static let routeTransition = Animation.easeInOut(duration: 0.3)   // tab switches, route changes
     static let fadeQuick       = Animation.easeInOut(duration: 0.15)  // button press feedback
+    static let fadeFast        = Animation.easeInOut(duration: 0.2)   // snappy toggles, subtle reveals
     static let fadeMedium      = Animation.easeInOut(duration: 0.3)   // content appear/disappear
+    static let routeTransition = Animation.easeInOut(duration: 0.3)   // tab switches, route changes (alias of fadeMedium)
+    static let revealSlow      = Animation.easeInOut(duration: 0.5)   // large element reveals
+    static let pipTransition   = Animation.easeInOut(duration: 0.8)   // Pip pose/dialog transitions
 
     // Morph — card-to-detail matchedGeometryEffect transitions
     static let morphTransition = Animation.spring(response: 0.45, dampingFraction: 0.85)
@@ -148,7 +170,8 @@ enum Haptic {
 
 // MARK: - Reusable View Modifiers
 
-// Card Style Modifier
+// Parchment card — the "reference" card style, used mainly in previews.
+// Production code prefers the warmCream variant — see .softCard() below.
 struct CardStyle: ViewModifier {
     func body(content: Content) -> some View {
         content
@@ -156,6 +179,27 @@ struct CardStyle: ViewModifier {
             .background(Color.AppTheme.parchment)
             .cornerRadius(AppSpacing.cardCornerRadius)
             .shadow(color: Color.AppTheme.sepia.opacity(0.1), radius: 8, x: 0, y: 4)
+    }
+}
+
+// Soft card — the 80% case. Warm cream background, subtle shadow.
+// Replaces inline .padding(...).background(warmCream).cornerRadius(...).shadow(...) chains.
+struct SoftCardStyle: ViewModifier {
+    var padding: CGFloat = AppSpacing.md
+    var cornerRadius: CGFloat = AppSpacing.cardCornerRadius
+    var showShadow: Bool = true
+
+    func body(content: Content) -> some View {
+        content
+            .padding(padding)
+            .background(Color.AppTheme.warmCream)
+            .cornerRadius(cornerRadius)
+            .shadow(
+                color: showShadow ? Color.AppTheme.sepia.opacity(0.1) : .clear,
+                radius: showShadow ? 6 : 0,
+                x: 0,
+                y: showShadow ? 3 : 0
+            )
     }
 }
 
@@ -257,6 +301,16 @@ extension View {
         modifier(CardStyle())
     }
 
+    /// Warm cream card — preferred for most production surfaces.
+    /// Defaults: md padding, cardCornerRadius (16), subtle shadow.
+    func softCard(
+        padding: CGFloat = AppSpacing.md,
+        cornerRadius: CGFloat = AppSpacing.cardCornerRadius,
+        showShadow: Bool = true
+    ) -> some View {
+        modifier(SoftCardStyle(padding: padding, cornerRadius: cornerRadius, showShadow: showShadow))
+    }
+
     func primaryButton() -> some View {
         self.buttonStyle(PrimaryButtonStyle())
     }
@@ -311,7 +365,7 @@ struct DifficultyBadge: View {
         .padding(.horizontal, AppSpacing.xs)
         .padding(.vertical, AppSpacing.xxs)
         .background(level.color)
-        .cornerRadius(8)
+        .cornerRadius(AppSpacing.pillCornerRadius)
     }
 }
 

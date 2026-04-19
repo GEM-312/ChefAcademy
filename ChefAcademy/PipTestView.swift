@@ -178,7 +178,7 @@ struct PipGridItem: View {
     var poseEmoji: String {
         switch pose {
         case .neutral: return "😊"
-        case .waving: return "👋"
+        case .waving, .wavingFrame01: return "👋"
         case .excited: return "🎉"
         case .cooking: return "👨‍🍳"
         case .thinking: return "🤔"

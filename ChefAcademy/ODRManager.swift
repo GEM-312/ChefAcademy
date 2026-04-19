@@ -259,7 +259,7 @@ struct ODRImageView: View {
                     .resizable()
             } else {
                 // Placeholder shimmer
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: AppSpacing.pillCornerRadius)
                     .fill(Color.AppTheme.warmCream)
                     .overlay {
                         if let prog = odr.progress[tag], prog < 1.0 {
@@ -333,7 +333,7 @@ struct ODRRequestModifier: ViewModifier {
             if !succeeded.isEmpty {
                 print("[ODR] ✅ Loaded tags: \(succeeded.map(\.rawValue))")
             }
-            withAnimation(.easeInOut(duration: 0.3)) {
+            withAnimation(AnimationConstants.fadeMedium) {
                 ready = true
             }
         }

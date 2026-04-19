@@ -109,7 +109,7 @@ struct ChopMiniGame: View {
                 .resizable()
                 .aspectRatio(contentMode: .fill)
                 .frame(height: 250)
-                .clipShape(RoundedRectangle(cornerRadius: 20))
+                .clipShape(RoundedRectangle(cornerRadius: AppSpacing.largeCornerRadius))
                 .shadow(color: Color.AppTheme.sepia.opacity(0.15), radius: 6, y: 3)
 
             VStack(spacing: 0) {
@@ -218,7 +218,7 @@ struct ChopMiniGame: View {
             .padding(.horizontal, AppSpacing.lg)
             .padding(.vertical, AppSpacing.sm)
             .background(Color.AppTheme.cream.opacity(0.9))
-            .cornerRadius(12)
+            .cornerRadius(AppSpacing.smallCornerRadius)
             .scaleEffect(showResult ? 1.0 : 0.5)
             .opacity(showResult ? 1.0 : 0.0)
             .animation(.spring(response: 0.3, dampingFraction: 0.6), value: showResult)

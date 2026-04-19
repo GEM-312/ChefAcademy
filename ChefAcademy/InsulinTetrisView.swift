@@ -287,7 +287,7 @@ struct InsulinTetrisView: View {
                     ForEach(StorageBinType.allCases, id: \.rawValue) { bin in
                         VStack(spacing: 6) {
                             Image(systemName: bin.icon)
-                                .font(.system(size: 30))
+                                .font(.AppTheme.rounded(size: 30))
                                 .foregroundColor(bin.color)
                             Text(bin.displayName)
                                 .font(.AppTheme.caption)
@@ -298,9 +298,7 @@ struct InsulinTetrisView: View {
                         }
                     }
                 }
-                .padding(AppSpacing.md)
-                .background(Color.AppTheme.warmCream)
-                .cornerRadius(AppSpacing.cardCornerRadius)
+                .softCard(showShadow: false)
 
                 // Start button
                 Button(action: { startGame(size: size) }) {
@@ -386,7 +384,7 @@ struct InsulinTetrisView: View {
 
     private func blockView(block: FallingBlock) -> some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: AppSpacing.smallCornerRadius)
                 .fill(block.type.color)
                 .frame(width: 56, height: 56)
                 .shadow(color: Color.AppTheme.sepia.opacity(0.2), radius: 4, y: 2)
@@ -395,11 +393,11 @@ struct InsulinTetrisView: View {
             switch block.type {
             case .glucose:
                 Text("G")
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .font(.AppTheme.rounded(size: 24, weight: .bold))
                     .foregroundColor(Color.AppTheme.darkBrown.opacity(0.6))
             case .fructose:
                 Text("F")
-                    .font(.system(size: 24, weight: .bold, design: .rounded))
+                    .font(.AppTheme.rounded(size: 24, weight: .bold))
                     .foregroundColor(Color.AppTheme.cream.opacity(0.8))
             case .fiber(let veg):
                 Image(veg.imageName)
@@ -433,11 +431,11 @@ struct InsulinTetrisView: View {
         return VStack(spacing: 4) {
             // Bin container with fill
             ZStack(alignment: .bottom) {
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: AppSpacing.smallCornerRadius)
                     .stroke(bin.type.color.opacity(0.5), lineWidth: 2)
                     .frame(width: binWidth, height: 130)
                     .background(
-                        RoundedRectangle(cornerRadius: 12)
+                        RoundedRectangle(cornerRadius: AppSpacing.smallCornerRadius)
                             .fill(Color.AppTheme.warmCream)
                     )
 
@@ -449,7 +447,7 @@ struct InsulinTetrisView: View {
 
                 // Icon
                 Image(systemName: bin.type.icon)
-                    .font(.system(size: 28))
+                    .font(.AppTheme.title)
                     .foregroundColor(bin.type.color)
                     .padding(.bottom, 8)
             }
@@ -473,7 +471,7 @@ struct InsulinTetrisView: View {
 
             // Capacity
             Text(bin.isFull ? "FULL" : "\(Int(bin.currentGrams))/\(Int(bin.type.capacity))g")
-                .font(.system(size: 10, weight: .semibold, design: .rounded))
+                .font(.AppTheme.rounded(size: 10, weight: .semibold))
                 .foregroundColor(bin.isFull ? Color.AppTheme.terracotta : Color.AppTheme.lightSepia)
         }
     }
@@ -485,11 +483,11 @@ struct InsulinTetrisView: View {
 
         return VStack(spacing: 4) {
             ZStack {
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: AppSpacing.smallCornerRadius)
                     .stroke(StorageBinType.fat.color.opacity(0.5), lineWidth: 2)
                     .frame(width: binWidth, height: 130)
                     .background(
-                        RoundedRectangle(cornerRadius: 12)
+                        RoundedRectangle(cornerRadius: AppSpacing.smallCornerRadius)
                             .fill(Color.AppTheme.warmCream)
                     )
 
@@ -501,7 +499,7 @@ struct InsulinTetrisView: View {
                     .animation(.spring(response: 0.4), value: balloonScale)
 
                 Image(systemName: "balloon.fill")
-                    .font(.system(size: 28))
+                    .font(.AppTheme.title)
                     .foregroundColor(StorageBinType.fat.color)
                     .scaleEffect(balloonScale * 0.8)
             }
@@ -520,7 +518,7 @@ struct InsulinTetrisView: View {
                 .foregroundColor(Color.AppTheme.sepia)
 
             Text(blocksInFat > 0 ? "\(blocksInFat) blocks" : "Empty")
-                .font(.system(size: 10, weight: .semibold, design: .rounded))
+                .font(.AppTheme.rounded(size: 10, weight: .semibold))
                 .foregroundColor(blocksInFat > 3 ? Color.AppTheme.terracotta : Color.AppTheme.lightSepia)
         }
     }
@@ -565,7 +563,7 @@ struct InsulinTetrisView: View {
                 // Close button
                 Button(action: { dismiss() }) {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 24))
+                        .font(.AppTheme.rounded(size: 24))
                         .foregroundColor(Color.AppTheme.sepia.opacity(0.4))
                 }
             }
@@ -584,7 +582,7 @@ struct InsulinTetrisView: View {
                 .padding(.horizontal, 12)
                 .padding(.vertical, 4)
                 .background(Color.AppTheme.sage.opacity(0.15))
-                .cornerRadius(12)
+                .cornerRadius(AppSpacing.smallCornerRadius)
                 .transition(.scale.combined(with: .opacity))
             }
 
@@ -595,22 +593,9 @@ struct InsulinTetrisView: View {
     // MARK: - Pip Toast
 
     private func pipToast(_ message: String) -> some View {
-        HStack(spacing: AppSpacing.sm) {
-            Image("pip_got_idea")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 36, height: 36)
-                .clipShape(Circle())
-
-            Text(message)
-                .font(.AppTheme.caption)
-                .foregroundColor(Color.AppTheme.darkBrown)
-        }
-        .padding(AppSpacing.sm)
-        .background(Color.AppTheme.warmCream.opacity(0.95))
-        .cornerRadius(20)
-        .shadow(color: Color.AppTheme.sepia.opacity(0.1), radius: 4, y: 2)
-        .transition(.move(edge: .bottom).combined(with: .opacity))
+        PipSpeechBubble(message: message, showsLabel: false, tintBackground: false)
+            .shadow(color: Color.AppTheme.sepia.opacity(0.1), radius: 4, y: 2)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
     }
 
     // MARK: - Game Over Screen
@@ -687,7 +672,7 @@ struct InsulinTetrisView: View {
                 HStack(spacing: 8) {
                     ForEach(0..<3, id: \.self) { i in
                         Image(systemName: i < stars ? "star.fill" : "star")
-                            .font(.system(size: 30))
+                            .font(.AppTheme.rounded(size: 30))
                             .foregroundColor(Color.AppTheme.goldenWheat)
                     }
                 }
@@ -779,9 +764,7 @@ struct InsulinTetrisView: View {
                     .foregroundColor(Color.AppTheme.sepia)
             }
         }
-        .padding(AppSpacing.md)
-        .background(Color.AppTheme.warmCream)
-        .cornerRadius(AppSpacing.cardCornerRadius)
+        .softCard(showShadow: false)
     }
 
     // MARK: - Scoring Helpers
@@ -826,13 +809,13 @@ struct InsulinTetrisView: View {
 
         showPipMessage("Drag glucose blocks into the bins!")
 
-        withAnimation(.easeInOut(duration: 0.3)) {
+        withAnimation(AnimationConstants.fadeMedium) {
             phase = .playing
         }
     }
 
     private func resetGame() {
-        withAnimation(.easeInOut(duration: 0.3)) {
+        withAnimation(AnimationConstants.fadeMedium) {
             phase = .ready
         }
     }
@@ -1139,7 +1122,7 @@ struct InsulinTetrisView: View {
         }
         gc.checkAchievements(gameState: gameState)
 
-        withAnimation(.easeInOut(duration: 0.5)) {
+        withAnimation(AnimationConstants.revealSlow) {
             phase = won ? .victory : .gameOver
         }
     }
@@ -1148,11 +1131,11 @@ struct InsulinTetrisView: View {
 
     private func showPipMessage(_ message: String) {
         pipMessageTimer?.cancel()
-        withAnimation(.easeInOut(duration: 0.2)) {
+        withAnimation(AnimationConstants.fadeFast) {
             pipMessage = message
         }
         let work = DispatchWorkItem {
-            withAnimation(.easeInOut(duration: 0.3)) {
+            withAnimation(AnimationConstants.fadeMedium) {
                 pipMessage = nil
             }
         }

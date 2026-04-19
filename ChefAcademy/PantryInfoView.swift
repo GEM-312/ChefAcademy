@@ -34,7 +34,7 @@ struct PantryInfoView: View {
 
                     // Item name
                     Text(item.displayName)
-                        .font(.custom("Georgia", size: 32).bold())
+                        .font(.AppTheme.rounded(size: 32, weight: .bold))
                         .foregroundColor(Color.AppTheme.darkBrown)
                         .scaleEffect(appeared ? 1.0 : 0.8)
                         .opacity(appeared ? 1.0 : 0)
@@ -51,15 +51,15 @@ struct PantryInfoView: View {
                     HStack(spacing: AppSpacing.sm) {
                         Image(systemName: "circle.fill")
                             .foregroundColor(Color.AppTheme.goldenWheat)
-                            .font(.system(size: 16))
+                            .font(.AppTheme.callout)
                         Text("\(item.shopPrice) coins")
-                            .font(.system(size: 18, weight: .semibold, design: .rounded))
+                            .font(.AppTheme.rounded(size: 18, weight: .semibold))
                             .foregroundColor(Color.AppTheme.darkBrown)
                     }
                     .padding(.horizontal, AppSpacing.md)
                     .padding(.vertical, AppSpacing.sm)
                     .background(Color.AppTheme.warmCream)
-                    .cornerRadius(20)
+                    .cornerRadius(AppSpacing.largeCornerRadius)
                     .opacity(appeared ? 1.0 : 0)
 
                     // Nutrients ("What's Inside")
@@ -83,7 +83,7 @@ struct PantryInfoView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "circle.fill")
                             .foregroundColor(Color.AppTheme.goldenWheat)
-                            .font(.system(size: 14))
+                            .font(.AppTheme.captionLarge)
                         Text("\(gameState.coins)")
                             .font(.AppTheme.headline)
                             .foregroundColor(Color.AppTheme.darkBrown)
@@ -91,7 +91,7 @@ struct PantryInfoView: View {
                     .padding(.horizontal, AppSpacing.md)
                     .padding(.vertical, AppSpacing.xs)
                     .background(Color.AppTheme.warmCream)
-                    .cornerRadius(20)
+                    .cornerRadius(AppSpacing.largeCornerRadius)
                     .padding(.leading, AppSpacing.md)
                     .padding(.top, AppSpacing.md)
 
@@ -105,7 +105,7 @@ struct PantryInfoView: View {
                         }
                     } label: {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 30))
+                            .font(.AppTheme.rounded(size: 30))
                             .foregroundColor(Color.AppTheme.sepia.opacity(0.6))
                             .padding(AppSpacing.md)
                     }
@@ -118,7 +118,7 @@ struct PantryInfoView: View {
             if let reward = showCoinReward {
                 VStack {
                     Text(reward)
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .font(.AppTheme.rounded(size: 28, weight: .bold))
                         .foregroundColor(Color.AppTheme.goldenWheat)
                         .shadow(color: .black.opacity(0.2), radius: 4, y: 2)
                         .transition(.scale.combined(with: .opacity))
@@ -140,11 +140,11 @@ struct PantryInfoView: View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             HStack {
                 Text("What's Inside")
-                    .font(.custom("Georgia", size: 20).bold())
+                    .font(.AppTheme.rounded(size: 20, weight: .bold))
                     .foregroundColor(Color.AppTheme.darkBrown)
                 Spacer()
                 Text("Tap to learn!")
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .font(.AppTheme.rounded(size: 12, weight: .medium))
                     .foregroundColor(Color.AppTheme.goldenWheat)
             }
 
@@ -173,21 +173,21 @@ struct PantryInfoView: View {
         }) {
             HStack(spacing: AppSpacing.md) {
                 Text(nutrient.emoji)
-                    .font(.system(size: 26))
+                    .font(.AppTheme.rounded(size: 26))
                     .frame(width: 36)
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(nutrient.rawValue)
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .font(.AppTheme.rounded(size: 16, weight: .semibold))
                         .foregroundColor(Color.AppTheme.darkBrown)
 
                     HStack(spacing: 4) {
                         Image(systemName: nutrient.organIcon)
-                            .font(.system(size: 12))
+                            .font(.AppTheme.caption)
                             .foregroundColor(Color.AppTheme.sage)
 
                         Text("Helps your \(nutrient.benefitsOrgan)")
-                            .font(.system(size: 13, weight: .regular, design: .rounded))
+                            .font(.AppTheme.rounded(size: 13, weight: .regular))
                             .foregroundColor(Color.AppTheme.sepia)
                     }
                 }
@@ -197,21 +197,21 @@ struct PantryInfoView: View {
                 if isClaimed {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(Color.AppTheme.sage)
-                        .font(.system(size: 18))
+                        .font(.AppTheme.recipeStep)
                 } else {
                     HStack(spacing: 2) {
                         Image(systemName: "circle.fill")
                             .foregroundColor(Color.AppTheme.goldenWheat)
-                            .font(.system(size: 10))
+                            .font(.AppTheme.micro)
                         Text("+\(nutrient.coinReward)")
-                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .font(.AppTheme.rounded(size: 13, weight: .bold))
                             .foregroundColor(Color.AppTheme.goldenWheat)
                     }
                 }
             }
             .padding(AppSpacing.md)
             .background(isClaimed ? Color.AppTheme.sage.opacity(0.1) : Color.AppTheme.parchment.opacity(0.6))
-            .cornerRadius(12)
+            .cornerRadius(AppSpacing.smallCornerRadius)
         }
         .buttonStyle(.plain)
     }
@@ -236,27 +236,27 @@ struct PantryInfoView: View {
                     Image(systemName: "lightbulb.fill")
                         .foregroundColor(Color.AppTheme.goldenWheat)
                     Text("Fun Fact!")
-                        .font(.custom("Georgia", size: 20).bold())
+                        .font(.AppTheme.rounded(size: 20, weight: .bold))
                         .foregroundColor(Color.AppTheme.darkBrown)
                     Spacer()
                     if isClaimed {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundColor(Color.AppTheme.sage)
-                            .font(.system(size: 18))
+                            .font(.AppTheme.recipeStep)
                     } else {
                         HStack(spacing: 2) {
                             Image(systemName: "circle.fill")
                                 .foregroundColor(Color.AppTheme.goldenWheat)
-                                .font(.system(size: 10))
+                                .font(.AppTheme.micro)
                             Text("+5")
-                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                                .font(.AppTheme.rounded(size: 13, weight: .bold))
                                 .foregroundColor(Color.AppTheme.goldenWheat)
                         }
                     }
                 }
 
                 Text(item.funFact)
-                    .font(.system(size: 16, weight: .regular, design: .rounded))
+                    .font(.AppTheme.rounded(size: 16, weight: .regular))
                     .foregroundColor(Color.AppTheme.sepia)
                     .lineSpacing(4)
                     .fixedSize(horizontal: false, vertical: true)

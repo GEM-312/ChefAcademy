@@ -154,7 +154,7 @@ struct BodyBuddyView: View {
             ZStack {
                 // Large body silhouette
                 Image(systemName: "figure.stand")
-                    .font(.system(size: 200))
+                    .font(.AppTheme.rounded(size: 200))
                     .foregroundColor(Color.AppTheme.sepia.opacity(0.08))
 
                 // Health orbs positioned around the body
@@ -203,9 +203,7 @@ struct BodyBuddyView: View {
                 }
             }
         }
-        .padding(AppSpacing.md)
-        .background(Color.AppTheme.warmCream)
-        .cornerRadius(AppSpacing.cardCornerRadius)
+        .softCard(showShadow: false)
     }
 
     // MARK: - Cooked Recipes Section
@@ -302,10 +300,10 @@ struct CookedRecipeCard: View {
                 .resizable()
                 .scaledToFill()
                 .frame(width: 70, height: 70)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .clipShape(RoundedRectangle(cornerRadius: AppSpacing.smallCornerRadius))
 
             Text(recipe.title)
-                .font(.system(size: 10, weight: .medium, design: .rounded))
+                .font(.AppTheme.rounded(size: 10, weight: .medium))
                 .foregroundColor(Color.AppTheme.darkBrown)
                 .lineLimit(2)
                 .multilineTextAlignment(.center)
@@ -313,7 +311,7 @@ struct CookedRecipeCard: View {
             HStack(spacing: 1) {
                 ForEach(0..<stars, id: \.self) { _ in
                     Image(systemName: "star.fill")
-                        .font(.system(size: 8))
+                        .font(.AppTheme.rounded(size: 8))
                         .foregroundColor(Color.AppTheme.goldenWheat)
                 }
             }
@@ -321,9 +319,9 @@ struct CookedRecipeCard: View {
         .frame(width: 85)
         .padding(AppSpacing.xs)
         .background(isSelected ? Color.AppTheme.sage.opacity(0.15) : Color.AppTheme.warmCream)
-        .cornerRadius(12)
+        .cornerRadius(AppSpacing.smallCornerRadius)
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: AppSpacing.smallCornerRadius)
                 .stroke(isSelected ? Color.AppTheme.sage : Color.clear, lineWidth: 2)
         )
     }
@@ -380,7 +378,7 @@ struct RecipeNutrientBreakdown: View {
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text("This recipe powers up:")
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .font(.AppTheme.rounded(size: 14, weight: .semibold))
                 .foregroundColor(Color.AppTheme.darkBrown)
 
             // Animated organ boost bars with USDA superpowers
@@ -388,12 +386,12 @@ struct RecipeNutrientBreakdown: View {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(spacing: AppSpacing.sm) {
                         Image(systemName: item.icon)
-                            .font(.system(size: 16))
+                            .font(.AppTheme.callout)
                             .foregroundColor(item.color)
                             .frame(width: 24)
 
                         Text(item.organ)
-                            .font(.system(size: 13, weight: .medium, design: .rounded))
+                            .font(.AppTheme.rounded(size: 13, weight: .medium))
                             .foregroundColor(Color.AppTheme.sepia)
                             .frame(width: 70, alignment: .leading)
 
@@ -411,7 +409,7 @@ struct RecipeNutrientBreakdown: View {
                         .frame(height: 10)
 
                         Text("+\(item.boost)")
-                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                            .font(.AppTheme.rounded(size: 12, weight: .bold))
                             .foregroundColor(item.color)
                             .frame(width: 30)
                     }
@@ -419,16 +417,14 @@ struct RecipeNutrientBreakdown: View {
                     // USDA kid-friendly superpower for this organ
                     if let superpower = superpowerForOrgan(item.organ) {
                         Text(superpower)
-                            .font(.system(size: 10, weight: .medium, design: .rounded))
+                            .font(.AppTheme.rounded(size: 10, weight: .medium))
                             .foregroundColor(Color.AppTheme.goldenWheat)
                             .padding(.leading, 36)
                     }
                 }
             }
         }
-        .padding(AppSpacing.md)
-        .background(Color.AppTheme.warmCream)
-        .cornerRadius(AppSpacing.cardCornerRadius)
+        .softCard(showShadow: false)
         .onAppear {
             withAnimation(.easeOut(duration: 0.8).delay(0.2)) {
                 animateOrgans = true
@@ -511,12 +507,12 @@ struct HealthOrb: View {
                     .animation(.easeOut(duration: 1.0), value: animate)
 
                 Image(systemName: icon)
-                    .font(.system(size: 18))
+                    .font(.AppTheme.recipeStep)
                     .foregroundColor(color)
             }
 
             Text(label)
-                .font(.system(size: 9, weight: .medium, design: .rounded))
+                .font(.AppTheme.rounded(size: 9, weight: .medium))
                 .foregroundColor(Color.AppTheme.sepia)
         }
     }
@@ -537,12 +533,12 @@ struct MiniOrb: View {
                     .frame(width: 36, height: 36)
 
                 Image(systemName: icon)
-                    .font(.system(size: 16))
+                    .font(.AppTheme.callout)
                     .foregroundColor(color)
             }
 
             Text(label)
-                .font(.system(size: 9, weight: .medium, design: .rounded))
+                .font(.AppTheme.rounded(size: 9, weight: .medium))
                 .foregroundColor(Color.AppTheme.sepia)
         }
     }

@@ -40,7 +40,7 @@ struct ProfileView: View {
                     .padding(.horizontal, AppSpacing.md)
                     .padding(.vertical, AppSpacing.xs)
                     .background(Color.AppTheme.warmCream)
-                    .cornerRadius(20)
+                    .cornerRadius(AppSpacing.largeCornerRadius)
                 }
                 .padding(.top, AppSpacing.md)
 
@@ -66,9 +66,7 @@ struct ProfileView: View {
                             .foregroundColor(Color.AppTheme.sepia)
                         Spacer()
                     }
-                    .padding(AppSpacing.md)
-                    .background(Color.AppTheme.warmCream)
-                    .cornerRadius(AppSpacing.cardCornerRadius)
+                    .softCard(showShadow: false)
                     .padding(.horizontal, AppSpacing.md)
                 }
 
@@ -89,9 +87,7 @@ struct ProfileView: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(AppSpacing.md)
-                .background(Color.AppTheme.warmCream)
-                .cornerRadius(AppSpacing.cardCornerRadius)
+                .softCard(showShadow: false)
                 .padding(.horizontal, AppSpacing.md)
 
                 // Actions
@@ -106,9 +102,7 @@ struct ProfileView: View {
                         }
                         .font(.AppTheme.body)
                         .foregroundColor(Color.AppTheme.sepia)
-                        .padding(AppSpacing.md)
-                        .background(Color.AppTheme.warmCream)
-                        .cornerRadius(AppSpacing.cardCornerRadius)
+                        .softCard(showShadow: false)
                     }
                     .buttonStyle(.plain)
 
@@ -126,9 +120,7 @@ struct ProfileView: View {
                                 }
                                 .font(.AppTheme.body)
                                 .foregroundColor(Color.AppTheme.sage)
-                                .padding(AppSpacing.md)
-                                .background(Color.AppTheme.warmCream)
-                                .cornerRadius(AppSpacing.cardCornerRadius)
+                                .softCard(showShadow: false)
                             }
                             .buttonStyle(.plain)
                         } else {
@@ -137,15 +129,13 @@ struct ProfileView: View {
                                     Image(systemName: "chart.bar.fill")
                                     Text("Parent Dashboard")
                                     Image(systemName: "lock.fill")
-                                        .font(.system(size: 12))
+                                        .font(.AppTheme.caption)
                                     Spacer()
                                     Image(systemName: "chevron.right")
                                 }
                                 .font(.AppTheme.body)
                                 .foregroundColor(Color.AppTheme.sage)
-                                .padding(AppSpacing.md)
-                                .background(Color.AppTheme.warmCream)
-                                .cornerRadius(AppSpacing.cardCornerRadius)
+                                .softCard(showShadow: false)
                             }
                             .buttonStyle(.plain)
                         }

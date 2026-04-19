@@ -26,7 +26,7 @@ class OnboardingManager: ObservableObject {
         let allSteps = OnboardingStep.allCases
         if let currentIndex = allSteps.firstIndex(of: currentStep),
            currentIndex < allSteps.count - 1 {
-            withAnimation(.easeInOut(duration: 0.3)) {
+            withAnimation(AnimationConstants.fadeMedium) {
                 currentStep = allSteps[currentIndex + 1]
             }
         }
@@ -36,7 +36,7 @@ class OnboardingManager: ObservableObject {
         let allSteps = OnboardingStep.allCases
         if let currentIndex = allSteps.firstIndex(of: currentStep),
            currentIndex > 0 {
-            withAnimation(.easeInOut(duration: 0.3)) {
+            withAnimation(AnimationConstants.fadeMedium) {
                 currentStep = allSteps[currentIndex - 1]
             }
         }
@@ -134,7 +134,7 @@ struct WelcomeView: View {
                     .padding(.horizontal, AppSpacing.md)
                     .padding(.vertical, AppSpacing.xs)
                     .background(Color.AppTheme.sage)
-                    .cornerRadius(20)
+                    .cornerRadius(AppSpacing.largeCornerRadius)
             }
             .scaleEffect(showContent ? 1 : 0.5)
             .opacity(showContent ? 1 : 0)
@@ -302,7 +302,7 @@ struct GenderCard: View {
                 Image(frameNames[frameIndex])
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .clipShape(RoundedRectangle(cornerRadius: AppSpacing.cardCornerRadius))
 
                 Text(gender.rawValue)
                     .font(.AppTheme.title3)
@@ -312,11 +312,11 @@ struct GenderCard: View {
             .padding(.vertical, AppSpacing.md)
             .padding(.horizontal, AppSpacing.sm)
             .background(
-                RoundedRectangle(cornerRadius: 20)
+                RoundedRectangle(cornerRadius: AppSpacing.largeCornerRadius)
                     .fill(isSelected ? Color.AppTheme.sage.opacity(0.2) : Color.AppTheme.warmCream)
             )
             .overlay(
-                RoundedRectangle(cornerRadius: 20)
+                RoundedRectangle(cornerRadius: AppSpacing.largeCornerRadius)
                     .stroke(isSelected ? Color.AppTheme.sage : Color.clear, lineWidth: 3)
             )
             .scaleEffect(isSelected ? 1.05 : 1.0)

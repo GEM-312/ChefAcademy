@@ -243,7 +243,7 @@ struct HealthyChoiceGameView: View {
                 } else if let icon = item.resultIcon {
                     // Brief feedback icon
                     Text(icon)
-                        .font(.system(size: 40))
+                        .font(.AppTheme.rounded(size: 40))
                         .position(x: item.x, y: item.y)
                         .transition(.scale.combined(with: .opacity))
                 }
@@ -255,7 +255,7 @@ struct HealthyChoiceGameView: View {
                     // Close button
                     Button(action: { endGame() }) {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 28))
+                            .font(.AppTheme.title)
                             .foregroundColor(Color.AppTheme.sepia.opacity(0.6))
                     }
                     .buttonStyle(.plain)
@@ -266,7 +266,7 @@ struct HealthyChoiceGameView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "circle.fill")
                             .foregroundColor(Color.AppTheme.goldenWheat)
-                            .font(.system(size: 14))
+                            .font(.AppTheme.captionLarge)
                         Text("+\(coinsEarned)")
                             .font(.AppTheme.headline)
                             .foregroundColor(Color.AppTheme.darkBrown)
@@ -274,7 +274,7 @@ struct HealthyChoiceGameView: View {
                     .padding(.horizontal, AppSpacing.sm)
                     .padding(.vertical, AppSpacing.xs)
                     .background(Color.AppTheme.warmCream.opacity(0.9))
-                    .cornerRadius(20)
+                    .cornerRadius(AppSpacing.largeCornerRadius)
 
                     Spacer()
 
@@ -283,7 +283,7 @@ struct HealthyChoiceGameView: View {
                         ForEach(0..<maxBadChoices, id: \.self) { i in
                             Image(systemName: i < badChoices ? "heart.slash.fill" : "heart.fill")
                                 .foregroundColor(i < badChoices ? Color.AppTheme.lightSepia : Color.AppTheme.terracotta)
-                                .font(.system(size: 16))
+                                .font(.AppTheme.callout)
                         }
                     }
                 }
@@ -329,10 +329,10 @@ struct HealthyChoiceGameView: View {
                     .frame(width: 60, height: 60)
             } else {
                 Text(item.food.emoji)
-                    .font(.system(size: 48))
+                    .font(.AppTheme.timerDisplay)
             }
             Text(item.food.name)
-                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .font(.AppTheme.rounded(size: 11, weight: .bold))
                 .foregroundColor(Color.AppTheme.darkBrown)
                 .lineLimit(1)
                 .shadow(color: .white, radius: 2)
@@ -447,9 +447,7 @@ struct HealthyChoiceGameView: View {
                                 .foregroundColor(Color.AppTheme.goldenWheat)
                         }
                     }
-                    .padding(AppSpacing.md)
-                    .background(Color.AppTheme.warmCream)
-                    .cornerRadius(AppSpacing.cardCornerRadius)
+                    .softCard(showShadow: false)
                     .padding(.horizontal, AppSpacing.md)
                 }
 
@@ -517,9 +515,7 @@ struct HealthyChoiceGameView: View {
                     .foregroundColor(Color.AppTheme.sepia)
             }
         }
-        .padding(AppSpacing.md)
-        .background(Color.AppTheme.warmCream)
-        .cornerRadius(AppSpacing.cardCornerRadius)
+        .softCard(showShadow: false)
     }
 
     // MARK: - Game Logic
@@ -728,7 +724,7 @@ struct HealthyChoiceGameView: View {
 
         if won {
             // Pip balloon float-away if bad choices happened
-            withAnimation(.easeInOut(duration: 0.5)) {
+            withAnimation(AnimationConstants.revealSlow) {
                 pipScale = 1.0
                 pipRotation = 0
             }

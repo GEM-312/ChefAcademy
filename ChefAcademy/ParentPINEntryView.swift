@@ -35,25 +35,11 @@ struct ParentPINEntryView: View {
             VStack(spacing: AppSpacing.lg) {
             Spacer()
 
-            // Pip thinking
-            Image("pip_thinking")
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: 100, height: 100)
-                .clipShape(Circle())
-
-            // Title
-            VStack(spacing: AppSpacing.xs) {
-                Text(titleText)
-                    .font(.AppTheme.title2)
-                    .foregroundColor(Color.AppTheme.darkBrown)
-                    .multilineTextAlignment(.center)
-
-                Text(subtitleText)
-                    .font(.AppTheme.body)
-                    .foregroundColor(Color.AppTheme.sepia)
-                    .multilineTextAlignment(.center)
-            }
+            PipHeaderStack(
+                title: titleText,
+                subtitle: subtitleText,
+                pose: .thinking
+            )
             .padding(.horizontal, AppSpacing.lg)
 
             // PIN dots
@@ -127,7 +113,7 @@ struct ParentPINEntryView: View {
 
                     Button(action: deleteDigit) {
                         Image(systemName: "delete.left.fill")
-                            .font(.system(size: 22))
+                            .font(.AppTheme.title2)
                             .foregroundColor(Color.AppTheme.sepia)
                             .frame(width: 75, height: 55)
                     }
@@ -268,11 +254,11 @@ struct PINButton: View {
     var body: some View {
         Button(action: action) {
             Text(label)
-                .font(.system(size: 28, weight: .medium, design: .rounded))
+                .font(.AppTheme.rounded(size: 28, weight: .medium))
                 .foregroundColor(Color.AppTheme.darkBrown)
                 .frame(width: 75, height: 55)
                 .background(Color.AppTheme.warmCream)
-                .cornerRadius(12)
+                .cornerRadius(AppSpacing.smallCornerRadius)
         }
         .buttonStyle(.plain)
     }

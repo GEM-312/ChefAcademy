@@ -233,7 +233,7 @@ struct PlantingSheet: View {
                                 HStack(spacing: 3) {
                                     Image(systemName: "circle.fill")
                                         .foregroundColor(Color.AppTheme.goldenWheat)
-                                        .font(.system(size: 12))
+                                        .font(.AppTheme.caption)
                                     Text("\(veg.seedCost)")
                                         .font(.AppTheme.title3)
                                         .foregroundColor(Color.AppTheme.goldenWheat)

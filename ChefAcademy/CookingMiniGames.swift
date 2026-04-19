@@ -66,7 +66,7 @@ struct HeatPanMiniGame: View {
                 if panGlow > 0.3 {
                     ForEach(0..<3, id: \.self) { i in
                         Text("~")
-                            .font(.system(size: 20))
+                            .font(.AppTheme.title3)
                             .foregroundColor(Color.AppTheme.terracotta.opacity(0.5))
                             .offset(x: CGFloat(i * 25 - 25), y: -60)
                             .opacity(panGlow)
@@ -88,7 +88,7 @@ struct HeatPanMiniGame: View {
                     .animation(.linear(duration: 0.05), value: progress)
 
                 Image(systemName: isHolding ? "flame.fill" : "flame")
-                    .font(.system(size: 28))
+                    .font(.AppTheme.title)
                     .foregroundColor(isHolding ? Color.AppTheme.terracotta : Color.AppTheme.sepia)
             }
 
@@ -189,7 +189,7 @@ struct AddToPanMiniGame: View {
                 Group {
                     if useEmoji {
                         Text(emoji)
-                            .font(.system(size: 60))
+                            .font(.AppTheme.rounded(size: 60))
                     } else {
                         Image(itemImage)
                             .resizable()
@@ -276,12 +276,12 @@ struct StirMiniGame: View {
 
                 // Ingredients in bowl
                 Text("🥗")
-                    .font(.system(size: 50))
+                    .font(.AppTheme.rounded(size: 50))
                     .rotationEffect(.degrees(Double(spoonAngle) * 2))
 
                 // Spoon
                 Text("🥄")
-                    .font(.system(size: 40))
+                    .font(.AppTheme.rounded(size: 40))
                     .offset(x: cos(spoonAngle) * 50, y: sin(spoonAngle) * 30)
             }
             .contentShape(Circle().size(width: 250, height: 250))
@@ -409,7 +409,7 @@ struct SeasonMiniGame: View {
         } label: {
             VStack(spacing: 4) {
                 Text(item.emoji)
-                    .font(.system(size: 40))
+                    .font(.AppTheme.rounded(size: 40))
                     .scaleEffect(done ? 0.8 : 1.0)
                     .opacity(done ? 0.5 : 1.0)
 
@@ -428,7 +428,7 @@ struct SeasonMiniGame: View {
             }
             .padding(AppSpacing.sm)
             .background(Color.AppTheme.warmCream)
-            .cornerRadius(12)
+            .cornerRadius(AppSpacing.smallCornerRadius)
         }
         .buttonStyle(.plain)
         .disabled(done)
@@ -438,8 +438,8 @@ struct SeasonMiniGame: View {
         let color: Color = {
             switch item {
             case .salt: return Color.AppTheme.cream
-            case .pepper: return .brown
-            case .cinnamon: return Color(red: 0.8, green: 0.5, blue: 0.2)
+            case .pepper: return Color.AppTheme.darkBrown
+            case .cinnamon: return Color.AppTheme.terracotta
             default: return Color.AppTheme.sepia
             }
         }()
@@ -608,7 +608,7 @@ struct CookTimerMiniGame: View {
                 HStack(spacing: 8) {
                     ForEach(0..<3, id: \.self) { _ in
                         Text("🔥")
-                            .font(.system(size: 24))
+                            .font(.AppTheme.rounded(size: 24))
                             .scaleEffect(flameScale)
                     }
                 }
@@ -620,7 +620,7 @@ struct CookTimerMiniGame: View {
                     .frame(width: 150, height: 100)
 
                 Text("🍳")
-                    .font(.system(size: 50))
+                    .font(.AppTheme.rounded(size: 50))
             }
 
             // Timer bar
@@ -674,7 +674,7 @@ struct CookTimerMiniGame: View {
                         .frame(width: 120)
                         .padding(.vertical, AppSpacing.sm)
                         .background(elapsed >= greenStart ? Color.AppTheme.sage : Color.AppTheme.sepia.opacity(0.3))
-                        .cornerRadius(16)
+                        .cornerRadius(AppSpacing.cardCornerRadius)
                 }
                 .buttonStyle(BouncyButtonStyle())
             }
@@ -800,7 +800,7 @@ struct WashMiniGame: View {
                     // Clean sparkle (appears as veggie gets cleaner)
                     ForEach(0..<3, id: \.self) { i in
                         Image(systemName: "sparkle")
-                            .font(.system(size: 12))
+                            .font(.AppTheme.caption)
                             .foregroundColor(Color.AppTheme.goldenWheat)
                             .offset(
                                 x: [-30, 25, -5][i],
@@ -1105,7 +1105,7 @@ struct AssembleMiniGame: View {
                         .padding(.horizontal, AppSpacing.xl)
                         .padding(.vertical, AppSpacing.md)
                         .background(Color.AppTheme.sage)
-                        .cornerRadius(16)
+                        .cornerRadius(AppSpacing.cardCornerRadius)
                 }
                 .buttonStyle(BouncyButtonStyle())
             } else {

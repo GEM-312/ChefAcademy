@@ -205,6 +205,7 @@ final class AvatarAnimator: ObservableObject {
 enum PipPose: String, CaseIterable {
     case neutral = "pip_neutral"
     case waving = "pip_waving"
+    case wavingFrame01 = "pip_waving_frame_01"   // first frame of waving animation
     case excited = "pip_excited"
     case cooking = "pip_cooking"
     case thinking = "pip_thinking"
@@ -223,6 +224,7 @@ enum PipPose: String, CaseIterable {
         switch self {
         case .neutral: return "Default state, listening"
         case .waving: return "Welcome, greetings"
+        case .wavingFrame01: return "First frame of waving animation (static greeting)"
         case .excited: return "Positive feedback, achievements"
         case .cooking: return "Recipe screens, cooking steps"
         case .thinking: return "Quiz questions, loading"
@@ -316,7 +318,7 @@ struct PipWithDialogue: View {
                 .padding(.horizontal, AppSpacing.md)
                 .padding(.vertical, AppSpacing.xs)
                 .background(Color.AppTheme.sage)
-                .cornerRadius(20)
+                .cornerRadius(AppSpacing.largeCornerRadius)
             
             // Speech bubble
             VStack {
@@ -404,7 +406,7 @@ struct SparkleEffect: View {
             ForEach(0..<8) { index in
                 Image(systemName: "sparkle")
                     .foregroundColor(Color.AppTheme.goldenWheat)
-                    .font(.system(size: 20))
+                    .font(.AppTheme.title3)
                     .offset(
                         x: isAnimating ? CGFloat.random(in: -80...80) : 0,
                         y: isAnimating ? CGFloat.random(in: -100...(-50)) : 0
@@ -481,7 +483,7 @@ struct PulseModifier: ViewModifier {
         content
             .scaleEffect(isPulsing ? 1.05 : 1.0)
             .animation(
-                .easeInOut(duration: 0.8)
+                AnimationConstants.pipTransition
                 .repeatForever(autoreverses: true),
                 value: isPulsing
             )
@@ -536,7 +538,7 @@ struct PipAnimationDemoView: View {
                                 .padding(.horizontal, AppSpacing.sm)
                                 .padding(.vertical, AppSpacing.xs)
                                 .background(currentPose == pose ? Color.AppTheme.goldenWheat : Color.AppTheme.parchment)
-                                .cornerRadius(8)
+                                .cornerRadius(AppSpacing.pillCornerRadius)
                         }
                         .buttonStyle(BouncyButtonStyle())
                     }
@@ -559,7 +561,7 @@ struct PipAnimationDemoView: View {
         switch pose {
         case .neutral:
             message = "I'm ready to help you cook!"
-        case .waving:
+        case .waving, .wavingFrame01:
             message = "Hello there, little chef! 👋"
         case .excited:
             message = "Wow, that's amazing! 🎉"

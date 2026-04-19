@@ -127,10 +127,10 @@ struct AllergenToggleButton: View {
         Button(action: onTap) {
             VStack(spacing: 6) {
                 Text(allergen.emoji)
-                    .font(.system(size: 28))
+                    .font(.AppTheme.title)
 
                 Text(allergen.displayName)
-                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .font(.AppTheme.rounded(size: 11, weight: .medium))
                     .foregroundColor(isSelected ? .white : Color.AppTheme.sepia)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
@@ -138,11 +138,11 @@ struct AllergenToggleButton: View {
 
                 if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 14))
+                        .font(.AppTheme.captionLarge)
                         .foregroundColor(.white)
                 } else {
                     Image(systemName: "circle")
-                        .font(.system(size: 14))
+                        .font(.AppTheme.captionLarge)
                         .foregroundColor(Color.AppTheme.lightSepia)
                 }
             }

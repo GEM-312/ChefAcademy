@@ -69,7 +69,7 @@ struct SunshineOverlay: View {
 
                 // Sun icon
                 Image(systemName: "sun.max.fill")
-                    .font(.system(size: 40))
+                    .font(.AppTheme.rounded(size: 40))
                     .foregroundColor(.yellow.opacity(0.5))
                     .rotationEffect(.degrees(pulse ? 15 : -15))
             }
@@ -103,7 +103,7 @@ struct PartlyCloudyOverlay: View {
 
                 // Drifting cloud
                 Image(systemName: "cloud.fill")
-                    .font(.system(size: 50))
+                    .font(.AppTheme.rounded(size: 50))
                     .foregroundColor(.white.opacity(0.6))
                     .offset(x: cloudOffset, y: 10)
             }
@@ -131,12 +131,12 @@ struct CloudOverlay: View {
         VStack {
             ZStack {
                 Image(systemName: "cloud.fill")
-                    .font(.system(size: 60))
+                    .font(.AppTheme.rounded(size: 60))
                     .foregroundColor(.gray.opacity(0.3))
                     .offset(x: cloud1X, y: 0)
 
                 Image(systemName: "cloud.fill")
-                    .font(.system(size: 40))
+                    .font(.AppTheme.rounded(size: 40))
                     .foregroundColor(.gray.opacity(0.25))
                     .offset(x: cloud2X, y: 20)
             }
@@ -218,7 +218,7 @@ struct RainOverlay: View {
                 }
             } symbols: {
                 Image(systemName: "cloud.rain.fill")
-                    .font(.system(size: 50))
+                    .font(.AppTheme.rounded(size: 50))
                     .foregroundColor(.gray.opacity(0.4))
                     .tag("cloud")
             }
@@ -296,7 +296,7 @@ struct StormOverlay: View {
                     }
                 } symbols: {
                     Image(systemName: "cloud.bolt.rain.fill")
-                        .font(.system(size: 55))
+                        .font(.AppTheme.rounded(size: 55))
                         .foregroundColor(.gray.opacity(0.5))
                         .tag("stormCloud")
                 }
@@ -395,7 +395,7 @@ struct SnowOverlay: View {
                     }
                 } symbols: {
                     Image(systemName: "cloud.snow.fill")
-                        .font(.system(size: 50))
+                        .font(.AppTheme.rounded(size: 50))
                         .foregroundColor(.gray.opacity(0.35))
                         .tag("snowCloud")
                 }
@@ -467,7 +467,7 @@ struct WindOverlay: View {
 
             // Wind icon
             Image(systemName: "wind")
-                .font(.system(size: 30))
+                .font(.AppTheme.rounded(size: 30))
                 .foregroundColor(Color.AppTheme.sage.opacity(0.4))
                 .position(x: width * 0.7, y: 40)
         }
@@ -517,7 +517,7 @@ struct WeatherBadge: View {
         .padding(.horizontal, isIPad ? AppSpacing.md : AppSpacing.sm)
         .padding(.vertical, isIPad ? AppSpacing.sm : AppSpacing.xs)
         .background(Color.AppTheme.warmCream.opacity(0.9))
-        .cornerRadius(20)
+        .cornerRadius(AppSpacing.largeCornerRadius)
     }
 }
 

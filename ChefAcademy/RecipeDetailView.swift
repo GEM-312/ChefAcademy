@@ -32,7 +32,7 @@ struct RecipeDetailView: View {
                         // Dismiss button
                         Button(action: { if let onDismiss { onDismiss() } else { dismiss() } }) {
                             Image(systemName: "xmark")
-                                .font(.system(size: 16, weight: .bold))
+                                .font(.AppTheme.rounded(size: 16, weight: .bold))
                                 .foregroundColor(Color.AppTheme.darkBrown)
                                 .frame(width: 44, height: 44)
                                 .background(Color.AppTheme.cream.opacity(0.9))
@@ -78,7 +78,7 @@ struct RecipeDetailView: View {
                                 .padding(.vertical, 8)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .background(Color.AppTheme.terracotta)
-                                .cornerRadius(12)
+                                .cornerRadius(AppSpacing.smallCornerRadius)
                             }
 
                             Text(recipe.title)
@@ -115,7 +115,7 @@ struct RecipeDetailView: View {
                         if !recipe.glucoseTip.isEmpty {
                             HStack(alignment: .top, spacing: 8) {
                                 Image(systemName: "lightbulb.fill")
-                                    .font(.system(size: 14))
+                                    .font(.AppTheme.captionLarge)
                                     .foregroundColor(Color.AppTheme.goldenWheat)
 
                                 VStack(alignment: .leading, spacing: 2) {
@@ -131,7 +131,7 @@ struct RecipeDetailView: View {
                             .padding(AppSpacing.sm)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .background(Color.AppTheme.goldenWheat.opacity(0.1))
-                            .cornerRadius(12)
+                            .cornerRadius(AppSpacing.smallCornerRadius)
                         }
 
                         // MARK: - Garden Ingredients
@@ -234,7 +234,7 @@ struct RecipeDetailView: View {
                                         }
                                         .padding(AppSpacing.sm)
                                         .background(Color.AppTheme.warmCream)
-                                        .cornerRadius(12)
+                                        .cornerRadius(AppSpacing.smallCornerRadius)
                                     }
                                 }
                             }

@@ -52,7 +52,7 @@ struct PlotView: View {
             // XP reward floating text
             if xpRewardVisible {
                 Text(rewardLabel)
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .font(.AppTheme.rounded(size: 12, weight: .bold))
                     .foregroundColor(Color.AppTheme.goldenWheat)
                     .offset(y: -60)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -60,14 +60,14 @@ struct PlotView: View {
         }
         .onAppear {
             if plot.state == .ready {
-                withAnimation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true)) {
+                withAnimation(AnimationConstants.revealSlow.repeatForever(autoreverses: true)) {
                     isAnimating = true
                 }
             }
         }
         .onChange(of: plot.state) { _, newState in
             if newState == .ready {
-                withAnimation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true)) {
+                withAnimation(AnimationConstants.revealSlow.repeatForever(autoreverses: true)) {
                     isAnimating = true
                 }
             } else {
@@ -117,12 +117,12 @@ struct PlotView: View {
                     .frame(width: 70, height: 70)
 
                 Image(systemName: "plus")
-                    .font(.system(size: 24, weight: .medium))
+                    .font(.AppTheme.rounded(size: 24, weight: .medium))
                     .foregroundColor(Color.AppTheme.sage)
             }
 
             Text("Plant")
-                .font(.system(size: 11, weight: .medium, design: .rounded))
+                .font(.AppTheme.rounded(size: 11, weight: .medium))
                 .foregroundColor(Color.AppTheme.sepia)
         }
     }
@@ -160,7 +160,7 @@ struct PlotView: View {
                 .frame(width: 70, height: 6)
 
                 Text("\(Int(plot.growthProgress * 100))%")
-                    .font(.system(size: 9, weight: .semibold, design: .rounded))
+                    .font(.AppTheme.rounded(size: 9, weight: .semibold))
                     .foregroundColor(Color.AppTheme.sepia)
             }
         }
@@ -184,23 +184,23 @@ struct PlotView: View {
                 }
 
                 Text("✨")
-                    .font(.system(size: 14))
+                    .font(.AppTheme.captionLarge)
                     .opacity(isAnimating ? 1.0 : 0.3)
                     .offset(x: -40, y: -30)
 
                 Text("✨")
-                    .font(.system(size: 11))
+                    .font(.AppTheme.microLarge)
                     .opacity(isAnimating ? 0.3 : 1.0)
                     .offset(x: 38, y: -25)
             }
 
             Text("Harvest!")
-                .font(.system(size: 10, weight: .bold, design: .rounded))
+                .font(.AppTheme.rounded(size: 10, weight: .bold))
                 .foregroundColor(Color.AppTheme.goldenWheat)
                 .padding(.horizontal, 8)
                 .padding(.vertical, 3)
                 .background(Color.AppTheme.warmCream.opacity(0.9))
-                .cornerRadius(8)
+                .cornerRadius(AppSpacing.pillCornerRadius)
         }
     }
 
@@ -226,7 +226,7 @@ struct PlotView: View {
                 // Watering can appears when holding
                 if showWateringCan {
                     Text("🚿")
-                        .font(.system(size: 24))
+                        .font(.AppTheme.rounded(size: 24))
                         .offset(x: 25, y: -35)
                         .transition(.scale.combined(with: .opacity))
                 }
@@ -253,7 +253,7 @@ struct PlotView: View {
             }
 
             Text(isWatering ? "Watering..." : "Hold me!")
-                .font(.system(size: 10, weight: .bold, design: .rounded))
+                .font(.AppTheme.rounded(size: 10, weight: .bold))
                 .foregroundColor(Color.AppTheme.sage)
         }
         .gesture(
@@ -332,7 +332,7 @@ struct PlotView: View {
 
             let remaining = weedsRemoved.filter { !$0 }.count
             Text(remaining > 0 ? "Swipe up! (\(remaining) left)" : "Clean!")
-                .font(.system(size: 10, weight: .bold, design: .rounded))
+                .font(.AppTheme.rounded(size: 10, weight: .bold))
                 .foregroundColor(Color.AppTheme.sage)
         }
     }
@@ -371,7 +371,7 @@ struct PlotView: View {
                 ForEach(0..<3, id: \.self) { i in
                     if bugsRescued[i] {
                         Text("🐞")
-                            .font(.system(size: 14))
+                            .font(.AppTheme.captionLarge)
                             .offset(
                                 x: ladybugOffsets[i] == 0 ? [-20, 22, 5][i] : ladybugOffsets[i],
                                 y: [-15, 5, 25][i]
@@ -383,7 +383,7 @@ struct PlotView: View {
 
             let remaining = bugsRescued.filter { !$0 }.count
             Text(remaining > 0 ? "Tap bugs! (\(remaining) left)" : "Rescued!")
-                .font(.system(size: 10, weight: .bold, design: .rounded))
+                .font(.AppTheme.rounded(size: 10, weight: .bold))
                 .foregroundColor(Color.AppTheme.terracotta)
         }
     }

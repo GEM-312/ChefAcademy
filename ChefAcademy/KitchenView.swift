@@ -197,7 +197,7 @@ struct KitchenView: View {
             } label: {
                 Image(systemName: editMode ? "pencil.circle.fill" : "pencil.circle")
                     .font(.system(size: isIPad ? 24 : 20))
-                    .foregroundColor(editMode ? .red : Color.AppTheme.lightSepia)
+                    .foregroundColor(editMode ? Color.AppTheme.terracotta : Color.AppTheme.lightSepia)
             }
             .buttonStyle(.plain)
             #endif
@@ -225,7 +225,7 @@ struct KitchenView: View {
             .padding(.horizontal, isIPad ? AppSpacing.md : AppSpacing.sm)
             .padding(.vertical, isIPad ? AppSpacing.sm : AppSpacing.xs)
             .background(Color.AppTheme.warmCream.opacity(0.9))
-            .cornerRadius(20)
+            .cornerRadius(AppSpacing.largeCornerRadius)
         }
         .padding(.horizontal, isIPad ? AppSpacing.lg : AppSpacing.md)
     }
@@ -311,14 +311,14 @@ struct KitchenView: View {
                             }
                             .padding(4)
                             .background(Color.AppTheme.warmCream.opacity(0.85))
-                            .cornerRadius(8)
+                            .cornerRadius(AppSpacing.pillCornerRadius)
                             .position(x: counterPos.x, y: counterPos.y - 35)
                         }
 
                         // Items on stove indicator
                         if itemsOnStove {
                             Image(systemName: stoveFlameOn ? "flame.fill" : "frying.pan.fill")
-                                .font(.system(size: 20))
+                                .font(.AppTheme.title3)
                                 .foregroundColor(stoveFlameOn ? Color.AppTheme.terracotta : Color.AppTheme.goldenWheat)
                                 .position(x: stovePos.x, y: stovePos.y - 35)
                         }
@@ -388,12 +388,12 @@ struct KitchenView: View {
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
                     .background(isPulsing ? color.opacity(0.15) : Color.AppTheme.warmCream.opacity(0.9))
-                    .cornerRadius(8)
+                    .cornerRadius(AppSpacing.pillCornerRadius)
             }
         }
         .buttonStyle(.plain)
         .onAppear {
-            withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+            withAnimation(AnimationConstants.pipTransition.repeatForever(autoreverses: true)) {
                 spotPulse = true
             }
         }
@@ -715,7 +715,7 @@ struct KitchenView: View {
                         .resizable()
                         .scaledToFill()
                         .frame(width: isIPad ? 80 : 60, height: isIPad ? 80 : 60)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .clipShape(RoundedRectangle(cornerRadius: AppSpacing.smallCornerRadius))
 
                     VStack(alignment: .leading, spacing: 4) {
                         Text(recipe.title)
@@ -743,11 +743,9 @@ struct KitchenView: View {
                     .padding(.horizontal, AppSpacing.md)
                     .padding(.vertical, AppSpacing.sm)
                     .background(Color.AppTheme.sage)
-                    .cornerRadius(12)
+                    .cornerRadius(AppSpacing.smallCornerRadius)
                 }
-                .padding(AppSpacing.md)
-                .background(Color.AppTheme.warmCream)
-                .cornerRadius(AppSpacing.cardCornerRadius)
+                .softCard(showShadow: false)
                 .onTapGesture {
                     startCooking(recipe: recipe)
                 }
@@ -787,7 +785,7 @@ struct KitchenView: View {
                                     .resizable()
                                     .scaledToFill()
                                     .frame(width: isIPad ? 60 : 44, height: isIPad ? 60 : 44)
-                                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                                    .clipShape(RoundedRectangle(cornerRadius: AppSpacing.pillCornerRadius))
 
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(recipe.title)
@@ -804,17 +802,17 @@ struct KitchenView: View {
                                 Spacer()
 
                                 Text("Farm Shop")
-                                    .font(.system(size: 10, weight: .semibold, design: .rounded))
+                                    .font(.AppTheme.rounded(size: 10, weight: .semibold))
                                     .foregroundColor(Color.AppTheme.goldenWheat)
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
                                     .background(Color.AppTheme.goldenWheat.opacity(0.15))
-                                    .cornerRadius(8)
+                                    .cornerRadius(AppSpacing.pillCornerRadius)
                             }
                         }
                         .padding(AppSpacing.sm)
                         .background(Color.AppTheme.warmCream)
-                        .cornerRadius(12)
+                        .cornerRadius(AppSpacing.smallCornerRadius)
                     }
                 }
             }

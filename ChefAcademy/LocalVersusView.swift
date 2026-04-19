@@ -145,7 +145,7 @@ struct LocalVersusView: View {
                 HStack(spacing: AppSpacing.lg) {
                     selectedPlayerChip(player: player1, label: "Player 1")
                     Text("VS")
-                        .font(.system(size: 20, weight: .black, design: .rounded))
+                        .font(.AppTheme.rounded(size: 20, weight: .black))
                         .foregroundColor(Color.AppTheme.goldenWheat)
                     selectedPlayerChip(player: player2, label: "Player 2")
                 }
@@ -214,7 +214,7 @@ struct LocalVersusView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "circle.fill")
                         .foregroundColor(Color.AppTheme.goldenWheat)
-                        .font(.system(size: 14))
+                        .font(.AppTheme.captionLarge)
                     Text("\(player1?.name ?? "Player 1") scored \(player1Score) coins")
                         .font(.AppTheme.headline)
                         .foregroundColor(Color.AppTheme.goldenWheat)
@@ -273,7 +273,7 @@ struct LocalVersusView: View {
                             .foregroundColor(Color.AppTheme.darkBrown)
                             .lineLimit(1)
                         Text("\(player1Score)")
-                            .font(.system(size: 40, weight: .black, design: .rounded))
+                            .font(.AppTheme.rounded(size: 40, weight: .black))
                             .foregroundColor(p1Won || tied ? Color.AppTheme.sage : Color.AppTheme.sepia)
                         Text("coins")
                             .font(.AppTheme.caption)
@@ -290,7 +290,7 @@ struct LocalVersusView: View {
                     }
 
                     Text("VS")
-                        .font(.system(size: 24, weight: .black, design: .rounded))
+                        .font(.AppTheme.rounded(size: 24, weight: .black))
                         .foregroundColor(Color.AppTheme.goldenWheat)
 
                     // Player 2
@@ -301,7 +301,7 @@ struct LocalVersusView: View {
                             .foregroundColor(Color.AppTheme.darkBrown)
                             .lineLimit(1)
                         Text("\(player2Score)")
-                            .font(.system(size: 40, weight: .black, design: .rounded))
+                            .font(.AppTheme.rounded(size: 40, weight: .black))
                             .foregroundColor(!p1Won || tied ? Color.AppTheme.sage : Color.AppTheme.sepia)
                         Text("coins")
                             .font(.AppTheme.caption)
@@ -398,7 +398,7 @@ struct LocalVersusView: View {
 
                     if let slot = slot {
                         Text(slot)
-                            .font(.system(size: 12, weight: .bold))
+                            .font(.AppTheme.rounded(size: 12, weight: .bold))
                             .foregroundColor(Color.AppTheme.cream)
                             .padding(4)
                             .background(Color.AppTheme.sage)
@@ -531,7 +531,7 @@ struct LocalVersusGameView: View {
                             .onTapGesture { tapFood(item) }
                     } else if let icon = item.resultIcon {
                         Text(icon)
-                            .font(.system(size: 40))
+                            .font(.AppTheme.rounded(size: 40))
                             .position(x: item.x, y: item.y)
                     }
                 }
@@ -546,7 +546,7 @@ struct LocalVersusGameView: View {
                             .padding(.horizontal, AppSpacing.sm)
                             .padding(.vertical, AppSpacing.xs)
                             .background(Color.AppTheme.sage)
-                            .cornerRadius(12)
+                            .cornerRadius(AppSpacing.smallCornerRadius)
 
                         Spacer()
 
@@ -554,7 +554,7 @@ struct LocalVersusGameView: View {
                         HStack(spacing: 6) {
                             Image(systemName: "circle.fill")
                                 .foregroundColor(Color.AppTheme.goldenWheat)
-                                .font(.system(size: 14))
+                                .font(.AppTheme.captionLarge)
                             Text("+\(coinsEarned)")
                                 .font(.AppTheme.headline)
                                 .foregroundColor(Color.AppTheme.darkBrown)
@@ -562,7 +562,7 @@ struct LocalVersusGameView: View {
                         .padding(.horizontal, AppSpacing.sm)
                         .padding(.vertical, AppSpacing.xs)
                         .background(Color.AppTheme.warmCream.opacity(0.9))
-                        .cornerRadius(20)
+                        .cornerRadius(AppSpacing.largeCornerRadius)
 
                         Spacer()
 
@@ -571,7 +571,7 @@ struct LocalVersusGameView: View {
                             ForEach(0..<maxBadChoices, id: \.self) { i in
                                 Image(systemName: i < badChoices ? "heart.slash.fill" : "heart.fill")
                                     .foregroundColor(i < badChoices ? Color.AppTheme.lightSepia : Color.AppTheme.terracotta)
-                                    .font(.system(size: 16))
+                                    .font(.AppTheme.callout)
                             }
                         }
                     }
@@ -614,10 +614,10 @@ struct LocalVersusGameView: View {
                     .frame(width: 60, height: 60)
             } else {
                 Text(item.food.emoji)
-                    .font(.system(size: 48))
+                    .font(.AppTheme.timerDisplay)
             }
             Text(item.food.name)
-                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .font(.AppTheme.rounded(size: 11, weight: .bold))
                 .foregroundColor(Color.AppTheme.darkBrown)
                 .lineLimit(1)
                 .shadow(color: .white, radius: 2)

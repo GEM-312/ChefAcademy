@@ -75,7 +75,7 @@ struct SiblingProfileView: View {
                             .padding(.horizontal, AppSpacing.md)
                             .padding(.vertical, AppSpacing.xs)
                             .background(Color.AppTheme.warmCream)
-                            .cornerRadius(20)
+                            .cornerRadius(AppSpacing.largeCornerRadius)
 
                             if data.gardenLikes > 0 {
                                 HStack(spacing: AppSpacing.xs) {
@@ -88,7 +88,7 @@ struct SiblingProfileView: View {
                                 .padding(.horizontal, AppSpacing.md)
                                 .padding(.vertical, AppSpacing.xs)
                                 .background(Color.AppTheme.warmCream)
-                                .cornerRadius(20)
+                                .cornerRadius(AppSpacing.largeCornerRadius)
                             }
                         }
                     }
@@ -160,7 +160,7 @@ struct SiblingProfileView: View {
                                                     .aspectRatio(contentMode: .fit)
                                                     .frame(width: 50, height: 50)
                                                 Text(vegType.displayName)
-                                                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                                                    .font(.AppTheme.rounded(size: 10, weight: .medium))
                                                     .foregroundColor(Color.AppTheme.darkBrown)
                                                 Text("x\(harvest.quantity)")
                                                     .font(.AppTheme.caption)
@@ -192,7 +192,7 @@ struct SiblingProfileView: View {
                                         HStack(spacing: 2) {
                                             ForEach(0..<3, id: \.self) { i in
                                                 Image(systemName: i < star.stars ? "star.fill" : "star")
-                                                    .font(.system(size: 14))
+                                                    .font(.AppTheme.captionLarge)
                                                     .foregroundColor(Color.AppTheme.goldenWheat)
                                             }
                                         }
@@ -238,10 +238,7 @@ struct SiblingProfileView: View {
                             .foregroundColor(Color.AppTheme.darkBrown)
                             .lineLimit(2)
                     }
-                    .padding(AppSpacing.md)
-                    .background(Color.AppTheme.warmCream)
-                    .cornerRadius(AppSpacing.cardCornerRadius)
-                    .shadow(color: Color.AppTheme.sepia.opacity(0.15), radius: 8, y: 4)
+                    .softCard()
                     .padding(.horizontal, AppSpacing.lg)
                     .padding(.bottom, 120)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
@@ -315,7 +312,7 @@ struct GiftVeggieSheet: View {
                 if availableVeggies.isEmpty {
                     VStack(spacing: AppSpacing.md) {
                         Image(systemName: "leaf.arrow.triangle.circlepath")
-                            .font(.system(size: 48))
+                            .font(.AppTheme.timerDisplay)
                             .foregroundColor(Color.AppTheme.sage.opacity(0.5))
                         Text("No veggies to gift!")
                             .font(.AppTheme.headline)
@@ -339,7 +336,7 @@ struct GiftVeggieSheet: View {
                                             .aspectRatio(contentMode: .fit)
                                             .frame(width: 60, height: 60)
                                         Text(item.type.displayName)
-                                            .font(.system(size: 12, weight: .medium, design: .rounded))
+                                            .font(.AppTheme.rounded(size: 12, weight: .medium))
                                             .foregroundColor(Color.AppTheme.darkBrown)
                                         Text("x\(item.quantity)")
                                             .font(.AppTheme.caption)

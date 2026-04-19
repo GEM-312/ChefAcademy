@@ -95,9 +95,9 @@ struct PipDialogView: View {
                 .padding(.vertical, AppSpacing.sm)
                 .foregroundColor(foregroundColor(for: choice.style))
                 .background(backgroundColor(for: choice.style))
-                .cornerRadius(12)
+                .cornerRadius(AppSpacing.smallCornerRadius)
                 .overlay(
-                    RoundedRectangle(cornerRadius: 12)
+                    RoundedRectangle(cornerRadius: AppSpacing.smallCornerRadius)
                         .stroke(borderColor(for: choice.style), lineWidth: choice.style == .secondary ? 1.5 : 0)
                 )
         }

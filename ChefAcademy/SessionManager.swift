@@ -102,11 +102,11 @@ class SessionManager: ObservableObject {
 
             // Require Apple sign-in before showing profiles
             if let auth = authManager, auth.isAuthenticated {
-                withAnimation(.easeInOut(duration: 0.3)) {
+                withAnimation(AnimationConstants.fadeMedium) {
                     self.route = .profilePicker
                 }
             } else {
-                withAnimation(.easeInOut(duration: 0.3)) {
+                withAnimation(AnimationConstants.fadeMedium) {
                     self.route = .signIn
                 }
             }
@@ -118,18 +118,18 @@ class SessionManager: ObservableObject {
             if let legacyData = legacyPlayers.first, legacyData.ownerID == nil {
                 // Legacy single-user data — migrate first, then ask for Apple ID later
                 migrateLegacyData(legacyPlayerData: legacyData, context: context)
-                withAnimation(.easeInOut(duration: 0.3)) {
+                withAnimation(AnimationConstants.fadeMedium) {
                     self.route = .migrationPINSetup
                 }
             } else if let auth = authManager, auth.isAuthenticated {
                 // Authenticated but no family — maybe CloudKit hasn't synced yet,
                 // or this is a new device. Go to family setup.
-                withAnimation(.easeInOut(duration: 0.3)) {
+                withAnimation(AnimationConstants.fadeMedium) {
                     self.route = .familySetup
                 }
             } else {
                 // Brand new install, no auth — show sign-in first
-                withAnimation(.easeInOut(duration: 0.3)) {
+                withAnimation(AnimationConstants.fadeMedium) {
                     self.route = .signIn
                 }
             }
@@ -206,12 +206,12 @@ class SessionManager: ObservableObject {
                 try? context.save()
             }
             self.familyProfile = family
-            withAnimation(.easeInOut(duration: 0.3)) {
+            withAnimation(AnimationConstants.fadeMedium) {
                 self.route = .profilePicker
             }
         } else {
             // No family yet — create one via setup wizard
-            withAnimation(.easeInOut(duration: 0.3)) {
+            withAnimation(AnimationConstants.fadeMedium) {
                 self.route = .familySetup
             }
         }
@@ -278,7 +278,7 @@ class SessionManager: ObservableObject {
         // Start play time tracking
         startPlayTimeTracking()
 
-        withAnimation(.easeInOut(duration: 0.3)) {
+        withAnimation(AnimationConstants.fadeMedium) {
             route = .mainApp(profile.id)
         }
     }
@@ -298,7 +298,7 @@ class SessionManager: ObservableObject {
         activeProfile = nil
         gameState.activeProfileID = nil
 
-        withAnimation(.easeInOut(duration: 0.3)) {
+        withAnimation(AnimationConstants.fadeMedium) {
             route = .profilePicker
         }
     }

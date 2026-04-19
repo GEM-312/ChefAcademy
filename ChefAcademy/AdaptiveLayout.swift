@@ -266,7 +266,7 @@ struct AdaptiveGrid<Content: View>: View {
                 .font(.title)
 
             ForEach(0..<5) { i in
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: AppSpacing.smallCornerRadius)
                     .fill(Color.blue.opacity(0.3))
                     .frame(height: 100)
             }
@@ -283,7 +283,7 @@ struct AdaptiveGrid<Content: View>: View {
                 .font(.title)
 
             ForEach(0..<5) { i in
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: AppSpacing.smallCornerRadius)
                     .fill(Color.blue.opacity(0.3))
                     .frame(height: 100)
             }

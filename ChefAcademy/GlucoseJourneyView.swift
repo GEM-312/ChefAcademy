@@ -190,7 +190,7 @@ struct GlucoseJourneyView: View {
                 HStack {
                     Button(action: { dismiss() }) {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 24))
+                            .font(.AppTheme.rounded(size: 24))
                             .foregroundColor(Color.AppTheme.lightSepia)
                     }
                     .buttonStyle(.plain)
@@ -245,7 +245,7 @@ struct GlucoseJourneyView: View {
     }
 
     private func advancePhase() {
-        withAnimation(.easeInOut(duration: 0.3)) {
+        withAnimation(AnimationConstants.fadeMedium) {
             if let next = JourneyPhase(rawValue: phase.rawValue + 1) {
                 phase = next
             }
@@ -279,7 +279,7 @@ struct GlucoseJourneyView: View {
                     }
                     .padding(AppSpacing.md)
                     .background(Color.AppTheme.goldenWheat.opacity(0.15))
-                    .cornerRadius(12)
+                    .cornerRadius(AppSpacing.smallCornerRadius)
                 }
 
                 Button(action: { dismiss() }) {
@@ -289,7 +289,7 @@ struct GlucoseJourneyView: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, AppSpacing.md)
                         .background(Color.AppTheme.sage)
-                        .cornerRadius(16)
+                        .cornerRadius(AppSpacing.cardCornerRadius)
                 }
                 .buttonStyle(BouncyButtonStyle())
                 .padding(.horizontal, AppSpacing.lg)
@@ -327,7 +327,7 @@ struct TummyPhaseView: View {
 
                 // Tummy scene — gut wall is INSIDE the tummy
                 ZStack {
-                    RoundedRectangle(cornerRadius: 20)
+                    RoundedRectangle(cornerRadius: AppSpacing.largeCornerRadius)
                         .fill(Color.AppTheme.parchment.opacity(0.5))
                         .frame(height: 320)
 
@@ -354,7 +354,7 @@ struct TummyPhaseView: View {
                                     HStack(spacing: 4) {
                                         ForEach(ingredients.filter { $0.placed }) { ing in
                                             Text(ing.emoji)
-                                                .font(.system(size: 18))
+                                                .font(.AppTheme.recipeStep)
                                                 .transition(.scale.combined(with: .opacity))
                                         }
                                     }
@@ -363,7 +363,7 @@ struct TummyPhaseView: View {
                                     // Glucose label + balls waiting
                                     VStack(spacing: 2) {
                                         Text("Glucose")
-                                            .font(.system(size: 9, weight: .bold, design: .rounded))
+                                            .font(.AppTheme.rounded(size: 9, weight: .bold))
                                             .foregroundColor(Color.AppTheme.goldenWheat)
 
                                         HStack(spacing: 4) {
@@ -380,7 +380,7 @@ struct TummyPhaseView: View {
                                 // GUT WALL inside the tummy
                                 VStack(spacing: 2) {
                                     Text("Gut Wall")
-                                        .font(.system(size: 8, weight: .bold, design: .rounded))
+                                        .font(.AppTheme.rounded(size: 8, weight: .bold))
                                         .foregroundColor(Color.AppTheme.sage)
 
                                     ZStack {
@@ -405,11 +405,11 @@ struct TummyPhaseView: View {
                                 // RIGHT inside tummy: → Blood arrow
                                 VStack(spacing: 4) {
                                     Image(systemName: "arrow.right")
-                                        .font(.system(size: 16))
+                                        .font(.AppTheme.callout)
                                         .foregroundColor(Color.AppTheme.terracotta.opacity(0.5))
 
                                     Text("→ Blood")
-                                        .font(.system(size: 9, weight: .semibold, design: .rounded))
+                                        .font(.AppTheme.rounded(size: 9, weight: .semibold))
                                         .foregroundColor(Color.AppTheme.terracotta.opacity(0.6))
 
                                     // Glucose that made it through
@@ -452,22 +452,22 @@ struct TummyPhaseView: View {
                                     Button(action: { placeIngredient(ingredient) }) {
                                         HStack(spacing: 6) {
                                             Text(ingredient.emoji)
-                                                .font(.system(size: 24))
+                                                .font(.AppTheme.rounded(size: 24))
                                             VStack(alignment: .leading, spacing: 1) {
                                                 Text(ingredient.name)
                                                     .font(.AppTheme.caption)
                                                     .foregroundColor(Color.AppTheme.darkBrown)
                                                 Text(ingredient.role.label)
-                                                    .font(.system(size: 9, weight: .bold, design: .rounded))
+                                                    .font(.AppTheme.rounded(size: 9, weight: .bold))
                                                     .foregroundColor(ingredient.role.color)
                                             }
                                         }
                                         .padding(.horizontal, AppSpacing.sm)
                                         .padding(.vertical, AppSpacing.xs)
                                         .background(Color.AppTheme.warmCream)
-                                        .cornerRadius(12)
+                                        .cornerRadius(AppSpacing.smallCornerRadius)
                                         .overlay(
-                                            RoundedRectangle(cornerRadius: 12)
+                                            RoundedRectangle(cornerRadius: AppSpacing.smallCornerRadius)
                                                 .stroke(ingredient.role.color.opacity(0.4), lineWidth: 1.5)
                                         )
                                     }
@@ -502,7 +502,7 @@ struct TummyPhaseView: View {
                         .background(compareActive
                                     ? Color.AppTheme.sage.opacity(0.1)
                                     : Color.AppTheme.terracotta.opacity(0.1))
-                        .cornerRadius(12)
+                        .cornerRadius(AppSpacing.smallCornerRadius)
                     }
                     .buttonStyle(BouncyButtonStyle())
                 }
@@ -516,7 +516,7 @@ struct TummyPhaseView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, AppSpacing.md)
                             .background(Color.AppTheme.sage)
-                            .cornerRadius(16)
+                            .cornerRadius(AppSpacing.cardCornerRadius)
                     }
                     .buttonStyle(BouncyButtonStyle())
                     .padding(.horizontal, AppSpacing.md)
@@ -642,7 +642,7 @@ struct CellPhaseView: View {
 
                 // Body → Cell zoom
                 ZStack {
-                    RoundedRectangle(cornerRadius: 20)
+                    RoundedRectangle(cornerRadius: AppSpacing.largeCornerRadius)
                         .fill(Color.AppTheme.parchment.opacity(0.3))
                         .frame(height: 320)
 
@@ -650,7 +650,7 @@ struct CellPhaseView: View {
                         // Body outline with cells hint
                         VStack(spacing: AppSpacing.sm) {
                             Image(systemName: "figure.stand")
-                                .font(.system(size: 100))
+                                .font(.AppTheme.rounded(size: 100))
                                 .foregroundColor(Color.AppTheme.sage.opacity(0.6))
                                 .scaleEffect(bodyScale)
 
@@ -679,7 +679,7 @@ struct CellPhaseView: View {
                                 .offset(x: -40, y: -40)
 
                             Text("Nucleus")
-                                .font(.system(size: 8, weight: .medium, design: .rounded))
+                                .font(.AppTheme.rounded(size: 8, weight: .medium))
                                 .foregroundColor(Color.AppTheme.lightSepia)
                                 .offset(x: -40, y: -15)
 
@@ -704,13 +704,13 @@ struct CellPhaseView: View {
                                             )
 
                                         Image(systemName: "bolt.fill")
-                                            .font(.system(size: 20))
+                                            .font(.AppTheme.title3)
                                             .foregroundColor(Color.AppTheme.goldenWheat)
                                     }
 
                                     if mitoTaps == 0 {
                                         Text("Tap me!")
-                                            .font(.system(size: 10, weight: .bold, design: .rounded))
+                                            .font(.AppTheme.rounded(size: 10, weight: .bold))
                                             .foregroundColor(Color.AppTheme.goldenWheat)
                                     }
                                 }
@@ -732,7 +732,7 @@ struct CellPhaseView: View {
                             // Energy bursts
                             ForEach(energyBursts) { burst in
                                 Image(systemName: "sparkle")
-                                    .font(.system(size: 16))
+                                    .font(.AppTheme.callout)
                                     .foregroundColor(Color.AppTheme.goldenWheat)
                                     .offset(x: burst.x, y: burst.y)
                                     .opacity(burst.opacity)
@@ -742,7 +742,7 @@ struct CellPhaseView: View {
                             if spikeMode {
                                 ForEach(0..<4, id: \.self) { i in
                                     Image(systemName: "staroflife.fill")
-                                        .font(.system(size: 12))
+                                        .font(.AppTheme.caption)
                                         .foregroundColor(Color.AppTheme.terracotta.opacity(0.6))
                                         .offset(
                                             x: CGFloat.random(in: -70...70),
@@ -792,13 +792,11 @@ struct CellPhaseView: View {
                                 Text(spikeMode
                                      ? "Overwhelmed! Too much glucose!"
                                      : (pipEnergy >= 5 ? "Full energy! Feeling great!" : "Tap mitochondria to energize Pip!"))
-                                    .font(.system(size: 10, weight: .medium, design: .rounded))
+                                    .font(.AppTheme.rounded(size: 10, weight: .medium))
                                     .foregroundColor(spikeMode ? Color.AppTheme.terracotta : Color.AppTheme.sage)
                             }
                         }
-                        .padding(AppSpacing.md)
-                        .background(Color.AppTheme.warmCream)
-                        .cornerRadius(AppSpacing.cardCornerRadius)
+                        .softCard(showShadow: false)
                     }
                     .padding(.horizontal, AppSpacing.md)
                 }
@@ -814,10 +812,10 @@ struct CellPhaseView: View {
                             ForEach(litOrgans, id: \.self) { organ in
                                 VStack(spacing: 2) {
                                     Image(systemName: organIcon(organ))
-                                        .font(.system(size: 22))
+                                        .font(.AppTheme.title2)
                                         .foregroundColor(organColor(organ))
                                     Text(organ)
-                                        .font(.system(size: 9, weight: .medium, design: .rounded))
+                                        .font(.AppTheme.rounded(size: 9, weight: .medium))
                                         .foregroundColor(Color.AppTheme.sepia)
                                 }
                                 .transition(.scale.combined(with: .opacity))
@@ -846,7 +844,7 @@ struct CellPhaseView: View {
                         .background(spikeMode
                                     ? Color.AppTheme.sage.opacity(0.1)
                                     : Color.AppTheme.terracotta.opacity(0.1))
-                        .cornerRadius(12)
+                        .cornerRadius(AppSpacing.smallCornerRadius)
                     }
                     .buttonStyle(BouncyButtonStyle())
                 }
@@ -860,7 +858,7 @@ struct CellPhaseView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, AppSpacing.md)
                             .background(Color.AppTheme.sage)
-                            .cornerRadius(16)
+                            .cornerRadius(AppSpacing.cardCornerRadius)
                     }
                     .buttonStyle(BouncyButtonStyle())
                     .padding(.horizontal, AppSpacing.md)
@@ -1030,7 +1028,7 @@ struct FreeRadicalPhaseView: View {
                         )
 
                     Image(systemName: "bolt.fill")
-                        .font(.system(size: 16))
+                        .font(.AppTheme.callout)
                         .foregroundColor(Color.AppTheme.goldenWheat)
 
                     // Glucose balls (proportional to sugar cubes)
@@ -1050,7 +1048,7 @@ struct FreeRadicalPhaseView: View {
                             ? radicalPositions[i]
                             : (x: CGFloat.random(in: -80...80), y: CGFloat.random(in: -80...80))
                         Image(systemName: "staroflife.fill")
-                            .font(.system(size: 14))
+                            .font(.AppTheme.captionLarge)
                             .foregroundColor(Color.AppTheme.terracotta.opacity(0.7))
                             .offset(x: pos.x, y: pos.y)
                             .transition(.scale.combined(with: .opacity))
@@ -1059,7 +1057,7 @@ struct FreeRadicalPhaseView: View {
                     // DNA in center
                     if cellHealth < 50 {
                         Image(systemName: "exclamationmark.triangle.fill")
-                            .font(.system(size: 20))
+                            .font(.AppTheme.title3)
                             .foregroundColor(Color.AppTheme.terracotta)
                             .offset(y: -60)
                             .transition(.scale)
@@ -1074,7 +1072,7 @@ struct FreeRadicalPhaseView: View {
                     Button(action: removeSugar) {
                         VStack(spacing: 4) {
                             Image(systemName: "minus.circle.fill")
-                                .font(.system(size: 32))
+                                .font(.AppTheme.rounded(size: 32))
                                 .foregroundColor(Color.AppTheme.sage)
                             Text("Remove")
                                 .font(.AppTheme.caption)
@@ -1107,7 +1105,7 @@ struct FreeRadicalPhaseView: View {
                     Button(action: addSugar) {
                         VStack(spacing: 4) {
                             Image(systemName: "plus.circle.fill")
-                                .font(.system(size: 32))
+                                .font(.AppTheme.rounded(size: 32))
                                 .foregroundColor(Color.AppTheme.terracotta)
                             Text("Add sugar")
                                 .font(.AppTheme.caption)
@@ -1197,7 +1195,7 @@ struct FreeRadicalPhaseView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, AppSpacing.md)
                             .background(Color.AppTheme.sage)
-                            .cornerRadius(16)
+                            .cornerRadius(AppSpacing.cardCornerRadius)
                     }
                     .buttonStyle(BouncyButtonStyle())
                     .padding(.horizontal, AppSpacing.md)
@@ -1300,7 +1298,7 @@ struct SmartSnackQuizView: View {
                     ForEach(shuffledOptions) { snack in
                         Button(action: { selectSnack(snack) }) {
                             HStack(spacing: AppSpacing.md) {
-                                Text(snack.emoji).font(.system(size: 36))
+                                Text(snack.emoji).font(.AppTheme.rounded(size: 36))
                                 Text(snack.name)
                                     .font(.AppTheme.bodyBold)
                                     .foregroundColor(Color.AppTheme.darkBrown)
@@ -1308,9 +1306,7 @@ struct SmartSnackQuizView: View {
                                 Image(systemName: "chevron.right")
                                     .foregroundColor(Color.AppTheme.lightSepia)
                             }
-                            .padding(AppSpacing.md)
-                            .background(Color.AppTheme.warmCream)
-                            .cornerRadius(AppSpacing.cardCornerRadius)
+                            .softCard(showShadow: false)
                         }
                         .buttonStyle(BouncyButtonStyle())
                         .padding(.horizontal, AppSpacing.md)
@@ -1320,7 +1316,7 @@ struct SmartSnackQuizView: View {
                 if showResult, let snack = selectedSnack {
                     VStack(spacing: AppSpacing.md) {
                         HStack(spacing: AppSpacing.md) {
-                            Text(snack.emoji).font(.system(size: 44))
+                            Text(snack.emoji).font(.AppTheme.rounded(size: 44))
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(snack.name)
                                     .font(.AppTheme.headline)
@@ -1331,7 +1327,7 @@ struct SmartSnackQuizView: View {
                             }
                             Spacer()
                             Image(systemName: snack.isHealthy ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
-                                .font(.system(size: 28))
+                                .font(.AppTheme.title)
                                 .foregroundColor(snack.isHealthy ? Color.AppTheme.sage : Color.AppTheme.terracotta)
                         }
                         .padding(AppSpacing.md)
@@ -1358,9 +1354,7 @@ struct SmartSnackQuizView: View {
                                     .font(.AppTheme.caption)
                                     .foregroundColor(Color.AppTheme.lightSepia)
                             }
-                            .padding(AppSpacing.md)
-                            .background(Color.AppTheme.warmCream)
-                            .cornerRadius(AppSpacing.cardCornerRadius)
+                            .softCard(showShadow: false)
                             .transition(.scale.combined(with: .opacity))
                         }
 
@@ -1372,7 +1366,7 @@ struct SmartSnackQuizView: View {
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, AppSpacing.md)
                                     .background(Color.AppTheme.sage)
-                                    .cornerRadius(16)
+                                    .cornerRadius(AppSpacing.cardCornerRadius)
                             }
                             .buttonStyle(BouncyButtonStyle())
                         } else {
@@ -1383,7 +1377,7 @@ struct SmartSnackQuizView: View {
                                     .frame(maxWidth: .infinity)
                                     .padding(.vertical, AppSpacing.md)
                                     .background(Color.AppTheme.sage)
-                                    .cornerRadius(16)
+                                    .cornerRadius(AppSpacing.cardCornerRadius)
                             }
                             .buttonStyle(BouncyButtonStyle())
                         }
@@ -1427,7 +1421,7 @@ struct SmartSnackQuizView: View {
     }
 
     private func retryQuiz() {
-        withAnimation(.easeInOut(duration: 0.3)) {
+        withAnimation(AnimationConstants.fadeMedium) {
             selectedSnack = nil
             showResult = false
             showSugarCubes = false
@@ -1456,9 +1450,7 @@ struct PipJourneyMessage: View {
                     .font(.AppTheme.body)
                     .foregroundColor(Color.AppTheme.darkBrown)
             }
-            .padding(AppSpacing.md)
-            .background(Color.AppTheme.warmCream)
-            .cornerRadius(AppSpacing.cardCornerRadius)
+            .softCard(showShadow: false)
         }
     }
 }

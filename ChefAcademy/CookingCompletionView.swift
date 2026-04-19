@@ -51,7 +51,7 @@ struct CookingCompletionView: View {
                 HStack(spacing: AppSpacing.md) {
                     ForEach(0..<3, id: \.self) { index in
                         Image(systemName: starStates[index] ? "star.fill" : "star")
-                            .font(.system(size: 44))
+                            .font(.AppTheme.rounded(size: 44))
                             .foregroundColor(Color.AppTheme.goldenWheat)
                             .scaleEffect(starStates[index] ? 1.0 : 0.3)
                             .rotationEffect(.degrees(starStates[index] ? 0 : -30))
@@ -80,25 +80,23 @@ struct CookingCompletionView: View {
                 if showHealthBoost {
                     VStack(spacing: AppSpacing.xs) {
                         Text("Body Buddy Boost!")
-                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                            .font(.AppTheme.rounded(size: 14, weight: .bold))
                             .foregroundColor(Color.AppTheme.darkBrown)
 
                         HStack(spacing: AppSpacing.sm) {
                             ForEach(boostedOrgans, id: \.name) { organ in
                                 VStack(spacing: 2) {
                                     Image(systemName: organ.icon)
-                                        .font(.system(size: 18))
+                                        .font(.AppTheme.recipeStep)
                                         .foregroundColor(organ.color)
                                     Text("+\(organ.boost)")
-                                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                                        .font(.AppTheme.rounded(size: 11, weight: .bold))
                                         .foregroundColor(organ.color)
                                 }
                             }
                         }
                     }
-                    .padding(AppSpacing.md)
-                    .background(Color.AppTheme.warmCream)
-                    .cornerRadius(AppSpacing.cardCornerRadius)
+                    .softCard(showShadow: false)
                     .transition(.scale.combined(with: .opacity))
                 }
 
@@ -118,7 +116,7 @@ struct CookingCompletionView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, AppSpacing.md)
                             .background(Color.AppTheme.goldenWheat)
-                            .cornerRadius(16)
+                            .cornerRadius(AppSpacing.cardCornerRadius)
                         }
                         .buttonStyle(BouncyButtonStyle())
 
@@ -130,9 +128,9 @@ struct CookingCompletionView: View {
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, AppSpacing.md)
                                 .background(Color.AppTheme.parchment)
-                                .cornerRadius(16)
+                                .cornerRadius(AppSpacing.cardCornerRadius)
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 16)
+                                    RoundedRectangle(cornerRadius: AppSpacing.cardCornerRadius)
                                         .stroke(Color.AppTheme.sepia.opacity(0.3), lineWidth: 1.5)
                                 )
                         }
@@ -224,7 +222,7 @@ struct CookingCompletionView: View {
         .padding(.horizontal, AppSpacing.md)
         .padding(.vertical, AppSpacing.sm)
         .background(Color.AppTheme.warmCream)
-        .cornerRadius(20)
+        .cornerRadius(AppSpacing.largeCornerRadius)
     }
 
     // MARK: - Animate Stars Sequentially

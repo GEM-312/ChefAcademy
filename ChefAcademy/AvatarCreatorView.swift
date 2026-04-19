@@ -55,7 +55,7 @@ struct AvatarCreatorView: View {
                         icon: tab.icon,
                         isSelected: selectedTab == tab
                     ) {
-                        withAnimation(.easeInOut(duration: 0.2)) {
+                        withAnimation(AnimationConstants.fadeFast) {
                             selectedTab = tab
                         }
                     }
@@ -156,7 +156,7 @@ struct HairView: View {
                     Ellipse()
                         .fill(hairColor)
                         .frame(width: 130, height: 50)
-                    RoundedRectangle(cornerRadius: 20)
+                    RoundedRectangle(cornerRadius: AppSpacing.largeCornerRadius)
                         .fill(hairColor)
                         .frame(width: 120, height: 80)
                 }
@@ -177,10 +177,10 @@ struct HairView: View {
 
             case .braids:
                 HStack(spacing: 60) {
-                    RoundedRectangle(cornerRadius: 8)
+                    RoundedRectangle(cornerRadius: AppSpacing.pillCornerRadius)
                         .fill(hairColor)
                         .frame(width: 20, height: 80)
-                    RoundedRectangle(cornerRadius: 8)
+                    RoundedRectangle(cornerRadius: AppSpacing.pillCornerRadius)
                         .fill(hairColor)
                         .frame(width: 20, height: 80)
                 }
@@ -219,7 +219,7 @@ struct HeadCoveringView: View {
             let hatColor = covering.color
             ZStack {
                 // Hat body
-                RoundedRectangle(cornerRadius: 12)
+                RoundedRectangle(cornerRadius: AppSpacing.smallCornerRadius)
                     .fill(hatColor.opacity(0.9))
                     .frame(width: 70, height: 50)
                     .offset(y: -5)
@@ -245,13 +245,13 @@ struct OutfitView: View {
     var body: some View {
         ZStack {
             // Body/Torso
-            RoundedRectangle(cornerRadius: 20)
+            RoundedRectangle(cornerRadius: AppSpacing.largeCornerRadius)
                 .fill(outfit.color)
                 .frame(width: 100, height: 60)
 
             if outfit.isApron {
                 // Apron pocket
-                RoundedRectangle(cornerRadius: 8)
+                RoundedRectangle(cornerRadius: AppSpacing.pillCornerRadius)
                     .fill(Color.AppTheme.cream.opacity(0.3))
                     .frame(width: 40, height: 25)
                     .offset(y: 10)
@@ -303,7 +303,7 @@ struct TabButton: View {
         Button(action: action) {
             VStack(spacing: 4) {
                 Image(systemName: icon)
-                    .font(.system(size: 18))
+                    .font(.AppTheme.recipeStep)
                 Text(title)
                     .font(.AppTheme.caption)
             }
@@ -311,7 +311,7 @@ struct TabButton: View {
             .frame(maxWidth: .infinity)
             .padding(.vertical, AppSpacing.sm)
             .background(isSelected ? Color.AppTheme.goldenWheat : Color.AppTheme.parchment)
-            .cornerRadius(12)
+            .cornerRadius(AppSpacing.smallCornerRadius)
         }
     }
 }
@@ -350,9 +350,9 @@ struct HairStyleSelector: View {
                         }
                         .padding(AppSpacing.sm)
                         .background(selectedStyle == style ? Color.AppTheme.goldenWheat.opacity(0.3) : Color.clear)
-                        .cornerRadius(12)
+                        .cornerRadius(AppSpacing.smallCornerRadius)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 12)
+                            RoundedRectangle(cornerRadius: AppSpacing.smallCornerRadius)
                                 .stroke(selectedStyle == style ? Color.AppTheme.goldenWheat : Color.clear, lineWidth: 2)
                         )
                     }
@@ -390,13 +390,13 @@ struct HeadCoveringSelector: View {
                             // Color circle for hats, X for none
                             if covering == .none {
                                 Image(systemName: "xmark.circle")
-                                    .font(.system(size: 24))
+                                    .font(.AppTheme.rounded(size: 24))
                                     .foregroundColor(Color.AppTheme.sepia.opacity(0.5))
                                     .frame(width: 44, height: 44)
                             } else {
                                 // Chef hat icon with the hat's color
                                 Image(systemName: "party.popper")
-                                    .font(.system(size: 22))
+                                    .font(.AppTheme.title2)
                                     .foregroundColor(.white)
                                     .frame(width: 44, height: 44)
                                     .background(covering.color)
@@ -411,9 +411,9 @@ struct HeadCoveringSelector: View {
                         }
                         .padding(AppSpacing.xs)
                         .background(selectedCovering == covering ? Color.AppTheme.goldenWheat.opacity(0.3) : Color.clear)
-                        .cornerRadius(12)
+                        .cornerRadius(AppSpacing.smallCornerRadius)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 12)
+                            RoundedRectangle(cornerRadius: AppSpacing.smallCornerRadius)
                                 .stroke(selectedCovering == covering ? Color.AppTheme.goldenWheat : Color.clear, lineWidth: 2)
                         )
                     }
@@ -460,11 +460,11 @@ struct OutfitSelector: View {
 
                                 if outfit == .none {
                                     Image(systemName: "xmark")
-                                        .font(.system(size: 18, weight: .medium))
+                                        .font(.AppTheme.rounded(size: 18, weight: .medium))
                                         .foregroundColor(Color.AppTheme.sepia)
                                 } else {
                                     Image(systemName: outfit.isApron ? "tshirt.fill" : "person.bust")
-                                        .font(.system(size: 20))
+                                        .font(.AppTheme.title3)
                                         .foregroundColor(Color.AppTheme.cream.opacity(0.9))
                                 }
                             }
@@ -476,9 +476,9 @@ struct OutfitSelector: View {
                         }
                         .padding(AppSpacing.xs)
                         .background(selectedOutfit == outfit ? Color.AppTheme.goldenWheat.opacity(0.3) : Color.clear)
-                        .cornerRadius(12)
+                        .cornerRadius(AppSpacing.smallCornerRadius)
                         .overlay(
-                            RoundedRectangle(cornerRadius: 12)
+                            RoundedRectangle(cornerRadius: AppSpacing.smallCornerRadius)
                                 .stroke(selectedOutfit == outfit ? Color.AppTheme.goldenWheat : Color.clear, lineWidth: 2)
                         )
                     }

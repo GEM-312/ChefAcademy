@@ -170,7 +170,7 @@ class NearbyMultiplayerManager: NSObject, ObservableObject {
                 self.checkBothReady()
 
             case .scoreUpdate(let score, let good, let bad):
-                withAnimation(.easeInOut(duration: 0.3)) {
+                withAnimation(AnimationConstants.fadeMedium) {
                     self.opponentScore = score
                     self.opponentGoodChoices = good
                     self.opponentBadChoices = bad

@@ -112,7 +112,7 @@ struct SplitScreenVersusView: View {
                                         .frame(width: 50, height: 50).clipShape(Circle())
                                     if isP1 || isP2 {
                                         Text(isP1 ? "P1" : "P2")
-                                            .font(.system(size: 10, weight: .bold))
+                                            .font(.AppTheme.rounded(size: 10, weight: .bold))
                                             .foregroundColor(Color.AppTheme.cream)
                                             .padding(3)
                                             .background(isP1 ? Color.AppTheme.sage : Color.AppTheme.terracotta)
@@ -187,7 +187,7 @@ struct SplitScreenVersusView: View {
             HStack(spacing: AppSpacing.xl) {
                 VStack {
                     Image(systemName: "arrow.up")
-                        .font(.system(size: 24))
+                        .font(.AppTheme.rounded(size: 24))
                         .foregroundColor(Color.AppTheme.sage)
                     if let p1 = player1 {
                         Image(p1.gender == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06")
@@ -203,12 +203,12 @@ struct SplitScreenVersusView: View {
                 }
 
                 Text("VS")
-                    .font(.system(size: 28, weight: .black, design: .rounded))
+                    .font(.AppTheme.rounded(size: 28, weight: .black))
                     .foregroundColor(Color.AppTheme.goldenWheat)
 
                 VStack {
                     Image(systemName: "arrow.down")
-                        .font(.system(size: 24))
+                        .font(.AppTheme.rounded(size: 24))
                         .foregroundColor(Color.AppTheme.terracotta)
                     if let p2 = player2 {
                         Image(p2.gender == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06")
@@ -250,7 +250,7 @@ struct SplitScreenVersusView: View {
         VStack {
             Spacer()
             Text("\(countdownValue)")
-                .font(.system(size: 120, weight: .black, design: .rounded))
+                .font(.AppTheme.rounded(size: 120, weight: .black))
                 .foregroundColor(Color.AppTheme.goldenWheat)
             Text("Get ready!")
                 .font(.AppTheme.headline)
@@ -291,10 +291,10 @@ struct SplitScreenVersusView: View {
                     // P1 score (shown right-side up for P1)
                     HStack(spacing: 4) {
                         Text(player1?.name ?? "P1")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(.AppTheme.rounded(size: 12, weight: .bold))
                             .foregroundColor(Color.AppTheme.sage)
                         Text("\(p1Coins)")
-                            .font(.system(size: 16, weight: .black, design: .rounded))
+                            .font(.AppTheme.rounded(size: 16, weight: .black))
                             .foregroundColor(Color.AppTheme.sage)
                     }
                     .rotationEffect(.degrees(180))
@@ -302,17 +302,17 @@ struct SplitScreenVersusView: View {
                     Spacer()
 
                     Text("VS")
-                        .font(.system(size: 16, weight: .black, design: .rounded))
+                        .font(.AppTheme.rounded(size: 16, weight: .black))
                         .foregroundColor(Color.AppTheme.goldenWheat)
 
                     Spacer()
 
                     HStack(spacing: 4) {
                         Text(player2?.name ?? "P2")
-                            .font(.system(size: 12, weight: .bold))
+                            .font(.AppTheme.rounded(size: 12, weight: .bold))
                             .foregroundColor(Color.AppTheme.terracotta)
                         Text("\(p2Coins)")
-                            .font(.system(size: 16, weight: .black, design: .rounded))
+                            .font(.AppTheme.rounded(size: 16, weight: .black))
                             .foregroundColor(Color.AppTheme.terracotta)
                     }
                 }
@@ -363,7 +363,7 @@ struct SplitScreenVersusView: View {
                         .onTapGesture { tapFood(item, playerNum: playerNum) }
                 } else if let icon = item.resultIcon {
                     Text(icon)
-                        .font(.system(size: 28))
+                        .font(.AppTheme.title)
                         .position(x: item.x, y: item.y)
                 }
             }
@@ -374,15 +374,15 @@ struct SplitScreenVersusView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "circle.fill")
                             .foregroundColor(Color.AppTheme.goldenWheat)
-                            .font(.system(size: 10))
+                            .font(.AppTheme.micro)
                         Text("+\(coins)")
-                            .font(.system(size: 14, weight: .bold))
+                            .font(.AppTheme.rounded(size: 14, weight: .bold))
                             .foregroundColor(Color.AppTheme.darkBrown)
                     }
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(Color.AppTheme.warmCream.opacity(0.9))
-                    .cornerRadius(12)
+                    .cornerRadius(AppSpacing.smallCornerRadius)
 
                     Spacer()
 
@@ -390,7 +390,7 @@ struct SplitScreenVersusView: View {
                         ForEach(0..<maxBadChoices, id: \.self) { i in
                             Image(systemName: i < badChoices ? "heart.slash.fill" : "heart.fill")
                                 .foregroundColor(i < badChoices ? Color.AppTheme.lightSepia : Color.AppTheme.terracotta)
-                                .font(.system(size: 12))
+                                .font(.AppTheme.caption)
                         }
                     }
                 }
@@ -421,10 +421,10 @@ struct SplitScreenVersusView: View {
                     .frame(width: 40, height: 40)
             } else {
                 Text(item.food.emoji)
-                    .font(.system(size: 32))
+                    .font(.AppTheme.rounded(size: 32))
             }
             Text(item.food.name)
-                .font(.system(size: 9, weight: .bold, design: .rounded))
+                .font(.AppTheme.rounded(size: 9, weight: .bold))
                 .foregroundColor(Color.AppTheme.darkBrown)
                 .lineLimit(1)
         }
@@ -452,7 +452,7 @@ struct SplitScreenVersusView: View {
                 VStack {
                     Text(player1?.name ?? "P1").font(.AppTheme.headline).foregroundColor(Color.AppTheme.sage)
                     Text("\(p1Coins)")
-                        .font(.system(size: 40, weight: .black, design: .rounded))
+                        .font(.AppTheme.rounded(size: 40, weight: .black))
                         .foregroundColor(p1Won || tied ? Color.AppTheme.sage : Color.AppTheme.sepia)
                     HStack(spacing: 4) {
                         Label("\(p1Good)", systemImage: "checkmark.circle.fill")
@@ -463,13 +463,13 @@ struct SplitScreenVersusView: View {
                 }
 
                 Text("VS")
-                    .font(.system(size: 24, weight: .black, design: .rounded))
+                    .font(.AppTheme.rounded(size: 24, weight: .black))
                     .foregroundColor(Color.AppTheme.goldenWheat)
 
                 VStack {
                     Text(player2?.name ?? "P2").font(.AppTheme.headline).foregroundColor(Color.AppTheme.terracotta)
                     Text("\(p2Coins)")
-                        .font(.system(size: 40, weight: .black, design: .rounded))
+                        .font(.AppTheme.rounded(size: 40, weight: .black))
                         .foregroundColor(!p1Won || tied ? Color.AppTheme.terracotta : Color.AppTheme.sepia)
                     HStack(spacing: 4) {
                         Label("\(p2Good)", systemImage: "checkmark.circle.fill")

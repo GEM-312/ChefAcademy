@@ -56,7 +56,7 @@ struct SiblingGardenView: View {
                 .padding(.horizontal, AppSpacing.md)
                 .padding(.vertical, AppSpacing.xs)
                 .background(Color.AppTheme.sage)
-                .cornerRadius(20)
+                .cornerRadius(AppSpacing.largeCornerRadius)
             }
             .buttonStyle(.plain)
             .padding(.leading, AppSpacing.md)
@@ -73,10 +73,7 @@ struct SiblingGardenView: View {
                             .foregroundColor(Color.AppTheme.darkBrown)
                             .lineLimit(2)
                     }
-                    .padding(AppSpacing.md)
-                    .background(Color.AppTheme.warmCream)
-                    .cornerRadius(AppSpacing.cardCornerRadius)
-                    .shadow(color: Color.AppTheme.sepia.opacity(0.15), radius: 8, y: 4)
+                    .softCard()
                     .padding(.horizontal, AppSpacing.lg)
                     .padding(.bottom, 120)
                     .transition(.move(edge: .bottom).combined(with: .opacity))

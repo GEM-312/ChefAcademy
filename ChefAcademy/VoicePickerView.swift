@@ -101,20 +101,12 @@ struct VoicePickerView: View {
     // MARK: - Pip Header
 
     private var pipHeader: some View {
-        VStack(spacing: AppSpacing.sm) {
-            Image("pip_points_up_left")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 100, height: 100)
-
-            Text("Pick how I sound!")
-                .font(.AppTheme.title2)
-                .foregroundColor(Color.AppTheme.darkBrown)
-
-            Text("Tap a voice to hear a preview")
-                .font(.AppTheme.caption)
-                .foregroundColor(Color.AppTheme.sepia)
-        }
+        PipHeaderStack(
+            title: "Pick how I sound!",
+            subtitle: "Tap a voice to hear a preview",
+            pose: .pointsUpLeft,
+            clipToCircle: false
+        )
         .padding(.top, AppSpacing.md)
     }
 
@@ -147,7 +139,7 @@ struct VoicePickerView: View {
             if !pipVoice.hasSubscription {
                 HStack(spacing: AppSpacing.xs) {
                     Image(systemName: "lock.fill")
-                        .font(.system(size: 12))
+                        .font(.AppTheme.caption)
                     Text("Upgrade to Pip Plus — $3.99/month")
                         .font(.AppTheme.caption)
                 }
@@ -190,7 +182,7 @@ struct VoiceCard: View {
             // Preview button
             Button(action: onPreview) {
                 Image(systemName: isPreviewing ? "stop.circle.fill" : "play.circle.fill")
-                    .font(.system(size: 28))
+                    .font(.AppTheme.title)
                     .foregroundColor(Color.AppTheme.sage)
                     .symbolEffect(.pulse, isActive: isPreviewing)
             }
@@ -199,11 +191,11 @@ struct VoiceCard: View {
             // Selection / lock indicator
             if isLocked {
                 Image(systemName: "lock.fill")
-                    .font(.system(size: 16))
+                    .font(.AppTheme.callout)
                     .foregroundColor(Color.AppTheme.goldenWheat)
             } else if isSelected {
                 Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 22))
+                    .font(.AppTheme.title2)
                     .foregroundColor(Color.AppTheme.sage)
             } else {
                 Circle()
@@ -217,9 +209,9 @@ struct VoiceCard: View {
                 ? Color.AppTheme.sage.opacity(0.1)
                 : Color.AppTheme.warmCream
         )
-        .cornerRadius(12)
+        .cornerRadius(AppSpacing.smallCornerRadius)
         .overlay(
-            RoundedRectangle(cornerRadius: 12)
+            RoundedRectangle(cornerRadius: AppSpacing.smallCornerRadius)
                 .stroke(
                     isSelected ? Color.AppTheme.sage : Color.clear,
                     lineWidth: 2
@@ -245,7 +237,7 @@ struct VoiceOptionCard: View {
         Button(action: { if !isLocked { onTap() } }) {
             HStack(spacing: AppSpacing.md) {
                 Image(systemName: icon)
-                    .font(.system(size: 28))
+                    .font(.AppTheme.title)
                     .foregroundColor(color)
                     .frame(width: 40)
 
@@ -263,11 +255,11 @@ struct VoiceOptionCard: View {
 
                 if isLocked {
                     Image(systemName: "lock.fill")
-                        .font(.system(size: 16))
+                        .font(.AppTheme.callout)
                         .foregroundColor(Color.AppTheme.goldenWheat)
                 } else if isSelected {
                     Image(systemName: "checkmark.circle.fill")
-                        .font(.system(size: 24))
+                        .font(.AppTheme.rounded(size: 24))
                         .foregroundColor(color)
                 } else {
                     Circle()
@@ -320,11 +312,11 @@ struct SettingsGuideSheet: View {
                         ForEach(steps, id: \.0) { step in
                             HStack(spacing: AppSpacing.md) {
                                 Image(systemName: step.2)
-                                    .font(.system(size: 20))
+                                    .font(.AppTheme.title3)
                                     .foregroundColor(Color.AppTheme.sage)
                                     .frame(width: 36, height: 36)
                                     .background(Color.AppTheme.sage.opacity(0.15))
-                                    .cornerRadius(8)
+                                    .cornerRadius(AppSpacing.pillCornerRadius)
 
                                 Text(step.1)
                                     .font(.AppTheme.body)
@@ -350,7 +342,7 @@ struct SettingsGuideSheet: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, AppSpacing.md)
                             .background(Color.AppTheme.sage)
-                            .cornerRadius(16)
+                            .cornerRadius(AppSpacing.cardCornerRadius)
                     }
                     .padding(.horizontal, AppSpacing.md)
 

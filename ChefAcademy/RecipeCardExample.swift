@@ -992,7 +992,7 @@ struct RecipeCardView: View {
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(Color.AppTheme.terracotta)
-                    .cornerRadius(8)
+                    .cornerRadius(AppSpacing.pillCornerRadius)
                     .padding(8)
                 }
 
@@ -1007,7 +1007,7 @@ struct RecipeCardView: View {
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(Color.AppTheme.terracotta.opacity(0.9))
-                    .cornerRadius(8)
+                    .cornerRadius(AppSpacing.pillCornerRadius)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(8)
                 }
@@ -1128,7 +1128,7 @@ struct RecipeListView: View {
                                     icon: category.icon,
                                     isSelected: selectedCategory == category,
                                     action: {
-                                        withAnimation(.easeInOut(duration: 0.2)) {
+                                        withAnimation(AnimationConstants.fadeFast) {
                                             selectedCategory = category
                                         }
                                     }
@@ -1154,7 +1154,7 @@ struct RecipeListView: View {
                     }
                     .padding(.horizontal, AppSpacing.md)
                     .padding(.bottom, 100)  // Space for tab bar
-                    .animation(.easeInOut(duration: 0.3), value: selectedCategory)
+                    .animation(AnimationConstants.fadeMedium, value: selectedCategory)
                 }
             }
             .background(Color.AppTheme.cream)
@@ -1194,7 +1194,7 @@ struct CategoryPill: View {
         Button(action: action) {
             HStack(spacing: 6) {
                 Image(systemName: icon)
-                    .font(.system(size: 14))
+                    .font(.AppTheme.captionLarge)
                 Text(title)
                     .font(.AppTheme.subheadline)
             }
@@ -1202,7 +1202,7 @@ struct CategoryPill: View {
             .padding(.horizontal, AppSpacing.md)
             .padding(.vertical, AppSpacing.sm)
             .background(isSelected ? Color.AppTheme.goldenWheat : Color.AppTheme.parchment)
-            .cornerRadius(20)
+            .cornerRadius(AppSpacing.largeCornerRadius)
         }
         .buttonStyle(.plain)
     }

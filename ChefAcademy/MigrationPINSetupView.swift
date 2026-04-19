@@ -22,23 +22,12 @@ struct MigrationPINSetupView: View {
         VStack(spacing: AppSpacing.lg) {
             Spacer()
 
-            // Pip excited
-            Image("pip_got_idea")
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: 120, height: 120)
-                .clipShape(Circle())
-
-            VStack(spacing: AppSpacing.sm) {
-                Text("Welcome Back!")
-                    .font(.AppTheme.largeTitle)
-                    .foregroundColor(Color.AppTheme.darkBrown)
-
-                Text("Your game is safe! We just need\na parent PIN for family mode.")
-                    .font(.AppTheme.body)
-                    .foregroundColor(Color.AppTheme.sepia)
-                    .multilineTextAlignment(.center)
-            }
+            PipHeaderStack(
+                title: "Welcome Back!",
+                subtitle: "Your game is safe! We just need\na parent PIN for family mode.",
+                pose: .gotIdea,
+                size: .large
+            )
 
             VStack(spacing: AppSpacing.xs) {
                 Text(isConfirming ? "Confirm Your PIN" : "Choose a 4-Digit PIN")
@@ -83,7 +72,7 @@ struct MigrationPINSetupView: View {
 
                     Button(action: deleteDigit) {
                         Image(systemName: "delete.left.fill")
-                            .font(.system(size: 22))
+                            .font(.AppTheme.title2)
                             .foregroundColor(Color.AppTheme.sepia)
                             .frame(width: 75, height: 55)
                     }
@@ -102,7 +91,7 @@ struct MigrationPINSetupView: View {
             if confirmPin.count == 4 {
                 if confirmPin == pin {
                     sessionManager.updateParentPIN(newPIN: pin)
-                    withAnimation(.easeInOut(duration: 0.3)) {
+                    withAnimation(AnimationConstants.fadeMedium) {
                         sessionManager.route = .profilePicker
                     }
                 } else {

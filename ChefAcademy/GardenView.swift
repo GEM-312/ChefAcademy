@@ -159,7 +159,7 @@ struct DraggablePipView: View {
                     Group {
                         if !isDragging && nearbyPlotIndex == nil {
                             Text("Drag me!")
-                                .font(.system(size: 9, weight: .semibold, design: .rounded))
+                                .font(.AppTheme.rounded(size: 9, weight: .semibold))
                                 .foregroundColor(Color.AppTheme.sage)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
@@ -199,7 +199,7 @@ struct DraggablePipView: View {
             }
         }
 
-        withAnimation(.easeInOut(duration: 0.15)) {
+        withAnimation(AnimationConstants.fadeQuick) {
             nearbyPlotIndex = closestReady
         }
     }
@@ -380,7 +380,7 @@ struct WalkingPipView: View {
                         Group {
                             if !isDragging && nearbyPlotIndex == nil && !isWalking {
                                 Text("Drag me!")
-                                    .font(.system(size: 9, weight: .semibold, design: .rounded))
+                                    .font(.AppTheme.rounded(size: 9, weight: .semibold))
                                     .foregroundColor(Color.AppTheme.sage)
                                     .padding(.horizontal, 6)
                                     .padding(.vertical, 2)
@@ -521,7 +521,7 @@ struct WalkingPipView: View {
             }
         }
 
-        withAnimation(.easeInOut(duration: 0.15)) {
+        withAnimation(AnimationConstants.fadeQuick) {
             nearbyPlotIndex = closestReady
         }
     }
@@ -714,7 +714,7 @@ struct GardenView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "heart.fill")
                             .foregroundColor(Color.AppTheme.terracotta.opacity(0.7))
-                            .font(.system(size: 12))
+                            .font(.AppTheme.caption)
                         Text("\(gameState.gardenLikes)")
                             .font(.AppTheme.caption)
                             .foregroundColor(Color.AppTheme.sepia)
@@ -733,7 +733,7 @@ struct GardenView: View {
             } label: {
                 Image(systemName: editMode ? "pencil.circle.fill" : "pencil.circle")
                     .font(.system(size: isIPad ? 24 : 20))
-                    .foregroundColor(editMode ? .red : Color.AppTheme.lightSepia)
+                    .foregroundColor(editMode ? Color.AppTheme.terracotta : Color.AppTheme.lightSepia)
             }
             .buttonStyle(.plain)
             #endif
@@ -753,7 +753,7 @@ struct GardenView: View {
             .padding(.horizontal, isIPad ? AppSpacing.md : AppSpacing.sm)
             .padding(.vertical, isIPad ? AppSpacing.sm : AppSpacing.xs)
             .background(Color.AppTheme.warmCream.opacity(0.9))
-            .cornerRadius(20)
+            .cornerRadius(AppSpacing.largeCornerRadius)
         }
         .padding(.horizontal, isIPad ? AppSpacing.lg : AppSpacing.md)
     }
@@ -1439,7 +1439,7 @@ struct PipGardenMessage: View {
                 .overlay(alignment: .bottom) {
                     if onPipTap != nil {
                         Text("Tap me!")
-                            .font(.system(size: 9, weight: .semibold, design: .rounded))
+                            .font(.AppTheme.rounded(size: 9, weight: .semibold))
                             .foregroundColor(Color.AppTheme.sage)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
@@ -1609,7 +1609,7 @@ struct SeedBadge: View {
                     HStack(spacing: 3) {
                         Image(systemName: "circle.fill")
                             .foregroundColor(Color.AppTheme.goldenWheat)
-                            .font(.system(size: 10))
+                            .font(.AppTheme.micro)
                         Text("\(seed.vegetableType.seedCost)")
                             .font(.system(size: isIPad ? 16 : 13, weight: .semibold, design: .rounded))
                             .foregroundColor(Color.AppTheme.goldenWheat)

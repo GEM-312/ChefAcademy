@@ -191,7 +191,7 @@ struct RootRouterView: View {
                 ParentDashboardView()
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: sessionManager.route)
+        .animation(AnimationConstants.fadeMedium, value: sessionManager.route)
     }
 }
 // MARK: - Main Tab View
@@ -280,16 +280,16 @@ struct CustomTabBar: View {
             HStack {
                 ForEach(MainTabView.Tab.allCases, id: \.self) { tab in
                     Button(action: {
-                        withAnimation(.easeInOut(duration: 0.2)) {
+                        withAnimation(AnimationConstants.fadeFast) {
                             selectedTab = tab
                         }
                     }) {
                         VStack(spacing: 4) {
                             Image(systemName: tab.icon)
-                                .font(.system(size: 20))
+                                .font(.AppTheme.title3)
                                 .frame(width: 28, height: 28)
                             Text(tab.rawValue)
-                                .font(.system(size: 10, weight: .medium, design: .rounded))
+                                .font(.AppTheme.rounded(size: 10, weight: .medium))
                         }
                         .foregroundColor(selectedTab == tab ? Color.AppTheme.goldenWheat : Color.AppTheme.lightSepia)
                         .frame(maxWidth: .infinity)
@@ -389,7 +389,7 @@ struct HomeView: View {
                         } icon: {
                             Image(systemName: "star.fill")
                                 .foregroundColor(Color.AppTheme.goldenWheat)
-                                .font(.system(size: 11))
+                                .font(.AppTheme.microLarge)
                         }
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
@@ -404,7 +404,7 @@ struct HomeView: View {
                         } icon: {
                             Image(systemName: "circle.fill")
                                 .foregroundColor(Color.AppTheme.goldenWheat)
-                                .font(.system(size: 11))
+                                .font(.AppTheme.microLarge)
                         }
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
@@ -419,7 +419,7 @@ struct HomeView: View {
                         } icon: {
                             Image(systemName: "bolt.fill")
                                 .foregroundColor(Color.AppTheme.sage)
-                                .font(.system(size: 11))
+                                .font(.AppTheme.microLarge)
                         }
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
@@ -476,7 +476,7 @@ struct HomeView: View {
                                 Text("See All")
                                     .font(.AppTheme.subheadline)
                                 Image(systemName: "chevron.right")
-                                    .font(.system(size: 12))
+                                    .font(.AppTheme.caption)
                             }
                             .foregroundColor(Color.AppTheme.goldenWheat)
                         }
@@ -507,7 +507,7 @@ struct HomeView: View {
                         ForEach(Array(helpMessages.enumerated()), id: \.offset) { _, entry in
                             HStack(spacing: AppSpacing.sm) {
                                 Text(CareAction(rawValue: entry.actionRaw)?.emoji ?? "🌱")
-                                    .font(.system(size: 24))
+                                    .font(.AppTheme.rounded(size: 24))
 
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text("\(entry.helperName) \(CareAction(rawValue: entry.actionRaw)?.displayVerb ?? "helped") your \(VegetableType(rawValue: entry.vegetableRaw)?.displayName ?? "plant")!")
@@ -580,9 +580,7 @@ struct HomeView: View {
                         }
                         .font(.AppTheme.body)
                         .foregroundColor(Color.AppTheme.sepia)
-                        .padding(AppSpacing.md)
-                        .background(Color.AppTheme.warmCream)
-                        .cornerRadius(AppSpacing.cardCornerRadius)
+                        .softCard(showShadow: false)
                     }
                     .buttonStyle(.plain)
 
@@ -599,9 +597,7 @@ struct HomeView: View {
                                 }
                                 .font(.AppTheme.body)
                                 .foregroundColor(Color.AppTheme.sage)
-                                .padding(AppSpacing.md)
-                                .background(Color.AppTheme.warmCream)
-                                .cornerRadius(AppSpacing.cardCornerRadius)
+                                .softCard(showShadow: false)
                             }
                             .buttonStyle(.plain)
                         } else {
@@ -610,15 +606,13 @@ struct HomeView: View {
                                     Image(systemName: "chart.bar.fill")
                                     Text("Parent Dashboard")
                                     Image(systemName: "lock.fill")
-                                        .font(.system(size: 12))
+                                        .font(.AppTheme.caption)
                                     Spacer()
                                     Image(systemName: "chevron.right")
                                 }
                                 .font(.AppTheme.body)
                                 .foregroundColor(Color.AppTheme.sage)
-                                .padding(AppSpacing.md)
-                                .background(Color.AppTheme.warmCream)
-                                .cornerRadius(AppSpacing.cardCornerRadius)
+                                .softCard(showShadow: false)
                             }
                             .buttonStyle(.plain)
                         }
@@ -715,13 +709,11 @@ struct StreakCard: View {
             HStack(spacing: -5) {
                 ForEach(0..<min(streak, 7), id: \.self) { _ in
                     Text("🔥")
-                        .font(.system(size: 20))
+                        .font(.AppTheme.title3)
                 }
             }
         }
-        .padding(AppSpacing.md)
-        .background(Color.AppTheme.warmCream)
-        .cornerRadius(AppSpacing.cardCornerRadius)
+        .softCard(showShadow: false)
     }
 }
 
@@ -747,9 +739,7 @@ struct PipMessageCard: View {
                     .font(.AppTheme.body)
                     .foregroundColor(Color.AppTheme.darkBrown)
             }
-            .padding(AppSpacing.md)
-            .background(Color.AppTheme.warmCream)
-            .cornerRadius(AppSpacing.cardCornerRadius)
+            .softCard(showShadow: false)
         }
     }
 }

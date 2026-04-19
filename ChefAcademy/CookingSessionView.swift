@@ -389,7 +389,7 @@ struct CookingSessionView: View {
             HStack(spacing: AppSpacing.md) {
                 Button { dismiss() } label: {
                     Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 24))
+                        .font(.AppTheme.rounded(size: 24))
                         .foregroundColor(Color.AppTheme.sepia.opacity(0.6))
                 }
 
@@ -397,7 +397,7 @@ struct CookingSessionView: View {
                     .resizable()
                     .scaledToFill()
                     .frame(width: 36, height: 36)
-                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .clipShape(RoundedRectangle(cornerRadius: AppSpacing.pillCornerRadius))
 
                 Text(recipe.title)
                     .font(.AppTheme.headline)
@@ -421,7 +421,7 @@ struct CookingSessionView: View {
                     Capsule()
                         .fill(Color.AppTheme.sage)
                         .frame(width: geo.size.width * progressFraction)
-                        .animation(.easeInOut(duration: 0.3), value: currentStepIndex)
+                        .animation(AnimationConstants.fadeMedium, value: currentStepIndex)
                 }
             }
             .frame(height: 8)
@@ -519,13 +519,13 @@ struct CookingSessionView: View {
             // Show Pip transition, then advance — Pip says encouragement aloud
             pipTransitionText = pipEncouragements.randomElement() ?? "Nice!"
             voice.speak(pipTransitionText)
-            withAnimation(.easeInOut(duration: 0.3)) {
+            withAnimation(AnimationConstants.fadeMedium) {
                 showPipTransition = true
                 transitioning = true
             }
 
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                withAnimation(.easeInOut(duration: 0.3)) {
+                withAnimation(AnimationConstants.fadeMedium) {
                     currentStepIndex += 1
                     showPipTransition = false
                     transitioning = false
@@ -561,7 +561,7 @@ struct CookingSessionView: View {
         .padding(.horizontal, AppSpacing.md)
         .padding(.vertical, AppSpacing.sm)
         .background(Color.AppTheme.warmCream)
-        .cornerRadius(16)
+        .cornerRadius(AppSpacing.cardCornerRadius)
         .padding(.horizontal, AppSpacing.md)
         .padding(.bottom, AppSpacing.sm)
     }

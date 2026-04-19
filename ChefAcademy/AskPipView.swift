@@ -215,7 +215,7 @@ struct AskPipView: View {
         HStack {
             Button(action: { dismiss() }) {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.system(size: 28))
+                    .font(.AppTheme.title)
                     .foregroundColor(Color.AppTheme.sepia.opacity(0.5))
             }
 
@@ -242,18 +242,18 @@ struct AskPipView: View {
                 // Cloud: show remaining questions counter
                 if aiService.isOnDevice {
                     Label("On-Device", systemImage: "lock.shield.fill")
-                        .font(.system(size: 10, weight: .medium))
+                        .font(.AppTheme.rounded(size: 10, weight: .medium))
                         .foregroundColor(Color.AppTheme.sage)
                 } else {
                     // Show remaining questions — creates anticipation!
                     let remaining = aiService.questionsRemainingToday
                     if remaining <= 5 && remaining > 0 {
                         Text("\(remaining) questions left today")
-                            .font(.system(size: 10, weight: .medium))
+                            .font(.AppTheme.rounded(size: 10, weight: .medium))
                             .foregroundColor(Color.AppTheme.goldenWheat)
                     } else if remaining == 0 {
                         Text("Pip is resting until tomorrow")
-                            .font(.system(size: 10, weight: .medium))
+                            .font(.AppTheme.rounded(size: 10, weight: .medium))
                             .foregroundColor(Color.AppTheme.terracotta)
                     }
                 }
@@ -270,32 +270,8 @@ struct AskPipView: View {
     // MARK: - Pip Bubble
 
     private func pipBubble(_ text: String) -> some View {
-        HStack(alignment: .top, spacing: AppSpacing.sm) {
-            Image("pip_got_idea")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 40, height: 40)
-                .clipShape(Circle())
-                .background(
-                    Circle()
-                        .fill(Color.AppTheme.sage.opacity(0.2))
-                        .frame(width: 44, height: 44)
-                )
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Pip")
-                    .font(.AppTheme.caption)
-                    .foregroundColor(Color.AppTheme.sage)
-
-                Text(text)
-                    .font(.AppTheme.body)
-                    .foregroundColor(Color.AppTheme.darkBrown)
-            }
-            .padding(AppSpacing.sm)
-            .background(Color.AppTheme.warmCream)
-            .cornerRadius(16)
-            .cornerRadius(4, corners: [.topLeft])
-
+        HStack {
+            PipSpeechBubble(message: text, hasTail: true)
             Spacer(minLength: 40)
         }
     }
@@ -311,7 +287,7 @@ struct AskPipView: View {
                 .foregroundColor(Color.AppTheme.cream)
                 .padding(AppSpacing.sm)
                 .background(Color.AppTheme.sage)
-                .cornerRadius(16)
+                .cornerRadius(AppSpacing.cardCornerRadius)
                 .cornerRadius(4, corners: [.topRight])
         }
     }
@@ -321,25 +297,8 @@ struct AskPipView: View {
     private func recipeSuggestionCard(recipe: ParsedRecipeSuggestion, pipMessage: String) -> some View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             // Pip's intro message
-            HStack(alignment: .top, spacing: AppSpacing.sm) {
-                Image("pip_waving_frame_01")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 40, height: 40)
-                    .clipShape(Circle())
-                    .background(
-                        Circle()
-                            .fill(Color.AppTheme.sage.opacity(0.2))
-                            .frame(width: 44, height: 44)
-                    )
-
-                Text(pipMessage)
-                    .font(.AppTheme.body)
-                    .foregroundColor(Color.AppTheme.darkBrown)
-                    .padding(AppSpacing.sm)
-                    .background(Color.AppTheme.warmCream)
-                    .cornerRadius(12)
-
+            HStack {
+                PipSpeechBubble(message: pipMessage, pose: .wavingFrame01, showsLabel: false)
                 Spacer(minLength: 20)
             }
 
@@ -370,7 +329,7 @@ struct AskPipView: View {
                             .padding(.horizontal, 8)
                             .padding(.vertical, 4)
                             .background(Color.AppTheme.parchment)
-                            .cornerRadius(8)
+                            .cornerRadius(AppSpacing.pillCornerRadius)
                     }
                 }
 
@@ -378,14 +337,14 @@ struct AskPipView: View {
                 HStack(spacing: AppSpacing.xs) {
                     Image(systemName: "bolt.fill")
                         .foregroundColor(Color.AppTheme.goldenWheat)
-                        .font(.system(size: 12))
+                        .font(.AppTheme.caption)
                     Text(recipe.nutritionFact)
                         .font(.AppTheme.caption)
                         .foregroundColor(Color.AppTheme.sepia)
                 }
                 .padding(AppSpacing.sm)
                 .background(Color.AppTheme.parchment.opacity(0.5))
-                .cornerRadius(8)
+                .cornerRadius(AppSpacing.pillCornerRadius)
 
                 // Let's Cook button
                 Button("Let's Cook This!") {
@@ -401,10 +360,7 @@ struct AskPipView: View {
                 }
                 .texturedButton(tint: Color.AppTheme.sage)
             }
-            .padding(AppSpacing.md)
-            .background(Color.AppTheme.warmCream)
-            .cornerRadius(AppSpacing.cardCornerRadius)
-            .shadow(color: Color.AppTheme.sepia.opacity(0.1), radius: 8, y: 4)
+            .softCard()
         }
     }
 
@@ -480,7 +436,7 @@ struct AskPipView: View {
             }
             .padding(AppSpacing.sm)
             .background(Color.AppTheme.warmCream)
-            .cornerRadius(16)
+            .cornerRadius(AppSpacing.cardCornerRadius)
 
             Spacer()
         }
@@ -511,9 +467,9 @@ struct AskPipView: View {
                                     .padding(.horizontal, 12)
                                     .padding(.vertical, 8)
                                     .background(Color.AppTheme.warmCream)
-                                    .cornerRadius(20)
+                                    .cornerRadius(AppSpacing.largeCornerRadius)
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: 20)
+                                        RoundedRectangle(cornerRadius: AppSpacing.largeCornerRadius)
                                             .stroke(Color.AppTheme.sage.opacity(0.3), lineWidth: 1)
                                     )
                             }
@@ -550,9 +506,9 @@ struct AskPipView: View {
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
                             .background(Color.AppTheme.sage.opacity(0.1))
-                            .cornerRadius(20)
+                            .cornerRadius(AppSpacing.largeCornerRadius)
                             .overlay(
-                                RoundedRectangle(cornerRadius: 20)
+                                RoundedRectangle(cornerRadius: AppSpacing.largeCornerRadius)
                                     .stroke(Color.AppTheme.sage.opacity(0.4), lineWidth: 1)
                             )
                     }
@@ -580,7 +536,7 @@ struct AskPipView: View {
                 let isEmpty = inputText.trimmingCharacters(in: .whitespaces).isEmpty
                 let isCloudRateLimited = aiService.isRateLimited && !aiService.isOnDevice
                 Image(systemName: "arrow.up.circle.fill")
-                    .font(.system(size: 34))
+                    .font(.AppTheme.largeTitle)
                     .foregroundColor(
                         isEmpty || isCloudRateLimited
                             ? Color.AppTheme.sepia.opacity(0.3)

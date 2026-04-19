@@ -38,7 +38,7 @@ struct PlayLearnView: View {
                         if gcService.isAuthenticated {
                             Button(action: { showGameCenter = true }) {
                                 Image(systemName: "trophy.fill")
-                                    .font(.system(size: 24))
+                                    .font(.AppTheme.rounded(size: 24))
                                     .foregroundColor(Color.AppTheme.goldenWheat)
                             }
                             .buttonStyle(.plain)
@@ -58,9 +58,7 @@ struct PlayLearnView: View {
                                 .font(.AppTheme.body)
                                 .foregroundColor(Color.AppTheme.sepia)
                         }
-                        .padding(AppSpacing.sm)
-                        .background(Color.AppTheme.warmCream)
-                        .cornerRadius(AppSpacing.cardCornerRadius)
+                        .softCard(padding: AppSpacing.sm, showShadow: false)
                     }
                     .padding(.horizontal, AppSpacing.md)
 
@@ -178,7 +176,7 @@ struct MiniGameCard: View {
                         .frame(width: 60, height: 60)
 
                     Image(systemName: isLocked ? "lock.fill" : icon)
-                        .font(.system(size: 26))
+                        .font(.AppTheme.rounded(size: 26))
                         .foregroundColor(isLocked ? Color.AppTheme.lightSepia : color)
                 }
 
@@ -194,9 +192,7 @@ struct MiniGameCard: View {
                     .lineLimit(2)
             }
             .frame(maxWidth: .infinity)
-            .padding(AppSpacing.md)
-            .background(Color.AppTheme.warmCream)
-            .cornerRadius(AppSpacing.cardCornerRadius)
+            .softCard(showShadow: false)
             .opacity(isLocked ? 0.6 : 1.0)
         }
         .buttonStyle(.plain)

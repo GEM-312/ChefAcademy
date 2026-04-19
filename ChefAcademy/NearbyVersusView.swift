@@ -143,7 +143,7 @@ struct NearbyVersusView: View {
                         .frame(width: CGFloat(80 + i * 40), height: CGFloat(80 + i * 40))
                 }
                 Image(systemName: "antenna.radiowaves.left.and.right")
-                    .font(.system(size: 40))
+                    .font(.AppTheme.rounded(size: 40))
                     .foregroundColor(Color.AppTheme.goldenWheat)
             }
 
@@ -192,7 +192,7 @@ struct NearbyVersusView: View {
                 }
 
                 Text("VS")
-                    .font(.system(size: 36, weight: .black, design: .rounded))
+                    .font(.AppTheme.rounded(size: 36, weight: .black))
                     .foregroundColor(Color.AppTheme.goldenWheat)
 
                 VStack(spacing: AppSpacing.sm) {
@@ -232,7 +232,7 @@ struct NearbyVersusView: View {
         VStack {
             Spacer()
             Text("\(count)")
-                .font(.system(size: 120, weight: .black, design: .rounded))
+                .font(.AppTheme.rounded(size: 120, weight: .black))
                 .foregroundColor(Color.AppTheme.goldenWheat)
             Text("Get ready!")
                 .font(.AppTheme.headline)
@@ -252,7 +252,7 @@ struct NearbyVersusView: View {
                         .onTapGesture { tapFood(item) }
                 } else if let icon = item.resultIcon {
                     Text(icon)
-                        .font(.system(size: 40))
+                        .font(.AppTheme.rounded(size: 40))
                         .position(x: item.x, y: item.y)
                 }
             }
@@ -277,7 +277,7 @@ struct NearbyVersusView: View {
                     HStack(spacing: 4) {
                         Image(systemName: "circle.fill")
                             .foregroundColor(Color.AppTheme.terracotta)
-                            .font(.system(size: 10))
+                            .font(.AppTheme.micro)
                         Text("+\(manager.opponentScore)")
                             .font(.AppTheme.caption)
                             .foregroundColor(Color.AppTheme.darkBrown)
@@ -294,7 +294,7 @@ struct NearbyVersusView: View {
                 .padding(.horizontal, AppSpacing.md)
                 .padding(.vertical, AppSpacing.xs)
                 .background(Color.AppTheme.terracotta.opacity(0.15))
-                .cornerRadius(12)
+                .cornerRadius(AppSpacing.smallCornerRadius)
                 .padding(.horizontal, AppSpacing.md)
                 .padding(.top, AppSpacing.sm)
 
@@ -306,7 +306,7 @@ struct NearbyVersusView: View {
                         dismiss()
                     }) {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 28))
+                            .font(.AppTheme.title)
                             .foregroundColor(Color.AppTheme.sepia.opacity(0.6))
                     }
                     .buttonStyle(.plain)
@@ -316,7 +316,7 @@ struct NearbyVersusView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "circle.fill")
                             .foregroundColor(Color.AppTheme.goldenWheat)
-                            .font(.system(size: 14))
+                            .font(.AppTheme.captionLarge)
                         Text("+\(coinsEarned)")
                             .font(.AppTheme.headline)
                             .foregroundColor(Color.AppTheme.darkBrown)
@@ -324,7 +324,7 @@ struct NearbyVersusView: View {
                     .padding(.horizontal, AppSpacing.sm)
                     .padding(.vertical, AppSpacing.xs)
                     .background(Color.AppTheme.warmCream.opacity(0.9))
-                    .cornerRadius(20)
+                    .cornerRadius(AppSpacing.largeCornerRadius)
 
                     Spacer()
 
@@ -332,7 +332,7 @@ struct NearbyVersusView: View {
                         ForEach(0..<maxBadChoices, id: \.self) { i in
                             Image(systemName: i < badChoices ? "heart.slash.fill" : "heart.fill")
                                 .foregroundColor(i < badChoices ? Color.AppTheme.lightSepia : Color.AppTheme.terracotta)
-                                .font(.system(size: 16))
+                                .font(.AppTheme.callout)
                         }
                     }
                 }
@@ -400,12 +400,12 @@ struct NearbyVersusView: View {
                             .font(.AppTheme.caption)
                             .foregroundColor(Color.AppTheme.sepia)
                         Text("\(coinsEarned)")
-                            .font(.system(size: 40, weight: .black, design: .rounded))
+                            .font(.AppTheme.rounded(size: 40, weight: .black))
                             .foregroundColor(Color.AppTheme.sage)
                     }
 
                     Text("VS")
-                        .font(.system(size: 24, weight: .black, design: .rounded))
+                        .font(.AppTheme.rounded(size: 24, weight: .black))
                         .foregroundColor(Color.AppTheme.goldenWheat)
 
                     VStack(spacing: AppSpacing.sm) {
@@ -415,7 +415,7 @@ struct NearbyVersusView: View {
                             .foregroundColor(Color.AppTheme.sepia)
                             .lineLimit(1)
                         Text("\(manager.opponentFinalScore)")
-                            .font(.system(size: 40, weight: .black, design: .rounded))
+                            .font(.AppTheme.rounded(size: 40, weight: .black))
                             .foregroundColor(Color.AppTheme.terracotta)
                     }
                 }
@@ -521,10 +521,10 @@ struct NearbyVersusView: View {
             if let imgName = item.food.imageName {
                 Image(imgName).resizable().aspectRatio(contentMode: .fit).frame(width: 60, height: 60)
             } else {
-                Text(item.food.emoji).font(.system(size: 48))
+                Text(item.food.emoji).font(.AppTheme.timerDisplay)
             }
             Text(item.food.name)
-                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .font(.AppTheme.rounded(size: 11, weight: .bold))
                 .foregroundColor(Color.AppTheme.darkBrown)
                 .lineLimit(1).shadow(color: .white, radius: 2)
         }

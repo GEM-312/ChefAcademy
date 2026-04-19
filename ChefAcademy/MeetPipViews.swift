@@ -132,7 +132,7 @@ struct MeetPipView: View {
                         .padding(.horizontal, AppSpacing.md)
                         .padding(.vertical, AppSpacing.xs)
                         .background(Color.AppTheme.sage)
-                        .cornerRadius(20)
+                        .cornerRadius(AppSpacing.largeCornerRadius)
 
                     // Dialogue text
                     Text(dialogueWithName)
@@ -264,7 +264,7 @@ struct ReadyToStartView: View {
                 // Celebration Header
                 VStack(spacing: AppSpacing.sm) {
                     Text("🎉")
-                        .font(.system(size: 60))
+                        .font(.AppTheme.rounded(size: 60))
                         .scaleEffect(showContent ? 1 : 0)
 
                     Text("You're Ready!")
@@ -358,12 +358,12 @@ struct FeatureRow: View {
         HStack(spacing: AppSpacing.md) {
             if systemIcon {
                 Image(systemName: icon)
-                    .font(.system(size: 24))
+                    .font(.AppTheme.rounded(size: 24))
                     .foregroundColor(Color.AppTheme.sage)
                     .frame(width: 32)
             } else {
                 Text(icon)
-                    .font(.system(size: 24))
+                    .font(.AppTheme.rounded(size: 24))
                     .frame(width: 32)
             }
 

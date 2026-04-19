@@ -44,7 +44,7 @@ struct MeetPipAnimatedView: View {
                         .padding(.horizontal, AppSpacing.md)
                         .padding(.vertical, AppSpacing.xs)
                         .background(Color.AppTheme.sage)
-                        .cornerRadius(20)
+                        .cornerRadius(AppSpacing.largeCornerRadius)
 
                     // Dialogue text
                     Text(dialogueWithName)
@@ -67,7 +67,7 @@ struct MeetPipAnimatedView: View {
                             .foregroundColor(Color.AppTheme.lightSepia)
 
                         Image(systemName: "hand.tap.fill")
-                            .font(.system(size: 14))
+                            .font(.AppTheme.captionLarge)
                             .foregroundColor(Color.AppTheme.lightSepia)
                             .wiggle(amount: 5, speed: 0.3)
                     }
@@ -182,7 +182,7 @@ struct ReadyToStartAnimatedView: View {
                     // Celebration Header
                     VStack(spacing: AppSpacing.sm) {
                         Text("🎉")
-                            .font(.system(size: 50))
+                            .font(.AppTheme.rounded(size: 50))
                             .scaleEffect(showContent ? 1 : 0)
 
                         Text("You're Ready!")
@@ -214,7 +214,7 @@ struct ReadyToStartAnimatedView: View {
                             .padding(.horizontal, AppSpacing.md)
                             .padding(.vertical, AppSpacing.xs)
                             .background(Color.AppTheme.sage)
-                            .cornerRadius(20)
+                            .cornerRadius(AppSpacing.largeCornerRadius)
                             .opacity(showPip ? 1 : 0)
                     }
 
@@ -225,9 +225,7 @@ struct ReadyToStartAnimatedView: View {
                             .foregroundColor(Color.AppTheme.darkBrown)
                             .multilineTextAlignment(.center)
                     }
-                    .padding(AppSpacing.md)
-                    .background(Color.AppTheme.warmCream)
-                    .cornerRadius(AppSpacing.cardCornerRadius)
+                    .softCard(showShadow: false)
                     .padding(.horizontal, AppSpacing.lg)
                     .opacity(showPip ? 1 : 0)
                     .offset(y: showPip ? 0 : 10)
@@ -319,7 +317,7 @@ struct AnimatedFeatureRow: View {
     var body: some View {
         HStack(spacing: AppSpacing.md) {
             Text(icon)
-                .font(.system(size: 24))
+                .font(.AppTheme.rounded(size: 24))
             
             Text(text)
                 .font(.AppTheme.body)

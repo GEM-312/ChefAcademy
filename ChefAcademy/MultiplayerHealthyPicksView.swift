@@ -183,7 +183,7 @@ struct MultiplayerHealthyPicksView: View {
                 }
 
                 Text("VS")
-                    .font(.system(size: 36, weight: .black, design: .rounded))
+                    .font(.AppTheme.rounded(size: 36, weight: .black))
                     .foregroundColor(Color.AppTheme.goldenWheat)
 
                 // Opponent
@@ -224,7 +224,7 @@ struct MultiplayerHealthyPicksView: View {
         VStack {
             Spacer()
             Text("\(count)")
-                .font(.system(size: 120, weight: .black, design: .rounded))
+                .font(.AppTheme.rounded(size: 120, weight: .black))
                 .foregroundColor(Color.AppTheme.goldenWheat)
                 .scaleEffect(1.0)
                 .animation(.spring(response: 0.3, dampingFraction: 0.5), value: count)
@@ -247,7 +247,7 @@ struct MultiplayerHealthyPicksView: View {
                         .onTapGesture { tapFood(item) }
                 } else if let icon = item.resultIcon {
                     Text(icon)
-                        .font(.system(size: 40))
+                        .font(.AppTheme.rounded(size: 40))
                         .position(x: item.x, y: item.y)
                         .transition(.scale.combined(with: .opacity))
                 }
@@ -267,7 +267,7 @@ struct MultiplayerHealthyPicksView: View {
                         dismiss()
                     }) {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 28))
+                            .font(.AppTheme.title)
                             .foregroundColor(Color.AppTheme.sepia.opacity(0.6))
                     }
                     .buttonStyle(.plain)
@@ -278,7 +278,7 @@ struct MultiplayerHealthyPicksView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "circle.fill")
                             .foregroundColor(Color.AppTheme.goldenWheat)
-                            .font(.system(size: 14))
+                            .font(.AppTheme.captionLarge)
                         Text("+\(coinsEarned)")
                             .font(.AppTheme.headline)
                             .foregroundColor(Color.AppTheme.darkBrown)
@@ -286,7 +286,7 @@ struct MultiplayerHealthyPicksView: View {
                     .padding(.horizontal, AppSpacing.sm)
                     .padding(.vertical, AppSpacing.xs)
                     .background(Color.AppTheme.warmCream.opacity(0.9))
-                    .cornerRadius(20)
+                    .cornerRadius(AppSpacing.largeCornerRadius)
 
                     Spacer()
 
@@ -295,7 +295,7 @@ struct MultiplayerHealthyPicksView: View {
                         ForEach(0..<maxBadChoices, id: \.self) { i in
                             Image(systemName: i < badChoices ? "heart.slash.fill" : "heart.fill")
                                 .foregroundColor(i < badChoices ? Color.AppTheme.lightSepia : Color.AppTheme.terracotta)
-                                .font(.system(size: 16))
+                                .font(.AppTheme.callout)
                         }
                     }
                 }
@@ -347,7 +347,7 @@ struct MultiplayerHealthyPicksView: View {
             HStack(spacing: 4) {
                 Image(systemName: "circle.fill")
                     .foregroundColor(Color.AppTheme.terracotta)
-                    .font(.system(size: 10))
+                    .font(.AppTheme.micro)
                 Text("+\(manager.opponentScore)")
                     .font(.AppTheme.caption)
                     .foregroundColor(Color.AppTheme.darkBrown)
@@ -365,7 +365,7 @@ struct MultiplayerHealthyPicksView: View {
         .padding(.horizontal, AppSpacing.md)
         .padding(.vertical, AppSpacing.xs)
         .background(Color.AppTheme.terracotta.opacity(0.15))
-        .cornerRadius(12)
+        .cornerRadius(AppSpacing.smallCornerRadius)
         .padding(.horizontal, AppSpacing.md)
         .padding(.top, AppSpacing.sm)
     }
@@ -412,7 +412,7 @@ struct MultiplayerHealthyPicksView: View {
 
                     VStack {
                         Text("VS")
-                            .font(.system(size: 24, weight: .black, design: .rounded))
+                            .font(.AppTheme.rounded(size: 24, weight: .black))
                             .foregroundColor(Color.AppTheme.goldenWheat)
                     }
 
@@ -431,9 +431,7 @@ struct MultiplayerHealthyPicksView: View {
                             .foregroundColor(Color.AppTheme.sepia)
                     }
                 }
-                .padding(AppSpacing.md)
-                .background(Color.AppTheme.warmCream)
-                .cornerRadius(AppSpacing.cardCornerRadius)
+                .softCard(showShadow: false)
 
                 // Stats
                 HStack(spacing: AppSpacing.lg) {
@@ -464,9 +462,7 @@ struct MultiplayerHealthyPicksView: View {
                             .foregroundColor(Color.AppTheme.sepia)
                     }
                 }
-                .padding(AppSpacing.md)
-                .background(Color.AppTheme.warmCream)
-                .cornerRadius(AppSpacing.cardCornerRadius)
+                .softCard(showShadow: false)
 
                 // Bonus message
                 Text(won ? "Winner bonus: +15 coins!" : (tied ? "Tie bonus: +10 coins!" : "Good game bonus: +5 coins!"))
@@ -590,10 +586,10 @@ struct MultiplayerHealthyPicksView: View {
                     .frame(width: 60, height: 60)
             } else {
                 Text(item.food.emoji)
-                    .font(.system(size: 48))
+                    .font(.AppTheme.timerDisplay)
             }
             Text(item.food.name)
-                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .font(.AppTheme.rounded(size: 11, weight: .bold))
                 .foregroundColor(Color.AppTheme.darkBrown)
                 .lineLimit(1)
                 .shadow(color: .white, radius: 2)

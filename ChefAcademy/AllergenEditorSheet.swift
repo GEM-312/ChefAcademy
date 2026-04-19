@@ -68,9 +68,7 @@ struct AllergenEditorSheet: View {
                             }
                             .tint(Color.AppTheme.terracotta)
                         }
-                        .padding(AppSpacing.md)
-                        .background(Color.AppTheme.warmCream)
-                        .cornerRadius(AppSpacing.cardCornerRadius)
+                        .softCard(showShadow: false)
                         .padding(.horizontal, AppSpacing.md)
 
                         // Clear all button

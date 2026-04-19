@@ -89,7 +89,7 @@ struct GardenModeButton: View {
         Button(action: action) {
             HStack(spacing: 4) {
                 Image(systemName: icon)
-                    .font(.system(size: 14))
+                    .font(.AppTheme.captionLarge)
                 Text(title)
                     .font(.AppTheme.caption)
             }
@@ -97,7 +97,7 @@ struct GardenModeButton: View {
             .padding(.horizontal, AppSpacing.sm)
             .padding(.vertical, 6)
             .background(isSelected ? Color.AppTheme.sage : Color.AppTheme.parchment)
-            .cornerRadius(20)
+            .cornerRadius(AppSpacing.largeCornerRadius)
         }
         .buttonStyle(.plain)
     }
@@ -160,9 +160,7 @@ struct SiblingPickerView: View {
                                             .foregroundColor(Color.AppTheme.sepia)
                                     }
                                 }
-                                .padding(AppSpacing.md)
-                                .background(Color.AppTheme.warmCream)
-                                .cornerRadius(AppSpacing.cardCornerRadius)
+                                .softCard(showShadow: false)
                             }
                             .buttonStyle(.plain)
                         }

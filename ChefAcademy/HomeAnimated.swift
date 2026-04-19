@@ -261,7 +261,7 @@ struct StreakCardAnimated: View {
                         .font(.system(size: sizeClass == .compact ? 20 : 28))
                         .scaleEffect(flamesAnimating ? 1.1 : 0.9)
                         .animation(
-                            .easeInOut(duration: 0.5)
+                            AnimationConstants.revealSlow
                             .repeatForever(autoreverses: true)
                             .delay(Double(index) * 0.1),
                             value: flamesAnimating

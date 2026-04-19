@@ -45,7 +45,7 @@ class FamilySetupManager: ObservableObject {
     func nextStep() {
         let all = SetupStep.allCases
         if let idx = all.firstIndex(of: step), idx < all.count - 1 {
-            withAnimation(.easeInOut(duration: 0.3)) {
+            withAnimation(AnimationConstants.fadeMedium) {
                 step = all[idx + 1]
             }
         }
@@ -54,7 +54,7 @@ class FamilySetupManager: ObservableObject {
     func previousStep() {
         let all = SetupStep.allCases
         if let idx = all.firstIndex(of: step), idx > 0 {
-            withAnimation(.easeInOut(duration: 0.3)) {
+            withAnimation(AnimationConstants.fadeMedium) {
                 step = all[idx - 1]
             }
         }
@@ -220,19 +220,16 @@ struct FamilyWelcomeStep: View {
         VStack(spacing: AppSpacing.xl) {
             Spacer()
 
-            Image("pip_got_idea")
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: 160, height: 160)
-                .clipShape(Circle())
-                .overlay(Circle().stroke(Color.AppTheme.sage, lineWidth: 3))
-                .scaleEffect(showContent ? 1 : 0.5)
-                .opacity(showContent ? 1 : 0)
+            PipHeaderStack(
+                title: "Welcome to",
+                pose: .gotIdea,
+                size: .hero,
+                strokeBorder: true
+            )
+            .scaleEffect(showContent ? 1 : 0.5)
+            .opacity(showContent ? 1 : 0)
 
             VStack(spacing: AppSpacing.sm) {
-                Text("Welcome to")
-                    .font(.AppTheme.title2)
-                    .foregroundColor(Color.AppTheme.sepia)
                 Text("Pip's Kitchen Garden")
                     .font(.AppTheme.largeTitle)
                     .foregroundColor(Color.AppTheme.darkBrown)
@@ -442,7 +439,7 @@ struct FamilyAvatarStep: View {
                                             .resizable()
                                             .aspectRatio(contentMode: .fit)
                                             .frame(width: smallSize, height: smallSize)
-                                            .clipShape(RoundedRectangle(cornerRadius: 20))
+                                            .clipShape(RoundedRectangle(cornerRadius: AppSpacing.largeCornerRadius))
 
                                         Text(g.rawValue)
                                             .font(.AppTheme.body)
@@ -766,7 +763,7 @@ struct HatColorPicker: View {
                             Circle()
                                 .fill(Color.AppTheme.parchment)
                             Image(systemName: "xmark")
-                                .font(.system(size: 16, weight: .medium))
+                                .font(.AppTheme.rounded(size: 16, weight: .medium))
                                 .foregroundColor(Color.AppTheme.sepia)
                         }
                         .overlay(
@@ -821,21 +818,11 @@ struct FamilyPINSetupStep: View {
         VStack(spacing: AppSpacing.lg) {
             Spacer()
 
-            Image("pip_thinking")
-                .resizable()
-                .aspectRatio(contentMode: .fill)
-                .frame(width: 100, height: 100)
-                .clipShape(Circle())
-
-            VStack(spacing: AppSpacing.xs) {
-                Text(isConfirming ? "Confirm Your PIN" : "Set a Parent PIN")
-                    .font(.AppTheme.title2)
-                    .foregroundColor(Color.AppTheme.darkBrown)
-
-                Text(isConfirming ? "Enter the same 4 digits" : "Only grown-ups need to know this!")
-                    .font(.AppTheme.body)
-                    .foregroundColor(Color.AppTheme.sepia)
-            }
+            PipHeaderStack(
+                title: isConfirming ? "Confirm Your PIN" : "Set a Parent PIN",
+                subtitle: isConfirming ? "Enter the same 4 digits" : "Only grown-ups need to know this!",
+                pose: .thinking
+            )
 
             // PIN dots
             HStack(spacing: 16) {
@@ -879,7 +866,7 @@ struct FamilyPINSetupStep: View {
 
                     Button(action: deleteDigit) {
                         Image(systemName: "delete.left.fill")
-                            .font(.system(size: 22))
+                            .font(.AppTheme.title2)
                             .foregroundColor(Color.AppTheme.sepia)
                             .frame(width: 75, height: 55)
                     }
@@ -963,7 +950,7 @@ struct FamilyMeetPipStep: View {
                         .padding(.horizontal, AppSpacing.md)
                         .padding(.vertical, AppSpacing.xs)
                         .background(Color.AppTheme.sage)
-                        .cornerRadius(20)
+                        .cornerRadius(AppSpacing.largeCornerRadius)
 
                     Text(dialogues[dialogueIndex])
                         .font(.AppTheme.title3)
@@ -1113,24 +1100,14 @@ struct FamilyVoiceStep: View {
                 VStack(spacing: AppSpacing.lg) {
 
                     // Pip + title
-                    VStack(spacing: AppSpacing.sm) {
-                        Image("pip_points_up_left")
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: 100, height: 100)
-                            .scaleEffect(showContent ? 1 : 0.5)
-                            .opacity(showContent ? 1 : 0)
-
-                        Text("How should I sound?")
-                            .font(.AppTheme.title2)
-                            .foregroundColor(Color.AppTheme.darkBrown)
-                            .opacity(showContent ? 1 : 0)
-
-                        Text("Tap a voice to hear me!")
-                            .font(.AppTheme.body)
-                            .foregroundColor(Color.AppTheme.sepia)
-                            .opacity(showContent ? 1 : 0)
-                    }
+                    PipHeaderStack(
+                        title: "How should I sound?",
+                        subtitle: "Tap a voice to hear me!",
+                        pose: .pointsUpLeft,
+                        clipToCircle: false
+                    )
+                    .scaleEffect(showContent ? 1 : 0.5)
+                    .opacity(showContent ? 1 : 0)
                     .padding(.top, AppSpacing.md)
 
                     // Two options: Read Text (free) or Pip's Voice (subscription)

@@ -323,7 +323,7 @@ struct SeedInfoView: View {
 
                     // MARK: - Veggie name
                     Text(veggie.displayName)
-                        .font(.custom("Georgia", size: 32).bold())
+                        .font(.AppTheme.rounded(size: 32, weight: .bold))
                         .foregroundColor(Color.AppTheme.darkBrown)
                         .scaleEffect(appeared ? 1.0 : 0.8)
                         .opacity(appeared ? 1.0 : 0)
@@ -369,7 +369,7 @@ struct SeedInfoView: View {
                     HStack(spacing: 6) {
                         Image(systemName: "circle.fill")
                             .foregroundColor(Color.AppTheme.goldenWheat)
-                            .font(.system(size: 14))
+                            .font(.AppTheme.captionLarge)
                         Text("\(gameState.coins)")
                             .font(.AppTheme.headline)
                             .foregroundColor(Color.AppTheme.darkBrown)
@@ -377,7 +377,7 @@ struct SeedInfoView: View {
                     .padding(.horizontal, AppSpacing.md)
                     .padding(.vertical, AppSpacing.xs)
                     .background(Color.AppTheme.warmCream)
-                    .cornerRadius(20)
+                    .cornerRadius(AppSpacing.largeCornerRadius)
                     .padding(.leading, AppSpacing.md)
                     .padding(.top, AppSpacing.md)
 
@@ -391,7 +391,7 @@ struct SeedInfoView: View {
                         }
                     } label: {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 30))
+                            .font(.AppTheme.rounded(size: 30))
                             .foregroundColor(Color.AppTheme.sepia.opacity(0.6))
                             .padding(AppSpacing.md)
                     }
@@ -404,7 +404,7 @@ struct SeedInfoView: View {
             if let reward = showCoinReward {
                 VStack {
                     Text(reward)
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
+                        .font(.AppTheme.rounded(size: 28, weight: .bold))
                         .foregroundColor(Color.AppTheme.goldenWheat)
                         .shadow(color: .black.opacity(0.2), radius: 4, y: 2)
                         .transition(.scale.combined(with: .opacity))
@@ -508,7 +508,7 @@ struct SeedInfoView: View {
                             }
                         } label: {
                             Image(systemName: showToolPicker ? "paintbrush.fill" : "paintbrush")
-                                .font(.system(size: 18))
+                                .font(.AppTheme.recipeStep)
                                 .foregroundColor(showToolPicker ? Color.AppTheme.cream : Color.AppTheme.sepia)
                                 .frame(width: 42, height: 42)
                                 .background(showToolPicker ? Color.AppTheme.sage : Color.AppTheme.parchment)
@@ -534,12 +534,12 @@ struct SeedInfoView: View {
                             Image(systemName: "arrow.counterclockwise")
                             Text("Clear")
                         }
-                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                        .font(.AppTheme.rounded(size: 14, weight: .medium))
                         .foregroundColor(Color.AppTheme.lightSepia)
                         .padding(.horizontal, AppSpacing.md)
                         .padding(.vertical, AppSpacing.xs)
                         .background(Color.AppTheme.parchment)
-                        .cornerRadius(20)
+                        .cornerRadius(AppSpacing.largeCornerRadius)
                     }
                 }
                 .padding(.horizontal, AppSpacing.lg)
@@ -563,36 +563,34 @@ struct SeedInfoView: View {
 
     private var pipColorTip: some View {
         HStack(alignment: .top, spacing: AppSpacing.sm) {
-            // Pip avatar
-            Image("pip_got_idea")
+            // Pip avatar — medium size to match pigment-science pattern
+            Image(PipPose.gotIdea.rawValue)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
-                .frame(width: 55, height: 55)
+                .frame(width: PipSize.medium.points, height: PipSize.medium.points)
                 .clipShape(Circle())
                 .overlay(
                     Circle()
-                        .stroke(Color.AppTheme.sage, lineWidth: 2)
+                        .stroke(Color.AppTheme.sage, lineWidth: AppSpacing.strokeMedium)
                 )
 
             // Speech bubble — color-based pigment science (NOT generic USDA nutrients)
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 4) {
                     Image(systemName: detectedColorChoice.organIcon)
-                        .font(.system(size: 12))
+                        .font(.AppTheme.caption)
                         .foregroundColor(detectedColorChoice.swiftUIColor)
                     Text(detectedColorChoice.nutrientName)
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .font(.AppTheme.rounded(size: 13, weight: .semibold))
                         .foregroundColor(Color.AppTheme.darkBrown)
                 }
 
                 Text(detectedColorChoice.pipTip)
-                    .font(.system(size: 14, weight: .regular, design: .rounded))
+                    .font(.AppTheme.rounded(size: 14, weight: .regular))
                     .foregroundColor(Color.AppTheme.sepia)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(AppSpacing.md)
-            .background(Color.AppTheme.warmCream)
-            .cornerRadius(AppSpacing.cardCornerRadius)
+            .softCard(showShadow: false)
         }
         .opacity(showPipTip ? 1 : 0)
         .offset(y: showPipTip ? 0 : 10)
@@ -603,7 +601,7 @@ struct SeedInfoView: View {
     private var growthInfoSection: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             Text("Growing Info")
-                .font(.custom("Georgia", size: 20).bold())
+                .font(.AppTheme.rounded(size: 20, weight: .bold))
                 .foregroundColor(Color.AppTheme.darkBrown)
 
             HStack(spacing: AppSpacing.md) {
@@ -630,23 +628,20 @@ struct SeedInfoView: View {
     private func growthInfoCard(icon: String, label: String, value: String) -> some View {
         VStack(spacing: AppSpacing.xs) {
             Image(systemName: icon)
-                .font(.system(size: 22))
+                .font(.AppTheme.title2)
                 .foregroundColor(Color.AppTheme.sage)
 
             Text(label)
-                .font(.system(size: 11, weight: .medium, design: .rounded))
+                .font(.AppTheme.rounded(size: 11, weight: .medium))
                 .foregroundColor(Color.AppTheme.lightSepia)
 
             Text(value)
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                .font(.AppTheme.rounded(size: 14, weight: .semibold))
                 .foregroundColor(Color.AppTheme.darkBrown)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
-        .padding(AppSpacing.md)
-        .background(Color.AppTheme.warmCream)
-        .cornerRadius(AppSpacing.cardCornerRadius)
-        .shadow(color: Color.AppTheme.sepia.opacity(0.08), radius: 4, y: 2)
+        .softCard()
     }
 
     private var growthTimeString: String {
@@ -770,7 +765,7 @@ struct SeedInfoView: View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
             HStack {
                 Text("What's Inside")
-                    .font(.custom("Georgia", size: 20).bold())
+                    .font(.AppTheme.rounded(size: 20, weight: .bold))
                     .foregroundColor(Color.AppTheme.darkBrown)
                 SpeakerButton(
                     text: "\(veggie.displayName) has \(veggie.nutrients.map { $0.rawValue }.joined(separator: ", ")). Each one helps a different part of your body!",
@@ -778,7 +773,7 @@ struct SeedInfoView: View {
                 )
                 Spacer()
                 Text("Tap to learn!")
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
+                    .font(.AppTheme.rounded(size: 12, weight: .medium))
                     .foregroundColor(Color.AppTheme.goldenWheat)
             }
 
@@ -807,21 +802,21 @@ struct SeedInfoView: View {
         }) {
             HStack(spacing: AppSpacing.md) {
                 Text(nutrient.emoji)
-                    .font(.system(size: 26))
+                    .font(.AppTheme.rounded(size: 26))
                     .frame(width: 36)
 
                 VStack(alignment: .leading, spacing: 3) {
                     Text(nutrient.rawValue)
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
+                        .font(.AppTheme.rounded(size: 16, weight: .semibold))
                         .foregroundColor(Color.AppTheme.darkBrown)
 
                     HStack(spacing: 4) {
                         Image(systemName: nutrient.organIcon)
-                            .font(.system(size: 12))
+                            .font(.AppTheme.caption)
                             .foregroundColor(Color.AppTheme.sage)
 
                         Text("Helps your \(nutrient.benefitsOrgan)")
-                            .font(.system(size: 13, weight: .regular, design: .rounded))
+                            .font(.AppTheme.rounded(size: 13, weight: .regular))
                             .foregroundColor(Color.AppTheme.sepia)
                     }
 
@@ -829,19 +824,19 @@ struct SeedInfoView: View {
                     if let profile = nutrientProfile,
                        let superpower = usdaSuperpower(for: nutrient, profile: profile) {
                         Text(superpower)
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .font(.AppTheme.rounded(size: 12, weight: .semibold))
                             .foregroundColor(Color.AppTheme.goldenWheat)
                             .padding(.horizontal, 8)
                             .padding(.vertical, 3)
                             .background(Color.AppTheme.goldenWheat.opacity(0.12))
-                            .cornerRadius(8)
+                            .cornerRadius(AppSpacing.pillCornerRadius)
                     }
 
                     // Fun comparison
                     if let profile = nutrientProfile,
                        let comparison = usdaComparison(for: nutrient, profile: profile) {
                         Text(comparison)
-                            .font(.system(size: 11, weight: .medium, design: .rounded))
+                            .font(.AppTheme.rounded(size: 11, weight: .medium))
                             .foregroundColor(Color.AppTheme.sage)
                             .italic()
                     }
@@ -852,21 +847,21 @@ struct SeedInfoView: View {
                 if isClaimed {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(Color.AppTheme.sage)
-                        .font(.system(size: 18))
+                        .font(.AppTheme.recipeStep)
                 } else {
                     HStack(spacing: 2) {
                         Image(systemName: "circle.fill")
                             .foregroundColor(Color.AppTheme.goldenWheat)
-                            .font(.system(size: 10))
+                            .font(.AppTheme.micro)
                         Text("+\(nutrient.coinReward)")
-                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .font(.AppTheme.rounded(size: 13, weight: .bold))
                             .foregroundColor(Color.AppTheme.goldenWheat)
                     }
                 }
             }
             .padding(AppSpacing.md)
             .background(isClaimed ? Color.AppTheme.sage.opacity(0.1) : Color.AppTheme.parchment.opacity(0.6))
-            .cornerRadius(12)
+            .cornerRadius(AppSpacing.smallCornerRadius)
         }
         .buttonStyle(.plain)
     }
@@ -895,7 +890,7 @@ struct SeedInfoView: View {
                     Image(systemName: "lightbulb.fill")
                         .foregroundColor(Color.AppTheme.goldenWheat)
                     Text("Fun Fact!")
-                        .font(.custom("Georgia", size: 20).bold())
+                        .font(.AppTheme.rounded(size: 20, weight: .bold))
                         .foregroundColor(Color.AppTheme.darkBrown)
                     SpeakerButton(
                         text: vegetableFunFacts[veggie] ?? "This vegetable is full of surprises!",
@@ -905,21 +900,21 @@ struct SeedInfoView: View {
                     if isClaimed {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundColor(Color.AppTheme.sage)
-                            .font(.system(size: 18))
+                            .font(.AppTheme.recipeStep)
                     } else {
                         HStack(spacing: 2) {
                             Image(systemName: "circle.fill")
                                 .foregroundColor(Color.AppTheme.goldenWheat)
-                                .font(.system(size: 10))
+                                .font(.AppTheme.micro)
                             Text("+5")
-                                .font(.system(size: 13, weight: .bold, design: .rounded))
+                                .font(.AppTheme.rounded(size: 13, weight: .bold))
                                 .foregroundColor(Color.AppTheme.goldenWheat)
                         }
                     }
                 }
 
                 Text(vegetableFunFacts[veggie] ?? "This vegetable is full of surprises!")
-                    .font(.system(size: 16, weight: .regular, design: .rounded))
+                    .font(.AppTheme.rounded(size: 16, weight: .regular))
                     .foregroundColor(Color.AppTheme.sepia)
                     .lineSpacing(4)
                     .fixedSize(horizontal: false, vertical: true)

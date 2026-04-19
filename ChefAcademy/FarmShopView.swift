@@ -116,7 +116,7 @@ struct FarmShopView: View {
             HStack(spacing: 4) {
                 Image(systemName: "circle.fill")
                     .foregroundColor(Color.AppTheme.goldenWheat)
-                    .font(.system(size: 14))
+                    .font(.AppTheme.captionLarge)
                 Text("\(gameState.coins)")
                     .font(.AppTheme.headline)
                     .foregroundColor(Color.AppTheme.darkBrown)
@@ -124,7 +124,7 @@ struct FarmShopView: View {
             .padding(.horizontal, AppSpacing.sm)
             .padding(.vertical, AppSpacing.xs)
             .background(Color.AppTheme.warmCream.opacity(0.9))
-            .cornerRadius(20)
+            .cornerRadius(AppSpacing.largeCornerRadius)
         }
         .padding(.horizontal, AppSpacing.md)
     }
@@ -136,13 +136,13 @@ struct FarmShopView: View {
             HStack(spacing: AppSpacing.sm) {
                 ForEach(ShopCategory.allCases, id: \.self) { category in
                     Button(action: {
-                        withAnimation(.easeInOut(duration: 0.2)) {
+                        withAnimation(AnimationConstants.fadeFast) {
                             selectedCategory = category
                         }
                     }) {
                         HStack(spacing: 6) {
                             Image(systemName: category.icon)
-                                .font(.system(size: 12))
+                                .font(.AppTheme.caption)
                             Text(category.rawValue)
                                 .font(.AppTheme.caption)
                         }
@@ -158,7 +158,7 @@ struct FarmShopView: View {
                             ? category.color
                             : Color.AppTheme.parchment
                         )
-                        .cornerRadius(20)
+                        .cornerRadius(AppSpacing.largeCornerRadius)
                     }
                     .buttonStyle(.plain)
                 }
@@ -206,7 +206,7 @@ struct FarmShopView: View {
                 )
             }
         }
-        .animation(.easeInOut(duration: 0.3), value: selectedCategory)
+        .animation(AnimationConstants.fadeMedium, value: selectedCategory)
     }
 
     // MARK: - My Pantry Section
@@ -291,7 +291,7 @@ struct ShopItemCard: View {
                     .overlay(alignment: .topLeading) {
                         if hasAllergen {
                             Image(systemName: "exclamationmark.triangle.fill")
-                                .font(.system(size: 12))
+                                .font(.AppTheme.caption)
                                 .foregroundColor(.white)
                                 .padding(4)
                                 .background(Color.AppTheme.terracotta)
@@ -308,16 +308,16 @@ struct ShopItemCard: View {
 
                     if ownedQuantity > 0 {
                         Text("x\(ownedQuantity)")
-                            .font(.system(size: 10))
+                            .font(.AppTheme.micro)
                             .foregroundColor(Color.AppTheme.sepia)
                     }
 
                     HStack(spacing: 2) {
                         Image(systemName: "circle.fill")
-                            .font(.system(size: 8))
+                            .font(.AppTheme.rounded(size: 8))
                             .foregroundColor(Color.AppTheme.goldenWheat)
                         Text("\(item.shopPrice)")
-                            .font(.system(size: 10))
+                            .font(.AppTheme.micro)
                     }
                     .foregroundColor(Color.AppTheme.lightSepia)
                 }
@@ -325,8 +325,8 @@ struct ShopItemCard: View {
             }
             .frame(maxWidth: .infinity)
             .background(Color.AppTheme.warmCream)
-            .cornerRadius(12)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .cornerRadius(AppSpacing.smallCornerRadius)
+            .clipShape(RoundedRectangle(cornerRadius: AppSpacing.smallCornerRadius))
         }
         .buttonStyle(.plain)
         .opacity(isLearned && !canAfford ? 0.5 : 1.0)
@@ -350,7 +350,7 @@ struct PantryBadge: View {
                 .opacity(0.8)
 
             Text(stock.item.displayName)
-                .font(.system(size: 9, weight: .medium, design: .rounded))
+                .font(.AppTheme.rounded(size: 9, weight: .medium))
                 .foregroundColor(Color.AppTheme.darkBrown)
                 .lineLimit(1)
 
@@ -362,7 +362,7 @@ struct PantryBadge: View {
         .padding(.vertical, AppSpacing.xs)
         .padding(.horizontal, AppSpacing.xs)
         .background(Color.AppTheme.warmCream)
-        .cornerRadius(12)
+        .cornerRadius(AppSpacing.smallCornerRadius)
     }
 }
 
@@ -384,9 +384,7 @@ struct PipShopMessage: View {
                     .font(.AppTheme.body)
                     .foregroundColor(Color.AppTheme.darkBrown)
             }
-            .padding(AppSpacing.md)
-            .background(Color.AppTheme.warmCream)
-            .cornerRadius(AppSpacing.cardCornerRadius)
+            .softCard(showShadow: false)
         }
     }
 
@@ -528,8 +526,8 @@ struct FarmTransitionView: View {
                             }
                         } label: {
                             Image(systemName: editMode ? "pencil.circle.fill" : "pencil.circle")
-                                .font(.system(size: 28))
-                                .foregroundColor(editMode ? .red : .white)
+                                .font(.AppTheme.title)
+                                .foregroundColor(editMode ? Color.AppTheme.terracotta : .white)
                                 .shadow(color: .black.opacity(0.5), radius: 4)
                                 .padding(AppSpacing.md)
                         }
@@ -640,7 +638,7 @@ struct FarmTabView: View {
                     .transition(.opacity)
             } else {
                 FarmTransitionView {
-                    withAnimation(.easeInOut(duration: 0.5)) {
+                    withAnimation(AnimationConstants.revealSlow) {
                         showShop = true
                     }
                 }

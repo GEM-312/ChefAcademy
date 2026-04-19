@@ -94,9 +94,7 @@ struct ParentDashboardView: View {
                                 .foregroundColor(Color.AppTheme.sepia)
                             Spacer()
                         }
-                        .padding(AppSpacing.md)
-                        .background(Color.AppTheme.warmCream)
-                        .cornerRadius(AppSpacing.cardCornerRadius)
+                        .softCard(showShadow: false)
 
                         // Last played
                         HStack {
@@ -107,9 +105,7 @@ struct ParentDashboardView: View {
                                 .foregroundColor(Color.AppTheme.sepia)
                             Spacer()
                         }
-                        .padding(AppSpacing.md)
-                        .background(Color.AppTheme.warmCream)
-                        .cornerRadius(AppSpacing.cardCornerRadius)
+                        .softCard(showShadow: false)
 
                         // Remove profile button
                         Button(action: {
@@ -159,9 +155,7 @@ struct ParentDashboardView: View {
                             }
                             .font(.AppTheme.body)
                             .foregroundColor(Color.AppTheme.sage)
-                            .padding(AppSpacing.md)
-                            .background(Color.AppTheme.warmCream)
-                            .cornerRadius(AppSpacing.cardCornerRadius)
+                            .softCard(showShadow: false)
                         }
                         .buttonStyle(.plain)
                     }
@@ -175,9 +169,7 @@ struct ParentDashboardView: View {
                         }
                         .font(.AppTheme.body)
                         .foregroundColor(Color.AppTheme.sepia)
-                        .padding(AppSpacing.md)
-                        .background(Color.AppTheme.warmCream)
-                        .cornerRadius(AppSpacing.cardCornerRadius)
+                        .softCard(showShadow: false)
                     }
                     .buttonStyle(.plain)
 
@@ -190,9 +182,7 @@ struct ParentDashboardView: View {
                         }
                         .font(.AppTheme.body)
                         .foregroundColor(Color.AppTheme.sepia)
-                        .padding(AppSpacing.md)
-                        .background(Color.AppTheme.warmCream)
-                        .cornerRadius(AppSpacing.cardCornerRadius)
+                        .softCard(showShadow: false)
                     }
                     .buttonStyle(.plain)
 
@@ -221,9 +211,7 @@ struct ParentDashboardView: View {
                                 Image(systemName: "chevron.right")
                                     .foregroundColor(Color.AppTheme.sepia)
                             }
-                            .padding(AppSpacing.md)
-                            .background(Color.AppTheme.warmCream)
-                            .cornerRadius(AppSpacing.cardCornerRadius)
+                            .softCard(showShadow: false)
                         }
                         .buttonStyle(.plain)
                     }
@@ -240,9 +228,7 @@ struct ParentDashboardView: View {
                                 .foregroundColor(Color.AppTheme.sage)
                         }
                         .foregroundColor(Color.AppTheme.sepia)
-                        .padding(AppSpacing.md)
-                        .background(Color.AppTheme.warmCream)
-                        .cornerRadius(AppSpacing.cardCornerRadius)
+                        .softCard(showShadow: false)
 
                         Button(action: { showSignOutConfirmation = true }) {
                             HStack {
@@ -483,7 +469,7 @@ struct StatCard: View {
     var body: some View {
         VStack(spacing: AppSpacing.xs) {
             Image(systemName: icon)
-                .font(.system(size: 22))
+                .font(.AppTheme.title2)
                 .foregroundColor(color)
 
             Text(value)
@@ -495,9 +481,7 @@ struct StatCard: View {
                 .foregroundColor(Color.AppTheme.sepia)
         }
         .frame(maxWidth: .infinity)
-        .padding(AppSpacing.md)
-        .background(Color.AppTheme.warmCream)
-        .cornerRadius(AppSpacing.cardCornerRadius)
+        .softCard(showShadow: false)
     }
 }
 
