@@ -38,6 +38,37 @@
 import Foundation
 import Combine
 
+// MARK: - Context Data Types
+//
+// Plain Swift types used to push richer player context into both AI backends:
+//   - On-device path stores them on PipGameContext (actor) and tools read them
+//   - Cloud Claude path serializes them into gameContextString
+//
+// These are NOT @Generable — they're INPUTS we feed the model, not outputs the model fills in.
+
+struct PipSiblingInfo: Codable, Equatable {
+    let name: String
+    let level: Int
+    let lastPlayedRelative: String  // e.g. "2h ago"
+}
+
+struct PipAlmostReadyRecipe: Codable, Equatable {
+    let title: String
+    let missingItems: [String]      // pantry item display names
+}
+
+struct PipPlotNeedCare: Codable, Equatable {
+    let vegetable: String
+    let action: String              // "water" / "weed" / "debug"
+}
+
+struct PipQuestProgress: Codable, Equatable {
+    let title: String
+    let current: Int
+    let target: Int
+    var isComplete: Bool { current >= target }
+}
+
 // MARK: - Compile-Time Guard
 //
 // TEACHING MOMENT: #if canImport checks at COMPILE TIME whether the
@@ -95,6 +126,15 @@ actor PipGameContext {
     var cookedRecipes: [String] = []
     var coins: Int = 0
 
+    // Player progression
+    var playerLevel: Int = 1
+    var xp: Int = 0
+    var xpToNextLevel: Int = 100
+    var helpStreak: Int = 0
+    var helpGivenCount: Int = 0
+    var giftsGivenCount: Int = 0
+    var badgesEarned: Int = 0
+
     // Pantry inventory — what the player bought from the farm shop
     var pantryItems: [String: Int] = [:]  // displayName → quantity
 
@@ -104,6 +144,23 @@ actor PipGameContext {
     // Weather — from WeatherKit
     var weatherCondition: String = "sunny"
     var temperature: String = ""
+
+    // Personalization (allergies + dietary)
+    var allergens: [String] = []                   // e.g. ["milk", "eggs"]
+    var dietaryPreference: String = "none"         // "none" / "halal" / "kosher"
+
+    // Family
+    var siblings: [PipSiblingInfo] = []
+
+    // Recipes — pre-computed in AskPipView so the model gets game-truth, not its own guesses
+    var recipesReadyNow: [String] = []             // titles the kid can fully cook right now
+    var recipesAlmostReady: [PipAlmostReadyRecipe] = []   // garden ready, missing pantry
+
+    // Garden — only plots that need attention right now
+    var plotsNeedingCare: [PipPlotNeedCare] = []
+
+    // Daily quests — current progress
+    var dailyQuests: [PipQuestProgress] = []
 
     func update(
         playerName: String,
@@ -134,6 +191,40 @@ actor PipGameContext {
     func updateWeather(condition: String, temperature: String) {
         self.weatherCondition = condition
         self.temperature = temperature
+    }
+
+    func updateProgress(level: Int, xp: Int, xpToNextLevel: Int,
+                        helpStreak: Int, helpGivenCount: Int,
+                        giftsGivenCount: Int, badgesEarned: Int) {
+        self.playerLevel = level
+        self.xp = xp
+        self.xpToNextLevel = xpToNextLevel
+        self.helpStreak = helpStreak
+        self.helpGivenCount = helpGivenCount
+        self.giftsGivenCount = giftsGivenCount
+        self.badgesEarned = badgesEarned
+    }
+
+    func updateAllergies(allergens: [String], dietaryPreference: String) {
+        self.allergens = allergens
+        self.dietaryPreference = dietaryPreference
+    }
+
+    func updateSiblings(_ siblings: [PipSiblingInfo]) {
+        self.siblings = siblings
+    }
+
+    func updateRecipes(readyNow: [String], almostReady: [PipAlmostReadyRecipe]) {
+        self.recipesReadyNow = readyNow
+        self.recipesAlmostReady = almostReady
+    }
+
+    func updatePlotsNeedingCare(_ plots: [PipPlotNeedCare]) {
+        self.plotsNeedingCare = plots
+    }
+
+    func updateDailyQuests(_ quests: [PipQuestProgress]) {
+        self.dailyQuests = quests
     }
 
     func summary() -> String {
@@ -190,6 +281,73 @@ actor PipGameContext {
         result += ". Month: \(monthNames[month - 1])"
         return result
     }
+
+    func cookableRecipesSummary() -> String {
+        var parts: [String] = []
+        if !recipesReadyNow.isEmpty {
+            parts.append("Ready to cook right now: \(recipesReadyNow.joined(separator: ", "))")
+        }
+        if !recipesAlmostReady.isEmpty {
+            let almost = recipesAlmostReady.map {
+                "\($0.title) (need \($0.missingItems.joined(separator: ", ")))"
+            }
+            parts.append("Almost ready: \(almost.joined(separator: "; "))")
+        }
+        if parts.isEmpty {
+            return "No recipes are cookable yet — the player needs to grow veggies and stock the pantry first."
+        }
+        return parts.joined(separator: ". ")
+    }
+
+    func dietaryRestrictionsSummary() -> String {
+        var parts: [String] = []
+        if !allergens.isEmpty {
+            parts.append("ALLERGIES (avoid these completely): \(allergens.joined(separator: ", "))")
+        } else {
+            parts.append("No allergies on file")
+        }
+        if dietaryPreference != "none" {
+            parts.append("Diet: \(dietaryPreference) — respect this when suggesting foods")
+        }
+        return parts.joined(separator: ". ")
+    }
+
+    func siblingsSummary() -> String {
+        guard !siblings.isEmpty else {
+            return "This player doesn't have siblings on this device yet."
+        }
+        let lines = siblings.map { "\($0.name) (level \($0.level), last played \($0.lastPlayedRelative))" }
+        return "Siblings: \(lines.joined(separator: ". "))"
+    }
+
+    func plotsNeedingCareSummary() -> String {
+        guard !plotsNeedingCare.isEmpty else {
+            return "All plants are happy — no urgent care needed!"
+        }
+        let lines = plotsNeedingCare.map { "\($0.vegetable) needs \($0.action)" }
+        return lines.joined(separator: ". ")
+    }
+
+    func playerProgressSummary() -> String {
+        var parts: [String] = [
+            "Level \(playerLevel) (\(xp)/\(xpToNextLevel) XP to level \(playerLevel + 1))",
+            "Coins: \(coins)"
+        ]
+        if helpStreak > 0 {
+            parts.append("Helping siblings streak: \(helpStreak) days")
+        }
+        if helpGivenCount > 0 {
+            parts.append("Total times helped siblings: \(helpGivenCount)")
+        }
+        if badgesEarned > 0 {
+            parts.append("Badges earned: \(badgesEarned)")
+        }
+        if !dailyQuests.isEmpty {
+            let questBits = dailyQuests.map { "\($0.title) \($0.current)/\($0.target)" }
+            parts.append("Today's quests: \(questBits.joined(separator: ", "))")
+        }
+        return parts.joined(separator: ". ")
+    }
 }
 
 // MARK: - Tool: Get Garden Status
@@ -213,7 +371,7 @@ actor PipGameContext {
 @available(iOS 26.0, macOS 26.0, *)
 struct GetGardenStatusTool: Tool {
     let name = "getGardenStatus"
-    let description = "Get what vegetables the player is currently growing and has harvested"
+    let description = "What veggies the player is growing and has harvested."
 
     /// No input needed — we return everything about the player's garden
     @Generable
@@ -238,7 +396,7 @@ struct GetGardenStatusTool: Tool {
 @available(iOS 26.0, macOS 26.0, *)
 struct GetVeggieFactTool: Tool {
     let name = "getVeggieFact"
-    let description = "Look up a fun kid-friendly fact about a specific vegetable or fruit"
+    let description = "Fun facts about a specific vegetable or fruit."
 
     @Generable
     struct Arguments {
@@ -301,7 +459,7 @@ struct GetVeggieFactTool: Tool {
 @available(iOS 26.0, macOS 26.0, *)
 struct GetNutrientProfileTool: Tool {
     let name = "getNutrientProfile"
-    let description = "Get real nutrition data for a food (vitamins, minerals, fiber, protein). Use when a kid asks what's healthy about a food."
+    let description = "Real nutrition data (vitamins, minerals) for a food. For 'what's healthy about X?'."
 
     @Generable
     struct Arguments {
@@ -368,7 +526,7 @@ struct GetNutrientProfileTool: Tool {
 @available(iOS 26.0, macOS 26.0, *)
 struct GetAvailableIngredientsTool: Tool {
     let name = "getAvailableIngredients"
-    let description = "Get what ingredients the player currently has — harvested veggies and pantry items bought from the shop"
+    let description = "Player's current ingredients (harvested + pantry)."
 
     @Generable
     struct Arguments {}
@@ -393,7 +551,7 @@ struct GetAvailableIngredientsTool: Tool {
 @available(iOS 26.0, macOS 26.0, *)
 struct GetBodyBuddyStatusTool: Tool {
     let name = "getBodyBuddyStatus"
-    let description = "Get the player's Body Buddy organ health levels (brain, heart, muscles, bones, immune, energy, eyes, skin, digestion). Use to give personalized nutrition advice."
+    let description = "Body Buddy organ health (0-100). For personalized nutrition advice."
 
     @Generable
     struct Arguments {}
@@ -449,13 +607,15 @@ struct GeneratedRecipeSuggestion {
 @available(iOS 26.0, macOS 26.0, *)
 struct GenerateRecipeTool: Tool {
     let name = "generateRecipe"
-    let description = "Suggest a kid-friendly recipe using the player's available ingredients. Call getAvailableIngredients first to know what they have."
+    let description = "Invent a NEW recipe from given ingredients. Use only if no real recipes from getCookableRecipes fit."
 
     @Generable
     struct Arguments {
         @Guide(description: "Comma-separated list of available ingredients to use")
         var availableIngredients: String
     }
+
+    let context: PipGameContext
 
     @concurrent func call(arguments: Arguments) async throws -> String {
         // The model generates the recipe — this tool just provides
@@ -470,7 +630,21 @@ struct GenerateRecipeTool: Tool {
             return "No ingredients provided. Suggest the player grow some veggies or visit the farm shop first!"
         }
 
-        return "Available ingredients: \(items.joined(separator: ", ")). Suggest a simple, healthy, kid-friendly recipe using some or all of these. Keep it Glucose Goddess approved — veggies first, protein included, minimal starch."
+        // Read live allergies + dietary preference from the actor and inject into the prompt.
+        // The model MUST avoid these in its generated suggestion.
+        let allergens = await context.allergens
+        let diet = await context.dietaryPreference
+
+        var instruction = "Available ingredients: \(items.joined(separator: ", ")). "
+        instruction += "Suggest a simple, healthy, kid-friendly recipe using some or all of these. "
+        instruction += "Keep it Glucose Goddess approved — veggies first, protein included, minimal starch. "
+        if !allergens.isEmpty {
+            instruction += "CRITICAL: the player is allergic to \(allergens.joined(separator: ", ")) — DO NOT include any of those ingredients or anything containing them. "
+        }
+        if diet != "none" {
+            instruction += "Diet: \(diet) — make sure the recipe respects this. "
+        }
+        return instruction
     }
 }
 
@@ -489,7 +663,7 @@ struct GenerateRecipeTool: Tool {
 @available(iOS 26.0, macOS 26.0, *)
 struct GetSeasonalAdviceTool: Tool {
     let name = "getSeasonalAdvice"
-    let description = "Get current weather and season info for personalized planting and gardening advice"
+    let description = "Current weather + month. For planting and seasonal advice."
 
     @Generable
     struct Arguments {}
@@ -498,6 +672,119 @@ struct GetSeasonalAdviceTool: Tool {
 
     @concurrent func call(arguments: Arguments) async throws -> String {
         await context.weatherSummary()
+    }
+}
+
+// MARK: - Tool: Get Cookable Recipes
+//
+// TEACHING MOMENT: This is the "what can I cook RIGHT NOW?" tool.
+// Other tools (getAvailableIngredients) tell the model what's in the pantry,
+// but only THIS tool cross-references ingredients with the actual game recipes
+// (GardenRecipes.all). The model uses this to answer "what can I cook?"
+// with REAL recipe names, not invented ones — and the kid can immediately tap
+// "Let's Cook This!" to start the matching cooking session.
+
+@available(iOS 26.0, macOS 26.0, *)
+struct GetCookableRecipesTool: Tool {
+    let name = "getCookableRecipes"
+    let description = "Real game recipes ready now or almost-ready (missing items). For 'what can I cook?'."
+
+    @Generable
+    struct Arguments {}
+
+    let context: PipGameContext
+
+    @concurrent func call(arguments: Arguments) async throws -> String {
+        await context.cookableRecipesSummary()
+    }
+}
+
+// MARK: - Tool: Get Dietary Restrictions
+//
+// TEACHING MOMENT: SAFETY FIRST. This tool surfaces the kid's allergies
+// and dietary preference (kosher/halal). The model is instructed to
+// CHECK THIS BEFORE every recipe suggestion. Allergens map directly to
+// FDA top 9 — milk, eggs, peanuts, tree nuts, wheat, soy, fish, shellfish, sesame.
+// We never want Pip to suggest something a kid is allergic to.
+
+@available(iOS 26.0, macOS 26.0, *)
+struct GetDietaryRestrictionsTool: Tool {
+    let name = "getDietaryRestrictions"
+    let description = "Player's allergies + diet (kosher/halal). Call before any food suggestion."
+
+    @Generable
+    struct Arguments {}
+
+    let context: PipGameContext
+
+    @concurrent func call(arguments: Arguments) async throws -> String {
+        await context.dietaryRestrictionsSummary()
+    }
+}
+
+// MARK: - Tool: Get Sibling Profiles
+//
+// TEACHING MOMENT: Family awareness! On a shared device, multiple kids
+// have profiles in the same FamilyProfile. This tool lets Pip mention
+// siblings by name — "Wanna show Lily what you grew?" — and answer
+// social questions like "did Lily play today?".
+
+@available(iOS 26.0, macOS 26.0, *)
+struct GetSiblingProfilesTool: Tool {
+    let name = "getSiblingProfiles"
+    let description = "Sibling names, levels, last-played. For family questions."
+
+    @Generable
+    struct Arguments {}
+
+    let context: PipGameContext
+
+    @concurrent func call(arguments: Arguments) async throws -> String {
+        await context.siblingsSummary()
+    }
+}
+
+// MARK: - Tool: Get Garden Care Needs
+//
+// TEACHING MOMENT: This bridges the random-event garden care system
+// (weeds, bugs, water) with Pip. When a kid asks "what should I do?"
+// or "how's my garden?", Pip can give an exact action list:
+// "Your tomato is thirsty and your carrot has weeds — let's go fix it!"
+
+@available(iOS 26.0, macOS 26.0, *)
+struct GetGardenCareTool: Tool {
+    let name = "getGardenCare"
+    let description = "Plants needing water/weed/debug now. For 'what should I do?' or 'how's my garden?'."
+
+    @Generable
+    struct Arguments {}
+
+    let context: PipGameContext
+
+    @concurrent func call(arguments: Arguments) async throws -> String {
+        await context.plotsNeedingCareSummary()
+    }
+}
+
+// MARK: - Tool: Get Player Progress
+//
+// TEACHING MOMENT: This gives Pip awareness of the kid's overall journey:
+// level, XP-to-next, coins, helping streak, badges, daily quest progress.
+// Lets Pip celebrate milestones ("You're 1 plant from finishing the
+// Green Thumb quest!") and motivate ("You're 60 XP from level 6!").
+
+@available(iOS 26.0, macOS 26.0, *)
+struct GetPlayerProgressTool: Tool {
+    let name = "getPlayerProgress"
+    let description = "Level, XP-to-next, coins, streak, badges, daily quests. For milestones or motivation."
+
+    @Generable
+    struct Arguments {}
+
+    let context: PipGameContext
+
+    @concurrent func call(arguments: Arguments) async throws -> String {
+        await context.playerProgressSummary()
     }
 }
 
@@ -543,38 +830,16 @@ class PipFoundationModelService: ObservableObject {
     // for chopping, the small one for peeling."
 
     private let pipInstructions = """
-        You are Pip, a cheerful hedgehog chef in a kids' kitchen garden game (ages 6+).
-        Be excited about veggies and cooking! Say "Ooh!" and "Wow!" naturally.
+        You are Pip, a cheerful hedgehog chef for kids age 6+. Be excited about veggies and cooking.
 
-        Rules:
-        - 2-3 sentences max
-        - Simple words: "good for your eyes" not "beta-carotene"
-        - Topics: vegetables, fruits, cooking, gardening, nutrition, food science
-        - Off-topic? Gently redirect with a food fact
-        - One emoji per response max
-        - End with something inviting: a question, teaser, or "wanna know more?"
+        Rules: 2-3 sentences max. Simple words. One emoji max. End with a question or teaser.
+        Topics: food, gardening, cooking, nutrition, the player's family.
+        Safety: ALWAYS call getDietaryRestrictions before suggesting any food. Skip allergens completely.
 
-        Tools — use them to give personalized answers:
-        - getGardenStatus: what the player is growing and has done
-        - getVeggieFact: fun facts about a specific plant
-        - getNutrientProfile: real nutrition data (vitamins, minerals) for any food
-        - getAvailableIngredients: what ingredients the player has right now
-        - getBodyBuddyStatus: the player's organ health levels — suggest foods for weak organs
-        - generateRecipe: suggest a recipe from available ingredients
-        - getSeasonalAdvice: current weather and season for planting tips
-
-        Combine tools! If asked "what should I cook?":
-        1. getAvailableIngredients → see what they have
-        2. getBodyBuddyStatus → see what organs need help
-        3. generateRecipe → suggest something that uses their ingredients AND helps weak organs
-
-        Example response WITH a follow-up question:
-        message: "Ooh, carrots are amazing! They were actually purple before people in the Netherlands made them orange. 🥕"
-        followUpQuestion: "Want to know what makes carrots good for your eyes?"
-
-        Example response WITHOUT a follow-up (conversation wrapping up):
-        message: "You're welcome! Have fun in your garden — your plants are going to love the sunshine! 🌱"
-        followUpQuestion: null
+        For "what can I cook?": call getCookableRecipes — name a REAL recipe that's ready or almost-ready.
+        For "what should I do?": call getGardenCare and getCookableRecipes, suggest the best next step.
+        For family questions: call getSiblingProfiles.
+        Use other tools when relevant.
         """
 
     // MARK: - Generation Options
@@ -654,28 +919,37 @@ class PipFoundationModelService: ObservableObject {
         // available, then autonomously decides when to call them
         // based on the kid's questions. We don't manually trigger tools.
         //
-        // With 7 tools, the model becomes a real personal nutritionist:
+        // With 12 tools, the model becomes a real personal buddy:
         //   - Garden + Veggie facts → knowledge base
         //   - Nutrients + Body Buddy → personalized health advice
-        //   - Ingredients + Recipe gen → "what can I cook?" answers
+        //   - Ingredients + Recipe gen + Cookable recipes → "what can I cook?" answers
+        //   - Dietary restrictions → safety: never suggest allergens
+        //   - Sibling profiles → social ("Lily is on level 4!")
+        //   - Garden care needs → urgent action ("your tomato is thirsty!")
+        //   - Player progress → motivation ("60 XP from level 6!")
         //   - Seasonal advice → "what should I plant?" answers
         //
         // The model can CHAIN tools — e.g., check ingredients → check
-        // body health → suggest a recipe that fills both needs. We don't
-        // code this logic; the model figures it out from the descriptions.
+        // dietary restrictions → check body health → suggest a recipe.
 
-        let gardenTool = GetGardenStatusTool(context: gameContext)
-        let veggieTool = GetVeggieFactTool()
-        let nutrientTool = GetNutrientProfileTool()
-        let ingredientsTool = GetAvailableIngredientsTool(context: gameContext)
-        let bodyBuddyTool = GetBodyBuddyStatusTool(context: gameContext)
-        let recipeTool = GenerateRecipeTool()
-        let seasonalTool = GetSeasonalAdviceTool(context: gameContext)
+        let gardenTool       = GetGardenStatusTool(context: gameContext)
+        let veggieTool       = GetVeggieFactTool()
+        let nutrientTool     = GetNutrientProfileTool()
+        let ingredientsTool  = GetAvailableIngredientsTool(context: gameContext)
+        let bodyBuddyTool    = GetBodyBuddyStatusTool(context: gameContext)
+        let recipeTool       = GenerateRecipeTool(context: gameContext)
+        let seasonalTool     = GetSeasonalAdviceTool(context: gameContext)
+        let cookableTool     = GetCookableRecipesTool(context: gameContext)
+        let dietaryTool      = GetDietaryRestrictionsTool(context: gameContext)
+        let siblingTool      = GetSiblingProfilesTool(context: gameContext)
+        let gardenCareTool   = GetGardenCareTool(context: gameContext)
+        let progressTool     = GetPlayerProgressTool(context: gameContext)
 
         session = LanguageModelSession(
             tools: [
                 gardenTool, veggieTool, nutrientTool,
-                ingredientsTool, bodyBuddyTool, recipeTool, seasonalTool
+                ingredientsTool, bodyBuddyTool, recipeTool, seasonalTool,
+                cookableTool, dietaryTool, siblingTool, gardenCareTool, progressTool
             ],
             instructions: pipInstructions
         )
@@ -824,11 +1098,32 @@ class PipFoundationModelService: ObservableObject {
         } catch let error as LanguageModelSession.GenerationError {
             let needsReset = await MainActor.run { self.handleGenerationError(error) }
             if needsReset { setupSession() }
-            return nil
+            // Even on context-overflow / decoding failure, try plain text once before giving up.
+            // Vague prompts like "Surprise me!" sometimes break structured @Generable decoding
+            // but work fine as freeform — tools still execute, we just lose the followUp field.
+            return await plainTextFallback(question: question, onPartial: onPartial)
         } catch {
             await MainActor.run {
                 self.lastError = "Something went wrong. Try again!"
             }
+            return await plainTextFallback(question: question, onPartial: onPartial)
+        }
+    }
+
+    /// Recover from a structured-generation failure by asking for plain text.
+    /// Returns nil if even plain text fails. Clears `lastError` on success so the UI
+    /// shows the message instead of the error banner.
+    private func plainTextFallback(question: String, onPartial: @escaping (String) -> Void) async -> PipChatResponse? {
+        guard let session else { return nil }
+        do {
+            let response = try await session.respond(to: question, options: generationOptions)
+            let text = response.content   // capture String (Sendable) before crossing actor
+            await MainActor.run {
+                self.lastError = nil
+                onPartial(text)
+            }
+            return PipChatResponse(message: text, followUpQuestion: nil)
+        } catch {
             return nil
         }
     }
@@ -904,6 +1199,38 @@ class PipFoundationModelService: ObservableObject {
 
     func updateWeatherContext(condition: String, temperature: String) {
         Task { await gameContext.updateWeather(condition: condition, temperature: temperature) }
+    }
+
+    func updateProgressContext(level: Int, xp: Int, xpToNextLevel: Int,
+                               helpStreak: Int, helpGivenCount: Int,
+                               giftsGivenCount: Int, badgesEarned: Int) {
+        Task {
+            await gameContext.updateProgress(
+                level: level, xp: xp, xpToNextLevel: xpToNextLevel,
+                helpStreak: helpStreak, helpGivenCount: helpGivenCount,
+                giftsGivenCount: giftsGivenCount, badgesEarned: badgesEarned
+            )
+        }
+    }
+
+    func updateAllergiesContext(allergens: [String], dietaryPreference: String) {
+        Task { await gameContext.updateAllergies(allergens: allergens, dietaryPreference: dietaryPreference) }
+    }
+
+    func updateSiblingsContext(_ siblings: [PipSiblingInfo]) {
+        Task { await gameContext.updateSiblings(siblings) }
+    }
+
+    func updateRecipesContext(readyNow: [String], almostReady: [PipAlmostReadyRecipe]) {
+        Task { await gameContext.updateRecipes(readyNow: readyNow, almostReady: almostReady) }
+    }
+
+    func updatePlotsNeedingCareContext(_ plots: [PipPlotNeedCare]) {
+        Task { await gameContext.updatePlotsNeedingCare(plots) }
+    }
+
+    func updateDailyQuestsContext(_ quests: [PipQuestProgress]) {
+        Task { await gameContext.updateDailyQuests(quests) }
     }
 }
 

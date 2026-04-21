@@ -151,6 +151,17 @@ enum AnimationConstants {
     // Button press scales
     static let buttonPressScale: CGFloat = 0.97   // subtle squeeze (PrimaryButtonStyle)
     static let bouncyPressScale: CGFloat = 0.9     // bigger bounce (BouncyButtonStyle)
+
+    // Kitchen cooking-flow timings — the fly/cleanup rhythm for pantry→counter→stove
+    static let itemFlyDelay: TimeInterval = 0.55    // wait before fading the flying image
+    static let itemFlyCleanup: TimeInterval = 0.7   // total step length before advancing
+    static let stovePreRoll: TimeInterval = 1.2     // stove ignition delay before mini-game
+
+    // Springs tuned for ingredient-fly animations (slightly slower than springMedium)
+    static let springFly = Animation.spring(response: 0.6, dampingFraction: 0.7)
+
+    // Quick fade used to pop the flying image after it reaches its target
+    static let fadeFlyOut = Animation.easeOut(duration: 0.15)
 }
 
 // MARK: - Haptic Feedback

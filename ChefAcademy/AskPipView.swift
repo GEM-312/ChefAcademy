@@ -43,9 +43,11 @@ struct AskPipView: View {
     @StateObject private var aiService = PipAIService()
     @EnvironmentObject var gameState: GameState
     @EnvironmentObject var sessionManager: SessionManager
+    @EnvironmentObject var subscriptionManager: SubscriptionManager
     @State private var messages: [PipChatMessage] = []
     @State private var inputText = ""
     @State private var followUpQuestions: [String] = []
+    @State private var showPaywall = false
     @Environment(\.dismiss) private var dismiss
 
     // Starter questions — shown before the first message.
@@ -183,10 +185,17 @@ struct AskPipView: View {
             inputBar
         }
         .background(Color.AppTheme.cream)
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
+                .environmentObject(subscriptionManager)
+        }
         .onAppear {
             injectGameContext()
-            // Prewarm the on-device model so the first response is faster
-            aiService.prewarmIfOnDevice()
+            // Sync trial state → PipAIService's daily limit tightens during trial (5 Q/day)
+            aiService.trialActive = subscriptionManager.isInTrial
+        }
+        .onChange(of: subscriptionManager.isInTrial) { _, newValue in
+            aiService.trialActive = newValue
         }
     }
 
@@ -200,12 +209,9 @@ struct AskPipView: View {
 
         let growingCount = gameState.gardenPlots.filter { $0.state == .growing }.count
         if growingCount > 0 {
-            return "Hey \(name)! I see you're growing \(growingCount) plants in your garden — awesome! Ask me anything about veggies, cooking, or gardening! 🌱"
-        } else if aiService.isOnDevice {
-            // On-device: mention it works anywhere (no internet needed!)
-            return "Hey \(name)! I'm Pip, your garden buddy! I work right on your phone — no internet needed! Ask me anything about food! 🌱"
+            return "Hey \(name)! I see you're growing \(growingCount) plants in your garden — awesome! Tap a question below or ask me anything about veggies, cooking, or gardening! 🌱"
         } else {
-            return "Hey \(name)! I'm Pip, your garden buddy! Ask me anything about veggies, cooking, or gardening — I love talking about food! 🌱"
+            return "Hey \(name)! I'm Pip, your garden buddy! Tap a question below to get started! 🌱"
         }
     }
 
@@ -238,14 +244,8 @@ struct AskPipView: View {
                     .foregroundColor(Color.AppTheme.sage)
                 }
 
-                // On-device: show privacy badge (no rate limits!)
-                // Cloud: show remaining questions counter
-                if aiService.isOnDevice {
-                    Label("On-Device", systemImage: "lock.shield.fill")
-                        .font(.AppTheme.rounded(size: 10, weight: .medium))
-                        .foregroundColor(Color.AppTheme.sage)
-                } else {
-                    // Show remaining questions — creates anticipation!
+                if subscriptionManager.isPremium {
+                    // Premium badge — show questions remaining for transparency
                     let remaining = aiService.questionsRemainingToday
                     if remaining <= 5 && remaining > 0 {
                         Text("\(remaining) questions left today")
@@ -255,7 +255,21 @@ struct AskPipView: View {
                         Text("Pip is resting until tomorrow")
                             .font(.AppTheme.rounded(size: 10, weight: .medium))
                             .foregroundColor(Color.AppTheme.terracotta)
+                    } else {
+                        Label("Pip Chat", systemImage: "sparkles")
+                            .font(.AppTheme.rounded(size: 10, weight: .medium))
+                            .foregroundColor(Color.AppTheme.sage)
                     }
+                } else {
+                    // Upgrade chip for base users
+                    Button {
+                        showPaywall = true
+                    } label: {
+                        Label("Upgrade", systemImage: "sparkles")
+                            .font(.AppTheme.rounded(size: 10, weight: .medium))
+                            .foregroundColor(Color.AppTheme.goldenWheat)
+                    }
+                    .buttonStyle(.plain)
                 }
             }
 
@@ -522,32 +536,67 @@ struct AskPipView: View {
     // MARK: - Input Bar
 
     private var inputBar: some View {
+        Group {
+            if subscriptionManager.isPremium {
+                premiumInputBar
+            } else {
+                lockedInputBar
+            }
+        }
+        .padding(.horizontal, AppSpacing.md)
+        .padding(.vertical, AppSpacing.sm)
+        .background(Color.AppTheme.cream)
+    }
+
+    /// Full-featured input for paid subscribers.
+    private var premiumInputBar: some View {
         HStack(spacing: AppSpacing.sm) {
             TextField("Ask Pip a question...", text: $inputText)
                 .font(.AppTheme.body)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
+                .padding(.horizontal, AppSpacing.md)
+                .padding(.vertical, AppSpacing.sm)
                 .background(Color.AppTheme.warmCream)
-                .cornerRadius(24)
+                .cornerRadius(AppSpacing.largeCornerRadius)
                 .submitLabel(.send)
                 .onSubmit { sendTypedQuestion() }
 
             Button(action: sendTypedQuestion) {
                 let isEmpty = inputText.trimmingCharacters(in: .whitespaces).isEmpty
-                let isCloudRateLimited = aiService.isRateLimited && !aiService.isOnDevice
                 Image(systemName: "arrow.up.circle.fill")
                     .font(.AppTheme.largeTitle)
                     .foregroundColor(
-                        isEmpty || isCloudRateLimited
+                        isEmpty || aiService.isRateLimited
                             ? Color.AppTheme.sepia.opacity(0.3)
                             : Color.AppTheme.sage
                     )
             }
-            .disabled(inputText.trimmingCharacters(in: .whitespaces).isEmpty || aiService.isLoading || (aiService.isRateLimited && !aiService.isOnDevice))
+            .disabled(inputText.trimmingCharacters(in: .whitespaces).isEmpty
+                      || aiService.isLoading
+                      || aiService.isRateLimited)
         }
-        .padding(.horizontal, AppSpacing.md)
-        .padding(.vertical, AppSpacing.sm)
-        .background(Color.AppTheme.cream)
+    }
+
+    /// Tap-to-upgrade bar for base users. Looks like the input but opens the paywall.
+    private var lockedInputBar: some View {
+        Button {
+            showPaywall = true
+        } label: {
+            HStack(spacing: AppSpacing.sm) {
+                Image(systemName: "lock.fill")
+                    .foregroundColor(Color.AppTheme.goldenWheat)
+                Text("Unlock Pip Chat to ask anything")
+                    .font(.AppTheme.body)
+                    .foregroundColor(Color.AppTheme.sepia)
+                Spacer(minLength: 0)
+                Image(systemName: "chevron.right")
+                    .foregroundColor(Color.AppTheme.sage)
+            }
+            .padding(.horizontal, AppSpacing.md)
+            .padding(.vertical, AppSpacing.sm)
+            .background(Color.AppTheme.warmCream)
+            .cornerRadius(AppSpacing.largeCornerRadius)
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Inject Game Context
@@ -564,7 +613,12 @@ struct AskPipView: View {
         let harvested = gameState.harvestedIngredients
             .map { "\($0.type.displayName) x\($0.quantity)" }
 
-        let cooked = gameState.unlockedRecipeIDs
+        // Only recipes the kid has ACTUALLY cooked (earned stars for).
+        // `unlockedRecipeIDs` includes starter recipes available to cook but
+        // not yet attempted — passing those to Claude as "cooked" made Pip
+        // congratulate kids for meals they never made. `recipeStars` is the
+        // real cooking record, shared with GameCenterService.
+        let cooked = gameState.recipeStars.keys
             .compactMap { id in GardenRecipes.all.first(where: { $0.id == id })?.title }
 
         let name = sessionManager.activeProfile?.name ?? "Little Chef"
@@ -604,15 +658,120 @@ struct AskPipView: View {
         let condition = weather.currentWeather.displayName
         let temp = "\(weather.temperature)°F"
         aiService.updateWeatherContext(condition: condition, temperature: temp)
+
+        // Allergies + dietary preference (from active UserProfile)
+        let activeProfile = sessionManager.activeProfile
+        let allergenStrings = (activeProfile?.allergens ?? []).map { $0.rawValue }
+        let dietaryRaw = activeProfile?.headCovering.dietaryPreference.rawValue.lowercased() ?? "none"
+        aiService.updateAllergiesContext(allergens: allergenStrings, dietaryPreference: dietaryRaw)
+
+        // Siblings — query the family for other children, exclude active profile
+        if let context = sessionManager.modelContext,
+           let family = sessionManager.familyProfile {
+            let allChildren = family.childProfiles(in: context)
+            let siblings = allChildren
+                .filter { $0.id != activeProfile?.id }
+                .map { sibling -> PipSiblingInfo in
+                    // Sibling level lives on PlayerData, not UserProfile
+                    let level = sibling.playerData(in: context)?.playerLevel ?? 1
+                    return PipSiblingInfo(
+                        name: sibling.name,
+                        level: level,
+                        lastPlayedRelative: sibling.lastPlayedRelative
+                    )
+                }
+            aiService.updateSiblingsContext(siblings)
+        }
+
+        // Cookable + almost-ready recipes — cross-reference inventory with real game recipes
+        // Filter out anything that contains the active player's allergens
+        let activeAllergens = activeProfile?.allergens ?? []
+        let safeRecipes = GardenRecipes.all.filter { !$0.containsAllergens(activeAllergens) }
+
+        let readyTitles = safeRecipes
+            .filter { $0.canCookFull(harvestedIngredients: gameState.harvestedIngredients,
+                                     pantryInventory: gameState.pantryInventory) }
+            .map { $0.title }
+
+        let almostReady: [PipAlmostReadyRecipe] = safeRecipes
+            .filter { recipe in
+                let hasGarden = recipe.canCook(with: gameState.harvestedIngredients)
+                let hasFull = recipe.canCookFull(
+                    harvestedIngredients: gameState.harvestedIngredients,
+                    pantryInventory: gameState.pantryInventory
+                )
+                return hasGarden && !hasFull
+            }
+            .map { recipe in
+                PipAlmostReadyRecipe(
+                    title: recipe.title,
+                    missingItems: recipe.missingPantryItems(from: gameState.pantryInventory)
+                        .map(\.displayName)
+                )
+            }
+        aiService.updateRecipesContext(readyNow: readyTitles, almostReady: almostReady)
+
+        // Garden care — only plots that need attention right now
+        let careNeeds: [PipPlotNeedCare] = gameState.gardenPlots.compactMap { plot in
+            guard let veg = plot.vegetable else { return nil }
+            switch plot.state {
+            case .needsWater:   return PipPlotNeedCare(vegetable: veg.displayName, action: "water")
+            case .needsWeeding: return PipPlotNeedCare(vegetable: veg.displayName, action: "weed")
+            case .hasBugs:      return PipPlotNeedCare(vegetable: veg.displayName, action: "release ladybugs")
+            default:            return nil
+            }
+        }
+        aiService.updatePlotsNeedingCareContext(careNeeds)
+
+        // Player progress — XP-to-next, helping streak, badges
+        let xpForLevel = gameState.playerLevel * 100
+        aiService.updateProgressContext(
+            level: gameState.playerLevel,
+            xp: gameState.xp,
+            xpToNextLevel: xpForLevel,
+            helpStreak: gameState.helpStreak,
+            helpGivenCount: gameState.helpGivenCount,
+            giftsGivenCount: gameState.giftsGivenCount,
+            badgesEarned: gameState.completedBadgeIDs.count
+        )
+
+        // Daily quests — current progress for milestone celebrations
+        let questProgress = gameState.dailyQuests.map { quest in
+            PipQuestProgress(
+                title: quest.title,
+                current: quest.currentCount,
+                target: quest.targetCount
+            )
+        }
+        aiService.updateDailyQuestsContext(questProgress)
     }
 
     // MARK: - Send Question
 
     private func sendQuestion(_ question: String) {
-        withAnimation {
-            followUpQuestions = []
+        withAnimation { followUpQuestions = [] }
+
+        // Base tier: route through static responses.
+        // Premium-required questions present the paywall; curated questions get instant local answers.
+        if !subscriptionManager.isPremium {
+            let mode = PipStaticResponses.response(for: question, gameState: gameState)
+            switch mode {
+            case .requiresPremium:
+                showPaywall = true
+                return
+            case .text(let reply):
+                let kidMessage = PipChatMessage(text: question, isFromPip: false)
+                messages.append(kidMessage)
+                let delay = AnimationConstants.fadeMedium
+                withAnimation(delay.delay(0.3)) {
+                    let pipMessage = PipChatMessage(text: reply, isFromPip: true)
+                    messages.append(pipMessage)
+                }
+                return
+            }
         }
 
+        // Premium tier — real Claude chat
         let kidMessage = PipChatMessage(text: question, isFromPip: false)
         messages.append(kidMessage)
 

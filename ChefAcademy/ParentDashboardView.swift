@@ -13,7 +13,9 @@ struct ParentDashboardView: View {
     @EnvironmentObject var gameState: GameState
     @EnvironmentObject var avatarModel: AvatarModel
     @EnvironmentObject var authManager: AuthManager
+    @EnvironmentObject var subscriptionManager: SubscriptionManager
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.openURL) private var openURL
 
     @State private var selectedChildID: UUID?
     @State private var showRemoveConfirmation = false
@@ -24,6 +26,7 @@ struct ParentDashboardView: View {
     @State private var showSignOutConfirmation = false
     @State private var showDeleteAllConfirmation = false
     @State private var showAllergenEditor = false
+    @State private var showPaywall = false
     @State private var signInCoordinator: SignInCoordinator?
 
     private var children: [UserProfile] {
@@ -186,6 +189,8 @@ struct ParentDashboardView: View {
                     }
                     .buttonStyle(.plain)
 
+                    subscriptionRow
+
                     // Food Allergies
                     if let child = selectedChild {
                         Button(action: { showAllergenEditor = true }) {
@@ -338,21 +343,17 @@ struct ParentDashboardView: View {
                 .environmentObject(avatarModel)
         }
         .sheet(isPresented: $showVoiceSettings) {
-            NavigationView {
-                VoicePickerView()
-                    .toolbar {
-                        ToolbarItem(placement: .navigationBarTrailing) {
-                            Button("Done") { showVoiceSettings = false }
-                                .foregroundColor(Color.AppTheme.sage)
-                        }
-                    }
-            }
+            VoicePickerView()
         }
         .sheet(isPresented: $showAllergenEditor) {
             if let child = selectedChild {
                 AllergenEditorSheet(profile: child)
                     .environmentObject(gameState)
             }
+        }
+        .sheet(isPresented: $showPaywall) {
+            PaywallView()
+                .environmentObject(subscriptionManager)
         }
         .alert("Sign Out?", isPresented: $showSignOutConfirmation) {
             Button("Cancel", role: .cancel) { }
@@ -373,6 +374,75 @@ struct ParentDashboardView: View {
             }
         } message: {
             Text("This will delete ALL profiles, gardens, recipes, coins — everything. The app will restart as if freshly installed. This cannot be undone.")
+        }
+    }
+
+    // MARK: - Subscription Row
+
+    private var subscriptionRow: some View {
+        VStack(alignment: .leading, spacing: AppSpacing.xs) {
+            if subscriptionManager.isPremium {
+                Button {
+                    // Opens iOS Subscription Settings for Manage/Cancel
+                    if let url = URL(string: "https://apps.apple.com/account/subscriptions") {
+                        openURL(url)
+                    }
+                } label: {
+                    HStack {
+                        Image(systemName: "sparkles")
+                            .foregroundColor(Color.AppTheme.sage)
+                        VStack(alignment: .leading, spacing: AppSpacing.xxs) {
+                            Text(subscriptionManager.isInTrial ? "Pip Chat (Free Trial)" : "Pip Chat")
+                                .font(.AppTheme.body)
+                                .foregroundColor(Color.AppTheme.sepia)
+                            if let expiration = subscriptionManager.expirationDate {
+                                Text("Renews \(expiration.formatted(date: .abbreviated, time: .omitted))")
+                                    .font(.AppTheme.caption)
+                                    .foregroundColor(Color.AppTheme.lightSepia)
+                            }
+                        }
+                        Spacer()
+                        Text("Manage")
+                            .font(.AppTheme.caption)
+                            .foregroundColor(Color.AppTheme.sage)
+                        Image(systemName: "chevron.right")
+                    }
+                    .font(.AppTheme.body)
+                    .foregroundColor(Color.AppTheme.sepia)
+                    .softCard(showShadow: false)
+                }
+                .buttonStyle(.plain)
+            } else {
+                Button { showPaywall = true } label: {
+                    HStack {
+                        Image(systemName: "sparkles")
+                            .foregroundColor(Color.AppTheme.goldenWheat)
+                        Text("Unlock Pip Chat")
+                            .font(.AppTheme.body)
+                            .foregroundColor(Color.AppTheme.sepia)
+                        Spacer()
+                        Text("Upgrade")
+                            .font(.AppTheme.caption)
+                            .foregroundColor(Color.AppTheme.goldenWheat)
+                        Image(systemName: "chevron.right")
+                    }
+                    .softCard(showShadow: false)
+                }
+                .buttonStyle(.plain)
+            }
+
+            #if DEBUG
+            Toggle(isOn: $subscriptionManager.debugForcePremium) {
+                HStack {
+                    Image(systemName: "ant.fill")
+                        .foregroundColor(Color.AppTheme.terracotta)
+                    Text("DEBUG: Force premium")
+                        .font(.AppTheme.caption)
+                        .foregroundColor(Color.AppTheme.sepia)
+                }
+            }
+            .padding(.horizontal, AppSpacing.md)
+            #endif
         }
     }
 

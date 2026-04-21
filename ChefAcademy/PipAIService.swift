@@ -94,14 +94,20 @@ class PipAIService: ObservableObject {
     // questions more and come back tomorrow. Games use this all the time
     // (energy systems, daily rewards). It INCREASES engagement.
     //
-    private let dailyQuestionLimit = 20
+    private let paidDailyLimit = 20
+    private let trialDailyLimit = 5
     private let questionsCountKey = "com.chefacademy.pip.dailyQuestionCount"
     private let questionsDateKey = "com.chefacademy.pip.dailyQuestionDate"
 
-    var questionsRemainingToday: Int {
-        // On-device AI has no rate limits — it's free!
-        if isOnDevice { return Int.max }
+    /// Set by SubscriptionManager when the active subscription is in a free-trial period.
+    /// During trial we cap API calls to protect margins (~$0.035 max trial cost).
+    var trialActive: Bool = false
 
+    var dailyQuestionLimit: Int {
+        trialActive ? trialDailyLimit : paidDailyLimit
+    }
+
+    var questionsRemainingToday: Int {
         resetCountIfNewDay()
         let used = UserDefaults.standard.integer(forKey: questionsCountKey)
         return max(0, dailyQuestionLimit - used)
@@ -163,17 +169,10 @@ class PipAIService: ObservableObject {
     //
 
     init() {
-        // Step 1: Try on-device AI (iOS 26+, zero cost, unlimited)
-        #if canImport(FoundationModels)
-        if #available(iOS 26, macOS 26, *) {
-            setupOnDeviceIfAvailable()
-        }
-        #endif
-
-        // Step 2: Fall back to cloud if on-device isn't available
-        if !isOnDevice {
-            setupCloudService()
-        }
+        // Chat is ALWAYS cloud (Claude Haiku) — the on-device 3B model is too small for
+        // reliable multi-tool reasoning in a multi-turn kids' chat. On-device remains
+        // available to GardenView for narrow single-shot garden tips.
+        setupCloudService()
     }
 
     #if canImport(FoundationModels)
@@ -311,6 +310,98 @@ class PipAIService: ObservableObject {
         gameContextString += "\n- Current weather: \(condition)\(temperature.isEmpty ? "" : ", \(temperature)")."
     }
 
+    func updateProgressContext(level: Int, xp: Int, xpToNextLevel: Int,
+                               helpStreak: Int, helpGivenCount: Int,
+                               giftsGivenCount: Int, badgesEarned: Int) {
+        #if canImport(FoundationModels)
+        if #available(iOS 26, macOS 26, *),
+           let service = _onDeviceService as? PipFoundationModelService {
+            service.updateProgressContext(
+                level: level, xp: xp, xpToNextLevel: xpToNextLevel,
+                helpStreak: helpStreak, helpGivenCount: helpGivenCount,
+                giftsGivenCount: giftsGivenCount, badgesEarned: badgesEarned
+            )
+        }
+        #endif
+
+        gameContextString += "\n- Progress: level \(level), \(xp)/\(xpToNextLevel) XP to level \(level + 1)."
+        if helpStreak > 0 { gameContextString += " Help streak: \(helpStreak) days." }
+        if helpGivenCount > 0 { gameContextString += " Helped siblings \(helpGivenCount) times total." }
+        if badgesEarned > 0 { gameContextString += " Badges: \(badgesEarned)." }
+    }
+
+    func updateAllergiesContext(allergens: [String], dietaryPreference: String) {
+        #if canImport(FoundationModels)
+        if #available(iOS 26, macOS 26, *),
+           let service = _onDeviceService as? PipFoundationModelService {
+            service.updateAllergiesContext(allergens: allergens, dietaryPreference: dietaryPreference)
+        }
+        #endif
+
+        if !allergens.isEmpty {
+            gameContextString += "\n- ALLERGIES (NEVER suggest these): \(allergens.joined(separator: ", "))."
+        }
+        if dietaryPreference != "none" {
+            gameContextString += "\n- Dietary preference: \(dietaryPreference)."
+        }
+    }
+
+    func updateSiblingsContext(_ siblings: [PipSiblingInfo]) {
+        #if canImport(FoundationModels)
+        if #available(iOS 26, macOS 26, *),
+           let service = _onDeviceService as? PipFoundationModelService {
+            service.updateSiblingsContext(siblings)
+        }
+        #endif
+
+        guard !siblings.isEmpty else { return }
+        let lines = siblings.map { "\($0.name) (level \($0.level), played \($0.lastPlayedRelative))" }
+        gameContextString += "\n- Siblings on this device: \(lines.joined(separator: "; "))."
+    }
+
+    func updateRecipesContext(readyNow: [String], almostReady: [PipAlmostReadyRecipe]) {
+        #if canImport(FoundationModels)
+        if #available(iOS 26, macOS 26, *),
+           let service = _onDeviceService as? PipFoundationModelService {
+            service.updateRecipesContext(readyNow: readyNow, almostReady: almostReady)
+        }
+        #endif
+
+        if !readyNow.isEmpty {
+            gameContextString += "\n- Ready to cook RIGHT NOW: \(readyNow.joined(separator: ", "))."
+        }
+        if !almostReady.isEmpty {
+            let bits = almostReady.map { "\($0.title) (need \($0.missingItems.joined(separator: ", ")))" }
+            gameContextString += "\n- Almost ready: \(bits.joined(separator: "; "))."
+        }
+    }
+
+    func updatePlotsNeedingCareContext(_ plots: [PipPlotNeedCare]) {
+        #if canImport(FoundationModels)
+        if #available(iOS 26, macOS 26, *),
+           let service = _onDeviceService as? PipFoundationModelService {
+            service.updatePlotsNeedingCareContext(plots)
+        }
+        #endif
+
+        guard !plots.isEmpty else { return }
+        let bits = plots.map { "\($0.vegetable) needs \($0.action)" }
+        gameContextString += "\n- Garden care needed RIGHT NOW: \(bits.joined(separator: ", "))."
+    }
+
+    func updateDailyQuestsContext(_ quests: [PipQuestProgress]) {
+        #if canImport(FoundationModels)
+        if #available(iOS 26, macOS 26, *),
+           let service = _onDeviceService as? PipFoundationModelService {
+            service.updateDailyQuestsContext(quests)
+        }
+        #endif
+
+        guard !quests.isEmpty else { return }
+        let bits = quests.map { "\($0.title) \($0.current)/\($0.target)" }
+        gameContextString += "\n- Today's quests: \(bits.joined(separator: ", "))."
+    }
+
     // MARK: - Clear Conversation
 
     func clearConversation() {
@@ -350,14 +441,8 @@ class PipAIService: ObservableObject {
     //
 
     func askPip(_ question: String) async -> String? {
-        // Route to on-device or cloud based on what's available
-        #if canImport(FoundationModels)
-        if #available(iOS 26, macOS 26, *),
-           let service = _onDeviceService as? PipFoundationModelService {
-            return await askOnDevice(question, service: service)
-        }
-        #endif
-        return await askCloud(question)
+        // Cloud Claude only — on-device is too small for reliable multi-tool chat.
+        await askCloud(question)
     }
 
     // MARK: - On-Device Path (iOS 26+)

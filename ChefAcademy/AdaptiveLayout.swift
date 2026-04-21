@@ -176,6 +176,90 @@ struct AdaptiveCardSize {
     static func pipBorderWidth(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
         sizeClass == .compact ? 3 : 5
     }
+
+    /// Walking Pip sprite size in the kitchen scene
+    static func pipKitchenWalking(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 80 : 110
+    }
+
+    /// Floating speech bubble width beside walking Pip
+    static func pipBubbleWidth(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 200 : 280
+    }
+
+    // MARK: Kitchen Scene Tokens
+    // Sizes for the tappable spots on the kitchen map (Counter / Stove / Pantry),
+    // the flying ingredient image, and the small badge images on recipe cards.
+
+    /// Outer "ring" circle diameter on a kitchen spot button (pulses when active).
+    static func kitchenSpotRing(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 50 : 70
+    }
+
+    /// Inner filled circle diameter behind the spot icon.
+    static func kitchenSpotInner(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 40 : 56
+    }
+
+    /// SF Symbol size for the icon inside a kitchen spot.
+    static func kitchenSpotIcon(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 18 : 24
+    }
+
+    /// Font size for the numeric count badge on a kitchen spot.
+    static func kitchenBadgeFontSize(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 10 : 12
+    }
+
+    /// Offset magnitude for the count badge relative to the spot center (x / -y).
+    static func kitchenBadgeOffset(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 16 : 22
+    }
+
+    /// Font size for the label text under each kitchen spot (Counter / Stove / Pantry).
+    static func kitchenSpotLabelSize(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 10 : 13
+    }
+
+    /// SF Symbol size used by icon-only buttons in the kitchen header.
+    static func kitchenHeaderIconSize(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 20 : 24
+    }
+
+    /// Square size of the flying ingredient image between pantry / counter / stove.
+    static func kitchenFlyingItem(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 80 : 100
+    }
+
+    /// Square size of the small ingredient images stacked on the counter.
+    static func kitchenGatheredItem(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 50 : 60
+    }
+
+    /// Square image size for "Ready to Cook!" recipe rows in the bottom panel.
+    static func kitchenReadyImage(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 60 : 80
+    }
+
+    /// Square image size for "Almost Ready!" recipe rows in the bottom panel.
+    static func kitchenAlmostImage(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 44 : 60
+    }
+
+    /// Width of the pantry staple badge (shown in the "On the Counter" row).
+    static func pantryBadgeWidth(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 70 : 110
+    }
+
+    /// Square image size inside the pantry staple badge.
+    static func pantryBadgeImage(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 30 : 40
+    }
+
+    /// Font size for the staple name inside the pantry badge.
+    static func pantryBadgeLabelSize(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 9 : 13
+    }
 }
 
 // MARK: - Adaptive Font Modifier

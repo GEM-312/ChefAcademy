@@ -13,11 +13,12 @@ import GameKit
 
 @main
 struct ChefAcademyApp: App {
-    // The four core state objects shared across the entire app
+    // The five core state objects shared across the entire app
     @StateObject private var avatarModel = AvatarModel()
     @StateObject private var gameState = GameState()
     @StateObject private var sessionManager = SessionManager()
     @StateObject private var authManager = AuthManager()
+    @StateObject private var subscriptionManager = SubscriptionManager()
 
     // Weather service — real weather affects garden growth!
     @ObservedObject private var weatherService = GardenWeatherService.shared
@@ -79,7 +80,13 @@ struct ChefAcademyApp: App {
                         .environmentObject(sessionManager)
                         .environmentObject(avatarModel)
                         .environmentObject(authManager)
+                        .environmentObject(subscriptionManager)
                 }
+            }
+            .task {
+                // Fetch subscription products from App Store Connect on launch.
+                // Safe to call even if products aren't set up yet — fails silently.
+                await subscriptionManager.loadProducts()
             }
             .onAppear {
                 // Wire SwiftData context to both GameState and SessionManager

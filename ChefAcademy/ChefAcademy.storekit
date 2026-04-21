@@ -1,0 +1,53 @@
+{
+  "identifier" : "B4F7A8D2-1C29-4F83-9E5A-7D91B0C5E84A",
+  "nonRenewingSubscriptions" : [],
+  "products" : [],
+  "settings" : {
+    "_applicationInternalID" : "6760671721",
+    "_developerTeamID" : "",
+    "_failTransactionsEnabled" : false,
+    "_lastSynchronizedDate" : 0,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [],
+    "_timeRate" : 1
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "22041858",
+      "localizations" : [],
+      "name" : "Pip Chat",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [],
+          "codeOffers" : [],
+          "displayPrice" : "3.99",
+          "familyShareable" : true,
+          "groupNumber" : 1,
+          "internalID" : "6762580072",
+          "introductoryOffer" : {
+            "internalID" : "pipchat_intro_trial",
+            "paymentMode" : "free",
+            "subscriptionPeriod" : "P1W"
+          },
+          "localizations" : [
+            {
+              "description" : "Chat with Pip! Recipes, gardening & fun food facts.",
+              "displayName" : "Pip Chat",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "com.GraphicElegance.ChefAcademy.pipchat.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Pip Chat Monthly",
+          "subscriptionGroupID" : "22041858",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}
