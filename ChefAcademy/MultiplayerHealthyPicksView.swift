@@ -309,18 +309,33 @@ struct MultiplayerHealthyPicksView: View {
                 Spacer()
             }
 
-            // Pip at the bottom
+            // Pip at the bottom — loops throw_veggie during play, progressive
+            // fat frame after bad choices, full fat_flying on game-over cap.
             VStack {
                 Spacer()
-                Image("pip_got_idea")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 80 * pipScale, height: 80 * pipScale)
+                onlineGamePip(size: 120)
                     .rotationEffect(.degrees(pipRotation))
                     .offset(y: pipOffset)
                     .scaleEffect(pipScale)
                     .padding(.bottom, 60)
             }
+        }
+    }
+
+    // MARK: - Online Game Pip (animated sprite selector)
+
+    @ViewBuilder
+    private func onlineGamePip(size: CGFloat) -> some View {
+        if badChoices >= maxBadChoices {
+            PipGameAnimationView(animation: .fatFlying, size: size, loop: false, fps: 15)
+        } else if badChoices > 0 {
+            let frameIdx = min(30, badChoices * 6)
+            Image(String(format: "pip_fat_flying_frame_%02d", frameIdx))
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: size, height: size)
+        } else {
+            PipGameAnimationView(animation: .throwVeggie, size: size, loop: true, fps: 15)
         }
     }
 
@@ -385,13 +400,25 @@ struct MultiplayerHealthyPicksView: View {
                     .font(.AppTheme.largeTitle)
                     .foregroundColor(won ? Color.AppTheme.sage : (tied ? Color.AppTheme.goldenWheat : Color.AppTheme.terracotta))
 
+                // Online result celebration — you are "on the right" from Pip's
+                // perspective (you tap on your device → handUpRight).
+                // Loss shows the fat-flying fail, tie stays neutral.
                 if won {
+                    PipGameAnimationView(
+                        animation: .handUpRight,
+                        size: 140,
+                        loop: true,
+                        fps: 15
+                    )
+                } else if tied {
                     PipWavingAnimatedView(size: 120)
                 } else {
-                    Image("pip_got_idea")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 100, height: 100)
+                    PipGameAnimationView(
+                        animation: .fatFlying,
+                        size: 140,
+                        loop: false,
+                        fps: 15
+                    )
                 }
 
                 // Score comparison

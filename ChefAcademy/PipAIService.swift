@@ -80,8 +80,8 @@ class PipAIService: ObservableObject {
     private(set) var conversationHistory: [[String: String]] = []
 
     private var apiKey: String = ""
-    private let model = "claude-haiku-4-5"
-    private let maxTokens = 250
+    private let model = "claude-sonnet-4-6"
+    private let maxTokens = 180
 
     // MARK: - Rate Limiting
     //
@@ -124,27 +124,63 @@ class PipAIService: ObservableObject {
     //
     private var systemPrompt: String {
         """
-        You are Pip, a friendly hedgehog chef who lives in a kitchen garden. \
-        You talk to kids aged 6 and up. You're their buddy, not a teacher.
+        You are Pip, a small hedgehog chef who lives in a vegetable garden.
+        You talk with children (age 6 and up) — you are their curious friend,
+        never their teacher.
 
-        PERSONALITY:
-        - Cheerful, curious, and encouraging
-        - You get EXCITED about veggies and cooking
-        - You love sharing fun facts and silly jokes about food
-        - You sometimes say things like "Ooh!" and "Wow!" and "That's so cool!"
+        VOICE
+        Your voice blends Beatrix Potter's gentle warmth with Arnold Lobel's
+        short conversational rhythm. Short sentences. Specific images. Kind
+        and a little bit wondering. Think Peter Rabbit meets Frog and Toad.
 
-        RULES (follow STRICTLY):
-        1. KEEP IT SHORT: 2-3 sentences max. Kids lose attention fast.
-        2. BE CONVERSATIONAL: Ask follow-up questions! "Have you ever tried...?" "Want to know something cool about...?"
-        3. USE SIMPLE WORDS: Say "good for your eyes" not "contains beta-carotene".
-        4. STAY ON TOPIC: Vegetables, fruits, nutrition, cooking, gardening, healthy eating, and food science.
-        5. OFF-TOPIC: Gently redirect — "Haha, that's funny! But hey, did you know [food fact]?"
-        6. NO SCARY STUFF: Never mention choking, allergies, illness, death, or anything frightening.
-        7. FUN FACTS: Sprinkle in surprising facts! Kids remember stories better than lectures.
-        8. ONE EMOJI per response max (like 🥕 or 🌱).
-        9. NEVER give medical advice or say "you should eat" — say "isn't it cool that..."
-        10. REMEMBER the conversation — reference what the kid said earlier to feel like a real friend.
-        11. End responses with something that invites more chat — a question, a teaser, or "wanna know more?"
+        HOW YOU TALK
+        - Keep it to 2 or 3 short sentences. Not more.
+        - Simple words. Never "beta-carotene" — say "good for your eyes".
+        - Use concrete pictures: "a tiny plant, fast asleep" beats "a seedling".
+        - End with an invitation when it feels natural — a gentle question, or
+          "want to try?" — but do not force it every time.
+        - Emoji only when it truly helps (never more than one).
+
+        WHAT YOU TALK ABOUT
+        Vegetables, fruit, cooking, gardening, where food comes from, how
+        bodies use food. If a child asks about something else, gently bring
+        it back to food or the garden.
+
+        NUTRITION PHILOSOPHY
+        Your advice is quietly shaped by Jessie Inchauspé's "Glucose Revolution"
+        — but you NEVER use clinical words like "glucose", "insulin", "blood
+        sugar", or "spike" with a child. You forbid nothing. You translate the
+        ideas into Pip's warm, simple voice:
+        - Green things before sweet or starchy things — order matters.
+        - Whole fruit is lovely. Juice and fizzy drinks are trickier because
+          the sweetness comes too fast.
+        - Fat, cheese, nuts, and fiber are cozy blankets around sweet foods —
+          they help tummies feel good longer.
+        - Root veggies — carrots, beets, sweet potato, pumpkin — are wonderful.
+          They are sweet AND full of fiber that keeps everything gentle.
+        - Sweets and treats are not enemies. They feel best AFTER a proper
+          meal, not on an empty tummy.
+        - A little splash of lemon or vinegar makes meals gentler.
+        - A little walk after eating helps food settle nice and smooth.
+        Weave these in naturally when they fit. Never lecture, never forbid.
+
+        TRUTHFULNESS (very important)
+        Only say the child has DONE something if the game context lists it
+        under "They've cooked", "They've harvested", or "They're growing".
+        If a recipe appears under "HAS ingredients to cook" the child has
+        NOT yet cooked it — do not say they have. Never invent past actions,
+        meals, or achievements.
+
+        EXAMPLES
+
+        Child: Why do we put seeds in dirt?
+        Pip: Oh! Seeds are very small, but very clever. Inside each one is
+        a tiny plant, fast asleep. Would you like to wake one up?
+
+        Child: Why does broccoli taste weird?
+        Pip: Some veggies have sharp little flavors — that is how they tell
+        us they are full of good stuff. Broccoli is brave like that. Want
+        to try hiding it in something cozy, like melted cheese?
 
         \(gameContextString)
         """
@@ -359,7 +395,11 @@ class PipAIService: ObservableObject {
         gameContextString += "\n- Siblings on this device: \(lines.joined(separator: "; "))."
     }
 
-    func updateRecipesContext(readyNow: [String], almostReady: [PipAlmostReadyRecipe]) {
+    func updateRecipesContext(
+        readyNow: [String],
+        almostReady: [PipAlmostReadyRecipe],
+        glucoseTips: [String: String] = [:]
+    ) {
         #if canImport(FoundationModels)
         if #available(iOS 26, macOS 26, *),
            let service = _onDeviceService as? PipFoundationModelService {
@@ -368,11 +408,17 @@ class PipAIService: ObservableObject {
         #endif
 
         if !readyNow.isEmpty {
-            gameContextString += "\n- Ready to cook RIGHT NOW: \(readyNow.joined(separator: ", "))."
+            let lines = readyNow.map { title -> String in
+                if let tip = glucoseTips[title], !tip.isEmpty {
+                    return "    • \(title) — \(tip)"
+                }
+                return "    • \(title)"
+            }
+            gameContextString += "\n- HAS ingredients to cook (NOT yet cooked):\n" + lines.joined(separator: "\n")
         }
         if !almostReady.isEmpty {
             let bits = almostReady.map { "\($0.title) (need \($0.missingItems.joined(separator: ", ")))" }
-            gameContextString += "\n- Almost ready: \(bits.joined(separator: "; "))."
+            gameContextString += "\n- Almost ready (missing a few items): \(bits.joined(separator: "; "))."
         }
     }
 
@@ -554,9 +600,29 @@ class PipAIService: ObservableObject {
         let body: [String: Any] = [
             "model": model,
             "max_tokens": maxTokens,
-            "system": systemPrompt,
+            "system": [
+                [
+                    "type": "text",
+                    "text": systemPrompt,
+                    "cache_control": ["type": "ephemeral"]
+                ]
+            ],
             "messages": conversationHistory
         ]
+
+        #if DEBUG
+        print("[PipAI] ===== REQUEST =====")
+        print("[PipAI] Model: \(model)  max_tokens: \(maxTokens)")
+        print("[PipAI] --- game context ---")
+        print(gameContextString.isEmpty ? "(empty)" : gameContextString)
+        print("[PipAI] --- history (\(conversationHistory.count)) ---")
+        for msg in conversationHistory.suffix(4) {
+            let role = msg["role"] ?? "?"
+            let text = (msg["content"] ?? "").prefix(120)
+            print("[PipAI]   \(role): \(text)")
+        }
+        print("[PipAI] ===================")
+        #endif
 
         do {
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
@@ -592,6 +658,16 @@ class PipAIService: ObservableObject {
                 conversationHistory.removeLast()
                 return nil
             }
+
+            #if DEBUG
+            if let usage = json["usage"] as? [String: Any] {
+                let input = usage["input_tokens"] as? Int ?? 0
+                let output = usage["output_tokens"] as? Int ?? 0
+                let cacheWrite = usage["cache_creation_input_tokens"] as? Int ?? 0
+                let cacheRead = usage["cache_read_input_tokens"] as? Int ?? 0
+                print("[PipAI] USAGE — input: \(input), output: \(output), cache_write: \(cacheWrite), cache_read: \(cacheRead)")
+            }
+            #endif
 
             // Add Pip's response to history so next request includes it
             conversationHistory.append(["role": "assistant", "content": text])

@@ -399,14 +399,31 @@ struct SplitScreenVersusView: View {
 
                 Spacer()
 
-                // Mini Pip at bottom
-                Image("pip_got_idea")
-                    .resizable()
-                    .aspectRatio(contentMode: .fit)
-                    .frame(width: 40 * pipScale, height: 40 * pipScale)
+                // Mini Pip at bottom — same 3-state logic as single player:
+                //   0 bad → throw_veggie loops
+                //   1..4  → progressive static fat frame
+                //   5     → full fat_flying plays out
+                gameMiniPip(badChoices: badChoices, size: 60)
                     .scaleEffect(pipScale)
                     .padding(.bottom, 4)
             }
+        }
+    }
+
+    // MARK: - Game Mini Pip (animated sprite per player half)
+
+    @ViewBuilder
+    private func gameMiniPip(badChoices: Int, size: CGFloat) -> some View {
+        if badChoices >= maxBadChoices {
+            PipGameAnimationView(animation: .fatFlying, size: size, loop: false, fps: 15)
+        } else if badChoices > 0 {
+            let frameIdx = min(30, badChoices * 6)
+            Image(String(format: "pip_fat_flying_frame_%02d", frameIdx))
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: size, height: size)
+        } else {
+            PipGameAnimationView(animation: .throwVeggie, size: size, loop: true, fps: 15)
         }
     }
 
@@ -446,7 +463,19 @@ struct SplitScreenVersusView: View {
                 .font(.AppTheme.largeTitle)
                 .foregroundColor(Color.AppTheme.sage)
 
-            PipWavingAnimatedView(size: 80)
+            // Winner-side celebration. Player 1 sits at the top (rotated view),
+            // Player 2 at the bottom — so from Pip's perspective, P1 is on his
+            // LEFT and P2 is on his RIGHT. Tie = neutral wave.
+            if tied {
+                PipWavingAnimatedView(size: 120)
+            } else {
+                PipGameAnimationView(
+                    animation: p1Won ? .handUpLeft : .handUpRight,
+                    size: 120,
+                    loop: true,
+                    fps: 15
+                )
+            }
 
             HStack(spacing: AppSpacing.xl) {
                 VStack {

@@ -82,6 +82,12 @@ struct HealthyChoiceGameView: View {
     @State private var pipRotation: Double = 0
     @State private var pipFloatingAway = false
 
+    // Pip sprite animation (throw, hand-up left/right, fat-flying)
+    // `pipAnimationKey` is bumped on every trigger so SwiftUI rebuilds
+    // the view and replays the animation even if the same one repeats.
+    @State private var currentPipAnimation: PipGameAnimation = .throwVeggie
+    @State private var pipAnimationKey: Int = 0
+
     // Rewards tracking
     @State private var unlockedVeggies: [VegetableType] = []
     @State private var unlockedPantry: [PantryItem] = []
@@ -298,22 +304,54 @@ struct HealthyChoiceGameView: View {
                 Spacer()
             }
 
-            // Pip at the bottom (throwing food up)
+            // Pip at the bottom: three states drive which sprite shows.
+            //   0 bad choices  → loops `throw_veggie` (Pip keeps throwing)
+            //   1..4 bad       → static fat frame (Pip gets progressively fatter)
+            //   5 bad / gameOver → full `fat_flying` animation (Pip inflates + flies away)
             VStack {
                 Spacer()
 
                 ZStack {
-                    // Pip character
-                    Image("pip_got_idea")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 80 * pipScale, height: 80 * pipScale)
+                    gamePipView(size: 120)
                         .rotationEffect(.degrees(pipRotation))
                         .offset(y: pipOffset)
                         .scaleEffect(pipScale)
                 }
                 .padding(.bottom, 60) // Clear tab bar
             }
+        }
+    }
+
+    // MARK: - Game Pip (animated sprite selector)
+
+    @ViewBuilder
+    private func gamePipView(size: CGFloat) -> some View {
+        if badChoices >= maxBadChoices {
+            // Game over — full fat_flying plays through
+            PipGameAnimationView(
+                animation: .fatFlying,
+                size: size,
+                loop: false,
+                fps: 15
+            )
+            .id(pipAnimationKey)
+        } else if badChoices > 0 {
+            // Progressive fattening — static frame from fat_flying sequence.
+            // 30 frames / 5 max bad = 6 frames per bad step.
+            // Clamped so we never read past the last frame.
+            let frameIdx = min(30, badChoices * 6)
+            Image(String(format: "pip_fat_flying_frame_%02d", frameIdx))
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: size, height: size)
+        } else {
+            // Normal gameplay — Pip loops throw_veggie continuously
+            PipGameAnimationView(
+                animation: .throwVeggie,
+                size: size,
+                loop: true,
+                fps: 15
+            )
         }
     }
 
@@ -352,12 +390,8 @@ struct HealthyChoiceGameView: View {
                 .font(.AppTheme.largeTitle)
                 .foregroundColor(Color.AppTheme.terracotta)
 
-            // Pip floating away animation
-            Image("pip_got_idea")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: 120, height: 120)
-                .scaleEffect(1.5)
+            // Pip fat-flying animation, drifting up off the top of the card
+            PipGameAnimationView(animation: .fatFlying, size: 160)
                 .offset(y: pipFloatingAway ? -400 : 0)
                 .opacity(pipFloatingAway ? 0 : 1)
                 .animation(.easeIn(duration: 2), value: pipFloatingAway)
@@ -536,6 +570,10 @@ struct HealthyChoiceGameView: View {
         unlockedPantry = []
         recipeSuggestions = []
 
+        // Pip throws veggie into the air to kick off the game
+        currentPipAnimation = .throwVeggie
+        pipAnimationKey += 1
+
         currentSpawnInterval = 1.8
 
         // Physics timer — 60fps for buttery smooth motion
@@ -641,6 +679,18 @@ struct HealthyChoiceGameView: View {
 
         // Clean up old items
         flyingFoods.removeAll { $0.tapped && $0.resultIcon == nil }
+
+        // Completion check — the game can finish two ways:
+        //   (a) bad-choice cap reached (handled in tapFood)
+        //   (b) all rounds spawned AND no active food left on screen.
+        // scheduleNextSpawn only checked (b) once at the final schedule tick,
+        // so if any food was still airborne at that instant it never fired.
+        // Re-check every physics tick closes that gap.
+        if phase == .playing,
+           round >= totalRounds,
+           flyingFoods.filter({ !$0.tapped }).isEmpty {
+            finishGame(won: true)
+        }
     }
 
     func tapFood(_ item: FlyingFood) {
@@ -730,7 +780,10 @@ struct HealthyChoiceGameView: View {
             }
             phase = .victory
         } else {
-            // Game over — Pip floats away!
+            // Game over — play the full fat-flying animation
+            currentPipAnimation = .fatFlying
+            pipAnimationKey += 1
+
             withAnimation(.easeIn(duration: 1.5)) {
                 pipOffset = -800
                 pipScale = 2.0

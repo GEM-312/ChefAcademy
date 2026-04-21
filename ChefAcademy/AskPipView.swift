@@ -688,10 +688,15 @@ struct AskPipView: View {
         let activeAllergens = activeProfile?.allergens ?? []
         let safeRecipes = GardenRecipes.all.filter { !$0.containsAllergens(activeAllergens) }
 
-        let readyTitles = safeRecipes
+        let readyRecipes = safeRecipes
             .filter { $0.canCookFull(harvestedIngredients: gameState.harvestedIngredients,
                                      pantryInventory: gameState.pantryInventory) }
-            .map { $0.title }
+        let readyTitles = readyRecipes.map { $0.title }
+        let glucoseTips: [String: String] = Dictionary(
+            uniqueKeysWithValues: readyRecipes
+                .filter { !$0.glucoseTip.isEmpty }
+                .map { ($0.title, $0.glucoseTip) }
+        )
 
         let almostReady: [PipAlmostReadyRecipe] = safeRecipes
             .filter { recipe in
@@ -709,7 +714,11 @@ struct AskPipView: View {
                         .map(\.displayName)
                 )
             }
-        aiService.updateRecipesContext(readyNow: readyTitles, almostReady: almostReady)
+        aiService.updateRecipesContext(
+            readyNow: readyTitles,
+            almostReady: almostReady,
+            glucoseTips: glucoseTips
+        )
 
         // Garden care — only plots that need attention right now
         let careNeeds: [PipPlotNeedCare] = gameState.gardenPlots.compactMap { plot in

@@ -261,7 +261,18 @@ struct LocalVersusView: View {
                     .font(.AppTheme.largeTitle)
                     .foregroundColor(tied ? Color.AppTheme.goldenWheat : Color.AppTheme.sage)
 
-                PipWavingAnimatedView(size: 100)
+                // Winner-side celebration. P1 shown on the left column below,
+                // P2 on the right — Pip raises the matching hand. Tie = wave.
+                if tied {
+                    PipWavingAnimatedView(size: 140)
+                } else {
+                    PipGameAnimationView(
+                        animation: p1Won ? .handUpLeft : .handUpRight,
+                        size: 140,
+                        loop: true,
+                        fps: 15
+                    )
+                }
 
                 // Score comparison
                 HStack(spacing: AppSpacing.xl) {
@@ -585,13 +596,13 @@ struct LocalVersusGameView: View {
                     Spacer()
                 }
 
-                // Pip
+                // Pip — same 3-state selector as single-player:
+                //   0 bad → throw_veggie loops
+                //   1..4  → static fat frame (progressive)
+                //   5+    → full fat_flying plays out
                 VStack {
                     Spacer()
-                    Image("pip_got_idea")
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 80 * pipScale, height: 80 * pipScale)
+                    gameTurnPip(size: 120)
                         .rotationEffect(.degrees(pipRotation))
                         .offset(y: pipOffset)
                         .scaleEffect(pipScale)
@@ -600,6 +611,23 @@ struct LocalVersusGameView: View {
             }
             .onAppear { startGame(size: geo.size) }
             .onDisappear { cleanup() }
+        }
+    }
+
+    // MARK: - Game Turn Pip (animated sprite selector)
+
+    @ViewBuilder
+    private func gameTurnPip(size: CGFloat) -> some View {
+        if badChoices >= maxBadChoices {
+            PipGameAnimationView(animation: .fatFlying, size: size, loop: false, fps: 15)
+        } else if badChoices > 0 {
+            let frameIdx = min(30, badChoices * 6)
+            Image(String(format: "pip_fat_flying_frame_%02d", frameIdx))
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: size, height: size)
+        } else {
+            PipGameAnimationView(animation: .throwVeggie, size: size, loop: true, fps: 15)
         }
     }
 

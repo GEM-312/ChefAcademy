@@ -146,6 +146,7 @@ enum AnimationConstants {
     // Frame animation rates
     static let walkingFPS: Double = 8.0       // ~0.125s per frame (walking characters)
     static let wavingFPS: Double = 6.0        // ~0.167s per frame (idle wave loop)
+    static let gameFPS: Double = 30.0         // ~0.033s per frame (one-shot game celebrations)
     static let walkSpeed: CGFloat = 54.0      // points per second (character movement)
 
     // Button press scales

@@ -34,3 +34,12 @@ Secrets.xcconfig
 # Other
 *.log
 *.tmp
+
+# Agent-local memory (not for git)
+.claude/agent-memory/
+
+# Source animation videos (frames are in Assets.xcassets)
+ChefAcademy/Pips Animaions for the games/
+
+# Stray media files at repo root
+/*.mp4
