@@ -87,10 +87,11 @@ class CloudKeyManager {
             return cached
         }
 
-        // 4. Last resort — use the bundled key (for development only)
-        //    In production, this should be empty. The CloudKit key is the source of truth.
-        print("[CloudKey] No CloudKit key available, using bundled fallback")
-        return APIKeys.claudeAPIKey
+        // DEPRECATED: the Claude key now lives as a secret on the Cloudflare
+        // Worker, not on the device. This class is orphaned and will be
+        // deleted in Phase 4 of the migration.
+        print("[CloudKey] Deprecated: Claude key lives on Cloudflare Worker now")
+        return ""
     }
 
     // MARK: - CloudKit Fetch

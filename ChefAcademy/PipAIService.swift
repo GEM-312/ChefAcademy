@@ -21,9 +21,11 @@
 //  Still about 1,000 questions per dollar!
 //
 //  SECURITY (App Store Ready):
-//  - API key is fetched from CloudKit (never in app binary)
-//  - Daily rate limit prevents runaway costs
-//  - Key can be rotated without an app update
+//  - Requests go to our Cloudflare Worker, which holds the Anthropic key
+//    as a server-side secret. The key never ships in the app binary.
+//  - The Worker validates a proxy token header (Phase 3 replaces with App Attest).
+//  - Daily rate limit prevents runaway costs on the client side.
+//  - Key can be rotated via `wrangler secret put` — no app update required.
 //
 
 import Foundation
@@ -79,7 +81,6 @@ class PipAIService: ObservableObject {
     //
     private(set) var conversationHistory: [[String: String]] = []
 
-    private var apiKey: String = ""
     private let model = "claude-sonnet-4-6"
     private let maxTokens = 180
 
@@ -232,17 +233,9 @@ class PipAIService: ObservableObject {
     #endif
 
     private func setupCloudService() {
-        // Start with the bundled key for immediate use (development)
-        // CloudKit will override this once it loads
-        self.apiKey = APIKeys.claudeAPIKey
-
-        // Fetch the real key from CloudKit in the background
-        Task {
-            let cloudKey = await CloudKeyManager.shared.fetchAPIKey()
-            await MainActor.run {
-                self.apiKey = cloudKey
-            }
-        }
+        // No key fetch — the Anthropic key lives on the Cloudflare Worker.
+        // The app only needs the proxy token (in WorkerClient) to authenticate
+        // to the Worker, and that's read lazily at request time.
     }
 
     // MARK: - Update Game Context
@@ -557,8 +550,9 @@ class PipAIService: ObservableObject {
             return nil
         }
 
-        guard !apiKey.isEmpty else {
-            await MainActor.run { lastError = "API key not configured" }
+        guard !WorkerClient.proxyToken.isEmpty,
+              WorkerClient.proxyToken != "PASTE_YOUR_HEX_TOKEN_HERE" else {
+            await MainActor.run { lastError = "Proxy token not configured" }
             return nil
         }
 
@@ -585,14 +579,12 @@ class PipAIService: ObservableObject {
             conversationHistory = Array(conversationHistory.suffix(20))
         }
 
-        let url = URL(string: "https://api.anthropic.com/v1/messages")!
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: WorkerClient.chatURL)
         request.httpMethod = "POST"
         request.timeoutInterval = 15
 
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(apiKey, forHTTPHeaderField: "x-api-key")
-        request.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
+        request.setValue(WorkerClient.proxyToken, forHTTPHeaderField: "X-Proxy-Token")
 
         // TEACHING MOMENT: Notice "messages" now contains the FULL history,
         // not just one message. Claude reads the whole conversation and

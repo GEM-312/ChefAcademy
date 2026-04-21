@@ -1,0 +1,8 @@
+name = "chefacademy-api"
+main = "src/index.ts"
+compatibility_date = "2026-04-21"
+
+# Observability: enables the Workers logs tab in the Cloudflare dashboard
+# so you can see request logs, errors, and console.log output live.
+[observability]
+enabled = true
