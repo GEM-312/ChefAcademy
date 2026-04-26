@@ -20,7 +20,23 @@ enum WorkerClient {
 
     static var chatURL: URL { baseURL.appendingPathComponent("chat") }
 
+    /// USDA FoodData Central single-food lookup, proxied through the Worker.
+    static func usdaURL(fdcId: Int) -> URL {
+        baseURL.appendingPathComponent("usda/\(fdcId)")
+    }
+
+    /// ElevenLabs text-to-speech, proxied through the Worker.
+    static func ttsURL(voiceID: String) -> URL {
+        baseURL.appendingPathComponent("tts/\(voiceID)")
+    }
+
     /// Shared-secret header that the Worker checks. Stored in APIKeys.swift
     /// (gitignored) so it doesn't end up in screenshots or commits.
     static var proxyToken: String { APIKeys.proxyToken }
+
+    /// True once the proxy token has been pasted into APIKeys.swift.
+    /// Use this to short-circuit network calls before they hit the wire.
+    static var isConfigured: Bool {
+        !proxyToken.isEmpty && proxyToken != "PASTE_YOUR_HEX_TOKEN_HERE"
+    }
 }

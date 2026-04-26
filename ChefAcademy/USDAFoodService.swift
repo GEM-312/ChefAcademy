@@ -2,8 +2,8 @@
 //  USDAFoodService.swift
 //  ChefAcademy
 //
-//  Fetches real nutrition data from the USDA FoodData Central API.
-//  Free API key required — sign up at https://api.data.gov/signup/
+//  Fetches real nutrition data from USDA FoodData Central, proxied
+//  through our Cloudflare Worker so the API key stays server-side.
 //  All values are per 100g. We convert to kid-friendly serving sizes.
 //
 
@@ -117,7 +117,6 @@ struct USDANutrientDetail: Codable {
 class USDAFoodService: ObservableObject {
     static let shared = USDAFoodService()
 
-    private let baseURL = "https://api.nal.usda.gov/fdc/v1"
     private let cacheKey = "com.chefacademy.usdaNutrientCache"
 
     /// Cached nutrient profiles keyed by item identifier (e.g., "carrot", "eggs")
@@ -237,17 +236,17 @@ class USDAFoodService: ObservableObject {
             return nil
         }
 
-        // Fetch from API
-        guard let apiKey = loadAPIKey() else {
-            print("[USDA] No API key available. Sign up at https://api.data.gov/signup/")
+        guard WorkerClient.isConfigured else {
+            print("[USDA] Proxy token not configured — set APIKeys.proxyToken")
             return nil
         }
 
-        let urlString = "\(baseURL)/food/\(fdcId)?api_key=\(apiKey)"
-        guard let url = URL(string: urlString) else { return nil }
+        var request = URLRequest(url: WorkerClient.usdaURL(fdcId: fdcId))
+        request.timeoutInterval = 15
+        request.setValue(WorkerClient.proxyToken, forHTTPHeaderField: "X-Proxy-Token")
 
         do {
-            let (data, _) = try await URLSession.shared.data(from: url)
+            let (data, _) = try await URLSession.shared.data(for: request)
             let food = try JSONDecoder().decode(USDAFood.self, from: data)
 
             let servingGrams = USDAFoodService.servingSizes[itemKey] ?? 100
@@ -312,28 +311,6 @@ class USDAFoodService: ObservableObject {
             lycopene: nutrientValue("337"),       // Red pigment
             lutein: nutrientValue("338")          // Yellow/green pigment
         )
-    }
-
-    // MARK: - API Key
-
-    /// Load USDA API key — stored alongside Pip AI key in UserDefaults
-    /// (CloudKit would be better for production)
-    private func loadAPIKey() -> String? {
-        // Use local dev key first (gitignored)
-        let localKey = APIKeys.usdaAPIKey
-        if !localKey.isEmpty && localKey != "YOUR_KEY_HERE" {
-            return localKey
-        }
-        // Fallback: check UserDefaults (from CloudKit or manual entry)
-        if let key = UserDefaults.standard.string(forKey: "com.chefacademy.usdaAPIKey"), !key.isEmpty {
-            return key
-        }
-        return "DEMO_KEY"
-    }
-
-    /// Save API key (called from settings or CloudKit fetch)
-    static func saveAPIKey(_ key: String) {
-        UserDefaults.standard.set(key, forKey: "com.chefacademy.usdaAPIKey")
     }
 
     // MARK: - Cache

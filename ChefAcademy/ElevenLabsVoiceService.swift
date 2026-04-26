@@ -63,7 +63,6 @@ class ElevenLabsVoiceService: NSObject, ObservableObject, AVAudioPlayerDelegate 
 
     // MARK: - Private State
 
-    private var apiKey: String = ""
     private var audioPlayer: AVAudioPlayer?
     private var audioCache: [String: Data] = [:]
     private let cacheLimit = 50  // Max cached phrases
@@ -72,36 +71,7 @@ class ElevenLabsVoiceService: NSObject, ObservableObject, AVAudioPlayerDelegate 
 
     override init() {
         super.init()
-        loadAPIKey()
         setupAudioSession()
-    }
-
-    // MARK: - API Key Management
-    //
-    // TEACHING MOMENT: Same pattern as Claude API key — CloudKit for
-    // production (never in app binary), APIKeys.swift for development.
-    // The key is cached in UserDefaults between launches.
-    //
-
-    private func loadAPIKey() {
-        // Try cached key first (set via setAPIKey() or CloudKit)
-        if let cached = UserDefaults.standard.string(forKey: "com.chefacademy.elevenLabsKey"),
-           !cached.isEmpty {
-            self.apiKey = cached
-            return
-        }
-
-        // Use bundled dev key from APIKeys.swift (gitignored)
-        let bundled = APIKeys.elevenLabsAPIKey
-        if !bundled.isEmpty {
-            self.apiKey = bundled
-        }
-        // TODO: Add CloudKit fetch for production (same pattern as Claude key)
-    }
-
-    func setAPIKey(_ key: String) {
-        self.apiKey = key
-        UserDefaults.standard.set(key, forKey: "com.chefacademy.elevenLabsKey")
     }
 
     // MARK: - Audio Session
@@ -128,8 +98,8 @@ class ElevenLabsVoiceService: NSObject, ObservableObject, AVAudioPlayerDelegate 
 
     func speak(_ text: String) async {
         guard !text.isEmpty else { return }
-        guard !apiKey.isEmpty else {
-            await MainActor.run { lastError = "Voice API key not configured" }
+        guard WorkerClient.isConfigured else {
+            await MainActor.run { lastError = "Proxy token not configured" }
             return
         }
 
@@ -179,28 +149,19 @@ class ElevenLabsVoiceService: NSObject, ObservableObject, AVAudioPlayerDelegate 
 
     // MARK: - API Call
     //
-    // TEACHING MOMENT: ElevenLabs API is simple — POST text, GET audio.
-    //   Endpoint: /v1/text-to-speech/{voice_id}
-    //   Auth: xi-api-key header
-    //   Body: JSON with text, model_id, voice_settings
-    //   Response: raw audio bytes (mpeg format)
-    //
-    // The "stream" endpoint returns chunked audio for real-time playback,
-    // but for our short phrases, the non-streaming endpoint is simpler
-    // and still fast enough.
+    // TEACHING MOMENT: We don't talk to ElevenLabs directly anymore — we
+    // hit our Cloudflare Worker, which holds the real `xi-api-key` as a
+    // server-side secret and forwards the request. The app only sends the
+    // shared X-Proxy-Token header, so even a jailbroken device can't
+    // exfiltrate Marina's ElevenLabs account credentials from the binary.
     //
 
     private func fetchSpeech(text: String) async throws -> Data {
-        let urlString = "https://api.elevenlabs.io/v1/text-to-speech/\(pipVoiceID)"
-        guard let url = URL(string: urlString) else {
-            throw ElevenLabsError.invalidURL
-        }
-
-        var request = URLRequest(url: url)
+        var request = URLRequest(url: WorkerClient.ttsURL(voiceID: pipVoiceID))
         request.httpMethod = "POST"
         request.timeoutInterval = 15
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(apiKey, forHTTPHeaderField: "xi-api-key")
+        request.setValue(WorkerClient.proxyToken, forHTTPHeaderField: "X-Proxy-Token")
         request.setValue("audio/mpeg", forHTTPHeaderField: "Accept")
 
         let body: [String: Any] = [
@@ -323,14 +284,12 @@ class ElevenLabsVoiceService: NSObject, ObservableObject, AVAudioPlayerDelegate 
 // MARK: - Errors
 
 enum ElevenLabsError: LocalizedError {
-    case invalidURL
     case badResponse
     case httpError(Int)
     case apiError(String)
 
     var errorDescription: String? {
         switch self {
-        case .invalidURL: return "Invalid voice API URL"
         case .badResponse: return "Bad response from voice server"
         case .httpError(let code): return "Voice server error (\(code))"
         case .apiError(let message): return message
