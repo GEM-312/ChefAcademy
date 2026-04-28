@@ -972,9 +972,8 @@ struct RecipeCardView: View {
         VStack(alignment: .leading, spacing: 0) {
             // Image Area - Recipe illustration
             ZStack(alignment: .topTrailing) {
-                // Recipe image from Assets
-                Image(recipe.imageName)
-                    .resizable()
+                // Recipe image — loaded from Apple-Hosted Asset Pack (recipes)
+                AssetPackImage(recipe.imageName, in: .recipes)
                     .aspectRatio(contentMode: .fill)
                     .frame(height: 160)
                     .offset(y: recipe.imageYOffset)

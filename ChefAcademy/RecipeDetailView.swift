@@ -22,8 +22,7 @@ struct RecipeDetailView: View {
 
                     // MARK: - Hero Image
                     ZStack(alignment: .topTrailing) {
-                        Image(recipe.imageName)
-                            .resizable()
+                        AssetPackImage(recipe.imageName, in: .recipes)
                             .aspectRatio(contentMode: .fill)
                             .frame(height: 180)
                             .offset(y: recipe.imageYOffset)

@@ -1,0 +1,28 @@
+{
+    "assetPackID": "recipes",
+    "downloadPolicy": {
+        "essential": {
+            "installationEventTypes": [
+                "firstInstallation",
+                "subsequentUpdate"
+            ]
+        }
+    },
+    "fileSelectors": [
+        { "file": "recipe_beef_zucchini_boats.png" },
+        { "file": "recipe_carrot_cheese_dip.png" },
+        { "file": "recipe_chicken_lettuce_wrap.png" },
+        { "file": "recipe_chicken_veggie_platter.png" },
+        { "file": "recipe_chicken_veggie_skillet.png" },
+        { "file": "recipe_cucumber_cheese_bites.png" },
+        { "file": "recipe_pumpkin_soup.png" },
+        { "file": "recipe_scrambled_egg_bowl.png" },
+        { "file": "recipe_tomato_egg_soup.png" },
+        { "file": "recipe_veggie_lettuce_cups.png" },
+        { "file": "recipe_veggie_omelette.png" },
+        { "file": "recipe_yogurt_power_bowl.png" },
+        { "file": "recipe_zucchini_fritters.png" },
+        { "file": "recipe_zucchini_noodle_bowl.png" }
+    ],
+    "platforms": ["iOS"]
+}

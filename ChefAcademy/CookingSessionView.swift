@@ -393,8 +393,7 @@ struct CookingSessionView: View {
                         .foregroundColor(Color.AppTheme.sepia.opacity(0.6))
                 }
 
-                Image(recipe.imageName)
-                    .resizable()
+                AssetPackImage(recipe.imageName, in: .recipes)
                     .scaledToFill()
                     .frame(width: 36, height: 36)
                     .clipShape(RoundedRectangle(cornerRadius: AppSpacing.pillCornerRadius))

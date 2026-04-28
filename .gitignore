@@ -43,3 +43,6 @@ ChefAcademy/Pips Animaions for the games/
 
 # Stray media files at repo root
 /*.mp4
+
+# Background Assets build artifacts
+*.aar

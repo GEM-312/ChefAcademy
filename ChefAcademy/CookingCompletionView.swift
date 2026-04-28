@@ -31,8 +31,7 @@ struct CookingCompletionView: View {
                 Spacer()
 
                 // Recipe image (circle, gold border)
-                Image(recipe.imageName)
-                    .resizable()
+                AssetPackImage(recipe.imageName, in: .recipes)
                     .scaledToFill()
                     .frame(width: 140, height: 140)
                     .clipShape(Circle())

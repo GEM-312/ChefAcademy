@@ -732,8 +732,7 @@ struct KitchenView: View {
 
     private func cookingBanner(recipe: Recipe) -> some View {
         HStack(spacing: AppSpacing.md) {
-            Image(recipe.imageName)
-                .resizable()
+            AssetPackImage(recipe.imageName, in: .recipes)
                 .scaledToFill()
                 .frame(width: AppSpacing.largeIconSize, height: AppSpacing.largeIconSize)
                 .clipShape(RoundedRectangle(cornerRadius: AppSpacing.smallCornerRadius))
@@ -822,8 +821,7 @@ struct KitchenView: View {
             ForEach(readyRecipes) { recipe in
                 let readySize = AdaptiveCardSize.kitchenReadyImage(for: sizeClass)
                 HStack(spacing: AppSpacing.md) {
-                    Image(recipe.imageName)
-                        .resizable()
+                    AssetPackImage(recipe.imageName, in: .recipes)
                         .scaledToFill()
                         .frame(width: readySize, height: readySize)
                         .clipShape(RoundedRectangle(cornerRadius: AppSpacing.smallCornerRadius))
@@ -892,8 +890,7 @@ struct KitchenView: View {
                         let almostSize = AdaptiveCardSize.kitchenAlmostImage(for: sizeClass)
                         VStack(alignment: .leading, spacing: AppSpacing.xs) {
                             HStack(spacing: AppSpacing.sm) {
-                                Image(recipe.imageName)
-                                    .resizable()
+                                AssetPackImage(recipe.imageName, in: .recipes)
                                     .scaledToFill()
                                     .frame(width: almostSize, height: almostSize)
                                     .clipShape(RoundedRectangle(cornerRadius: AppSpacing.pillCornerRadius))

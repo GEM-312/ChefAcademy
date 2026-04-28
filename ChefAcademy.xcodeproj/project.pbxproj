@@ -6,9 +6,48 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		54DF853C2FA02A2500B423C1 /* AssetPackDownloader.appex in Embed ExtensionKit Extensions */ = {isa = PBXBuildFile; fileRef = 54DF85342FA02A2500B423C1 /* AssetPackDownloader.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		54DF853A2FA02A2500B423C1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 541F93BE2F283D530086DC99 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 54DF85332FA02A2500B423C1;
+			remoteInfo = AssetPackDownloader;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		54DF852B2FA0291300B423C1 /* Embed ExtensionKit Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "$(EXTENSIONS_FOLDER_PATH)";
+			dstSubfolderSpec = 16;
+			files = (
+				54DF853C2FA02A2500B423C1 /* AssetPackDownloader.appex in Embed ExtensionKit Extensions */,
+			);
+			name = "Embed ExtensionKit Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		541F93C62F283D530086DC99 /* ChefAcademy.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ChefAcademy.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		54DF85342FA02A2500B423C1 /* AssetPackDownloader.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.extensionkit-extension"; includeInIndex = 0; path = AssetPackDownloader.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		54DF853D2FA02A2500B423C1 /* Exceptions for "AssetPackDownloader" folder in "AssetPackDownloader" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 54DF85332FA02A2500B423C1 /* AssetPackDownloader */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		541F93C82F283D530086DC99 /* ChefAcademy */ = {
@@ -16,10 +55,30 @@
 			path = ChefAcademy;
 			sourceTree = "<group>";
 		};
+		54DF85232FA0291300B423C1 /* AssetPackDownloader */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = AssetPackDownloader;
+			sourceTree = "<group>";
+		};
+		54DF85352FA02A2500B423C1 /* AssetPackDownloader */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				54DF853D2FA02A2500B423C1 /* Exceptions for "AssetPackDownloader" folder in "AssetPackDownloader" target */,
+			);
+			path = AssetPackDownloader;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		541F93C32F283D530086DC99 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		54DF85312FA02A2500B423C1 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -33,6 +92,8 @@
 			isa = PBXGroup;
 			children = (
 				541F93C82F283D530086DC99 /* ChefAcademy */,
+				54DF85232FA0291300B423C1 /* AssetPackDownloader */,
+				54DF85352FA02A2500B423C1 /* AssetPackDownloader */,
 				541F93C72F283D530086DC99 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +102,7 @@
 			isa = PBXGroup;
 			children = (
 				541F93C62F283D530086DC99 /* ChefAcademy.app */,
+				54DF85342FA02A2500B423C1 /* AssetPackDownloader.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -55,10 +117,12 @@
 				541F93C22F283D530086DC99 /* Sources */,
 				541F93C32F283D530086DC99 /* Frameworks */,
 				541F93C42F283D530086DC99 /* Resources */,
+				54DF852B2FA0291300B423C1 /* Embed ExtensionKit Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				54DF853B2FA02A2500B423C1 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				541F93C82F283D530086DC99 /* ChefAcademy */,
@@ -69,6 +133,28 @@
 			productName = ChefAcademy;
 			productReference = 541F93C62F283D530086DC99 /* ChefAcademy.app */;
 			productType = "com.apple.product-type.application";
+		};
+		54DF85332FA02A2500B423C1 /* AssetPackDownloader */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 54DF853E2FA02A2500B423C1 /* Build configuration list for PBXNativeTarget "AssetPackDownloader" */;
+			buildPhases = (
+				54DF85302FA02A2500B423C1 /* Sources */,
+				54DF85312FA02A2500B423C1 /* Frameworks */,
+				54DF85322FA02A2500B423C1 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				54DF85352FA02A2500B423C1 /* AssetPackDownloader */,
+			);
+			name = AssetPackDownloader;
+			packageProductDependencies = (
+			);
+			productName = AssetPackDownloader;
+			productReference = 54DF85342FA02A2500B423C1 /* AssetPackDownloader.appex */;
+			productType = "com.apple.product-type.extensionkit-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -84,11 +170,14 @@
 					kitchen,
 					recipes,
 				);
-				LastSwiftUpdateCheck = 2620;
+				LastSwiftUpdateCheck = 2640;
 				LastUpgradeCheck = 2640;
 				TargetAttributes = {
 					541F93C52F283D530086DC99 = {
 						CreatedOnToolsVersion = 26.2;
+					};
+					54DF85332FA02A2500B423C1 = {
+						CreatedOnToolsVersion = 26.4.1;
 					};
 				};
 			};
@@ -107,12 +196,20 @@
 			projectRoot = "";
 			targets = (
 				541F93C52F283D530086DC99 /* ChefAcademy */,
+				54DF85332FA02A2500B423C1 /* AssetPackDownloader */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		541F93C42F283D530086DC99 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		54DF85322FA02A2500B423C1 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -129,7 +226,22 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		54DF85302FA02A2500B423C1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		54DF853B2FA02A2500B423C1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 54DF85332FA02A2500B423C1 /* AssetPackDownloader */;
+			targetProxy = 54DF853A2FA02A2500B423C1 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		541F93CF2F283D540086DC99 /* Debug */ = {
@@ -185,7 +297,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
@@ -244,7 +356,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
@@ -262,10 +374,11 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = ChefAcademy/ChefAcademy.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				ENABLE_ON_DEMAND_RESOURCES = NO;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_NSBonjourServices = "(_pip-healthy._tcp)";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Pip needs local network access to play Healthy Picks with nearby friends!";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Pip uses your location to show real weather in your garden!";
@@ -299,10 +412,11 @@
 				CODE_SIGN_ENTITLEMENTS = ChefAcademy/ChefAcademyRelease.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
+				CURRENT_PROJECT_VERSION = 2;
 				ENABLE_ON_DEMAND_RESOURCES = NO;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
 				INFOPLIST_KEY_NSBonjourServices = "(_pip-healthy._tcp)";
 				INFOPLIST_KEY_NSLocalNetworkUsageDescription = "Pip needs local network access to play Healthy Picks with nearby friends!";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Pip uses your location to show real weather in your garden!";
@@ -329,6 +443,63 @@
 			};
 			name = Release;
 		};
+		54DF853F2FA02A2500B423C1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = AssetPackDownloader/AssetPackDownloader.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AssetPackDownloader/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = AssetPackDownloader;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = GraphicElegance.ChefAcademy.AssetPackDownloader;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		54DF85402FA02A2500B423C1 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = AssetPackDownloader/AssetPackDownloader.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AssetPackDownloader/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = AssetPackDownloader;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = GraphicElegance.ChefAcademy.AssetPackDownloader;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -346,6 +517,15 @@
 			buildConfigurations = (
 				541F93D22F283D540086DC99 /* Debug */,
 				541F93D32F283D540086DC99 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		54DF853E2FA02A2500B423C1 /* Build configuration list for PBXNativeTarget "AssetPackDownloader" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				54DF853F2FA02A2500B423C1 /* Debug */,
+				54DF85402FA02A2500B423C1 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

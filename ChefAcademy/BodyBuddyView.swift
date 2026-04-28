@@ -296,8 +296,7 @@ struct CookedRecipeCard: View {
 
     var body: some View {
         VStack(spacing: 4) {
-            Image(recipe.imageName)
-                .resizable()
+            AssetPackImage(recipe.imageName, in: .recipes)
                 .scaledToFill()
                 .frame(width: 70, height: 70)
                 .clipShape(RoundedRectangle(cornerRadius: AppSpacing.smallCornerRadius))
