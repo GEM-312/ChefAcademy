@@ -235,23 +235,17 @@ struct MainTabView: View {
                 case .home:
                     HomeView(avatarModel: avatarModel, selectedTab: $selectedTab)
                         .onAppear {
-                            ODRManager.shared.prefetch(.garden)
-                            ODRManager.shared.prefetch(.kitchen)
-                            ODRManager.shared.prefetch(.characterAnim)
-                            ODRManager.shared.prefetch(.recipes)
+                            AssetPackController.shared.prefetch(.recipes)
                             ImagePrewarmer.prewarmHome()
                         }
                 case .garden:
                     GardenView(selectedTab: $selectedTab, onShowFarmShop: { selectedTab = .shop })
-                        .requestODR(.garden, .characterAnim)
                         .onAppear { ImagePrewarmer.prewarmGarden() }
                 case .shop:
                     FarmTabView()
-                        .requestODR(.farm)
                         .onAppear { ImagePrewarmer.prewarmFarm() }
                 case .kitchen:
                     KitchenView()
-                        .requestODR(.kitchen, .characterAnim)
                 case .bodyBuddy:
                     BodyBuddyView(selectedTab: $selectedTab)
                 case .playLearn:
