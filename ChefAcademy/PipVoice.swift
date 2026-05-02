@@ -395,7 +395,7 @@ struct SpeakerButton: View {
 
 // MARK: - Voice Toggle (Settings)
 
-/// Toggle for parents to enable/disable Pip's voice
+/// Full-row toggle for parent settings screens.
 struct VoiceToggleView: View {
     @ObservedObject private var voice = PipVoice.shared
 
@@ -410,6 +410,31 @@ struct VoiceToggleView: View {
             }
         }
         .tint(Color.AppTheme.sage)
+    }
+}
+
+/// Compact speaker chip — same shape as the Level/Coins/XP chips in
+/// the Home header. Tap toggles Pip's voice on/off. Crucial for
+/// devs/testers to control ElevenLabs API spend during play, and for
+/// parents who want quiet time.
+struct PipVoiceToggleChip: View {
+    @ObservedObject private var voice = PipVoice.shared
+
+    var body: some View {
+        Button(action: {
+            Haptic.selection()
+            voice.isEnabled.toggle()
+        }) {
+            Image(systemName: voice.isEnabled ? "speaker.wave.2.fill" : "speaker.slash.fill")
+                .font(.AppTheme.microLarge)
+                .foregroundColor(voice.isEnabled ? Color.AppTheme.sage : Color.AppTheme.lightSepia)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 6)
+                .background(Color.AppTheme.warmCream)
+                .cornerRadius(14)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(voice.isEnabled ? "Turn off Pip's voice" : "Turn on Pip's voice")
     }
 }
 

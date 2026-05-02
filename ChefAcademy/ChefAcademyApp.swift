@@ -431,6 +431,9 @@ struct HomeView: View {
                         .background(Color.AppTheme.warmCream)
                         .cornerRadius(14)
 
+                        // Voice on/off — saves ElevenLabs credits when testing
+                        PipVoiceToggleChip()
+
                         Spacer()
                     }
                 }

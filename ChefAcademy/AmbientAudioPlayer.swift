@@ -23,6 +23,7 @@
 //
 
 import AVFoundation
+import Combine    // @Published, ObservableObject — Swift 6 strict mode requires explicit import
 import Foundation
 import SwiftUI
 
