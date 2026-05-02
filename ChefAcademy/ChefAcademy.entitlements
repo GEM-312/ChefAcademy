@@ -4,6 +4,9 @@
 <dict>
 	<key>aps-environment</key>
 	<string>development</string>
+	<!-- App Attest: development = sandbox CA. Used by Xcode device builds. -->
+	<key>com.apple.developer.devicecheck.appattest-environment</key>
+	<string>development</string>
 	<key>com.apple.developer.applesignin</key>
 	<array>
 		<string>Default</string>

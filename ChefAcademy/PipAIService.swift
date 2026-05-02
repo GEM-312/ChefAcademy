@@ -550,9 +550,8 @@ class PipAIService: ObservableObject {
             return nil
         }
 
-        guard !WorkerClient.proxyToken.isEmpty,
-              WorkerClient.proxyToken != "PASTE_YOUR_HEX_TOKEN_HERE" else {
-            await MainActor.run { lastError = "Proxy token not configured" }
+        guard await WorkerClient.isReady() else {
+            await MainActor.run { lastError = "Pip chat needs a real device (App Attest not available here)" }
             return nil
         }
 
@@ -584,7 +583,6 @@ class PipAIService: ObservableObject {
         request.timeoutInterval = 15
 
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(WorkerClient.proxyToken, forHTTPHeaderField: "X-Proxy-Token")
 
         // TEACHING MOMENT: Notice "messages" now contains the FULL history,
         // not just one message. Claude reads the whole conversation and
@@ -617,7 +615,14 @@ class PipAIService: ObservableObject {
         #endif
 
         do {
-            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+            let bodyData = try JSONSerialization.data(withJSONObject: body)
+            request.httpBody = bodyData
+
+            // Bind the assertion (or fall back to proxy token) to the exact body bytes.
+            let auth = await WorkerClient.authHeaders(for: bodyData)
+            for (key, value) in auth {
+                request.setValue(value, forHTTPHeaderField: key)
+            }
 
             let (data, response) = try await URLSession.shared.data(for: request)
 

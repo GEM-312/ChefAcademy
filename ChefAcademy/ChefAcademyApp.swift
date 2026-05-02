@@ -87,6 +87,10 @@ struct ChefAcademyApp: App {
                 // Fetch subscription products from App Store Connect on launch.
                 // Safe to call even if products aren't set up yet — fails silently.
                 await subscriptionManager.loadProducts()
+
+                // Register this device with the Worker via App Attest, if not already.
+                // No-ops on simulator, jailbroken devices, and after first successful run.
+                await AppAttestService.shared.registerIfNeeded()
             }
             .onAppear {
                 // Wire SwiftData context to both GameState and SessionManager

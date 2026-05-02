@@ -2,7 +2,28 @@ name = "chefacademy-api"
 main = "src/index.ts"
 compatibility_date = "2026-04-21"
 
+# nodejs_compat — exposes node:crypto, node:buffer, etc. inside the
+# Worker's V8 isolate. Required by `node-app-attest` for CBOR parsing
+# and X.509 certificate chain validation when verifying attestations.
+compatibility_flags = ["nodejs_compat"]
+
 # Observability: enables the Workers logs tab in the Cloudflare dashboard
 # so you can see request logs, errors, and console.log output live.
 [observability]
 enabled = true
+
+# Public, non-secret config used by App Attest verification.
+# Must match the iOS app's actual bundle ID + team ID; otherwise
+# Apple's attestation fails the bundle/team check.
+[vars]
+BUNDLE_ID = "GraphicElegance.ChefAcademy"
+TEAM_ID   = "M84U73M2CT"
+
+# KV namespace storing per-device public keys + signature counters,
+# plus short-lived challenge nonces. Run:
+#   npx wrangler kv namespace create APP_ATTEST_KV
+# and paste the printed `id` value below. The `binding` name is what
+# the Worker code references (env.APP_ATTEST_KV).
+[[kv_namespaces]]
+binding = "APP_ATTEST_KV"
+id = "a99c75c57855420e8a395ee3a4ecf230"

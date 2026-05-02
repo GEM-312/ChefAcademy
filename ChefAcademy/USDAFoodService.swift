@@ -236,14 +236,19 @@ class USDAFoodService: ObservableObject {
             return nil
         }
 
-        guard WorkerClient.isConfigured else {
-            print("[USDA] Proxy token not configured — set APIKeys.proxyToken")
+        guard await WorkerClient.isReady() else {
+            print("[USDA] Skipping fetch — App Attest not ready (running on simulator?)")
             return nil
         }
 
         var request = URLRequest(url: WorkerClient.usdaURL(fdcId: fdcId))
         request.timeoutInterval = 15
-        request.setValue(WorkerClient.proxyToken, forHTTPHeaderField: "X-Proxy-Token")
+
+        // GET request → no body to bind the assertion to. Pass Data().
+        let auth = await WorkerClient.authHeaders(for: Data())
+        for (key, value) in auth {
+            request.setValue(value, forHTTPHeaderField: key)
+        }
 
         do {
             let (data, _) = try await URLSession.shared.data(for: request)

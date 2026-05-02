@@ -98,8 +98,8 @@ class ElevenLabsVoiceService: NSObject, ObservableObject, AVAudioPlayerDelegate 
 
     func speak(_ text: String) async {
         guard !text.isEmpty else { return }
-        guard WorkerClient.isConfigured else {
-            await MainActor.run { lastError = "Proxy token not configured" }
+        guard await WorkerClient.isReady() else {
+            await MainActor.run { lastError = "Voice needs a real device (App Attest not available here)" }
             return
         }
 
@@ -161,7 +161,6 @@ class ElevenLabsVoiceService: NSObject, ObservableObject, AVAudioPlayerDelegate 
         request.httpMethod = "POST"
         request.timeoutInterval = 15
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        request.setValue(WorkerClient.proxyToken, forHTTPHeaderField: "X-Proxy-Token")
         request.setValue("audio/mpeg", forHTTPHeaderField: "Accept")
 
         let body: [String: Any] = [
@@ -173,7 +172,14 @@ class ElevenLabsVoiceService: NSObject, ObservableObject, AVAudioPlayerDelegate 
             ]
         ]
 
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        let bodyData = try JSONSerialization.data(withJSONObject: body)
+        request.httpBody = bodyData
+
+        // Bind the assertion to the exact body bytes we're about to send.
+        let auth = await WorkerClient.authHeaders(for: bodyData)
+        for (key, value) in auth {
+            request.setValue(value, forHTTPHeaderField: key)
+        }
 
         let (data, response) = try await URLSession.shared.data(for: request)
 
