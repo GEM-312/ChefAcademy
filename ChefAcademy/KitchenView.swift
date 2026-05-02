@@ -1074,6 +1074,8 @@ struct PipFloatingBubble: View {
         .softCard()
         .position(x: bubbleCenterX, y: anchor.y)
         .animation(AnimationConstants.fadeMedium, value: anchorOnLeftHalf)
+        .onAppear { PipVoice.shared.speak(message) }
+        .onChange(of: message) { _, new in PipVoice.shared.speak(new) }
     }
 }
 

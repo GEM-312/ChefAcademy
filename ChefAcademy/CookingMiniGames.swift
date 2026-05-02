@@ -866,8 +866,14 @@ struct WashMiniGame: View {
             withAnimation(.spring(response: 0.6, dampingFraction: 0.6).delay(0.3)) {
                 vegY = 10
             }
+            // Running-water ambient while washing. CookingSessionView's
+            // frying loop crossfades back in when this view disappears.
+            AmbientAudioPlayer.shared.play(.washing)
         }
-        .onDisappear { sinkTimer?.invalidate() }
+        .onDisappear {
+            sinkTimer?.invalidate()
+            AmbientAudioPlayer.shared.play(.cookingFrying)
+        }
     }
 
     private func startSinkAnimation() {

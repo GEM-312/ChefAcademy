@@ -373,6 +373,15 @@ struct CookingSessionView: View {
         .task {
             steps = recipe.generateCookingSteps()
         }
+        .onAppear {
+            // Sizzle/frying ambient backdrop while the kid cooks.
+            // Stops on disappear (when CookingCompletionView dismisses
+            // back to the kitchen, this view leaves the hierarchy).
+            AmbientAudioPlayer.shared.play(.cookingFrying)
+        }
+        .onDisappear {
+            AmbientAudioPlayer.shared.stop()
+        }
     }
 
     // MARK: - Current Step

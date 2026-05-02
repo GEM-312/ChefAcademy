@@ -76,9 +76,15 @@ struct ChopMiniGame: View {
         .background(Color.AppTheme.cream)
         .onAppear {
             startGame()
+            // Switch the cooking ambient to the chopping loop while
+            // this mini-game is active. CookingSessionView restored it
+            // to the frying ambient when this view disappears.
+            AmbientAudioPlayer.shared.play(.chopping)
         }
         .onDisappear {
             timer?.invalidate()
+            // Hand the ambient back to the cooking session's frying loop.
+            AmbientAudioPlayer.shared.play(.cookingFrying)
         }
     }
 

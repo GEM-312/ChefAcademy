@@ -115,11 +115,15 @@ class PipVoice: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
         elevenLabs.$isSpeaking
             .receive(on: RunLoop.main)
             .sink { [weak self] speaking in
-                if self?.voiceMode == .elevenLabs {
+                if self?.effectiveVoiceMode == .elevenLabs {
                     self?.isSpeaking = speaking
                 }
             }
             .store(in: &cancellables)
+
+        #if DEBUG
+        print("[PipVoice] DEBUG build → ElevenLabs voice forced on (subscription gating bypassed)")
+        #endif
 
         // Listen for new voices being downloaded in Settings
         //
@@ -154,14 +158,41 @@ class PipVoice: NSObject, ObservableObject, AVSpeechSynthesizerDelegate {
     func speak(_ text: String) {
         guard isEnabled, !text.isEmpty else { return }
 
-        switch voiceMode {
+        switch effectiveVoiceMode {
         case .readText:
             // Silent — kid reads text on screen. No audio.
             return
         case .elevenLabs:
-            guard hasSubscription else { return }
+            guard effectiveHasSubscription else { return }
             speakWithElevenLabs(text)
         }
+    }
+
+    // MARK: - DEBUG override
+    //
+    // In Xcode-built device builds we force the ElevenLabs path on so we
+    // can hear Pip speak before the Pip Plus subscription tier ships.
+    // Release / TestFlight / App Store builds skip this branch entirely
+    // and behave per the user's saved preferences (silent until subscribed).
+    //
+    // We override at READ TIME (computed property) instead of mutating
+    // `voiceMode` / `hasSubscription` so the DEBUG choice never leaks into
+    // UserDefaults — nothing to revert before shipping.
+
+    private var effectiveVoiceMode: PipVoiceMode {
+        #if DEBUG
+        return .elevenLabs
+        #else
+        return voiceMode
+        #endif
+    }
+
+    private var effectiveHasSubscription: Bool {
+        #if DEBUG
+        return true
+        #else
+        return hasSubscription
+        #endif
     }
 
     // MARK: - Apple TTS Path

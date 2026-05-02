@@ -11,11 +11,19 @@ import SwiftUI
 struct PantryInfoView: View {
     let item: PantryItem
     var onDismiss: (() -> Void)? = nil
+    /// Tapped from the sticky "Buy" button at the bottom of this view.
+    /// Caller is responsible for actually purchasing (gameState.buyPantryItem)
+    /// AND for dismissing this view — we don't do either here so the
+    /// caller can sequence them with a bounce animation back at the shop.
+    var onBuy: (() -> Void)? = nil
     @Environment(\.dismiss) var dismiss
     @EnvironmentObject var gameState: GameState
 
     @State private var appeared = false
     @State private var showCoinReward: String? = nil
+
+    private var canAfford: Bool { gameState.coins >= item.shopPrice }
+    private var ownedQuantity: Int { gameState.pantryQuantity(for: item) }
 
     private func nutrientKnowledgeID(_ nutrient: NutrientType) -> String {
         "pantry_\(item.rawValue)_\(nutrient.rawValue)"
@@ -72,9 +80,21 @@ struct PantryInfoView: View {
                         .offset(y: appeared ? 0 : 40)
                         .opacity(appeared ? 1.0 : 0)
 
-                    Spacer(minLength: 80)
+                    // Bottom space so the sticky buy button doesn't cover the fun fact
+                    Spacer(minLength: 140)
                 }
                 .padding(.top, 60)
+            }
+
+            // Sticky buy CTA at the bottom — fixes the "I forgot to purchase"
+            // bug where the kid would learn the item, dismiss, and forget that
+            // a SECOND tap on the shop card was needed to actually buy.
+            // Now the buy action lives in the same screen as the learning.
+            VStack {
+                Spacer()
+                buyButton
+                    .padding(.horizontal, AppSpacing.lg)
+                    .padding(.bottom, AppSpacing.lg)
             }
 
             // Close Button + Coin Counter
@@ -132,6 +152,40 @@ struct PantryInfoView: View {
                 appeared = true
             }
         }
+    }
+
+    // MARK: - Buy Button (Sticky CTA)
+
+    private var buyButton: some View {
+        Button {
+            guard canAfford else { return }
+            Haptic.notify(.success)
+            onBuy?()
+        } label: {
+            HStack(spacing: AppSpacing.sm) {
+                Image(systemName: "cart.fill")
+                    .font(.AppTheme.headline)
+                Text(buyButtonLabel)
+                    .font(.AppTheme.headline)
+                Image(systemName: "circle.fill")
+                    .font(.AppTheme.captionLarge)
+                    .foregroundColor(Color.AppTheme.goldenWheat)
+                Text("\(item.shopPrice)")
+                    .font(.AppTheme.headline)
+            }
+        }
+        .texturedButton(tint: canAfford ? Color.AppTheme.sage : Color.AppTheme.lightSepia)
+        .opacity(canAfford ? 1.0 : 0.6)
+        .disabled(!canAfford)
+        .accessibilityLabel(canAfford
+            ? "Buy \(item.displayName) for \(item.shopPrice) coins"
+            : "Need \(item.shopPrice - gameState.coins) more coins"
+        )
+    }
+
+    private var buyButtonLabel: String {
+        if !canAfford { return "Need more coins" }
+        return ownedQuantity > 0 ? "Buy another" : "Buy"
     }
 
     // MARK: - Nutrients Section

@@ -79,11 +79,23 @@ struct FarmShopView: View {
         // Morph overlay — replaces .fullScreenCover for smooth matched geometry
         .overlay {
             if let item = selectedInfoItem {
-                PantryInfoView(item: item, onDismiss: {
-                    withAnimation(AnimationConstants.morphTransition) {
-                        selectedInfoItem = nil
+                PantryInfoView(
+                    item: item,
+                    onDismiss: {
+                        withAnimation(AnimationConstants.morphTransition) {
+                            selectedInfoItem = nil
+                        }
+                    },
+                    onBuy: {
+                        // Buy first, THEN dismiss — buyItem triggers the bounce
+                        // animation on the shop card, which is more satisfying
+                        // when the info card is already morphing away.
+                        buyItem(item)
+                        withAnimation(AnimationConstants.morphTransition) {
+                            selectedInfoItem = nil
+                        }
                     }
-                })
+                )
                 .morphDestination(id: "pantry-\(item.rawValue)", in: shopNamespace)
                 .dragToDismiss {
                     withAnimation(AnimationConstants.morphTransition) {
@@ -268,13 +280,11 @@ struct ShopItemCard: View {
     }
 
     var body: some View {
-        Button(action: {
-            if isLearned {
-                onBuy()
-            } else {
-                onInfo?()
-            }
-        }) {
+        // Card tap ALWAYS opens the info card. The Buy button lives inside
+        // PantryInfoView as a sticky CTA — fixes the old "I tapped, learned,
+        // forgot to tap again to buy" bug by putting buying in the same
+        // screen as learning (no hidden mode switch).
+        Button(action: { onInfo?() }) {
             VStack(spacing: 0) {
                 Image(item.imageName)
                     .resizable()

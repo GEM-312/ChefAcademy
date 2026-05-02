@@ -9,7 +9,7 @@
 //
 
 import SwiftUI
-import Combine  // Needed for Timer.publish
+import Combine  // NotificationCenter publisher → .onReceive
 #if canImport(FoundationModels)
 import FoundationModels
 #endif
@@ -575,10 +575,6 @@ struct GardenView: View {
 
     // @State is for LOCAL view state - things only this view cares about
     @State private var selectedPlotIndex: SelectedPlot?
-    // Growth timer — manually connected/disconnected on appear/disappear
-    // to avoid running in background when user is on other tabs
-    private let growthTimerPublisher = Timer.publish(every: 1, on: .main, in: .common)
-    @State private var growthTimerCancellable: (any Cancellable)?
     @State private var suggestedRecipe: Recipe?
     @State private var showRecipeSuggestion = false
 
@@ -662,9 +658,28 @@ struct GardenView: View {
             )
             .environmentObject(gameState)
         }
-        // Update growth progress every second (only while view is visible)
-        .onReceive(growthTimerPublisher) { _ in
-            updateGrowthStates()
+        // Update growth progress every second (only while view is visible).
+        //
+        // BUGFIX (May 2): the previous implementation used Timer.publish + manual
+        // .connect()/.cancel() inside onAppear/onDisappear. Because SwiftUI
+        // re-creates the View struct on every render, a NEW TimerPublisher value
+        // was constructed each render. .onReceive resubscribed to that new
+        // publisher, but only the FIRST publisher had ever been .connect()ed
+        // (via .onAppear, which doesn't fire on re-renders). After the first
+        // render, .onReceive was listening to publishers that were never
+        // connected → no ticks → updateGrowthStates never ran → plots stayed
+        // at .growing forever even after crossing 100%. Symptom: harvest UI
+        // only appeared after navigating away and back (which re-fired
+        // .onAppear and re-connected the publisher).
+        //
+        // .task is the modern fix: one Task per view appearance, auto-cancels
+        // on disappear, runs on the @MainActor by default (so @Published
+        // mutations publish on the right thread), no publisher gymnastics.
+        .task {
+            while !Task.isCancelled {
+                updateGrowthStates()
+                try? await Task.sleep(nanoseconds: 1_000_000_000) // 1s
+            }
         }
         // Rain auto-waters all thirsty plants!
         .onReceive(NotificationCenter.default.publisher(for: .gardenRainEvent)) { _ in
@@ -677,9 +692,6 @@ struct GardenView: View {
         // Recipe suggestion is now handled inline by PipGardenMessage in bottomPanel
         // Visitor greeting is now handled inline by PipGardenMessage in bottomPanel
         .onAppear {
-            // Start growth timer when garden becomes visible
-            growthTimerCancellable = growthTimerPublisher.connect()
-
             if isVisiting {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                     showVisitorGreeting = true
@@ -690,11 +702,28 @@ struct GardenView: View {
             Task { await weatherService.fetchWeather() }
 
             // Pip stays quiet until tapped — no auto tip on appear
+
+            // Start the right ambient loop for the current weather.
+            // Crossfades automatically when weather changes (see .onChange below).
+            AmbientAudioPlayer.shared.play(ambientTrackForWeather(weatherService.currentWeather))
+        }
+        .onChange(of: weatherService.currentWeather) { _, newWeather in
+            AmbientAudioPlayer.shared.play(ambientTrackForWeather(newWeather))
         }
         .onDisappear {
-            // Stop growth timer when leaving garden — saves CPU & battery
-            growthTimerCancellable?.cancel()
-            growthTimerCancellable = nil
+            // Garden tab gone → fade out ambient. Other tabs may have their
+            // own ambient (kitchen hum, farm bell) wired later.
+            AmbientAudioPlayer.shared.stop()
+        }
+    }
+
+    /// Map the weather enum to the matching ambient loop.
+    /// Rainy + stormy share the rain track; everything else uses the
+    /// peaceful garden track.
+    private func ambientTrackForWeather(_ weather: GardenWeather) -> AmbientTrack {
+        switch weather {
+        case .rainy, .stormy: return .rainAmbient
+        default:              return .gardenAmbient
         }
     }
 
@@ -1428,6 +1457,15 @@ struct PipGardenMessage: View {
     @Environment(\.horizontalSizeClass) private var sizeClass
     private var isIPad: Bool { sizeClass == .regular }
 
+    // Resolved random tip — captured once per appearance so the displayed
+    // and spoken text always match (and the tip doesn't reshuffle on every
+    // re-render of this view).
+    @State private var resolvedTip: String = ""
+
+    private var displayedMessage: String {
+        recipeMessage ?? (resolvedTip.isEmpty ? "Happy gardening!" : resolvedTip)
+    }
+
     var body: some View {
         HStack(alignment: .top, spacing: AppSpacing.md) {
             // Static Pip (transparent bg) — will switch to speaking animation once ready
@@ -1455,7 +1493,7 @@ struct PipGardenMessage: View {
                     .font(.AppTheme.caption)
                     .foregroundColor(Color.AppTheme.sage)
 
-                Text(recipeMessage ?? gardeningTips.randomElement() ?? "Happy gardening!")
+                Text(displayedMessage)
                     .font(isIPad ? .AppTheme.body : .AppTheme.subheadline)
                     .foregroundColor(Color.AppTheme.darkBrown)
 
@@ -1496,6 +1534,18 @@ struct PipGardenMessage: View {
         }
         .frame(maxWidth: isIPad ? 500 : .infinity)
         .padding(.horizontal, AppSpacing.md)
+        .onAppear {
+            // Pick the random fallback tip exactly once per appearance.
+            if resolvedTip.isEmpty {
+                resolvedTip = gardeningTips.randomElement() ?? "Happy gardening!"
+            }
+            PipVoice.shared.speak(displayedMessage)
+        }
+        .onChange(of: recipeMessage) { _, _ in
+            // Smart-tip updates (Apple Intelligence regen on Pip tap) flow
+            // through `recipeMessage`. Re-speak whenever it changes.
+            PipVoice.shared.speak(displayedMessage)
+        }
     }
 
     // TEACHING MOMENT: Context-Aware Tips

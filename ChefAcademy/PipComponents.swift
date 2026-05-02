@@ -48,6 +48,11 @@ struct PipSpeechBubble: View {
     var showsLabel: Bool = true
     var tintBackground: Bool = true
     var hasTail: Bool = false
+    /// Read `message` aloud when the bubble first appears AND whenever
+    /// `message` changes. Default `true` because every existing call site
+    /// in the app uses this for live dialog (chat replies, kitchen prompts).
+    /// Pass `false` for static decorative usage where audio would be noise.
+    var speakOnAppear: Bool = true
 
     var body: some View {
         HStack(alignment: .top, spacing: AppSpacing.sm) {
@@ -67,6 +72,12 @@ struct PipSpeechBubble: View {
             .background(Color.AppTheme.warmCream)
             .cornerRadius(AppSpacing.cardCornerRadius)
             .modifier(SpeechTail(enabled: hasTail))
+        }
+        .onAppear {
+            if speakOnAppear { PipVoice.shared.speak(message) }
+        }
+        .onChange(of: message) { _, new in
+            if speakOnAppear { PipVoice.shared.speak(new) }
         }
     }
 
@@ -117,6 +128,9 @@ struct PipHeaderStack: View {
     var size: PipSize = .large
     var clipToCircle: Bool = true
     var strokeBorder: Bool = false
+    /// Read `title` (and `subtitle` if provided) aloud once when shown.
+    /// Onboarding / wizard headers benefit; pass `false` for static page chrome.
+    var speakOnAppear: Bool = true
 
     var body: some View {
         VStack(spacing: AppSpacing.sm) {
@@ -130,6 +144,12 @@ struct PipHeaderStack: View {
                     .font(.AppTheme.body)
                     .foregroundColor(Color.AppTheme.sepia)
                     .multilineTextAlignment(.center)
+            }
+        }
+        .onAppear {
+            if speakOnAppear {
+                let combined = subtitle.map { "\(title). \($0)" } ?? title
+                PipVoice.shared.speak(combined)
             }
         }
     }

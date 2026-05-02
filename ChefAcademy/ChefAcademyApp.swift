@@ -746,6 +746,8 @@ struct PipMessageCard: View {
             }
             .softCard(showShadow: false)
         }
+        .onAppear { PipVoice.shared.speak(message) }
+        .onChange(of: message) { _, new in PipVoice.shared.speak(new) }
     }
 }
 

@@ -213,6 +213,7 @@ struct PlantingSheet: View {
                     }
                     .transition(.scale.combined(with: .opacity))
                     .padding(.horizontal, isIPad ? AppSpacing.xxl : AppSpacing.lg)
+                    .onAppear { PipVoice.shared.speak(veg.npcGreeting) }
                 }
 
                 // Stats row
