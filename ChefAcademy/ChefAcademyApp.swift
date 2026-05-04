@@ -258,8 +258,11 @@ struct MainTabView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            // Tab bar at bottom — no overlap with content
-            CustomTabBar(selectedTab: $selectedTab)
+            // Tab bar at bottom — hidden on Home where the image map provides
+            // navigation. Other tabs need the bar to navigate back to Home.
+            if selectedTab != .home {
+                CustomTabBar(selectedTab: $selectedTab)
+            }
         }
         .ignoresSafeArea(.keyboard)
         .onChange(of: gameState.pendingAIRecipe) { _, newRecipe in
@@ -313,6 +316,121 @@ struct CustomTabBar: View {
                 .ignoresSafeArea(.container, edges: [.bottom, .leading, .trailing])
         )
     }
+}
+
+// MARK: - Home Image Map (iPhone)
+//
+// Replaces the horizontal QuickActionCard row on iPhone with a tappable
+// scene-style map. Each hotspot is an invisible Button positioned over
+// the matching building/stall on bg_home_map. Coordinates are unit
+// fractions (0..1) of the image's intrinsic size, so they scale with
+// any rendered width.
+//
+// Image is 1632×2912 (portrait, aspect ≈ 0.56). The artwork is a
+// placeholder Marina will replace; hotspot rects are easy to retune.
+
+private struct HomeImageMap: View {
+    @Binding var selectedTab: MainTabView.Tab
+
+    private struct Hotspot {
+        let tab: MainTabView.Tab
+        let title: String
+        let centerX: CGFloat   // tap area center, fraction of image width
+        let centerY: CGFloat   // tap area center, fraction of image height
+        let widthFraction: CGFloat
+        let heightFraction: CGFloat
+        let labelOffsetY: CGFloat  // label Y offset relative to centerY (negative = above building)
+    }
+
+    private static let imageAspect: CGFloat = 1632.0 / 2912.0
+
+    private static let hotspots: [Hotspot] = [
+        Hotspot(tab: .bodyBuddy, title: "Body",
+                centerX: 0.28, centerY: 0.42,
+                widthFraction: 0.30, heightFraction: 0.10,
+                labelOffsetY: -0.06),
+        Hotspot(tab: .playLearn, title: "Play",
+                centerX: 0.65, centerY: 0.56,
+                widthFraction: 0.22, heightFraction: 0.14,
+                labelOffsetY: -0.10),
+        Hotspot(tab: .kitchen, title: "Kitchen",
+                centerX: 0.30, centerY: 0.68,
+                widthFraction: 0.30, heightFraction: 0.16,
+                labelOffsetY: -0.10),
+        Hotspot(tab: .garden, title: "Garden",
+                centerX: 0.22, centerY: 0.88,
+                widthFraction: 0.30, heightFraction: 0.12,
+                labelOffsetY: -0.08),
+        Hotspot(tab: .shop, title: "Shop",
+                centerX: 0.74, centerY: 0.88,
+                widthFraction: 0.32, heightFraction: 0.16,
+                labelOffsetY: -0.10)
+    ]
+
+    private static let homeIndicatorCenterX: CGFloat = 0.50
+    private static let homeIndicatorCenterY: CGFloat = 0.20
+
+    var body: some View {
+        GeometryReader { geo in
+            let w = geo.size.width
+            let h = w / Self.imageAspect
+
+            ZStack(alignment: .topLeading) {
+                Image("bg_home_map")
+                    .resizable()
+                    .scaledToFit()
+                    .frame(width: w, height: h)
+
+                // Home — non-tappable "you are here" marker over the top cottage
+                MapLabel(text: "Home", style: .youAreHere)
+                    .position(x: w * Self.homeIndicatorCenterX,
+                              y: h * Self.homeIndicatorCenterY)
+
+                ForEach(Self.hotspots, id: \.tab) { spot in
+                    // Tap target — invisible button covers the building footprint
+                    Button {
+                        selectedTab = spot.tab
+                    } label: {
+                        Color.clear.contentShape(Rectangle())
+                    }
+                    .buttonStyle(BouncyButtonStyle())
+                    .accessibilityLabel(spot.title)
+                    .frame(width: w * spot.widthFraction,
+                           height: h * spot.heightFraction)
+                    .position(x: w * spot.centerX, y: h * spot.centerY)
+
+                    // Visible label — sits above the building so the artwork stays readable
+                    MapLabel(text: spot.title, style: .destination)
+                        .position(x: w * spot.centerX,
+                                  y: h * (spot.centerY + spot.labelOffsetY))
+                        .allowsHitTesting(false)
+                }
+            }
+            .frame(width: w, height: h)
+        }
+        .aspectRatio(Self.imageAspect, contentMode: .fit)
+    }
+}
+
+private struct MapLabel: View {
+    enum Style { case destination, youAreHere }
+    let text: String
+    let style: Style
+
+    var body: some View {
+        Text(text)
+            .font(DeviceInfo.isIPad
+                  ? .AppTheme.title.weight(.bold)
+                  : .AppTheme.subheadline.weight(.bold))
+            .foregroundColor(style == .youAreHere ? Color.AppTheme.goldenWheat : Color.AppTheme.darkBrown)
+    }
+}
+
+#Preview("Home Image Map") {
+    @Previewable @State var tab: MainTabView.Tab = .home
+    return HomeImageMap(selectedTab: $tab)
+        .padding()
+        .background(Color.AppTheme.cream)
 }
 
 // MARK: - Home View (Simple Layout for iPhone)
@@ -450,24 +568,16 @@ struct HomeView: View {
                 )
                 .padding(.horizontal, AppSpacing.md)
 
-                // Quick Actions
+                // Map — universal across iPhone + iPad. Fills available width so
+                // the artwork dominates the layout on both devices.
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
                     Text("What would you like to do?")
                         .font(.AppTheme.headline)
                         .foregroundColor(Color.AppTheme.darkBrown)
                         .padding(.horizontal, AppSpacing.md)
 
-                    ScrollView(.horizontal, showsIndicators: false) {
-                        HStack(spacing: AppSpacing.md) {
-                            QuickActionCard(icon: "🌱", title: "Visit Garden", color: Color.AppTheme.sage, action: { selectedTab = .garden })
-                            QuickActionCard(icon: "🍳", title: "Cook Recipe", color: Color.AppTheme.goldenWheat, action: { selectedTab = .kitchen })
-                            QuickActionCard(icon: "🛒", title: "Farm Shop", color: Color.AppTheme.terracotta, action: { selectedTab = .shop })
-                            QuickActionCard(icon: "🫀", title: "Body Buddy", color: Color.AppTheme.terracotta.opacity(0.7), action: { selectedTab = .bodyBuddy })
-                            QuickActionCard(icon: "🎮", title: "Play Games", color: Color.AppTheme.sepia.opacity(0.7), action: { selectedTab = .playLearn })
-                            QuickActionCard(icon: "💬", title: "Ask Pip!", color: Color.AppTheme.sage, action: { showAskPip = true })
-                        }
+                    HomeImageMap(selectedTab: $selectedTab)
                         .padding(.horizontal, AppSpacing.md)
-                    }
                 }
 
                 // Today's Recipe
