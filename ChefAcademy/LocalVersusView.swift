@@ -515,8 +515,9 @@ struct LocalVersusGameView: View {
     @State private var pipOffset: CGFloat = 0
     @State private var pipRotation: Double = 0
 
-    // Timers
-    @State private var gameTimer: Timer?
+    // Physics driver (TimelineView fixed-timestep accumulator)
+    @State private var lastPhysicsTick: Date?
+    @State private var physicsAccumulator: TimeInterval = 0
     @State private var spawnTimer: Timer?
 
     // Deterministic sequence
@@ -533,6 +534,15 @@ struct LocalVersusGameView: View {
         GeometryReader { geo in
             ZStack {
                 Color.AppTheme.cream.ignoresSafeArea()
+
+                // Physics driver — fixed 60Hz accumulator, re-driven by display refresh.
+                TimelineView(.animation) { ctx in
+                    Color.clear
+                        .onChange(of: ctx.date) { _, newDate in
+                            tickPhysics(now: newDate, size: geo.size)
+                        }
+                }
+                .allowsHitTesting(false)
 
                 // Flying food
                 ForEach(flyingFoods) { item in
@@ -671,12 +681,27 @@ struct LocalVersusGameView: View {
         }
         rng = gen
 
-        gameTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { _ in
-            updatePhysics(size: size)
-        }
+        lastPhysicsTick = nil
+        physicsAccumulator = 0
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             spawnNextFood(size: size)
+        }
+    }
+
+    private let physicsStep: TimeInterval = 1.0 / 60.0
+
+    private func tickPhysics(now: Date, size: CGSize) {
+        guard let last = lastPhysicsTick else {
+            lastPhysicsTick = now
+            return
+        }
+        let dt = min(now.timeIntervalSince(last), 0.1)
+        lastPhysicsTick = now
+        physicsAccumulator += dt
+        while physicsAccumulator >= physicsStep {
+            updatePhysics(size: size)
+            physicsAccumulator -= physicsStep
         }
     }
 
@@ -798,10 +823,10 @@ struct LocalVersusGameView: View {
     }
 
     private func cleanup() {
-        gameTimer?.invalidate()
         spawnTimer?.invalidate()
-        gameTimer = nil
         spawnTimer = nil
+        lastPhysicsTick = nil
+        physicsAccumulator = 0
     }
 }
 

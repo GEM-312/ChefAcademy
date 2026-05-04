@@ -41,7 +41,8 @@ struct SplitScreenVersusView: View {
     // Shared
     @State private var foodSequence: [FoodChoice] = []
     @State private var spawnIntervals: [TimeInterval] = []
-    @State private var gameTimer: Timer?
+    @State private var lastPhysicsTick: Date?
+    @State private var physicsAccumulator: TimeInterval = 0
     @State private var spawnTimer: Timer?
     @State private var countdownValue: Int = 3
 
@@ -266,6 +267,16 @@ struct SplitScreenVersusView: View {
         let dividerHeight: CGFloat = 44
 
         return ZStack {
+            // Physics driver — fixed 60Hz accumulator, re-driven by display refresh.
+            TimelineView(.animation) { ctx in
+                Color.clear
+                    .onChange(of: ctx.date) { _, newDate in
+                        tickPhysics(now: newDate, size: size)
+                    }
+            }
+            .allowsHitTesting(false)
+            .onAppear { startFirstSplitSpawn(size: size) }
+
             VStack(spacing: 0) {
                 // Player 1 — TOP (rotated 180° so they sit across)
                 ZStack {
@@ -582,18 +593,33 @@ struct SplitScreenVersusView: View {
         p1Foods = []; p2Foods = []
 
         phase = .playing
+        lastPhysicsTick = nil
+        physicsAccumulator = 0
+        // First spawn happens from splitGameView's .onAppear so it
+        // can use geo.size instead of the deprecated UIScreen.main.
+    }
 
-        let screenSize = UIScreen.main.bounds.size
-        let halfHeight = screenSize.height / 2 - 22
-
-        // Physics timer
-        gameTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { _ in
-            updatePhysics(halfHeight: halfHeight, width: screenSize.width)
-        }
-
-        // First spawn
+    private func startFirstSplitSpawn(size: CGSize) {
+        let halfHeight = size.height / 2 - 22
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            spawnForBoth(halfHeight: halfHeight, width: screenSize.width)
+            spawnForBoth(halfHeight: halfHeight, width: size.width)
+        }
+    }
+
+    private let physicsStep: TimeInterval = 1.0 / 60.0
+
+    private func tickPhysics(now: Date, size: CGSize) {
+        guard let last = lastPhysicsTick else {
+            lastPhysicsTick = now
+            return
+        }
+        let dt = min(now.timeIntervalSince(last), 0.1)
+        lastPhysicsTick = now
+        physicsAccumulator += dt
+        let halfHeight = size.height / 2 - 22
+        while physicsAccumulator >= physicsStep {
+            updatePhysics(halfHeight: halfHeight, width: size.width)
+            physicsAccumulator -= physicsStep
         }
     }
 
@@ -748,8 +774,10 @@ struct SplitScreenVersusView: View {
     }
 
     private func cleanup() {
-        gameTimer?.invalidate(); spawnTimer?.invalidate()
-        gameTimer = nil; spawnTimer = nil
+        spawnTimer?.invalidate()
+        spawnTimer = nil
+        lastPhysicsTick = nil
+        physicsAccumulator = 0
     }
 }
 

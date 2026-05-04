@@ -27,8 +27,9 @@ struct NearbyVersusView: View {
     @State private var pipOffset: CGFloat = 0
     @State private var pipRotation: Double = 0
 
-    // Timers
-    @State private var gameTimer: Timer?
+    // Physics driver (TimelineView fixed-timestep accumulator)
+    @State private var lastPhysicsTick: Date?
+    @State private var physicsAccumulator: TimeInterval = 0
     @State private var spawnTimer: Timer?
 
     // Seeded RNG
@@ -245,6 +246,17 @@ struct NearbyVersusView: View {
 
     private func gameplayView(size: CGSize) -> some View {
         ZStack {
+            // Physics driver — fires updatePhysics at fixed 60Hz internally,
+            // re-driven by display refresh (TimelineView pauses offscreen).
+            TimelineView(.animation) { ctx in
+                Color.clear
+                    .onChange(of: ctx.date) { _, newDate in
+                        tickPhysics(now: newDate, size: size)
+                    }
+            }
+            .allowsHitTesting(false)
+            .onAppear { startFirstSpawn(size: size) }
+
             ForEach(flyingFoods) { item in
                 if !item.tapped {
                     foodBubble(item: item)
@@ -552,13 +564,29 @@ struct NearbyVersusView: View {
         badChoices = 0; goodChoices = 0; coinsEarned = 0; round = 0
         pipScale = 1.0; pipOffset = 0; pipRotation = 0
         flyingFoods = []; localFinished = false
+        lastPhysicsTick = nil
+        physicsAccumulator = 0
+    }
 
-        let screenSize = UIScreen.main.bounds.size
-        gameTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { _ in
-            updatePhysics(size: screenSize)
-        }
+    private func startFirstSpawn(size: CGSize) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            spawnNextFood(size: screenSize)
+            spawnNextFood(size: size)
+        }
+    }
+
+    private let physicsStep: TimeInterval = 1.0 / 60.0
+
+    private func tickPhysics(now: Date, size: CGSize) {
+        guard let last = lastPhysicsTick else {
+            lastPhysicsTick = now
+            return
+        }
+        let dt = min(now.timeIntervalSince(last), 0.1)
+        lastPhysicsTick = now
+        physicsAccumulator += dt
+        while physicsAccumulator >= physicsStep {
+            updatePhysics(size: size)
+            physicsAccumulator -= physicsStep
         }
     }
 
@@ -653,8 +681,10 @@ struct NearbyVersusView: View {
     }
 
     private func cleanupGame() {
-        gameTimer?.invalidate(); spawnTimer?.invalidate()
-        gameTimer = nil; spawnTimer = nil
+        spawnTimer?.invalidate()
+        spawnTimer = nil
+        lastPhysicsTick = nil
+        physicsAccumulator = 0
     }
 }
 

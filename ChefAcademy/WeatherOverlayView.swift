@@ -265,6 +265,7 @@ struct StormOverlay: View {
     @State private var drops: [RainOverlay.RainParticle] = []
     @State private var lastUpdate: Date = .now
     @State private var flashOpacity: Double = 0
+    @State private var lightningTask: Task<Void, Never>?
 
     var body: some View {
         ZStack {
@@ -309,7 +310,12 @@ struct StormOverlay: View {
         }
         .onAppear {
             spawnStorm()
-            triggerLightning()
+            lightningTask?.cancel()
+            lightningTask = Task { await runLightningLoop() }
+        }
+        .onDisappear {
+            lightningTask?.cancel()
+            lightningTask = nil
         }
     }
 
@@ -338,13 +344,16 @@ struct StormOverlay: View {
         drops = updated
     }
 
-    private func triggerLightning() {
-        DispatchQueue.main.asyncAfter(deadline: .now() + Double.random(in: 5...10)) {
+    @MainActor
+    private func runLightningLoop() async {
+        while !Task.isCancelled {
+            let delay = Double.random(in: 5...10)
+            try? await Task.sleep(for: .seconds(delay))
+            guard !Task.isCancelled else { return }
             withAnimation(.easeIn(duration: 0.1)) { flashOpacity = 0.3 }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                withAnimation(.easeOut(duration: 0.2)) { flashOpacity = 0 }
-            }
-            triggerLightning()
+            try? await Task.sleep(for: .seconds(0.15))
+            guard !Task.isCancelled else { return }
+            withAnimation(.easeOut(duration: 0.2)) { flashOpacity = 0 }
         }
     }
 }

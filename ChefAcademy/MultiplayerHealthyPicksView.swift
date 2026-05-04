@@ -28,8 +28,9 @@ struct MultiplayerHealthyPicksView: View {
     @State private var pipOffset: CGFloat = 0
     @State private var pipRotation: Double = 0
 
-    // Timers
-    @State private var gameTimer: Timer?
+    // Physics driver (TimelineView fixed-timestep accumulator)
+    @State private var lastPhysicsTick: Date?
+    @State private var physicsAccumulator: TimeInterval = 0
     @State private var spawnTimer: Timer?
 
     // Seeded RNG for deterministic food sequence
@@ -239,6 +240,16 @@ struct MultiplayerHealthyPicksView: View {
 
     private func gameplayView(size: CGSize) -> some View {
         ZStack {
+            // Physics driver — fixed 60Hz accumulator, re-driven by display refresh.
+            TimelineView(.animation) { ctx in
+                Color.clear
+                    .onChange(of: ctx.date) { _, newDate in
+                        tickPhysics(now: newDate, size: size)
+                    }
+            }
+            .allowsHitTesting(false)
+            .onAppear { startFirstSpawn(size: size) }
+
             // Flying food items
             ForEach(flyingFoods) { item in
                 if !item.tapped {
@@ -658,15 +669,29 @@ struct MultiplayerHealthyPicksView: View {
         flyingFoods = []
         localFinished = false
 
-        // Start physics timer
-        let screenSize = UIScreen.main.bounds.size
-        gameTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { _ in
-            updatePhysics(size: screenSize)
-        }
+        lastPhysicsTick = nil
+        physicsAccumulator = 0
+    }
 
-        // Spawn first food after brief delay
+    private func startFirstSpawn(size: CGSize) {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            spawnNextFood(size: screenSize)
+            spawnNextFood(size: size)
+        }
+    }
+
+    private let physicsStep: TimeInterval = 1.0 / 60.0
+
+    private func tickPhysics(now: Date, size: CGSize) {
+        guard let last = lastPhysicsTick else {
+            lastPhysicsTick = now
+            return
+        }
+        let dt = min(now.timeIntervalSince(last), 0.1)
+        lastPhysicsTick = now
+        physicsAccumulator += dt
+        while physicsAccumulator >= physicsStep {
+            updatePhysics(size: size)
+            physicsAccumulator -= physicsStep
         }
     }
 
@@ -790,10 +815,10 @@ struct MultiplayerHealthyPicksView: View {
         guard !localFinished else { return }
         localFinished = true
 
-        gameTimer?.invalidate()
         spawnTimer?.invalidate()
-        gameTimer = nil
         spawnTimer = nil
+        lastPhysicsTick = nil
+        physicsAccumulator = 0
 
         manager.sendGameFinished(finalScore: coinsEarned, goodChoices: goodChoices, badChoices: badChoices)
 
@@ -827,10 +852,10 @@ struct MultiplayerHealthyPicksView: View {
     }
 
     private func cleanupGame() {
-        gameTimer?.invalidate()
         spawnTimer?.invalidate()
-        gameTimer = nil
         spawnTimer = nil
+        lastPhysicsTick = nil
+        physicsAccumulator = 0
     }
 
     private func resetForRematch() {

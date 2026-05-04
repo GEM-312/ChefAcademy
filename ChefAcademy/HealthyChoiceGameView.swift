@@ -93,10 +93,14 @@ struct HealthyChoiceGameView: View {
     @State private var unlockedPantry: [PantryItem] = []
     @State private var recipeSuggestions: [String] = []
 
-    // Timer
-    @State private var gameTimer: Timer?
+    // Physics driver (TimelineView fixed-timestep accumulator)
+    @State private var lastPhysicsTick: Date?
+    @State private var physicsAccumulator: TimeInterval = 0
     @State private var spawnTimer: Timer?
     @State private var currentSpawnInterval: TimeInterval = 1.8
+    // Cached play area for tap-driven respawn helpers (speedUpSpawning) that
+    // don't have GeometryReader scope.
+    @State private var playAreaSize: CGSize = .zero
 
     // Gravity & physics — 60fps for smooth motion
     private let gravity: CGFloat = 0.18
@@ -238,6 +242,15 @@ struct HealthyChoiceGameView: View {
 
     func gameplayView(size: CGSize) -> some View {
         ZStack {
+            // Physics driver — fixed 60Hz accumulator, re-driven by display refresh.
+            TimelineView(.animation) { ctx in
+                Color.clear
+                    .onChange(of: ctx.date) { _, newDate in
+                        tickPhysics(now: newDate, size: size)
+                    }
+            }
+            .allowsHitTesting(false)
+
             // Flying food items
             ForEach(flyingFoods) { item in
                 if !item.tapped {
@@ -575,11 +588,9 @@ struct HealthyChoiceGameView: View {
         pipAnimationKey += 1
 
         currentSpawnInterval = 1.8
-
-        // Physics timer — 60fps for buttery smooth motion
-        gameTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 60.0, repeats: true) { _ in
-            updatePhysics(size: size)
-        }
+        playAreaSize = size
+        lastPhysicsTick = nil
+        physicsAccumulator = 0
 
         // Start spawn cycle
         scheduleNextSpawn(size: size)
@@ -717,7 +728,7 @@ struct HealthyChoiceGameView: View {
             }
 
             // Speed up spawning as kid gets better!
-            speedUpSpawning(size: UIScreen.main.bounds.size)
+            speedUpSpawning(size: playAreaSize)
 
             // Remove feedback after brief flash
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
@@ -749,10 +760,10 @@ struct HealthyChoiceGameView: View {
     }
 
     func finishGame(won: Bool) {
-        gameTimer?.invalidate()
         spawnTimer?.invalidate()
-        gameTimer = nil
         spawnTimer = nil
+        lastPhysicsTick = nil
+        physicsAccumulator = 0
 
         // Award coins
         if coinsEarned > 0 {
@@ -798,9 +809,27 @@ struct HealthyChoiceGameView: View {
     }
 
     func endGame() {
-        gameTimer?.invalidate()
         spawnTimer?.invalidate()
+        spawnTimer = nil
+        lastPhysicsTick = nil
+        physicsAccumulator = 0
         dismiss()
+    }
+
+    private let physicsStep: TimeInterval = 1.0 / 60.0
+
+    private func tickPhysics(now: Date, size: CGSize) {
+        guard let last = lastPhysicsTick else {
+            lastPhysicsTick = now
+            return
+        }
+        let dt = min(now.timeIntervalSince(last), 0.1)
+        lastPhysicsTick = now
+        physicsAccumulator += dt
+        while physicsAccumulator >= physicsStep {
+            updatePhysics(size: size)
+            physicsAccumulator -= physicsStep
+        }
     }
 
     func resetGame(size: CGSize) {
