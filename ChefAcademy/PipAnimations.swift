@@ -90,14 +90,16 @@ struct OneShotFrameAnimationView: View {
         currentFrame = 0
         finished = false
         timer = Timer.scheduledTimer(withTimeInterval: 1.0 / fps, repeats: true) { _ in
-            guard !finished else { return }
-            let next = currentFrame + 1
-            if next >= frameNames.count {
-                finished = true
-                timer?.invalidate()
-                timer = nil
-            } else {
-                currentFrame = next
+            Task { @MainActor in
+                guard !finished else { return }
+                let next = currentFrame + 1
+                if next >= frameNames.count {
+                    finished = true
+                    timer?.invalidate()
+                    timer = nil
+                } else {
+                    currentFrame = next
+                }
             }
         }
     }
@@ -164,16 +166,18 @@ final class AvatarAnimator: ObservableObject {
         currentImageName = anim.frameNames[0]
 
         timer = Timer.scheduledTimer(withTimeInterval: 1.0 / anim.fps, repeats: true) { [weak self] _ in
-            guard let self else { return }
-            let next = self.frameIndex + 1
-            if next >= anim.frameNames.count {
-                // Hold on last frame
-                self.isAnimating = false
-                self.timer?.invalidate()
-                self.timer = nil
-            } else {
-                self.frameIndex = next
-                self.currentImageName = anim.frameNames[next]
+            Task { @MainActor [weak self] in
+                guard let self else { return }
+                let next = self.frameIndex + 1
+                if next >= anim.frameNames.count {
+                    // Hold on last frame
+                    self.isAnimating = false
+                    self.timer?.invalidate()
+                    self.timer = nil
+                } else {
+                    self.frameIndex = next
+                    self.currentImageName = anim.frameNames[next]
+                }
             }
         }
     }

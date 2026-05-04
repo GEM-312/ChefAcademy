@@ -594,13 +594,15 @@ struct HealthyChoiceGameView: View {
     func scheduleNextSpawn(size: CGSize) {
         spawnTimer?.invalidate()
         spawnTimer = Timer.scheduledTimer(withTimeInterval: currentSpawnInterval, repeats: false) { _ in
-            guard self.phase == .playing else { return }
-            if self.round < self.totalRounds {
-                self.spawnFood(size: size)
-                self.round += 1
-                self.scheduleNextSpawn(size: size)
-            } else if self.flyingFoods.filter({ !$0.tapped }).isEmpty {
-                self.finishGame(won: true)
+            Task { @MainActor in
+                guard self.phase == .playing else { return }
+                if self.round < self.totalRounds {
+                    self.spawnFood(size: size)
+                    self.round += 1
+                    self.scheduleNextSpawn(size: size)
+                } else if self.flyingFoods.filter({ !$0.tapped }).isEmpty {
+                    self.finishGame(won: true)
+                }
             }
         }
     }

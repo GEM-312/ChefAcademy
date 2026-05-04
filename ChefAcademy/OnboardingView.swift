@@ -335,11 +335,13 @@ struct GenderCard: View {
         animTimer?.invalidate()
         frameIndex = 0
         animTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / fps, repeats: true) { timer in
-            if frameIndex < frameNames.count - 1 {
-                frameIndex += 1
-            } else {
-                timer.invalidate()
-                animTimer = nil
+            Task { @MainActor in
+                if frameIndex < frameNames.count - 1 {
+                    frameIndex += 1
+                } else {
+                    timer.invalidate()
+                    animTimer = nil
+                }
             }
         }
     }

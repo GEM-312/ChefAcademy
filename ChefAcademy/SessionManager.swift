@@ -432,9 +432,11 @@ class SessionManager: ObservableObject {
     private func startPlayTimeTracking() {
         sessionStartTime = Date()
         playTimeTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
-            guard let self, let profile = self.activeProfile else { return }
-            self.recordPlayTime(for: profile)
-            self.sessionStartTime = Date()
+            Task { @MainActor [weak self] in
+                guard let self, let profile = self.activeProfile else { return }
+                self.recordPlayTime(for: profile)
+                self.sessionStartTime = Date()
+            }
         }
     }
 

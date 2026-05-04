@@ -606,17 +606,19 @@ struct FamilyAvatarStep: View {
         animFrameIndex = 0
         outfitAnimFinished = false
         animTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / anim.fps, repeats: true) { _ in
-            let next = animFrameIndex + 1
-            if next >= anim.frameNames.count {
-                // Animation done — hold last frame, show color picker
-                animTimer?.invalidate()
-                animTimer = nil
-                activeAnimation = nil
-                withAnimation(AnimationConstants.springMedium) {
-                    outfitAnimFinished = true
+            Task { @MainActor in
+                let next = animFrameIndex + 1
+                if next >= anim.frameNames.count {
+                    // Animation done — hold last frame, show color picker
+                    animTimer?.invalidate()
+                    animTimer = nil
+                    activeAnimation = nil
+                    withAnimation(AnimationConstants.springMedium) {
+                        outfitAnimFinished = true
+                    }
+                } else {
+                    animFrameIndex = next
                 }
-            } else {
-                animFrameIndex = next
             }
         }
     }
@@ -628,17 +630,19 @@ struct FamilyAvatarStep: View {
         animFrameIndex = 0
         hatAnimFinished = false
         animTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / anim.fps, repeats: true) { _ in
-            let next = animFrameIndex + 1
-            if next >= anim.frameNames.count {
-                // Hat animation done — reveal colored hat with ripple
-                animTimer?.invalidate()
-                animTimer = nil
-                activeAnimation = nil
-                hatAnimFinished = true
-                triggerRipple(from: origin)
-                showColoredHat = true
-            } else {
-                animFrameIndex = next
+            Task { @MainActor in
+                let next = animFrameIndex + 1
+                if next >= anim.frameNames.count {
+                    // Hat animation done — reveal colored hat with ripple
+                    animTimer?.invalidate()
+                    animTimer = nil
+                    activeAnimation = nil
+                    hatAnimFinished = true
+                    triggerRipple(from: origin)
+                    showColoredHat = true
+                } else {
+                    animFrameIndex = next
+                }
             }
         }
     }
@@ -660,10 +664,12 @@ struct FamilyAvatarStep: View {
 
         // Animate rippleTime from 0 to ~2 seconds over 60 steps
         rippleTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 30.0, repeats: true) { timer in
-            rippleTime += 1.0 / 30.0
-            if rippleTime > 2.0 {
-                timer.invalidate()
-                rippleTimer = nil
+            Task { @MainActor in
+                rippleTime += 1.0 / 30.0
+                if rippleTime > 2.0 {
+                    timer.invalidate()
+                    rippleTimer = nil
+                }
             }
         }
     }

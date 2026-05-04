@@ -119,10 +119,12 @@ struct HeatPanMiniGame: View {
         isHolding = true
         Haptic.impact(.light) // gentle warmth starting
         timer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
-            progress += 0.05 / holdDuration
-            panGlow = Double(progress)
-            if progress >= 1.0 {
-                finishGame()
+            Task { @MainActor in
+                progress += 0.05 / holdDuration
+                panGlow = Double(progress)
+                if progress >= 1.0 {
+                    finishGame()
+                }
             }
         }
     }
@@ -696,13 +698,15 @@ struct CookTimerMiniGame: View {
 
     private func startTimer() {
         timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
-            elapsed += 0.1
-            // Flame animation
-            flameScale = 1.0 + CGFloat.random(in: -0.1...0.1)
+            Task { @MainActor in
+                elapsed += 0.1
+                // Flame animation
+                flameScale = 1.0 + CGFloat.random(in: -0.1...0.1)
 
-            if elapsed >= CGFloat(totalSeconds) + 2 {
-                // Auto-finish if they wait too long
-                finishCooking()
+                if elapsed >= CGFloat(totalSeconds) + 2 {
+                    // Auto-finish if they wait too long
+                    finishCooking()
+                }
             }
         }
     }
@@ -878,7 +882,9 @@ struct WashMiniGame: View {
 
     private func startSinkAnimation() {
         sinkTimer = Timer.scheduledTimer(withTimeInterval: 1.0 / 8.0, repeats: true) { _ in
-            sinkFrame = (sinkFrame % totalSinkFrames) + 1
+            Task { @MainActor in
+                sinkFrame = (sinkFrame % totalSinkFrames) + 1
+            }
         }
     }
 

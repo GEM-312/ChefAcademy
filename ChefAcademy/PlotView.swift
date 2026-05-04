@@ -76,6 +76,10 @@ struct PlotView: View {
             // Reset care states when plot state changes
             resetCareStates()
         }
+        .onDisappear {
+            waterTimer?.invalidate()
+            waterTimer = nil
+        }
     }
 
     // MARK: - Plot Content
@@ -401,9 +405,11 @@ struct PlotView: View {
         }
 
         waterTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
-            waterProgress += 0.015
-            if waterProgress >= 1.0 {
-                completeWatering()
+            Task { @MainActor in
+                waterProgress += 0.015
+                if waterProgress >= 1.0 {
+                    completeWatering()
+                }
             }
         }
     }

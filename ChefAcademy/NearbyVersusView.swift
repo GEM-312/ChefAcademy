@@ -591,7 +591,9 @@ struct NearbyVersusView: View {
         if round < totalRounds {
             spawnTimer?.invalidate()
             spawnTimer = Timer.scheduledTimer(withTimeInterval: spawnIntervals[round - 1], repeats: false) { _ in
-                self.spawnNextFood(size: size)
+                Task { @MainActor in
+                    self.spawnNextFood(size: size)
+                }
             }
         }
     }

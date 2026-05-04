@@ -566,10 +566,12 @@ struct SplitScreenVersusView: View {
     private func startCountdown() {
         countdownValue = 3
         Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { timer in
-            countdownValue -= 1
-            if countdownValue <= 0 {
-                timer.invalidate()
-                startGame()
+            Task { @MainActor in
+                countdownValue -= 1
+                if countdownValue <= 0 {
+                    timer.invalidate()
+                    startGame()
+                }
             }
         }
     }
@@ -647,7 +649,9 @@ struct SplitScreenVersusView: View {
             let interval = spawnIntervals[currentRound]
             spawnTimer?.invalidate()
             spawnTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { _ in
-                self.spawnForBoth(halfHeight: halfHeight, width: width)
+                Task { @MainActor in
+                    self.spawnForBoth(halfHeight: halfHeight, width: width)
+                }
             }
         }
     }

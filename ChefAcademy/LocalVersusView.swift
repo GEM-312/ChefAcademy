@@ -721,7 +721,9 @@ struct LocalVersusGameView: View {
             let interval = spawnIntervals[round - 1]
             spawnTimer?.invalidate()
             spawnTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { _ in
-                self.spawnNextFood(size: size)
+                Task { @MainActor in
+                    self.spawnNextFood(size: size)
+                }
             }
         }
     }
