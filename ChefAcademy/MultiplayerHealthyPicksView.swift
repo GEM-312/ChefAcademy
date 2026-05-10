@@ -630,7 +630,7 @@ struct MultiplayerHealthyPicksView: View {
                 .font(.AppTheme.rounded(size: 11, weight: .bold))
                 .foregroundColor(Color.AppTheme.darkBrown)
                 .lineLimit(1)
-                .shadow(color: .white, radius: 2)
+                .shadow(color: Color.AppTheme.cream, radius: 2)
         }
         .scaleEffect(item.scale)
         .opacity(item.opacity)

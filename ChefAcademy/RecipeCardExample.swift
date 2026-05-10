@@ -1002,7 +1002,7 @@ struct RecipeCardView: View {
                         Text("Allergen")
                     }
                     .font(.AppTheme.caption)
-                    .foregroundColor(.white)
+                    .foregroundColor(Color.AppTheme.cream)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(Color.AppTheme.terracotta.opacity(0.9))

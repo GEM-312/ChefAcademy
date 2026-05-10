@@ -28,6 +28,15 @@ extension Color {
         static let easyLevel = Color("AppColors/softOlive")       // Easy recipes
         static let mediumLevel = Color("AppColors/goldenWheat")   // Medium recipes
         static let hardLevel = Color("AppColors/terracotta")      // Hard recipes (needs adult help)
+
+        // Specialty colors — hex-backed until asset-cataloged for Dark Mode.
+        // Use these instead of inline hex / raw system colors at call sites.
+        static let pureWhite = Color(hex: "F7FAFC")               // chef hat white, near-white surfaces
+        static let overlay = Color.black.opacity(0.4)             // modal dim behind dialogs
+        static let sunYellow = Color(hex: "FFD54F")               // weather sun glow
+        static let rainBlue = Color(hex: "4FC3F7")                // weather rain / storm drops
+        static let autumnBrown = Color(hex: "8B4513")             // weather fall leaves
+        static let frostBlue = Color(hex: "E3F2FD")               // weather winter sparkles
     }
 }
 
@@ -120,6 +129,18 @@ struct AppSpacing {
     static let strokeThin: CGFloat = 1
     static let strokeMedium: CGFloat = 2
     static let strokeBold: CGFloat = 3
+
+    // PIN pad button — used by ParentPINEntryView, FamilySetupView, MigrationPINSetupView.
+    // Three files each re-implemented this. Centralizing here.
+    static let pinButtonWidth: CGFloat = 75
+    static let pinButtonHeight: CGFloat = 55
+
+    // Tab bar safe-area padding — keeps content above the floating tab bar.
+    // Used by main-tab views (PlayLearnView, ProfileView, RecipeCardExample, etc.).
+    static let tabBarClearance: CGFloat = 100
+
+    // Hero image size for info cards (PantryInfoView, WeatherOverlayView sun glow).
+    static let infoCardImageSize: CGFloat = 200
 }
 
 // MARK: - Animation Constants
@@ -165,6 +186,17 @@ enum AnimationConstants {
 
     // Quick fade used to pop the flying image after it reaches its target
     static let fadeFlyOut = Animation.easeOut(duration: 0.15)
+
+    // Float loop — gentle idle bounce that runs forever.
+    // Used by floating clouds, idle Pip breathing, breathing rings.
+    static let floatLoop = Animation.easeInOut(duration: 1.5).repeatForever(autoreverses: true)
+
+    // PIN-entry shake — fast bouncy shake when a wrong PIN is entered.
+    // Lower damping than springQuick on purpose so the shake is visible.
+    static let pinShake = Animation.spring(response: 0.2, dampingFraction: 0.3)
+
+    // Weather change crossfade — used when WeatherOverlayView swaps overlays.
+    static let weatherTransition = Animation.easeInOut(duration: 1.0)
 }
 
 // MARK: - Haptic Feedback

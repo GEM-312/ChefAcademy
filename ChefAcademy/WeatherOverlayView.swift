@@ -624,7 +624,7 @@ struct SeasonalOverlayView: View {
     var fallParticles: some View {
         // Procedural leaf shapes — 3 autumn colors, cheaper than emoji
         ForEach(0..<8, id: \.self) { i in
-            let colors: [Color] = [.orange, Color(hex: "8B4513"), Color(hex: "DAA520")]
+            let colors: [Color] = [Color.AppTheme.terracotta, Color.AppTheme.autumnBrown, Color.AppTheme.goldenWheat]
             Ellipse()
                 .fill(colors[i % 3].opacity(0.5))
                 .frame(width: CGFloat(12 + i % 3 * 4), height: CGFloat(8 + i % 3 * 2))
@@ -642,7 +642,7 @@ struct SeasonalOverlayView: View {
         ForEach(0..<6, id: \.self) { i in
             Image(systemName: "sparkle")
                 .font(.system(size: CGFloat.random(in: 8...14)))
-                .foregroundColor(Color(hex: "E3F2FD").opacity(0.5))
+                .foregroundColor(Color.AppTheme.frostBlue.opacity(0.5))
                 .offset(
                     x: CGFloat.random(in: -mapWidth/2.5...mapWidth/2.5),
                     y: CGFloat.random(in: -mapHeight/3...mapHeight/3)

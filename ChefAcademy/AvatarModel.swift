@@ -104,7 +104,7 @@ enum HeadCovering: String, CaseIterable, Identifiable {
     var color: Color {
         switch self {
         case .none: return Color.AppTheme.lightSepia
-        case .chefHatWhite: return Color(hex: "F7FAFC")
+        case .chefHatWhite: return Color.AppTheme.pureWhite
         case .chefHatSage: return Color.AppTheme.sage
         case .chefHatGold: return Color.AppTheme.goldenWheat
         case .chefHatTerracotta: return Color.AppTheme.terracotta

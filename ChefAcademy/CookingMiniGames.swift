@@ -269,7 +269,7 @@ struct StirMiniGame: View {
                 Ellipse()
                     .fill(
                         LinearGradient(
-                            colors: [Color(white: 0.85), Color(white: 0.7)],
+                            colors: [Color.AppTheme.parchment, Color.AppTheme.warmCream.opacity(0.7)],
                             startPoint: .top,
                             endPoint: .bottom
                         )
@@ -364,7 +364,7 @@ struct SeasonMiniGame: View {
             // Pan/bowl at center
             ZStack {
                 Ellipse()
-                    .fill(Color(white: 0.3))
+                    .fill(Color.AppTheme.sepia)
                     .frame(width: 160, height: 100)
 
                 // Falling particles
@@ -618,7 +618,7 @@ struct CookTimerMiniGame: View {
 
                 // Pan
                 Ellipse()
-                    .fill(Color(white: 0.3))
+                    .fill(Color.AppTheme.sepia)
                     .frame(width: 150, height: 100)
 
                 Text("🍳")

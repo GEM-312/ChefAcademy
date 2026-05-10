@@ -34,7 +34,7 @@ struct PipDialogView: View {
     var body: some View {
         ZStack {
             // Dim overlay — blocks taps behind
-            Color.black.opacity(0.4)
+            Color.AppTheme.overlay
                 .ignoresSafeArea()
 
             VStack(spacing: 0) {

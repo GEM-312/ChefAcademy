@@ -538,7 +538,7 @@ struct NearbyVersusView: View {
             Text(item.food.name)
                 .font(.AppTheme.rounded(size: 11, weight: .bold))
                 .foregroundColor(Color.AppTheme.darkBrown)
-                .lineLimit(1).shadow(color: .white, radius: 2)
+                .lineLimit(1).shadow(color: Color.AppTheme.cream, radius: 2)
         }
         .scaleEffect(item.scale).opacity(item.opacity).rotationEffect(.degrees(item.rotation))
     }

@@ -406,7 +406,7 @@ struct SeedInfoView: View {
                     Text(reward)
                         .font(.AppTheme.rounded(size: 28, weight: .bold))
                         .foregroundColor(Color.AppTheme.goldenWheat)
-                        .shadow(color: .black.opacity(0.2), radius: 4, y: 2)
+                        .shadow(color: Color.AppTheme.sepia.opacity(0.2), radius: 4, y: 2)
                         .transition(.scale.combined(with: .opacity))
                     Spacer()
                 }
@@ -513,7 +513,7 @@ struct SeedInfoView: View {
                                 .frame(width: 42, height: 42)
                                 .background(showToolPicker ? Color.AppTheme.sage : Color.AppTheme.parchment)
                                 .clipShape(Circle())
-                                .shadow(color: Color.black.opacity(0.15), radius: 4, y: 2)
+                                .shadow(color: Color.AppTheme.sepia.opacity(0.15), radius: 4, y: 2)
                         }
                         .padding(AppSpacing.sm)
                     }

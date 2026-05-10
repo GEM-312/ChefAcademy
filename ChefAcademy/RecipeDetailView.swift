@@ -67,7 +67,7 @@ struct RecipeDetailView: View {
                             if !matchingAllergens.isEmpty {
                                 HStack(spacing: 8) {
                                     Image(systemName: "exclamationmark.triangle.fill")
-                                        .foregroundColor(.white)
+                                        .foregroundColor(Color.AppTheme.cream)
                                     VStack(alignment: .leading, spacing: 2) {
                                         Text("Allergen Warning")
                                             .font(.AppTheme.caption)

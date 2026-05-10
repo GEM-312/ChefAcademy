@@ -260,7 +260,7 @@ struct CharacterWalkingView: View {
                 .aspectRatio(contentMode: .fit)
                 .frame(width: size, height: size)
                 .scaleEffect(x: engine.facingRight ? 1 : -1, y: 1)
-                .shadow(color: Color.black.opacity(0.2), radius: 4, x: 0, y: 3)
+                .shadow(color: Color.AppTheme.sepia.opacity(0.2), radius: 4, x: 0, y: 3)
                 .position(engine.position)
         }
         .onAppear {
