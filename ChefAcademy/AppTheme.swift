@@ -187,9 +187,11 @@ enum AnimationConstants {
     // Quick fade used to pop the flying image after it reaches its target
     static let fadeFlyOut = Animation.easeOut(duration: 0.15)
 
-    // Float loop — gentle idle bounce that runs forever.
-    // Used by floating clouds, idle Pip breathing, breathing rings.
-    static let floatLoop = Animation.easeInOut(duration: 1.5).repeatForever(autoreverses: true)
+    // Float loop family — idle/breathing animations that run forever.
+    // Pick by feel: fast for snappy bounces, default for breathing, slow for ambient.
+    static let floatLoopFast = Animation.easeInOut(duration: 1.0).repeatForever(autoreverses: true)
+    static let floatLoop     = Animation.easeInOut(duration: 1.5).repeatForever(autoreverses: true)
+    static let floatLoopSlow = Animation.easeInOut(duration: 4.0).repeatForever(autoreverses: true)
 
     // PIN-entry shake — fast bouncy shake when a wrong PIN is entered.
     // Lower damping than springQuick on purpose so the shake is visible.

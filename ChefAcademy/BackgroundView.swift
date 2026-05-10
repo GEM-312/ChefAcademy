@@ -148,10 +148,7 @@ struct AnimatedBackgroundView: View {
         }
         .ignoresSafeArea()
         .onAppear {
-            withAnimation(
-                .easeInOut(duration: 4)
-                .repeatForever(autoreverses: true)
-            ) {
+            withAnimation(AnimationConstants.floatLoopSlow) {
                 floatOffset = -8
             }
         }

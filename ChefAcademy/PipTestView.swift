@@ -152,10 +152,7 @@ struct PipGridItem: View {
 
     private func startBreathingAnimation() {
         isBreathing = true
-        withAnimation(
-            .easeInOut(duration: 1.2)
-            .repeatForever(autoreverses: true)
-        ) {
+        withAnimation(AnimationConstants.floatLoop) {
             breatheOffset = -6
         }
     }

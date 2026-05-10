@@ -176,7 +176,7 @@ struct DraggablePipView: View {
         .animation(AnimationConstants.springMedium, value: isVisible)
         .onAppear {
             // Start idle bounce animation
-            withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
+            withAnimation(AnimationConstants.floatLoopFast) {
                 idleBounce = true
             }
         }
@@ -398,7 +398,7 @@ struct WalkingPipView: View {
         .animation(AnimationConstants.springMedium, value: isVisible)
         .onAppear {
             pipPosition = idlePosition
-            withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
+            withAnimation(AnimationConstants.floatLoopFast) {
                 idleBounce = true
             }
         }

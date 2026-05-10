@@ -263,7 +263,7 @@ struct PipCharacterView: View {
             .opacity(isAnimating ? 1.0 : 0.0)
             .onAppear {
                 // Entrance animation
-                withAnimation(.spring(response: 0.5, dampingFraction: 0.6)) {
+                withAnimation(AnimationConstants.springMedium) {
                     isAnimating = true
                 }
                 
@@ -280,10 +280,7 @@ struct PipCharacterView: View {
     
     private func startIdleBounce() {
         // Gentle breathing/idle animation
-        withAnimation(
-            .easeInOut(duration: 1.5)
-            .repeatForever(autoreverses: true)
-        ) {
+        withAnimation(AnimationConstants.floatLoop) {
             bounceOffset = -5
         }
     }
@@ -295,7 +292,7 @@ struct PipCharacterView: View {
         }
         
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+            withAnimation(AnimationConstants.springMedium) {
                 isAnimating = true
             }
         }
