@@ -23,6 +23,9 @@ struct FarmShopView: View {
     @State private var selectedInfoItem: PantryItem?
     // Confirm-before-spend: tap "Buy" sets this; PipDialog overlay confirms.
     @State private var pendingBuyItem: PantryItem?
+    // Cancellable replacement for the old asyncAfter that nil'd bounceItem.
+    // Prevents writing to dead @State if the view is dismissed mid-bounce.
+    @State private var bounceTask: Task<Void, Never>?
     @Namespace private var shopNamespace
 
     // Filter items by category
@@ -129,6 +132,7 @@ struct FarmShopView: View {
             }
         }
         .animation(AnimationConstants.fadeMedium, value: pendingBuyItem)
+        .onDisappear { bounceTask?.cancel() }
     }
 
     // MARK: - Shop Header
@@ -286,8 +290,12 @@ struct FarmShopView: View {
             withAnimation(AnimationConstants.springBouncy) {
                 bounceItem = item
             }
-            // Reset bounce after animation
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            // Reset bounce after animation. Cancellable Task replaces asyncAfter so
+            // the write is skipped if the view dismisses before 0.5s elapses.
+            bounceTask?.cancel()
+            bounceTask = Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.5))
+                guard !Task.isCancelled else { return }
                 bounceItem = nil
             }
             showPurchaseConfirm = true

@@ -269,9 +269,13 @@ struct ChopMiniGame: View {
     // MARK: - Game Logic
 
     func startGame() {
-        // Start the knife oscillation
+        // Start the knife oscillation.
+        // Mutations to @State (knifePosition, movingRight) inside updateKnifePosition()
+        // must run on the main actor — Timer callbacks fire on an unspecified thread.
         timer = Timer.scheduledTimer(withTimeInterval: 0.02, repeats: true) { _ in
-            updateKnifePosition()
+            Task { @MainActor in
+                updateKnifePosition()
+            }
         }
     }
 

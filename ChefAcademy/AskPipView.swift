@@ -160,14 +160,14 @@ struct AskPipView: View {
                     }
                     .padding(AppSpacing.md)
                 }
-                .onChange(of: messages.count) { _ in
+                .onChange(of: messages.count) { _, _ in
                     if let last = messages.last {
                         withAnimation(.easeOut(duration: 0.3)) {
                             proxy.scrollTo(last.id, anchor: .bottom)
                         }
                     }
                 }
-                .onChange(of: followUpQuestions) { _ in
+                .onChange(of: followUpQuestions) { _, _ in
                     // Scroll to show follow-up chips
                     if let last = messages.last {
                         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
