@@ -75,7 +75,7 @@ enum StorageBinType: String, CaseIterable {
 
     var displayName: String {
         switch self {
-        case .liver:   return "Liver"
+        case .liver:   return "Tummy"     // kid-friendly label for the liver bin
         case .muscles: return "Muscles"
         case .fat:     return "Fat"
         }
@@ -258,7 +258,7 @@ struct InsulinTetrisView: View {
             VStack(spacing: AppSpacing.lg) {
                 Spacer().frame(height: AppSpacing.xl)
 
-                Text("Insulin Tetris")
+                Text("Sugar Sorter")
                     .font(.AppTheme.largeTitle)
                     .foregroundColor(Color.AppTheme.darkBrown)
 
@@ -266,7 +266,7 @@ struct InsulinTetrisView: View {
 
                 // Instructions
                 VStack(spacing: AppSpacing.sm) {
-                    Text("Glucose blocks are falling!")
+                    Text("Sugar blocks are falling!")
                         .font(.AppTheme.headline)
                         .foregroundColor(Color.AppTheme.darkBrown)
 
@@ -275,7 +275,7 @@ struct InsulinTetrisView: View {
                         .foregroundColor(Color.AppTheme.sepia)
                         .multilineTextAlignment(.center)
 
-                    Text("Fill the liver first, then muscles. Fat is the last resort!")
+                    Text("Fill your tummy first, then your muscles!")
                         .font(.AppTheme.caption)
                         .foregroundColor(Color.AppTheme.lightSepia)
                         .multilineTextAlignment(.center)
@@ -604,7 +604,7 @@ struct InsulinTetrisView: View {
         VStack(spacing: AppSpacing.lg) {
             Spacer()
 
-            Text("Glucose Overflow!")
+            Text("Too much sugar!")
                 .font(.AppTheme.largeTitle)
                 .foregroundColor(Color.AppTheme.terracotta)
 
@@ -613,7 +613,7 @@ struct InsulinTetrisView: View {
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 120, height: 120)
 
-            Text("Too many blocks fell through! The glucose overwhelmed your body.")
+            Text("Too many blocks fell through! Your body got too much sugar at once.")
                 .font(.AppTheme.body)
                 .foregroundColor(Color.AppTheme.sepia)
                 .multilineTextAlignment(.center)
@@ -679,7 +679,7 @@ struct InsulinTetrisView: View {
 
                 // Teaching recap
                 VStack(spacing: 6) {
-                    Text("Your liver stored \(Int(liverBin.currentGrams))g")
+                    Text("Your tummy stored \(Int(liverBin.currentGrams))g")
                         .font(.AppTheme.body)
                         .foregroundColor(Color.AppTheme.goldenWheat)
                     Text("Your muscles stored \(Int(muscleBin.currentGrams))g")
@@ -807,7 +807,7 @@ struct InsulinTetrisView: View {
         nextSpawnTime = .now.addingTimeInterval(1.0) // first block after 1s
         spawnInterval = 2.5
 
-        showPipMessage("Drag glucose blocks into the bins!")
+        showPipMessage("Drag sugar blocks into the bins!")
 
         withAnimation(AnimationConstants.fadeMedium) {
             phase = .playing
@@ -957,7 +957,7 @@ struct InsulinTetrisView: View {
 
         // Pip messages at milestones
         if blocksSpawned == 9 {
-            showPipMessage("Glucose spike! Things are getting faster!")
+            showPipMessage("Sugar rush! Things are getting faster!")
         }
     }
 
@@ -1020,13 +1020,13 @@ struct InsulinTetrisView: View {
         switch binType {
         case .liver:
             if liverBin.isFull {
-                rejectBlock(at: blockIndex, reason: "Liver is full! Try muscles!")
+                rejectBlock(at: blockIndex, reason: "Tummy is full! Try muscles!")
                 return
             }
             liverBin.currentGrams += StorageBinType.liver.gramsPerBlock
             liverBin.blocksStored += 1
             score += 15 // optimal: liver first
-            if liverBin.isFull { showPipMessage("Liver's full! It can only hold 100 grams!") }
+            if liverBin.isFull { showPipMessage("Tummy's full! It can only hold 100 grams!") }
 
         case .muscles:
             if muscleBin.isFull {
@@ -1036,7 +1036,7 @@ struct InsulinTetrisView: View {
             muscleBin.currentGrams += StorageBinType.muscles.gramsPerBlock
             muscleBin.blocksStored += 1
             score += liverBin.isFull ? 15 : 10 // bonus if liver was filled first
-            if muscleBin.isFull { showPipMessage("Muscles stored 400 grams! Only fat cells are left...") }
+            if muscleBin.isFull { showPipMessage("Muscles are full! Time to store fat...") }
 
         case .fat:
             fatBin.blocksStored += 1
@@ -1093,7 +1093,7 @@ struct InsulinTetrisView: View {
         withAnimation { fiberSlowdownEnd = .now.addingTimeInterval(5.0) }
 
         if case .fiber(let veg) = block.type {
-            showPipMessage("Fiber from your \(veg.displayName.lowercased()) slows glucose down!")
+            showPipMessage("Fiber from your \(veg.displayName.lowercased()) slows sugar down!")
         }
     }
 

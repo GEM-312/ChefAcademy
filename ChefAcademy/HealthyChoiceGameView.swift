@@ -652,11 +652,11 @@ struct HealthyChoiceGameView: View {
         flyingFoods.append(item)
 
         // Pip throwing animation
-        withAnimation(.spring(response: 0.2, dampingFraction: 0.5)) {
+        withAnimation(AnimationConstants.springSnappy) {
             pipScale = 1.15
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+            withAnimation(AnimationConstants.springQuick) {
                 pipScale = max(1.0, 1.0 + CGFloat(badChoices) * 0.12) // Stay inflated if bad choices
             }
         }
@@ -740,7 +740,7 @@ struct HealthyChoiceGameView: View {
             badChoices += 1
 
             // Inflate Pip
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.4)) {
+            withAnimation(AnimationConstants.springTight) {
                 pipScale = 1.0 + CGFloat(badChoices) * 0.15
                 pipRotation = Double.random(in: -10...10)
             }

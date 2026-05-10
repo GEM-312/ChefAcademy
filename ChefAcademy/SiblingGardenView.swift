@@ -180,7 +180,7 @@ struct SiblingGardenView: View {
         GameCenterService.shared.checkAchievements(gameState: visitorGameState)
 
         // Show reward toast
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+        withAnimation(AnimationConstants.springMedium) {
             showHelpReward = true
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {

@@ -608,9 +608,9 @@ struct NearbyVersusView: View {
             velocity: velocity, rotation: rotation, wobblePhase: wobblePhase,
             wobbleSpeed: wobbleSpeed, wobbleAmount: wobbleAmount))
 
-        withAnimation(.spring(response: 0.2, dampingFraction: 0.5)) { pipScale = 1.15 }
+        withAnimation(AnimationConstants.springSnappy) { pipScale = 1.15 }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+            withAnimation(AnimationConstants.springQuick) {
                 pipScale = max(1.0, 1.0 + CGFloat(badChoices) * 0.12)
             }
         }
@@ -656,7 +656,7 @@ struct NearbyVersusView: View {
         } else {
             flyingFoods[index].resultIcon = "\u{274C}"
             badChoices += 1
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.4)) {
+            withAnimation(AnimationConstants.springTight) {
                 pipScale = 1.0 + CGFloat(badChoices) * 0.15
                 pipRotation = Double.random(in: -10...10)
             }

@@ -318,7 +318,7 @@ struct SeedInfoView: View {
             Color.AppTheme.cream
                 .ignoresSafeArea()
 
-            ScrollView(.vertical, showsIndicators: false) {
+            ScrollView(.vertical) {
                 VStack(spacing: AppSpacing.lg) {
 
                     // MARK: - Veggie name
@@ -418,7 +418,7 @@ struct SeedInfoView: View {
             detectedColorChoice = initialColorForVeggie(veggie)
 
             coloringRewardClaimed = gameState.isKnowledgeClaimed(colorKnowledgeID)
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
+            withAnimation(AnimationConstants.springFly) {
                 appeared = true
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {

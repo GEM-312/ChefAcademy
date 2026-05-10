@@ -311,6 +311,39 @@ extension View {
     }
 }
 
+// MARK: - Trailing Fade
+//
+// A non-interactive gradient on the right edge that signals "more content
+// is over here" — gives kids an at-rest scroll cue on horizontal carousels
+// where iOS's default scrollbar only appears mid-gesture. Defaults to the
+// app cream background; pass `color:` if your scroll sits on warmCream or
+// another surface. The fade is hit-test transparent.
+
+struct TrailingFadeModifier: ViewModifier {
+    var color: Color = Color.AppTheme.cream
+    var width: CGFloat = AppSpacing.xl
+
+    func body(content: Content) -> some View {
+        content.overlay(alignment: .trailing) {
+            LinearGradient(
+                colors: [color.opacity(0), color],
+                startPoint: .leading,
+                endPoint: .trailing
+            )
+            .frame(width: width)
+            .allowsHitTesting(false)
+        }
+    }
+}
+
+extension View {
+    /// Adds a soft gradient on the trailing edge as an at-rest cue that the
+    /// horizontal carousel has more content to scroll. See TrailingFadeModifier.
+    func trailingFade(color: Color = Color.AppTheme.cream, width: CGFloat = AppSpacing.xl) -> some View {
+        modifier(TrailingFadeModifier(color: color, width: width))
+    }
+}
+
 // MARK: - Adaptive Grid
 //
 // Grid that shows more columns on iPad

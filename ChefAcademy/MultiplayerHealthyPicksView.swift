@@ -228,7 +228,7 @@ struct MultiplayerHealthyPicksView: View {
                 .font(.AppTheme.rounded(size: 120, weight: .black))
                 .foregroundColor(Color.AppTheme.goldenWheat)
                 .scaleEffect(1.0)
-                .animation(.spring(response: 0.3, dampingFraction: 0.5), value: count)
+                .animation(AnimationConstants.springBouncy, value: count)
             Text("Get ready!")
                 .font(.AppTheme.headline)
                 .foregroundColor(Color.AppTheme.sepia)
@@ -724,11 +724,11 @@ struct MultiplayerHealthyPicksView: View {
         flyingFoods.append(item)
 
         // Pip throw animation
-        withAnimation(.spring(response: 0.2, dampingFraction: 0.5)) {
+        withAnimation(AnimationConstants.springSnappy) {
             pipScale = 1.15
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+            withAnimation(AnimationConstants.springQuick) {
                 pipScale = max(1.0, 1.0 + CGFloat(badChoices) * 0.12)
             }
         }
@@ -791,7 +791,7 @@ struct MultiplayerHealthyPicksView: View {
             flyingFoods[index].resultIcon = "\u{274C}"
             badChoices += 1
 
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.4)) {
+            withAnimation(AnimationConstants.springTight) {
                 pipScale = 1.0 + CGFloat(badChoices) * 0.15
                 pipRotation = Double.random(in: -10...10)
             }

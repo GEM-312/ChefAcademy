@@ -39,7 +39,7 @@ struct ParentDashboardView: View {
     }
 
     var body: some View {
-        ScrollView(showsIndicators: false) {
+        ScrollView {
             VStack(spacing: AppSpacing.lg) {
                 // Header
                 HStack {
@@ -70,6 +70,7 @@ struct ParentDashboardView: View {
                         }
                         .padding(.horizontal, AppSpacing.md)
                     }
+                    .trailingFade()
                 }
 
                 // Stats for selected child

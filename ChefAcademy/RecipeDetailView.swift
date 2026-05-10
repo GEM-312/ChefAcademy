@@ -13,12 +13,16 @@ struct RecipeDetailView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
+        ZStack {
             Color.AppTheme.cream
                 .ignoresSafeArea()
 
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 0) {
+            // Sticky-footer pattern: ScrollView is bounded by the VStack so
+            // "Let's Cook!" lives BELOW the scroll, always visible. Kids who
+            // never scroll past the recipe steps still see the primary CTA.
+            VStack(spacing: 0) {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: 0) {
 
                     // MARK: - Hero Image
                     ZStack(alignment: .topTrailing) {
@@ -265,27 +269,26 @@ struct RecipeDetailView: View {
                             }
                         }
 
-                        // MARK: - Let's Cook Button
-                        Button(action: {
-                            if let onDismiss { onDismiss() } else { dismiss() }
-                            onStartCooking?()
-                        }) {
-                            Text("Let's Cook!")
-                                .font(.AppTheme.headline)
-                                .foregroundColor(Color.AppTheme.cream)
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 56)
-                                .background(Color.AppTheme.sage)
-                                .cornerRadius(AppSpacing.cardCornerRadius)
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.top, AppSpacing.xs)
-
                         Spacer().frame(height: AppSpacing.lg)
                     }
                     .padding(.horizontal, AppSpacing.lg)
                     .padding(.top, AppSpacing.md)
                 }
+            }
+
+                // MARK: - Sticky "Let's Cook!" Footer
+                // Lives outside the ScrollView so 6yr olds always see the
+                // primary CTA — no scrolling-past-everything required.
+                Button(action: {
+                    if let onDismiss { onDismiss() } else { dismiss() }
+                    onStartCooking?()
+                }) {
+                    Text("Let's Cook!")
+                }
+                .buttonStyle(TexturedButtonStyle(tint: Color.AppTheme.sage))
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.vertical, AppSpacing.sm)
+                .background(Color.AppTheme.cream)
             }
         }
     }

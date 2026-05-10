@@ -281,7 +281,7 @@ struct SiblingProfileView: View {
         // Show toast
         showGiftSheet = false
         giftMessage = "You gave \(sibling.name) a \(vegType.displayName)!"
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+        withAnimation(AnimationConstants.springMedium) {
             showGiftToast = true
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
@@ -299,6 +299,10 @@ struct GiftVeggieSheet: View {
     let sibling: UserProfile
     let onGift: (VegetableType) -> Void
     @Environment(\.dismiss) private var dismiss
+
+    // Confirm-before-gift: tap a veggie sets this; PipDialog confirms.
+    // Gifting is irreversible, so this guard matters more than purchase confirms.
+    @State private var pendingGiftVeg: VegetableType?
 
     private var availableVeggies: [HarvestedIngredient] {
         visitorGameState.harvestedIngredients.filter { $0.quantity > 0 }
@@ -329,7 +333,7 @@ struct GiftVeggieSheet: View {
                             GridItem(.flexible())
                         ], spacing: AppSpacing.md) {
                             ForEach(availableVeggies, id: \.type) { item in
-                                Button(action: { onGift(item.type) }) {
+                                Button(action: { pendingGiftVeg = item.type }) {
                                     VStack(spacing: 4) {
                                         Image(item.type.imageName)
                                             .resizable()
@@ -361,6 +365,27 @@ struct GiftVeggieSheet: View {
                         .foregroundColor(Color.AppTheme.sage)
                 }
             }
+            // Confirm-before-gift overlay — gifting is irreversible
+            .overlay {
+                if let veg = pendingGiftVeg {
+                    PipDialogView(
+                        message: "Give your \(veg.displayName) to \(sibling.name)? You can't get it back!",
+                        choices: [
+                            PipDialogChoice(label: "Yes, gift it!", style: .primary, action: {
+                                let toGift = veg
+                                pendingGiftVeg = nil
+                                onGift(toGift)
+                            }),
+                            PipDialogChoice(label: "Maybe not", style: .subtle, action: {
+                                pendingGiftVeg = nil
+                            })
+                        ]
+                    )
+                    .transition(.opacity)
+                    .zIndex(20)
+                }
+            }
+            .animation(AnimationConstants.fadeMedium, value: pendingGiftVeg)
         }
     }
 }

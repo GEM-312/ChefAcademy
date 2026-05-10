@@ -731,7 +731,7 @@ struct SplitScreenVersusView: View {
             } else {
                 p1Foods[idx].resultIcon = "\u{274C}"
                 p1Bad += 1
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.4)) {
+                withAnimation(AnimationConstants.springTight) {
                     p1PipScale = 1.0 + CGFloat(p1Bad) * 0.15
                 }
                 if p1Bad >= maxBadChoices { p1Finished = true }
@@ -749,7 +749,7 @@ struct SplitScreenVersusView: View {
             } else {
                 p2Foods[idx].resultIcon = "\u{274C}"
                 p2Bad += 1
-                withAnimation(.spring(response: 0.3, dampingFraction: 0.4)) {
+                withAnimation(AnimationConstants.springTight) {
                     p2PipScale = 1.0 + CGFloat(p2Bad) * 0.15
                 }
                 if p2Bad >= maxBadChoices { p2Finished = true }

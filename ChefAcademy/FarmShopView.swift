@@ -21,6 +21,8 @@ struct FarmShopView: View {
     @State private var purchasedItemName = ""
     @State private var bounceItem: PantryItem?
     @State private var selectedInfoItem: PantryItem?
+    // Confirm-before-spend: tap "Buy" sets this; PipDialog overlay confirms.
+    @State private var pendingBuyItem: PantryItem?
     @Namespace private var shopNamespace
 
     // Filter items by category
@@ -37,7 +39,7 @@ struct FarmShopView: View {
                 Color.AppTheme.cream
                     .ignoresSafeArea()
 
-                ScrollView(showsIndicators: false) {
+                ScrollView {
                     VStack(spacing: 0) {
 
                         // MARK: - Header
@@ -106,6 +108,27 @@ struct FarmShopView: View {
                 .zIndex(10)
             }
         }
+        // Confirm-before-spend overlay (top of stack)
+        .overlay {
+            if let item = pendingBuyItem {
+                PipDialogView(
+                    message: "Buy \(item.displayName) for \(item.shopPrice) coins?",
+                    choices: [
+                        PipDialogChoice(label: "Yes!", style: .primary, action: {
+                            let toBuy = item
+                            pendingBuyItem = nil
+                            confirmBuyItem(toBuy)
+                        }),
+                        PipDialogChoice(label: "Maybe later", style: .subtle, action: {
+                            pendingBuyItem = nil
+                        })
+                    ]
+                )
+                .transition(.opacity)
+                .zIndex(20)
+            }
+        }
+        .animation(AnimationConstants.fadeMedium, value: pendingBuyItem)
     }
 
     // MARK: - Shop Header
@@ -177,6 +200,7 @@ struct FarmShopView: View {
             }
             .padding(.horizontal, AppSpacing.md)
         }
+        .trailingFade()
     }
 
     // MARK: - Shop Grid
@@ -241,17 +265,25 @@ struct FarmShopView: View {
                         }
                     }
                 }
+                .trailingFade()
             }
         }
     }
 
     // MARK: - Buy Action
 
+    /// Called by both the shop card "Buy" tap and the info card sticky-buy.
+    /// Stages a pending purchase; the PipDialog overlay confirms before spending.
     func buyItem(_ item: PantryItem) {
+        pendingBuyItem = item
+    }
+
+    /// Performs the actual purchase after the kid taps "Yes!" in the dialog.
+    private func confirmBuyItem(_ item: PantryItem) {
         if gameState.buyPantryItem(item) {
             purchasedItemName = item.displayName
             // Bounce animation
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
+            withAnimation(AnimationConstants.springBouncy) {
                 bounceItem = item
             }
             // Reset bounce after animation
@@ -296,7 +328,7 @@ struct ShopItemCard: View {
                     .clipped()
                     .opacity(0.8)
                     .scaleEffect(isBouncing ? 1.1 : 1.0)
-                    .animation(.spring(response: 0.3, dampingFraction: 0.5), value: isBouncing)
+                    .animation(AnimationConstants.springBouncy, value: isBouncing)
                     .padding(.top, 4)
                     .overlay(alignment: .topLeading) {
                         if hasAllergen {

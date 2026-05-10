@@ -173,7 +173,7 @@ struct DraggablePipView: View {
                 )
         }
         .opacity(isVisible ? 1.0 : 0.0)
-        .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isVisible)
+        .animation(AnimationConstants.springMedium, value: isVisible)
         .onAppear {
             // Start idle bounce animation
             withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
@@ -208,7 +208,7 @@ struct DraggablePipView: View {
 
     private func triggerHarvest(plotIndex: Int) {
         // Burst animation
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.4)) {
+        withAnimation(AnimationConstants.springTight) {
             showHarvestBurst = true
         }
 
@@ -395,7 +395,7 @@ struct WalkingPipView: View {
             }
         }
         .opacity(isVisible ? 1.0 : 0.0)
-        .animation(.spring(response: 0.4, dampingFraction: 0.7), value: isVisible)
+        .animation(AnimationConstants.springMedium, value: isVisible)
         .onAppear {
             pipPosition = idlePosition
             withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) {
@@ -499,7 +499,7 @@ struct WalkingPipView: View {
         isWalking = false
         walkingFrameIndex = 0
 
-        withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+        withAnimation(AnimationConstants.springSlow) {
             pipPosition = idlePosition
         }
     }
@@ -527,7 +527,7 @@ struct WalkingPipView: View {
     }
 
     private func triggerHarvest(plotIndex: Int) {
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.4)) {
+        withAnimation(AnimationConstants.springTight) {
             showHarvestBurst = true
         }
 

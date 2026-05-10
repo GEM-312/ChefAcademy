@@ -2,18 +2,14 @@
 //  VoicePickerView.swift
 //  ChefAcademy
 //
-//  Voice selection screen — kids/parents pick how Pip sounds.
-//  Shows free Apple voices (with preview) and premium ElevenLabs voice.
-//  Guides users to Settings to download better voices if needed.
+//  Voice selection screen — two honest options:
+//    1. Read Text (free, silent — Pip's words on screen)
+//    2. Pip's Voice (Pip Plus subscription — ElevenLabs character voice)
 //
-//  TEACHING MOMENT: This screen serves two goals:
-//    1. Let users pick a voice they like (engagement)
-//    2. Upsell the premium Pip voice (revenue for subscription)
-//  The "try it" button for premium creates desire before the paywall.
+//  Preview button lets the user hear Pip's real voice before subscribing.
 //
 
 import SwiftUI
-import AVFoundation
 
 // MARK: - Voice Picker View
 
@@ -21,9 +17,6 @@ struct VoicePickerView: View {
 
     @ObservedObject private var pipVoice = PipVoice.shared
     @Environment(\.dismiss) private var dismiss
-
-    @State private var previewingVoiceID: String?
-    @State private var showSettingsGuide = false
 
     var body: some View {
         NavigationView {
@@ -64,21 +57,19 @@ struct VoicePickerView: View {
                             }
                         }
 
-                        // Preview button for ElevenLabs
-                        if pipVoice.hasSubscription || true { // always show preview
-                            Button(action: {
-                                pipVoice.previewElevenLabsVoice()
-                            }) {
-                                HStack(spacing: AppSpacing.xs) {
-                                    Image(systemName: pipVoice.isSpeaking ? "speaker.wave.3.fill" : "play.circle.fill")
-                                        .symbolEffect(.pulse, isActive: pipVoice.isSpeaking)
-                                    Text("Preview Pip's Voice")
-                                }
-                                .font(.AppTheme.subheadline)
-                                .foregroundColor(Color.AppTheme.goldenWheat)
+                        // Preview button — lets users hear Pip's voice before subscribing
+                        Button(action: {
+                            pipVoice.previewElevenLabsVoice()
+                        }) {
+                            HStack(spacing: AppSpacing.xs) {
+                                Image(systemName: pipVoice.isSpeaking ? "speaker.wave.3.fill" : "play.circle.fill")
+                                    .symbolEffect(.pulse, isActive: pipVoice.isSpeaking)
+                                Text("Preview Pip's Voice")
                             }
-                            .buttonStyle(.plain)
+                            .font(.AppTheme.subheadline)
+                            .foregroundColor(Color.AppTheme.goldenWheat)
                         }
+                        .buttonStyle(.plain)
                     }
 
                     Spacer(minLength: AppSpacing.xxl)
@@ -102,123 +93,12 @@ struct VoicePickerView: View {
 
     private var pipHeader: some View {
         PipHeaderStack(
-            title: "Pick how I sound!",
-            subtitle: "Tap a voice to hear a preview",
+            title: "How should I talk?",
+            subtitle: "Read silently, or hear my voice with Pip Plus",
             pose: .pointsUpLeft,
             clipToCircle: false
         )
         .padding(.top, AppSpacing.md)
-    }
-
-    // MARK: - Premium Voice Section
-
-    private var premiumVoiceSection: some View {
-        VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Label("Pip's Special Voice", systemImage: "star.fill")
-                .font(.AppTheme.headline)
-                .foregroundColor(Color.AppTheme.goldenWheat)
-
-            VoiceCard(
-                name: "Pip's Character Voice",
-                quality: "Custom AI Voice",
-                qualityColor: Color.AppTheme.goldenWheat,
-                isSelected: pipVoice.voiceMode == .elevenLabs,
-                isLocked: !pipVoice.hasSubscription,
-                onTap: {
-                    if pipVoice.hasSubscription {
-                        pipVoice.voiceMode = .elevenLabs
-                    }
-                },
-                onPreview: {
-                    previewingVoiceID = "elevenlabs"
-                    pipVoice.previewElevenLabsVoice()
-                },
-                isPreviewing: previewingVoiceID == "elevenlabs" && pipVoice.isSpeaking
-            )
-
-            if !pipVoice.hasSubscription {
-                HStack(spacing: AppSpacing.xs) {
-                    Image(systemName: "lock.fill")
-                        .font(.AppTheme.caption)
-                    Text("Upgrade to Pip Plus — $3.99/month")
-                        .font(.AppTheme.caption)
-                }
-                .foregroundColor(Color.AppTheme.goldenWheat)
-                .padding(.leading, AppSpacing.xs)
-            }
-        }
-    }
-
-}
-
-// MARK: - Voice Card
-
-struct VoiceCard: View {
-    let name: String
-    let quality: String
-    let qualityColor: Color
-    let isSelected: Bool
-    let isLocked: Bool
-    let onTap: () -> Void
-    let onPreview: () -> Void
-    let isPreviewing: Bool
-
-    var body: some View {
-        HStack(spacing: AppSpacing.md) {
-            // Voice info
-            VStack(alignment: .leading, spacing: 2) {
-                Text(name)
-                    .font(.AppTheme.body)
-                    .fontWeight(.medium)
-                    .foregroundColor(Color.AppTheme.darkBrown)
-
-                Text(quality)
-                    .font(.AppTheme.caption)
-                    .foregroundColor(qualityColor)
-            }
-
-            Spacer()
-
-            // Preview button
-            Button(action: onPreview) {
-                Image(systemName: isPreviewing ? "stop.circle.fill" : "play.circle.fill")
-                    .font(.AppTheme.title)
-                    .foregroundColor(Color.AppTheme.sage)
-                    .symbolEffect(.pulse, isActive: isPreviewing)
-            }
-            .buttonStyle(.plain)
-
-            // Selection / lock indicator
-            if isLocked {
-                Image(systemName: "lock.fill")
-                    .font(.AppTheme.callout)
-                    .foregroundColor(Color.AppTheme.goldenWheat)
-            } else if isSelected {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.AppTheme.title2)
-                    .foregroundColor(Color.AppTheme.sage)
-            } else {
-                Circle()
-                    .stroke(Color.AppTheme.sepia.opacity(0.3), lineWidth: 2)
-                    .frame(width: 22, height: 22)
-            }
-        }
-        .padding(AppSpacing.md)
-        .background(
-            isSelected
-                ? Color.AppTheme.sage.opacity(0.1)
-                : Color.AppTheme.warmCream
-        )
-        .cornerRadius(AppSpacing.smallCornerRadius)
-        .overlay(
-            RoundedRectangle(cornerRadius: AppSpacing.smallCornerRadius)
-                .stroke(
-                    isSelected ? Color.AppTheme.sage : Color.clear,
-                    lineWidth: 2
-                )
-        )
-        .contentShape(Rectangle())
-        .onTapGesture { if !isLocked { onTap() } }
     }
 }
 
@@ -276,100 +156,6 @@ struct VoiceOptionCard: View {
             )
         }
         .buttonStyle(.plain)
-    }
-}
-
-// MARK: - Settings Guide Sheet
-//
-// TEACHING MOMENT: Since we can't deep-link to the voice download page
-// (App Store rejection risk), we show step-by-step instructions with
-// a button that opens the general Settings app.
-//
-
-struct SettingsGuideSheet: View {
-
-    @Environment(\.dismiss) private var dismiss
-
-    private let steps = [
-        ("1", "Open Settings", "gear"),
-        ("2", "Tap Accessibility", "figure.stand"),
-        ("3", "Tap Read & Speak", "text.bubble"),
-        ("4", "Tap Voices", "speaker.wave.2"),
-        ("5", "Tap English", "globe"),
-        ("6", "Download a voice (tap the cloud icon)", "icloud.and.arrow.down")
-    ]
-
-    var body: some View {
-        NavigationView {
-            ScrollView {
-                VStack(spacing: AppSpacing.lg) {
-                    Text("How to get a better voice for Pip")
-                        .font(.AppTheme.title3)
-                        .foregroundColor(Color.AppTheme.darkBrown)
-                        .padding(.top, AppSpacing.lg)
-
-                    VStack(alignment: .leading, spacing: AppSpacing.md) {
-                        ForEach(steps, id: \.0) { step in
-                            HStack(spacing: AppSpacing.md) {
-                                Image(systemName: step.2)
-                                    .font(.AppTheme.title3)
-                                    .foregroundColor(Color.AppTheme.sage)
-                                    .frame(width: 36, height: 36)
-                                    .background(Color.AppTheme.sage.opacity(0.15))
-                                    .cornerRadius(AppSpacing.pillCornerRadius)
-
-                                Text(step.1)
-                                    .font(.AppTheme.body)
-                                    .foregroundColor(Color.AppTheme.darkBrown)
-
-                                Spacer()
-                            }
-                        }
-                    }
-                    .padding(AppSpacing.md)
-
-                    Text("Look for \"Samantha\" or \"Ava\" — they sound the best!")
-                        .font(.AppTheme.caption)
-                        .foregroundColor(Color.AppTheme.sepia)
-                        .italic()
-                        .multilineTextAlignment(.center)
-
-                    Button(action: openSettings) {
-                        Label("Open Settings", systemImage: "gear")
-                            .font(.AppTheme.body)
-                            .fontWeight(.semibold)
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, AppSpacing.md)
-                            .background(Color.AppTheme.sage)
-                            .cornerRadius(AppSpacing.cardCornerRadius)
-                    }
-                    .padding(.horizontal, AppSpacing.md)
-
-                    Text("Come back after downloading — Pip will automatically use the new voice!")
-                        .font(.AppTheme.caption)
-                        .foregroundColor(Color.AppTheme.sage)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, AppSpacing.lg)
-
-                    Spacer(minLength: AppSpacing.xxl)
-                }
-                .padding(AppSpacing.md)
-            }
-            .background(Color.AppTheme.cream)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button("Done") { dismiss() }
-                        .foregroundColor(Color.AppTheme.sage)
-                }
-            }
-        }
-    }
-
-    private func openSettings() {
-        if let url = URL(string: UIApplication.openSettingsURLString) {
-            UIApplication.shared.open(url)
-        }
     }
 }
 

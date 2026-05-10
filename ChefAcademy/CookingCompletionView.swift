@@ -78,7 +78,7 @@ struct CookingCompletionView: View {
                 // Body Buddy health boost summary
                 if showHealthBoost {
                     VStack(spacing: AppSpacing.xs) {
-                        Text("Body Buddy Boost!")
+                        Text("Body Boost!")
                             .font(.AppTheme.rounded(size: 14, weight: .bold))
                             .foregroundColor(Color.AppTheme.darkBrown)
 
@@ -244,14 +244,14 @@ struct CookingCompletionView: View {
 
         // Show health boost after rewards
         DispatchQueue.main.asyncAfter(deadline: .now() + Double(stars) * 0.3 + 1.2) {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+            withAnimation(AnimationConstants.springSlow) {
                 showHealthBoost = true
             }
         }
 
         // Show button after health boost
         DispatchQueue.main.asyncAfter(deadline: .now() + Double(stars) * 0.3 + 1.8) {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+            withAnimation(AnimationConstants.springSlow) {
                 showButton = true
             }
         }

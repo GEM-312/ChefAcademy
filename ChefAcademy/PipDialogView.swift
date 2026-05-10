@@ -73,7 +73,7 @@ struct PipDialogView: View {
             }
         }
         .onAppear {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.7)) {
+            withAnimation(AnimationConstants.springSlow) {
                 appeared = true
             }
             // Pip reads the dialog aloud (great for age 6+ who can't read yet)

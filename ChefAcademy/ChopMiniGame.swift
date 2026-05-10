@@ -208,7 +208,7 @@ struct ChopMiniGame: View {
                     .aspectRatio(contentMode: .fit)
                     .frame(width: 50, height: 50)
                     .scaleEffect(justChopped ? 0.8 : 1.0)
-                    .animation(.spring(response: 0.2, dampingFraction: 0.5), value: justChopped)
+                    .animation(AnimationConstants.springSnappy, value: justChopped)
             }
         }
         .frame(height: 60)
@@ -227,7 +227,7 @@ struct ChopMiniGame: View {
             .cornerRadius(AppSpacing.smallCornerRadius)
             .scaleEffect(showResult ? 1.0 : 0.5)
             .opacity(showResult ? 1.0 : 0.0)
-            .animation(.spring(response: 0.3, dampingFraction: 0.6), value: showResult)
+            .animation(AnimationConstants.springQuick, value: showResult)
     }
 
     // MARK: - Progress View

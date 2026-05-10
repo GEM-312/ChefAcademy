@@ -100,14 +100,13 @@ struct MeetPipView: View {
     @State private var showDialogue = false
     @State private var currentDialogueIndex = 0
 
+    // 3-dialog flow per UX audit (was 7). The CTA "Let's grow!" button
+    // surfaces on dialog index 2 (the final entry) so a 6yr old reaches
+    // the action in 3 taps, not 7.
     let dialogues: [String] = [
-        "Hello there! 👋",
-        "I'm Pip, and this is my Kitchen Garden!",
-        "I'm so excited to cook with you!",
-        "Together, we'll grow yummy vegetables...",
-        "...cook delicious healthy meals...",
-        "...and discover how food makes your body AMAZING! 💪",
-        "Are you ready to become a super chef?"
+        "Hi! 🦔 I'm Pip, your kitchen garden buddy!",
+        "Grow veggies → cook recipes → Feed Your Body!",
+        "Tap seeds to start growing. Ready?"
     ]
 
     var body: some View {
@@ -172,7 +171,7 @@ struct MeetPipView: View {
                         onboardingManager.nextStep()
                     }) {
                         HStack {
-                            Text("Yes! Let's Go!")
+                            Text("Let's grow!")
                             Image(systemName: "arrow.right")
                         }
                     }
@@ -196,15 +195,15 @@ struct MeetPipView: View {
 
     var dialogueWithName: String {
         let dialogue = dialogues[currentDialogueIndex]
-        // Personalize certain dialogues
+        // Personalize the greeting if we know the kid's name
         if currentDialogueIndex == 0 && !avatarModel.name.isEmpty {
-            return "Hello there, \(avatarModel.name)! 👋"
+            return "Hi \(avatarModel.name)! 🦔 I'm Pip, your kitchen garden buddy!"
         }
         return dialogue
     }
 
     func startAnimation() {
-        withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
+        withAnimation(AnimationConstants.springFly) {
             showPip = true
         }
 

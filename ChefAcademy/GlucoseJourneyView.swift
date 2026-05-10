@@ -1396,7 +1396,7 @@ struct SmartSnackQuizView: View {
 
     private func selectSnack(_ snack: SnackOption) {
         selectedSnack = snack
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+        withAnimation(AnimationConstants.springMedium) {
             showResult = true
         }
 
@@ -1414,7 +1414,7 @@ struct SmartSnackQuizView: View {
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+            withAnimation(AnimationConstants.springMedium) {
                 showSugarCubes = true
             }
         }

@@ -290,7 +290,7 @@ struct PipCharacterView: View {
     
     private func triggerPoseChangeAnimation() {
         // Quick scale down and up for pose change
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
+        withAnimation(AnimationConstants.springBouncy) {
             isAnimating = false
         }
         
@@ -307,14 +307,19 @@ struct PipWithDialogue: View {
     let pose: PipPose
     let message: String
     var pipSize: CGFloat = 180
-    
+    /// Read `message` aloud when the bubble first appears AND whenever
+    /// `message` changes. Matches PipSpeechBubble's behavior so any view
+    /// using PipWithDialogue gets ElevenLabs voice on Pip Plus, silent on free.
+    /// Pass `false` for purely decorative usage where audio would be noise.
+    var speakOnAppear: Bool = true
+
     @State private var showMessage = false
-    
+
     var body: some View {
         VStack(spacing: AppSpacing.md) {
             // Pip Character
             PipCharacterView(pose: pose, size: pipSize)
-            
+
             // Pip name badge
             Text("Pip")
                 .font(.AppTheme.headline)
@@ -323,7 +328,7 @@ struct PipWithDialogue: View {
                 .padding(.vertical, AppSpacing.xs)
                 .background(Color.AppTheme.sage)
                 .cornerRadius(AppSpacing.largeCornerRadius)
-            
+
             // Speech bubble
             VStack {
                 Text(message)
@@ -338,6 +343,7 @@ struct PipWithDialogue: View {
             .offset(y: showMessage ? 0 : 20)
         }
         .onAppear {
+            if speakOnAppear { PipVoice.shared.speak(message) }
             // Delay speech bubble appearance
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 withAnimation(.easeOut(duration: 0.3)) {
@@ -346,6 +352,7 @@ struct PipWithDialogue: View {
             }
         }
         .onChange(of: message) { oldMessage, newMessage in
+            if speakOnAppear { PipVoice.shared.speak(newMessage) }
             // Animate message change
             withAnimation(.easeOut(duration: 0.15)) {
                 showMessage = false

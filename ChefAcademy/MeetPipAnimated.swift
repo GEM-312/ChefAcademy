@@ -11,14 +11,12 @@ struct MeetPipAnimatedView: View {
     @State private var currentDialogueIndex = 0
     @State private var currentPose: PipPose = .waving
     
+    // 3-dialog flow per UX audit (was 7). CTA "Let's grow!" button surfaces
+    // on dialog index 2 — kid reaches the action in 3 taps, not 7.
     let dialogues: [(text: String, pose: PipPose)] = [
-        ("Hello there! 👋", .waving),
-        ("I'm Pip, and this is my Kitchen Garden!", .neutral),
-        ("I'm so excited to cook with you!", .excited),
-        ("Together, we'll grow yummy vegetables...", .cooking),
-        ("...cook delicious healthy meals...", .cooking),
-        ("...and discover how food makes your body AMAZING! 💪", .celebrating),
-        ("Are you ready to become a super chef?", .excited)
+        ("Hi! 🦔 I'm Pip, your kitchen garden buddy!", .waving),
+        ("Grow veggies → cook recipes → Feed Your Body!", .cooking),
+        ("Tap seeds to start growing. Ready?", .gotIdea)
     ]
     
     var body: some View {
@@ -82,7 +80,7 @@ struct MeetPipAnimatedView: View {
                         onboardingManager.nextStep()
                     }) {
                         HStack {
-                            Text("Yes! Let's Go!")
+                            Text("Let's grow!")
                             Image(systemName: "arrow.right")
                         }
                     }
@@ -106,16 +104,16 @@ struct MeetPipAnimatedView: View {
     
     var dialogueWithName: String {
         let dialogue = dialogues[currentDialogueIndex].text
-        // Personalize first dialogue
+        // Personalize the greeting if we know the kid's name
         if currentDialogueIndex == 0 && !avatarModel.name.isEmpty {
-            return "Hello there, \(avatarModel.name)! 👋"
+            return "Hi \(avatarModel.name)! 🦔 I'm Pip, your kitchen garden buddy!"
         }
         return dialogue
     }
     
     func startAnimation() {
         // Pip bounces in
-        withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
+        withAnimation(AnimationConstants.springFly) {
             showPip = true
         }
         
@@ -285,7 +283,7 @@ struct ReadyToStartAnimatedView: View {
 
         // 2. Pip video appears
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) {
+            withAnimation(AnimationConstants.springFly) {
                 showPip = true
             }
         }

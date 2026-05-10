@@ -34,13 +34,13 @@ struct BodyBuddyView: View {
         ZStack {
             Color.AppTheme.cream.ignoresSafeArea()
 
-            ScrollView(showsIndicators: false) {
+            ScrollView {
                 VStack(spacing: AppSpacing.lg) {
 
                     // Header
                     HStack {
                         VStack(alignment: .leading) {
-                            Text("Body Buddy")
+                            Text("Your Body")
                                 .font(.AppTheme.largeTitle)
                                 .foregroundColor(Color.AppTheme.darkBrown)
                             Text(hasCookedSomething
@@ -224,7 +224,7 @@ struct BodyBuddyView: View {
                             isSelected: selectedRecipeID == item.recipe.id
                         )
                         .onTapGesture {
-                            withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                            withAnimation(AnimationConstants.springMedium) {
                                 if selectedRecipeID == item.recipe.id {
                                     selectedRecipeID = nil
                                 } else {
@@ -236,6 +236,7 @@ struct BodyBuddyView: View {
                 }
                 .padding(.horizontal, AppSpacing.md)
             }
+            .trailingFade()
 
             // Show nutrient breakdown for selected recipe
             if let recipeID = selectedRecipeID,
@@ -269,9 +270,9 @@ struct BodyBuddyView: View {
 
     private var pipMessage: String {
         if !hasCookedSomething {
-            return "Cook healthy recipes to make your Body Buddy stronger! Each veggie helps different parts of your body."
+            return "Cook healthy recipes to make your body stronger! Each veggie helps different parts of your body."
         } else if gameState.brainHealth >= 80 && gameState.heartHealth >= 80 {
-            return "Your Body Buddy is super strong! Keep cooking to stay healthy!"
+            return "Your body is super strong! Keep cooking to stay healthy!"
         } else {
             // Find weakest organ
             let organs = [
@@ -282,7 +283,7 @@ struct BodyBuddyView: View {
             if let weakest = organs.min(by: { $0.1 < $1.1 }) {
                 return "Your \(weakest.0) could use a boost! Try cooking recipes with veggies that help your \(weakest.0.lowercased())."
             }
-            return "Keep cooking to power up your Body Buddy!"
+            return "Keep cooking to power up your body!"
         }
     }
 }

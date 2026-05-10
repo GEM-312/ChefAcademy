@@ -226,7 +226,7 @@ struct HomeAnimatedView: View {
 
         let random = messages.randomElement()!
 
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+        withAnimation(AnimationConstants.springQuick) {
             pipPose = random.1
             pipMessage = random.0
         }

@@ -323,7 +323,7 @@ class PipAIService: ObservableObject {
         if !health.isEmpty {
             let sorted = health.sorted { $0.value < $1.value }
             if let weakest = sorted.first {
-                gameContextString += "\n- Body Buddy weakest organ: \(weakest.key) (\(weakest.value)/100). Suggest foods that help it!"
+                gameContextString += "\n- Body's weakest organ: \(weakest.key) (\(weakest.value)/100). Suggest foods that help it!"
             }
         }
     }

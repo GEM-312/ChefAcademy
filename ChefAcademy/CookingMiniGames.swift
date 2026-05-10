@@ -230,7 +230,7 @@ struct AddToPanMiniGame: View {
 
         Haptic.impact(inTarget ? .medium : .soft) // sizzle thud on hit, soft miss
 
-        withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+        withAnimation(AnimationConstants.springQuick) {
             dropped = true
             if inTarget {
                 dragOffset = CGSize(width: panCenter.x, height: panCenter.y)
@@ -898,7 +898,7 @@ struct WashMiniGame: View {
             vegRotation = Double.random(in: -15...15)
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
-            withAnimation(.spring(response: 0.2, dampingFraction: 0.5)) {
+            withAnimation(AnimationConstants.springSnappy) {
                 vegScale = 1.0
                 vegRotation = 0
             }
@@ -1049,7 +1049,7 @@ struct CrackEggMiniGame: View {
         tapCount += 1
         if tapCount >= targetTaps {
             Haptic.impact(.heavy) // egg breaks open!
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.5)) {
+            withAnimation(AnimationConstants.springBouncy) {
                 cracked = true
             }
             isDone = true

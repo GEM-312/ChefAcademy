@@ -927,14 +927,13 @@ struct FamilyMeetPipStep: View {
     @State private var showDialogue = false
     @State private var dialogueIndex = 0
 
+    // 3-dialog flow per UX audit (was 6). CTA "Let's grow!" surfaces on
+    // dialog index 2 — the kid reaches the action in 3 taps, not 6.
     private var dialogues: [String] {
         [
-            "Hello there, \(childName)!",
-            "I'm Pip, and this is my Kitchen Garden!",
-            "I'm so excited to cook with you!",
-            "Together, we'll grow yummy vegetables...",
-            "...and cook delicious healthy meals!",
-            "Are you ready to become a super chef?"
+            "Hi \(childName)! 🦔 I'm Pip, your kitchen garden buddy!",
+            "Grow veggies → cook recipes → Feed Your Body!",
+            "Tap seeds to start growing. Ready?"
         ]
     }
 
@@ -982,7 +981,7 @@ struct FamilyMeetPipStep: View {
                 if dialogueIndex == dialogues.count - 1 {
                     Button(action: onNext) {
                         HStack {
-                            Text("Yes! Let's Go!")
+                            Text("Let's grow!")
                             Image(systemName: "arrow.right")
                         }
                     }
@@ -1003,7 +1002,7 @@ struct FamilyMeetPipStep: View {
             }
         }
         .onAppear {
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.7)) { showPip = true }
+            withAnimation(AnimationConstants.springFly) { showPip = true }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
                 withAnimation(.easeIn(duration: 0.3)) { showDialogue = true }
             }
@@ -1038,7 +1037,7 @@ struct FamilyReadyStep: View {
             VStack(alignment: .leading, spacing: AppSpacing.md) {
                 FeatureRow(icon: "leaf.fill", text: "Grow vegetables in Pip's garden", systemIcon: true)
                 FeatureRow(icon: "fork.knife", text: "Cook yummy healthy recipes", systemIcon: true)
-                FeatureRow(icon: "figure.child", text: "Feed your Body Buddy", systemIcon: true)
+                FeatureRow(icon: "figure.child", text: "Feed Your Body", systemIcon: true)
                 FeatureRow(icon: "star.fill", text: "Earn badges and rewards", systemIcon: true)
             }
             .padding(AppSpacing.lg)
@@ -1082,8 +1081,6 @@ struct FamilyVoiceStep: View {
 
     @ObservedObject private var pipVoice = PipVoice.shared
     @State private var showContent = false
-    @State private var previewingID: String?
-    @State private var showSettingsGuide = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -1107,8 +1104,8 @@ struct FamilyVoiceStep: View {
 
                     // Pip + title
                     PipHeaderStack(
-                        title: "How should I sound?",
-                        subtitle: "Tap a voice to hear me!",
+                        title: "How should I talk?",
+                        subtitle: "Read silently, or tap Preview to hear my voice",
                         pose: .pointsUpLeft,
                         clipToCircle: false
                     )

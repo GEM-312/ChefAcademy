@@ -67,6 +67,7 @@ struct ProfilePickerView: View {
                         }
                         .padding(.horizontal, AppSpacing.lg)
                     }
+                    .trailingFade()
                     .id(refreshKey)
                 }
 

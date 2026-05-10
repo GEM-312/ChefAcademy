@@ -217,7 +217,7 @@ struct GenderSelectionView: View {
                     gender: .boy,
                     isSelected: avatarModel.gender == .boy
                 ) {
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                    withAnimation(AnimationConstants.springMedium) {
                         avatarModel.gender = .boy
                     }
                 }
@@ -226,7 +226,7 @@ struct GenderSelectionView: View {
                     gender: .girl,
                     isSelected: avatarModel.gender == .girl
                 ) {
-                    withAnimation(.spring(response: 0.4, dampingFraction: 0.7)) {
+                    withAnimation(AnimationConstants.springMedium) {
                         avatarModel.gender = .girl
                     }
                 }

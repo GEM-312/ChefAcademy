@@ -100,9 +100,9 @@ struct PlayLearnView: View {
                         ) { selectedGame = .healthyChoice }
 
                         MiniGameCard(
-                            title: "Insulin Tetris",
+                            title: "Sugar Sorter",
                             icon: "arrow.down.to.line.compact",
-                            description: "Sort glucose into your body!",
+                            description: "Sort sugar into your body!",
                             color: Color.AppTheme.goldenWheat,
                             isLocked: false // TODO: restore to gameState.recipeStars.count < 3 after testing
                         ) { selectedGame = .insulinTetris }
@@ -262,7 +262,7 @@ struct MiniGameRouterView: View {
         case .nutritionQuiz: return "Nutrition Quiz"
         case .chopChallenge: return "Chop Challenge"
         case .healthyChoice: return "Healthy Picks"
-        case .insulinTetris: return "Insulin Tetris"
+        case .insulinTetris: return "Sugar Sorter"
         case .bodyParts: return "Body Parts"
         case .seedSorting: return "Seed Sorting"
         case .gardenPuzzle: return "Garden Puzzle"

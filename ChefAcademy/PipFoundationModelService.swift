@@ -551,7 +551,7 @@ struct GetAvailableIngredientsTool: Tool {
 @available(iOS 26.0, macOS 26.0, *)
 struct GetBodyBuddyStatusTool: Tool {
     let name = "getBodyBuddyStatus"
-    let description = "Body Buddy organ health (0-100). For personalized nutrition advice."
+    let description = "Body organ health (0-100). For personalized nutrition advice."
 
     @Generable
     struct Arguments {}

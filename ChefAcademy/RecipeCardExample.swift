@@ -1136,6 +1136,7 @@ struct RecipeListView: View {
                         }
                         .padding(.horizontal, AppSpacing.md)
                     }
+                    .trailingFade()
 
                     // Recipe Cards - Shows filtered recipes
                     VStack(spacing: AppSpacing.md) {

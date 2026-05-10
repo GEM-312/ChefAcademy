@@ -111,7 +111,7 @@ struct PaywallView: View {
                        subtitle: "Tailored to your garden and weather")
 
             benefitRow(icon: "heart.fill",
-                       title: "Nutrition advice for YOUR Body Buddy",
+                       title: "Nutrition advice for YOUR body",
                        subtitle: "Foods that help weak organs")
 
             benefitRow(icon: "person.3.fill",

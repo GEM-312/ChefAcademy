@@ -131,6 +131,8 @@ enum AnimationConstants {
     static let springMedium  = Animation.spring(response: 0.4, dampingFraction: 0.7)   // cards, dialogs
     static let springSlow    = Animation.spring(response: 0.5, dampingFraction: 0.7)   // large elements, reveals
     static let springBouncy  = Animation.spring(response: 0.3, dampingFraction: 0.5)   // celebrations, pose changes
+    static let springSnappy  = Animation.spring(response: 0.2, dampingFraction: 0.5)   // snappy reactions (Pip throws, splashes)
+    static let springTight   = Animation.spring(response: 0.3, dampingFraction: 0.4)   // tight bounce (inflate, scoring pop)
 
     // Easing — smooth transitions between states
     static let fadeQuick       = Animation.easeInOut(duration: 0.15)  // button press feedback
