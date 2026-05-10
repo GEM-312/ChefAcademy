@@ -101,7 +101,7 @@ struct SignInView: View {
             }
         }
         .onAppear {
-            withAnimation(.easeOut(duration: 0.8)) {
+            withAnimation(AnimationConstants.pipTransition) {
                 showContent = true
             }
         }

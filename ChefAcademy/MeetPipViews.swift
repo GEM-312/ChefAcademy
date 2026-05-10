@@ -208,7 +208,7 @@ struct MeetPipView: View {
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            withAnimation(.easeIn(duration: 0.3)) {
+            withAnimation(AnimationConstants.fadeMedium) {
                 showDialogue = true
             }
         }
@@ -217,13 +217,13 @@ struct MeetPipView: View {
     func advanceDialogue() {
         guard currentDialogueIndex < dialogues.count - 1 else { return }
 
-        withAnimation(.easeOut(duration: 0.15)) {
+        withAnimation(AnimationConstants.fadeFlyOut) {
             showDialogue = false
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             currentDialogueIndex += 1
-            withAnimation(.easeIn(duration: 0.2)) {
+            withAnimation(AnimationConstants.fadeFast) {
                 showDialogue = true
             }
         }
@@ -340,7 +340,7 @@ struct ReadyToStartView: View {
             }
         }
         .onAppear {
-            withAnimation(.easeOut(duration: 0.8)) {
+            withAnimation(AnimationConstants.pipTransition) {
                 showContent = true
             }
         }

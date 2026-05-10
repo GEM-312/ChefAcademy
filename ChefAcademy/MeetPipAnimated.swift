@@ -119,26 +119,26 @@ struct MeetPipAnimatedView: View {
         
         // Speech bubble appears after Pip
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            withAnimation(.easeIn(duration: 0.3)) {
+            withAnimation(AnimationConstants.fadeMedium) {
                 showDialogue = true
             }
         }
     }
-    
+
     func advanceDialogue() {
         guard currentDialogueIndex < dialogues.count - 1 else { return }
-        
+
         // Fade out current dialogue
-        withAnimation(.easeOut(duration: 0.15)) {
+        withAnimation(AnimationConstants.fadeFlyOut) {
             showDialogue = false
         }
-        
+
         // Change to next dialogue and pose
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             currentDialogueIndex += 1
             currentPose = dialogues[currentDialogueIndex].pose
-            
-            withAnimation(.easeIn(duration: 0.2)) {
+
+            withAnimation(AnimationConstants.fadeFast) {
                 showDialogue = true
             }
         }
@@ -277,7 +277,7 @@ struct ReadyToStartAnimatedView: View {
 
     func startAnimationSequence() {
         // 1. Header appears
-        withAnimation(.easeOut(duration: 0.5)) {
+        withAnimation(AnimationConstants.revealSlow) {
             showContent = true
         }
 
@@ -290,14 +290,14 @@ struct ReadyToStartAnimatedView: View {
 
         // 3. Features list appears
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
-            withAnimation(.easeOut(duration: 0.4)) {
+            withAnimation(AnimationConstants.fadeMedium) {
                 showFeatures = true
             }
         }
 
         // 4. Button bounces in
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.6)) {
+            withAnimation(AnimationConstants.springMedium) {
                 showButton = true
             }
         }
@@ -325,7 +325,7 @@ struct AnimatedFeatureRow: View {
         .offset(x: isVisible ? 0 : -20)
         .onAppear {
             DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
-                withAnimation(.easeOut(duration: 0.3)) {
+                withAnimation(AnimationConstants.fadeMedium) {
                     isVisible = true
                 }
             }

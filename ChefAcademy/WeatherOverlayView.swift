@@ -36,7 +36,7 @@ struct WeatherOverlayView: View {
             }
         }
         .allowsHitTesting(false) // All touches pass through!
-        .animation(.easeInOut(duration: 1.0), value: weather)
+        .animation(AnimationConstants.weatherTransition, value: weather)
     }
 }
 
@@ -350,10 +350,10 @@ struct StormOverlay: View {
             let delay = Double.random(in: 5...10)
             try? await Task.sleep(for: .seconds(delay))
             guard !Task.isCancelled else { return }
-            withAnimation(.easeIn(duration: 0.1)) { flashOpacity = 0.3 }
+            withAnimation(AnimationConstants.fadeQuick) { flashOpacity = 0.3 }
             try? await Task.sleep(for: .seconds(0.15))
             guard !Task.isCancelled else { return }
-            withAnimation(.easeOut(duration: 0.2)) { flashOpacity = 0 }
+            withAnimation(AnimationConstants.fadeFast) { flashOpacity = 0 }
         }
     }
 }

@@ -316,7 +316,7 @@ struct PlotView: View {
                         if let idx = weedsRemoved.firstIndex(of: false) {
                             if value.translation.height < -40 {
                                 // Pulled out!
-                                withAnimation(.easeOut(duration: 0.3)) {
+                                withAnimation(AnimationConstants.fadeMedium) {
                                     weedOffsets[idx] = -100
                                 }
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
@@ -423,7 +423,7 @@ struct PlotView: View {
         }
         // Drain a bit if not complete
         if waterProgress < 1.0 {
-            withAnimation(.easeOut(duration: 0.3)) {
+            withAnimation(AnimationConstants.fadeMedium) {
                 waterProgress = max(0, waterProgress - 0.05)
             }
         }
@@ -454,7 +454,7 @@ struct PlotView: View {
         guard !bugsRescued[index] else { return }
 
         // Ladybug flies in
-        withAnimation(.easeIn(duration: 0.3)) {
+        withAnimation(AnimationConstants.fadeMedium) {
             ladybugOffsets[index] = 0
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
@@ -477,7 +477,7 @@ struct PlotView: View {
             xpRewardVisible = true
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            withAnimation(.easeOut(duration: 0.3)) {
+            withAnimation(AnimationConstants.fadeMedium) {
                 xpRewardVisible = false
             }
         }

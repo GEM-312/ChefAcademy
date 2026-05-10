@@ -179,7 +179,7 @@ struct WelcomeView: View {
         .padding()
         .background(Color.AppTheme.cream)
         .onAppear {
-            withAnimation(.easeOut(duration: 0.8)) {
+            withAnimation(AnimationConstants.pipTransition) {
                 showContent = true
             }
         }
@@ -264,7 +264,7 @@ struct GenderSelectionView: View {
         }
         .background(Color.AppTheme.cream)
         .onAppear {
-            withAnimation(.easeOut(duration: 0.6)) {
+            withAnimation(AnimationConstants.revealSlow) {
                 showContent = true
             }
         }

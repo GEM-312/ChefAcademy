@@ -422,7 +422,7 @@ struct SeedInfoView: View {
                 appeared = true
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
-                withAnimation(.easeOut(duration: 0.3)) {
+                withAnimation(AnimationConstants.fadeMedium) {
                     showPipTip = true
                 }
             }
@@ -469,12 +469,12 @@ struct SeedInfoView: View {
                     onColorChange: { uiColor in
                         let newChoice = ColorChoice.closest(to: uiColor)
                         if newChoice != detectedColorChoice {
-                            withAnimation(.easeOut(duration: 0.15)) {
+                            withAnimation(AnimationConstants.fadeFlyOut) {
                                 showPipTip = false
                             }
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
                                 detectedColorChoice = newChoice
-                                withAnimation(.easeIn(duration: 0.2)) {
+                                withAnimation(AnimationConstants.fadeFast) {
                                     showPipTip = true
                                 }
                             }

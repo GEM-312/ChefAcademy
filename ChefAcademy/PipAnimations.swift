@@ -343,7 +343,7 @@ struct PipWithDialogue: View {
             if speakOnAppear { PipVoice.shared.speak(message) }
             // Delay speech bubble appearance
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                withAnimation(.easeOut(duration: 0.3)) {
+                withAnimation(AnimationConstants.fadeMedium) {
                     showMessage = true
                 }
             }
@@ -351,11 +351,11 @@ struct PipWithDialogue: View {
         .onChange(of: message) { oldMessage, newMessage in
             if speakOnAppear { PipVoice.shared.speak(newMessage) }
             // Animate message change
-            withAnimation(.easeOut(duration: 0.15)) {
+            withAnimation(AnimationConstants.fadeFlyOut) {
                 showMessage = false
             }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
-                withAnimation(.easeIn(duration: 0.2)) {
+                withAnimation(AnimationConstants.fadeFast) {
                     showMessage = true
                 }
             }
@@ -392,13 +392,13 @@ struct PipReactionView: View {
     }
     
     private func triggerCelebration() {
-        withAnimation(.easeIn(duration: 0.2)) {
+        withAnimation(AnimationConstants.fadeFast) {
             showSparkles = true
         }
-        
+
         // Hide sparkles after a bit
         DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-            withAnimation(.easeOut(duration: 0.5)) {
+            withAnimation(AnimationConstants.revealSlow) {
                 showSparkles = false
             }
         }
@@ -424,7 +424,7 @@ struct SparkleEffect: View {
             }
         }
         .onAppear {
-            withAnimation(.easeOut(duration: 1.0)) {
+            withAnimation(AnimationConstants.weatherTransition) {
                 isAnimating = true
             }
         }
