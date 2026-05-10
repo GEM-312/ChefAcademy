@@ -54,30 +54,21 @@ struct MigrationPINSetupView: View {
 
             Spacer()
 
-            // Number pad
-            VStack(spacing: 12) {
-                ForEach(0..<3, id: \.self) { row in
-                    HStack(spacing: 20) {
-                        ForEach(1...3, id: \.self) { col in
-                            let num = row * 3 + col
-                            PINButton(label: "\(num)") { appendDigit("\(num)") }
-                        }
-                    }
-                }
-
-                HStack(spacing: 20) {
-                    Color.clear.frame(width: 75, height: 55) // Spacer
-
-                    PINButton(label: "0") { appendDigit("0") }
-
+            // Number pad — empty spacer / 0 / delete (no Cancel/Back during migration)
+            PINPadGrid(
+                onDigit: appendDigit,
+                leading: {
+                    Color.clear.frame(width: AppSpacing.pinButtonWidth, height: AppSpacing.pinButtonHeight)
+                },
+                trailing: {
                     Button(action: deleteDigit) {
                         Image(systemName: "delete.left.fill")
                             .font(.AppTheme.title2)
                             .foregroundColor(Color.AppTheme.sepia)
-                            .frame(width: 75, height: 55)
+                            .frame(width: AppSpacing.pinButtonWidth, height: AppSpacing.pinButtonHeight)
                     }
                 }
-            }
+            )
             .padding(.bottom, AppSpacing.xl)
         }
         .background(Color.AppTheme.cream)
@@ -95,7 +86,7 @@ struct MigrationPINSetupView: View {
                         sessionManager.route = .profilePicker
                     }
                 } else {
-                    withAnimation(.spring(response: 0.2, dampingFraction: 0.3)) { shake = true }
+                    withAnimation(AnimationConstants.pinShake) { shake = true }
                     showError = true
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                         shake = false

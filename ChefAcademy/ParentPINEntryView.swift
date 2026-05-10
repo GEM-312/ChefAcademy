@@ -84,42 +84,28 @@ struct ParentPINEntryView: View {
 
             Spacer()
 
-            // Number pad
-            VStack(spacing: 12) {
-                ForEach(0..<3, id: \.self) { row in
-                    HStack(spacing: 20) {
-                        ForEach(1...3, id: \.self) { col in
-                            let number = row * 3 + col
-                            PINButton(label: "\(number)") {
-                                appendDigit("\(number)")
-                            }
-                        }
-                    }
-                }
-
-                // Bottom row: cancel, 0, backspace
-                HStack(spacing: 20) {
+            // Number pad — Cancel / 0 / delete
+            PINPadGrid(
+                onDigit: appendDigit,
+                leading: {
                     Button(action: onCancel) {
                         Text("Cancel")
                             .font(.AppTheme.body)
                             .foregroundColor(Color.AppTheme.sepia)
-                            .frame(width: 75, height: 55)
+                            .frame(width: AppSpacing.pinButtonWidth, height: AppSpacing.pinButtonHeight)
                     }
                     .buttonStyle(.plain)
-
-                    PINButton(label: "0") {
-                        appendDigit("0")
-                    }
-
+                },
+                trailing: {
                     Button(action: deleteDigit) {
                         Image(systemName: "delete.left.fill")
                             .font(.AppTheme.title2)
                             .foregroundColor(Color.AppTheme.sepia)
-                            .frame(width: 75, height: 55)
+                            .frame(width: AppSpacing.pinButtonWidth, height: AppSpacing.pinButtonHeight)
                     }
                     .buttonStyle(.plain)
                 }
-            }
+            )
             .padding(.bottom, AppSpacing.xl)
         }
         }
@@ -232,7 +218,7 @@ struct ParentPINEntryView: View {
     }
 
     private func triggerError() {
-        withAnimation(.spring(response: 0.2, dampingFraction: 0.3)) {
+        withAnimation(AnimationConstants.pinShake) {
             shake = true
         }
         showError = true
@@ -245,24 +231,7 @@ struct ParentPINEntryView: View {
     }
 }
 
-// MARK: - PIN Button
-
-struct PINButton: View {
-    let label: String
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            Text(label)
-                .font(.AppTheme.rounded(size: 28, weight: .medium))
-                .foregroundColor(Color.AppTheme.darkBrown)
-                .frame(width: 75, height: 55)
-                .background(Color.AppTheme.warmCream)
-                .cornerRadius(AppSpacing.smallCornerRadius)
-        }
-        .buttonStyle(.plain)
-    }
-}
+// PINButton + PINPadGrid moved to PipComponents.swift (Pass E dedup, May 10).
 
 #Preview {
     ParentPINEntryView(

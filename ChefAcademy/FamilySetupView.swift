@@ -849,35 +849,26 @@ struct FamilyPINSetupStep: View {
 
             Spacer()
 
-            // Number pad
-            VStack(spacing: 12) {
-                ForEach(0..<3, id: \.self) { row in
-                    HStack(spacing: 20) {
-                        ForEach(1...3, id: \.self) { col in
-                            let num = row * 3 + col
-                            PINButton(label: "\(num)") { appendDigit("\(num)") }
-                        }
-                    }
-                }
-
-                HStack(spacing: 20) {
+            // Number pad — Back / 0 / delete
+            PINPadGrid(
+                onDigit: appendDigit,
+                leading: {
                     Button(action: onBack) {
                         Text("Back")
                             .font(.AppTheme.body)
                             .foregroundColor(Color.AppTheme.sepia)
-                            .frame(width: 75, height: 55)
+                            .frame(width: AppSpacing.pinButtonWidth, height: AppSpacing.pinButtonHeight)
                     }
-
-                    PINButton(label: "0") { appendDigit("0") }
-
+                },
+                trailing: {
                     Button(action: deleteDigit) {
                         Image(systemName: "delete.left.fill")
                             .font(.AppTheme.title2)
                             .foregroundColor(Color.AppTheme.sepia)
-                            .frame(width: 75, height: 55)
+                            .frame(width: AppSpacing.pinButtonWidth, height: AppSpacing.pinButtonHeight)
                     }
                 }
-            }
+            )
             .padding(.bottom, AppSpacing.xl)
         }
     }
@@ -891,7 +882,7 @@ struct FamilyPINSetupStep: View {
                 if confirmPin == pin {
                     onComplete(pin)
                 } else {
-                    withAnimation(.spring(response: 0.2, dampingFraction: 0.3)) { shake = true }
+                    withAnimation(AnimationConstants.pinShake) { shake = true }
                     showError = true
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
                         shake = false

@@ -175,6 +175,57 @@ struct PipHeaderStack: View {
     }
 }
 
+// MARK: - PIN Pad Components
+//
+// Used by ParentPINEntryView, FamilySetupView (FamilyPINStep), and MigrationPINSetupView.
+// Each call site passes a `leading` view (Cancel / Back / empty spacer) and a `trailing`
+// view (typically the delete button). The 3×3 digit grid and "0" key are baked in.
+//
+
+/// Single PIN digit button — sized by AppSpacing.pinButtonWidth/Height tokens.
+struct PINButton: View {
+    let label: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(label)
+                .font(.AppTheme.rounded(size: 28, weight: .medium))
+                .foregroundColor(Color.AppTheme.darkBrown)
+                .frame(width: AppSpacing.pinButtonWidth, height: AppSpacing.pinButtonHeight)
+                .background(Color.AppTheme.warmCream)
+                .cornerRadius(AppSpacing.smallCornerRadius)
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+/// 3×3 PIN digit grid plus a bottom row with [leading] [0] [trailing].
+/// Use the `leading` slot for Cancel/Back/empty spacer; `trailing` for delete.
+struct PINPadGrid<Leading: View, Trailing: View>: View {
+    let onDigit: (String) -> Void
+    @ViewBuilder var leading: () -> Leading
+    @ViewBuilder var trailing: () -> Trailing
+
+    var body: some View {
+        VStack(spacing: AppSpacing.sm) {
+            ForEach(0..<3, id: \.self) { row in
+                HStack(spacing: AppSpacing.lg) {
+                    ForEach(1...3, id: \.self) { col in
+                        let n = row * 3 + col
+                        PINButton(label: "\(n)") { onDigit("\(n)") }
+                    }
+                }
+            }
+            HStack(spacing: AppSpacing.lg) {
+                leading()
+                PINButton(label: "0") { onDigit("0") }
+                trailing()
+            }
+        }
+    }
+}
+
 // MARK: - Preview
 #Preview {
     ScrollView {
