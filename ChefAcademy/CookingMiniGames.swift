@@ -845,7 +845,7 @@ struct WashMiniGame: View {
                         Capsule()
                             .fill(Color.AppTheme.sage)
                             .frame(width: geo.size.width * cleanProgress)
-                            .animation(.spring(response: 0.3), value: cleanProgress)
+                            .animation(AnimationConstants.springQuick, value: cleanProgress)
                     }
                 }
                 .frame(height: 12)
@@ -867,7 +867,7 @@ struct WashMiniGame: View {
         .onAppear {
             startSinkAnimation()
             // Veggie drops into sink
-            withAnimation(.spring(response: 0.6, dampingFraction: 0.6).delay(0.3)) {
+            withAnimation(AnimationConstants.springFly.delay(0.3)) {
                 vegY = 10
             }
             // Running-water ambient while washing. CookingSessionView's
@@ -893,7 +893,7 @@ struct WashMiniGame: View {
         Haptic.impact(.soft) // water splash feel
 
         // Veggie bounces and rotates (like scrubbing)
-        withAnimation(.spring(response: 0.15, dampingFraction: 0.4)) {
+        withAnimation(AnimationConstants.springSnappy) {
             vegScale = 0.85
             vegRotation = Double.random(in: -15...15)
         }
@@ -949,7 +949,7 @@ struct WashMiniGame: View {
             sinkTimer?.invalidate()
 
             // Final shine burst
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+            withAnimation(AnimationConstants.springMedium) {
                 shineOpacity = 1.0
                 vegScale = 1.15
                 dirtOpacity = 0

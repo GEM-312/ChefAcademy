@@ -325,7 +325,7 @@ struct PlotView: View {
                                 }
                             } else {
                                 // Snap back
-                                withAnimation(.spring(response: 0.3)) {
+                                withAnimation(AnimationConstants.springQuick) {
                                     weedOffsets[idx] = 0
                                 }
                             }
@@ -396,7 +396,7 @@ struct PlotView: View {
 
     private func startWatering() {
         isWatering = true
-        withAnimation(.spring(response: 0.3)) {
+        withAnimation(AnimationConstants.springQuick) {
             showWateringCan = true
         }
         // Animate water drops
@@ -418,7 +418,7 @@ struct PlotView: View {
         isWatering = false
         waterTimer?.invalidate()
         waterTimer = nil
-        withAnimation(.spring(response: 0.3)) {
+        withAnimation(AnimationConstants.springQuick) {
             showWateringCan = false
         }
         // Drain a bit if not complete
@@ -473,7 +473,7 @@ struct PlotView: View {
     // MARK: - Reward
 
     private func showXPBadge() {
-        withAnimation(.spring(response: 0.4)) {
+        withAnimation(AnimationConstants.springMedium) {
             xpRewardVisible = true
         }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {

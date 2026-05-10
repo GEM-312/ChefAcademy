@@ -483,7 +483,7 @@ struct SeedInfoView: View {
                         if !coloringRewardClaimed {
                             if gameState.claimKnowledgeReward(id: colorKnowledgeID, coins: 5) {
                                 coloringRewardClaimed = true
-                                withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+                                withAnimation(AnimationConstants.springMedium) {
                                     showCoinReward = "+5"
                                 }
                                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
@@ -503,7 +503,7 @@ struct SeedInfoView: View {
                     HStack {
                         Spacer()
                         Button {
-                            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                            withAnimation(AnimationConstants.springQuick) {
                                 showToolPicker.toggle()
                             }
                         } label: {
@@ -792,7 +792,7 @@ struct SeedInfoView: View {
 
         return Button(action: {
             if gameState.claimKnowledgeReward(id: knowledgeID, coins: nutrient.coinReward) {
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+                withAnimation(AnimationConstants.springMedium) {
                     showCoinReward = "+\(nutrient.coinReward)"
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
@@ -877,7 +877,7 @@ struct SeedInfoView: View {
 
         return Button(action: {
             if gameState.claimKnowledgeReward(id: funFactKnowledgeID, coins: 5) {
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.6)) {
+                withAnimation(AnimationConstants.springMedium) {
                     showCoinReward = "+5"
                 }
                 DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {

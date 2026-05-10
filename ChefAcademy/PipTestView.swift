@@ -38,7 +38,7 @@ struct PipTestView: View {
                                 pose: pose,
                                 isSelected: selectedPose == pose,
                                 onTap: {
-                                    withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
+                                    withAnimation(AnimationConstants.springQuick) {
                                         selectedPose = pose
                                     }
                                 }

@@ -641,9 +641,9 @@ struct SplitScreenVersusView: View {
                 wobbleAmount: CGFloat.random(in: 10...25)
             ))
             p1Round += 1
-            withAnimation(.spring(response: 0.2)) { p1PipScale = 1.15 }
+            withAnimation(AnimationConstants.springSnappy) { p1PipScale = 1.15 }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                withAnimation(.spring(response: 0.3)) {
+                withAnimation(AnimationConstants.springQuick) {
                     p1PipScale = max(1.0, 1.0 + CGFloat(p1Bad) * 0.12)
                 }
             }
@@ -661,9 +661,9 @@ struct SplitScreenVersusView: View {
                 wobbleAmount: CGFloat.random(in: 10...25)
             ))
             p2Round += 1
-            withAnimation(.spring(response: 0.2)) { p2PipScale = 1.15 }
+            withAnimation(AnimationConstants.springSnappy) { p2PipScale = 1.15 }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                withAnimation(.spring(response: 0.3)) {
+                withAnimation(AnimationConstants.springQuick) {
                     p2PipScale = max(1.0, 1.0 + CGFloat(p2Bad) * 0.12)
                 }
             }

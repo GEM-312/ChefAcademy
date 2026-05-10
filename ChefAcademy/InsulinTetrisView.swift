@@ -410,7 +410,7 @@ struct InsulinTetrisView: View {
         .rotationEffect(.degrees(block.rotation))
         .scaleEffect(block.isDragging ? 1.2 : 1.0)
         .opacity(block.isRejected ? 0.5 : 1.0)
-        .animation(.spring(response: 0.2), value: block.isDragging)
+        .animation(AnimationConstants.springSnappy, value: block.isDragging)
     }
 
     // MARK: - Bins Row
@@ -443,7 +443,7 @@ struct InsulinTetrisView: View {
                 RoundedRectangle(cornerRadius: 10)
                     .fill(bin.type.color.opacity(0.4))
                     .frame(width: binWidth - 4, height: 126 * bin.fillFraction)
-                    .animation(.spring(response: 0.4), value: bin.fillFraction)
+                    .animation(AnimationConstants.springMedium, value: bin.fillFraction)
 
                 // Icon
                 Image(systemName: bin.type.icon)
@@ -496,7 +496,7 @@ struct InsulinTetrisView: View {
                     .fill(StorageBinType.fat.color.opacity(0.3))
                     .frame(width: 50, height: 50)
                     .scaleEffect(balloonScale)
-                    .animation(.spring(response: 0.4), value: balloonScale)
+                    .animation(AnimationConstants.springMedium, value: balloonScale)
 
                 Image(systemName: "balloon.fill")
                     .font(.AppTheme.title)
@@ -1048,7 +1048,7 @@ struct InsulinTetrisView: View {
         }
 
         Haptic.impact(.medium)
-        withAnimation(.spring(response: 0.3)) {
+        withAnimation(AnimationConstants.springQuick) {
             fallingBlocks[blockIndex].isStored = true
         }
     }
@@ -1060,7 +1060,7 @@ struct InsulinTetrisView: View {
         showPipMessage(reason)
 
         // Bounce back
-        withAnimation(.spring(response: 0.4, dampingFraction: 0.3)) {
+        withAnimation(AnimationConstants.springTight) {
             fallingBlocks[index].isDragging = false
             fallingBlocks[index].dragOffset = .zero
             fallingBlocks[index].isRejected = true
@@ -1084,7 +1084,7 @@ struct InsulinTetrisView: View {
         score += 15
 
         // Remove the fiber block
-        withAnimation(.spring(response: 0.3)) {
+        withAnimation(AnimationConstants.springQuick) {
             fallingBlocks[idx].isStored = true
         }
 

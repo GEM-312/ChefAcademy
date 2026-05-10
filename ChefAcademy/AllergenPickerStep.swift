@@ -156,7 +156,7 @@ struct AllergenToggleButton: View {
             )
         }
         .buttonStyle(.plain)
-        .animation(.spring(response: 0.3, dampingFraction: 0.7), value: isSelected)
+        .animation(AnimationConstants.springQuick, value: isSelected)
     }
 }
 
