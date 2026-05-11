@@ -207,7 +207,9 @@ struct MeetPipView: View {
             showPip = true
         }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.5))
+            guard !Task.isCancelled else { return }
             withAnimation(AnimationConstants.fadeMedium) {
                 showDialogue = true
             }
@@ -221,7 +223,9 @@ struct MeetPipView: View {
             showDialogue = false
         }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.2))
+            guard !Task.isCancelled else { return }
             currentDialogueIndex += 1
             withAnimation(AnimationConstants.fadeFast) {
                 showDialogue = true

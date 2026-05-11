@@ -118,7 +118,9 @@ struct MeetPipAnimatedView: View {
         }
         
         // Speech bubble appears after Pip
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.5))
+            guard !Task.isCancelled else { return }
             withAnimation(AnimationConstants.fadeMedium) {
                 showDialogue = true
             }
@@ -134,7 +136,9 @@ struct MeetPipAnimatedView: View {
         }
 
         // Change to next dialogue and pose
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.2))
+            guard !Task.isCancelled else { return }
             currentDialogueIndex += 1
             currentPose = dialogues[currentDialogueIndex].pose
 
@@ -276,27 +280,28 @@ struct ReadyToStartAnimatedView: View {
     }
 
     func startAnimationSequence() {
-        // 1. Header appears
+        // 1. Header appears immediately.
         withAnimation(AnimationConstants.revealSlow) {
             showContent = true
         }
 
-        // 2. Pip video appears
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+        // 2-4: staggered Pip → features → button entrance via sequential awaits.
+        // Visual timing matches the prior asyncAfter deadlines (0.4s, 0.9s, 1.3s).
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.4))
+            guard !Task.isCancelled else { return }
             withAnimation(AnimationConstants.springFly) {
                 showPip = true
             }
-        }
 
-        // 3. Features list appears
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
+            try? await Task.sleep(for: .seconds(0.5))
+            guard !Task.isCancelled else { return }
             withAnimation(AnimationConstants.fadeMedium) {
                 showFeatures = true
             }
-        }
 
-        // 4. Button bounces in
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.3) {
+            try? await Task.sleep(for: .seconds(0.4))
+            guard !Task.isCancelled else { return }
             withAnimation(AnimationConstants.springMedium) {
                 showButton = true
             }
@@ -324,7 +329,9 @@ struct AnimatedFeatureRow: View {
         .opacity(isVisible ? 1 : 0)
         .offset(x: isVisible ? 0 : -20)
         .onAppear {
-            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(delay))
+                guard !Task.isCancelled else { return }
                 withAnimation(AnimationConstants.fadeMedium) {
                     isVisible = true
                 }
@@ -367,8 +374,10 @@ struct ConfettiView: View {
             )
             confettiPieces.append(piece)
             
-            // Animate falling
-            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.05) {
+            // Animate falling — staggered start per piece, randomized fall duration
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(Double(i) * 0.05))
+                guard !Task.isCancelled else { return }
                 withAnimation(.easeIn(duration: Double.random(in: 1.5...2.5))) {
                     if let index = confettiPieces.firstIndex(where: { $0.id == i }) {
                         confettiPieces[index].position.y += 600

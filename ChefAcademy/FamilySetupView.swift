@@ -429,7 +429,9 @@ struct FamilyAvatarStep: View {
                                         resetAllState()
                                     }
                                     // Auto-play outfit animation after gender pick
-                                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                                    Task { @MainActor in
+                                        try? await Task.sleep(for: .seconds(0.4))
+                                        guard !Task.isCancelled else { return }
                                         playOutfitAnimation()
                                     }
                                 }) {
@@ -884,7 +886,9 @@ struct FamilyPINSetupStep: View {
                 } else {
                     withAnimation(AnimationConstants.pinShake) { shake = true }
                     showError = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .seconds(0.4))
+                        guard !Task.isCancelled else { return }
                         shake = false
                         confirmPin = ""
                         pin = ""
@@ -986,16 +990,20 @@ struct FamilyMeetPipStep: View {
         .contentShape(Rectangle())
         .onTapGesture {
             guard dialogueIndex < dialogues.count - 1 else { return }
-            withAnimation(.easeOut(duration: 0.15)) { showDialogue = false }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            withAnimation(AnimationConstants.fadeFlyOut) { showDialogue = false }
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.2))
+                guard !Task.isCancelled else { return }
                 dialogueIndex += 1
-                withAnimation(.easeIn(duration: 0.2)) { showDialogue = true }
+                withAnimation(AnimationConstants.fadeFast) { showDialogue = true }
             }
         }
         .onAppear {
             withAnimation(AnimationConstants.springFly) { showPip = true }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                withAnimation(.easeIn(duration: 0.3)) { showDialogue = true }
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.5))
+                guard !Task.isCancelled else { return }
+                withAnimation(AnimationConstants.fadeMedium) { showDialogue = true }
             }
         }
     }

@@ -227,30 +227,39 @@ struct CookingCompletionView: View {
     // MARK: - Animate Stars Sequentially
 
     private func animateStars() {
-        for i in 0..<stars {
-            DispatchQueue.main.asyncAfter(deadline: .now() + Double(i) * 0.3 + 0.3) {
-                withAnimation(.spring(response: 0.4, dampingFraction: 0.5)) {
+        // Single Task drives the whole reveal sequence: stars one-by-one,
+        // then rewards / health boost / button. Sequential awaits replace
+        // the 4 separate asyncAfter deadlines (visual timing is preserved).
+        Task { @MainActor in
+            // 0.3s initial delay before first star
+            try? await Task.sleep(for: .seconds(0.3))
+            for i in 0..<stars {
+                guard !Task.isCancelled else { return }
+                withAnimation(AnimationConstants.springBouncy) {
                     starStates[i] = true
                 }
+                if i < stars - 1 {
+                    try? await Task.sleep(for: .seconds(0.3))
+                }
             }
-        }
 
-        // Show rewards after stars
-        DispatchQueue.main.asyncAfter(deadline: .now() + Double(stars) * 0.3 + 0.6) {
-            withAnimation(.easeOut(duration: 0.4)) {
+            // After last star: 0.3s gap, then rewards
+            try? await Task.sleep(for: .seconds(0.3))
+            guard !Task.isCancelled else { return }
+            withAnimation(AnimationConstants.fadeMedium) {
                 showRewards = true
             }
-        }
 
-        // Show health boost after rewards
-        DispatchQueue.main.asyncAfter(deadline: .now() + Double(stars) * 0.3 + 1.2) {
+            // 0.6s gap, then health boost
+            try? await Task.sleep(for: .seconds(0.6))
+            guard !Task.isCancelled else { return }
             withAnimation(AnimationConstants.springSlow) {
                 showHealthBoost = true
             }
-        }
 
-        // Show button after health boost
-        DispatchQueue.main.asyncAfter(deadline: .now() + Double(stars) * 0.3 + 1.8) {
+            // 0.6s gap, then button
+            try? await Task.sleep(for: .seconds(0.6))
+            guard !Task.isCancelled else { return }
             withAnimation(AnimationConstants.springSlow) {
                 showButton = true
             }
