@@ -761,7 +761,7 @@ struct GardenView: View {
                 }
             } label: {
                 Image(systemName: editMode ? "pencil.circle.fill" : "pencil.circle")
-                    .font(.system(size: isIPad ? 24 : 20))
+                    .font(.AppTheme.rounded(size: isIPad ? 24 : 20))
                     .foregroundColor(editMode ? Color.AppTheme.terracotta : Color.AppTheme.lightSepia)
             }
             .buttonStyle(.plain)
@@ -774,7 +774,7 @@ struct GardenView: View {
             HStack(spacing: 6) {
                 Image(systemName: "circle.fill")
                     .foregroundColor(Color.AppTheme.goldenWheat)
-                    .font(.system(size: isIPad ? 18 : 14))
+                    .font(.AppTheme.rounded(size: isIPad ? 18 : 14))
                 Text("\(gameState.coins)")
                     .font(isIPad ? .AppTheme.title3 : .AppTheme.headline)
                     .foregroundColor(Color.AppTheme.darkBrown)
@@ -1644,7 +1644,7 @@ struct SeedBadge: View {
                     .offset(y: 25)
 
                 Text(seed.vegetableType.displayName)
-                    .font(.system(size: isIPad ? 18 : 14, weight: .medium, design: .rounded))
+                    .font(.AppTheme.rounded(size: isIPad ? 18 : 14, weight: .medium))
                     .foregroundColor(Color.AppTheme.darkBrown)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
@@ -1652,7 +1652,7 @@ struct SeedBadge: View {
 
                 if isOwned {
                     Text("x\(seed.quantity)")
-                        .font(.system(size: isIPad ? 18 : 15, weight: .semibold, design: .rounded))
+                        .font(.AppTheme.rounded(size: isIPad ? 18 : 15, weight: .semibold))
                         .foregroundColor(Color.AppTheme.sepia)
                         .offset(y: 20)
                 } else if showPrice {
@@ -1661,7 +1661,7 @@ struct SeedBadge: View {
                             .foregroundColor(Color.AppTheme.goldenWheat)
                             .font(.AppTheme.micro)
                         Text("\(seed.vegetableType.seedCost)")
-                            .font(.system(size: isIPad ? 16 : 13, weight: .semibold, design: .rounded))
+                            .font(.AppTheme.rounded(size: isIPad ? 16 : 13, weight: .semibold))
                             .foregroundColor(Color.AppTheme.goldenWheat)
                     }
                     .offset(y: 20)
@@ -1692,7 +1692,7 @@ struct IngredientBadge: View {
                 .frame(width: imgSize, height: imgSize)
 
             Text(ingredient.type.displayName)
-                .font(.system(size: isIPad ? 13 : 9, weight: .medium, design: .rounded))
+                .font(.AppTheme.rounded(size: isIPad ? 13 : 9, weight: .medium))
                 .foregroundColor(Color.AppTheme.darkBrown)
                 .lineLimit(1)
 

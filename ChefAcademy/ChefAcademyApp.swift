@@ -884,7 +884,7 @@ struct QuickActionCard: View {
                         )
 
                     Text(icon)
-                        .font(.system(size: isLarge ? 40 : 30))
+                        .font(.AppTheme.rounded(size: isLarge ? 40 : 30))
                 }
 
                 Text(title)

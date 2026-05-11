@@ -818,7 +818,7 @@ struct WashMiniGame: View {
                 // Water splashes on tap
                 ForEach(splashes) { splash in
                     Text("💦")
-                        .font(.system(size: splash.size))
+                        .font(.AppTheme.rounded(size: splash.size))
                         .offset(x: splash.x, y: splash.y)
                         .opacity(splash.opacity)
                 }
@@ -1087,7 +1087,7 @@ struct AssembleMiniGame: View {
                 // Sparkles
                 ForEach(sparkles) { sparkle in
                     Image(systemName: "sparkle")
-                        .font(.system(size: sparkle.size))
+                        .font(.AppTheme.rounded(size: sparkle.size))
                         .foregroundColor(Color.AppTheme.goldenWheat)
                         .offset(x: sparkle.x, y: sparkle.y)
                         .opacity(sparkle.opacity)

@@ -177,7 +177,7 @@ struct ProfileCard: View {
                     // Crown for parent
                     if isParent {
                         Image(systemName: "crown.fill")
-                            .font(.system(size: isIPad ? 36 : 18))
+                            .font(.AppTheme.rounded(size: isIPad ? 36 : 18))
                             .foregroundColor(Color.AppTheme.goldenWheat)
                             .offset(y: isIPad ? -115 : -50)
                     }
@@ -185,7 +185,7 @@ struct ProfileCard: View {
                     // Lock icon for parent
                     if isParent {
                         Image(systemName: "lock.fill")
-                            .font(.system(size: isIPad ? 22 : 12))
+                            .font(.AppTheme.rounded(size: isIPad ? 22 : 12))
                             .foregroundColor(Color.AppTheme.sepia)
                             .padding(isIPad ? 10 : 6)
                             .background(Color.AppTheme.warmCream)
@@ -203,7 +203,7 @@ struct ProfileCard: View {
                 // Last played relative time
                 HStack(spacing: 3) {
                     Image(systemName: "clock.fill")
-                        .font(.system(size: isIPad ? 14 : 10))
+                        .font(.AppTheme.rounded(size: isIPad ? 14 : 10))
                     Text(profile.lastPlayedRelative)
                         .font(isIPad ? .system(size: 15, design: .rounded) : .AppTheme.caption)
                 }

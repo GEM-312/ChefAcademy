@@ -341,7 +341,7 @@ struct ConfettiView: View {
         ZStack {
             ForEach(confettiPieces) { piece in
                 Text(piece.emoji)
-                    .font(.system(size: piece.size))
+                    .font(.AppTheme.rounded(size: piece.size))
                     .position(piece.position)
                     .opacity(piece.opacity)
             }

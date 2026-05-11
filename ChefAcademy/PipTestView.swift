@@ -133,7 +133,7 @@ struct PipGridItem: View {
                 // Emoji indicator for selected
                 if isSelected {
                     Text(poseEmoji)
-                        .font(.system(size: 20))
+                        .font(.AppTheme.title3)
                         .transition(.scale.combined(with: .opacity))
                 }
             }

@@ -173,7 +173,7 @@ struct SpeakerButton: View {
             }
         }) {
             Image(systemName: voice.isSpeaking ? "speaker.wave.3.fill" : "speaker.wave.2.fill")
-                .font(.system(size: size))
+                .font(.AppTheme.rounded(size: size))
                 .foregroundColor(Color.AppTheme.sage)
                 .symbolEffect(.pulse, isActive: voice.isSpeaking)
         }

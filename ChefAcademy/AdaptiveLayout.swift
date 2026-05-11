@@ -274,7 +274,7 @@ struct AdaptiveFontModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .font(.system(size: sizeClass == .compact ? compactSize : regularSize))
+            .font(.AppTheme.rounded(size: sizeClass == .compact ? compactSize : regularSize))
     }
 }
 

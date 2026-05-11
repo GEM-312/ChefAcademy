@@ -239,7 +239,7 @@ struct PlotView: View {
                 if isWatering {
                     ForEach(0..<3, id: \.self) { i in
                         Text("💧")
-                            .font(.system(size: CGFloat(10 + i * 2)))
+                            .font(.AppTheme.rounded(size: CGFloat(10 + i * 2)))
                             .offset(
                                 x: CGFloat([-10, 5, 15][i]),
                                 y: waterDropY + CGFloat(i * 8)
@@ -292,7 +292,7 @@ struct PlotView: View {
                 ForEach(0..<3, id: \.self) { i in
                     if !weedsRemoved[i] {
                         Text("🌿")
-                            .font(.system(size: [14, 12, 10][i]))
+                            .font(.AppTheme.rounded(size: [14, 12, 10][i]))
                             .offset(
                                 x: [-28, 25, -5][i],
                                 y: [20, 22, 30][i] + weedOffsets[i]
@@ -362,7 +362,7 @@ struct PlotView: View {
                 ForEach(0..<3, id: \.self) { i in
                     if !bugsRescued[i] {
                         Text("🐛")
-                            .font(.system(size: [12, 10, 11][i]))
+                            .font(.AppTheme.rounded(size: [12, 10, 11][i]))
                             .offset(
                                 x: [-20, 22, 5][i],
                                 y: [-15, 5, 25][i]

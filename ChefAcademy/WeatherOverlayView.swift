@@ -517,7 +517,7 @@ struct WeatherBadge: View {
         HStack(spacing: 4) {
             Image(systemName: weatherService.currentWeather.systemIcon)
                 .foregroundColor(weatherService.currentWeather.iconColor)
-                .font(.system(size: isIPad ? 18 : 14))
+                .font(.AppTheme.rounded(size: isIPad ? 18 : 14))
 
             Text("\(weatherService.temperature)°")
                 .font(isIPad ? .AppTheme.title3 : .AppTheme.headline)

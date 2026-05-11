@@ -258,7 +258,7 @@ struct StreakCardAnimated: View {
             HStack(spacing: sizeClass == .compact ? -5 : -3) {
                 ForEach(0..<min(max(streak, 1), 7), id: \.self) { index in
                     Text("🔥")
-                        .font(.system(size: sizeClass == .compact ? 20 : 28))
+                        .font(.AppTheme.rounded(size: sizeClass == .compact ? 20 : 28, weight: .bold))
                         .scaleEffect(flamesAnimating ? 1.1 : 0.9)
                         .animation(
                             AnimationConstants.revealSlow
@@ -346,7 +346,7 @@ struct QuickActionCardAnimated: View {
                         .frame(width: iconSize, height: iconSize)
 
                     Text(icon)
-                        .font(.system(size: emojiSize))
+                        .font(.AppTheme.rounded(size: emojiSize))
                 }
 
                 Text(title)
