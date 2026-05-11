@@ -43,7 +43,7 @@ struct PipDialogView: View {
                 // Dialog box at bottom
                 HStack(alignment: .bottom, spacing: AppSpacing.md) {
                     // Pip sprite (left)
-                    PipWavingAnimatedView(size: 120)
+                    PipWavingAnimatedView(size: .large)
                         .offset(y: 10)
 
                     // Speech bubble + buttons

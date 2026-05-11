@@ -158,7 +158,7 @@ struct RootRouterView: View {
                 ZStack {
                     Color.AppTheme.cream.ignoresSafeArea()
                     VStack {
-                        PipWavingAnimatedView(size: 120)
+                        PipWavingAnimatedView(size: .large)
                         Text("Loading...")
                             .font(.AppTheme.body)
                             .foregroundColor(Color.AppTheme.sepia)
@@ -845,7 +845,7 @@ struct PipMessageCard: View {
     var body: some View {
         HStack(alignment: .top, spacing: AppSpacing.md) {
             // Animated Pip — 2x on iPad
-            PipWavingAnimatedView(size: isIPad ? 240 : 120)
+            PipWavingAnimatedView(size: .custom(isIPad ? 240 : 120))
 
             // Message bubble
             VStack(alignment: .leading, spacing: AppSpacing.xs) {

@@ -87,7 +87,7 @@ struct SplitScreenVersusView: View {
                 .font(.AppTheme.largeTitle)
                 .foregroundColor(Color.AppTheme.darkBrown)
 
-            PipWavingAnimatedView(size: 80)
+            PipWavingAnimatedView(size: .medium)
 
             Text("Pick two players!")
                 .font(.AppTheme.body)
@@ -478,7 +478,7 @@ struct SplitScreenVersusView: View {
             // Player 2 at the bottom — so from Pip's perspective, P1 is on his
             // LEFT and P2 is on his RIGHT. Tie = neutral wave.
             if tied {
-                PipWavingAnimatedView(size: 120)
+                PipWavingAnimatedView(size: .large)
             } else {
                 PipGameAnimationView(
                     animation: p1Won ? .handUpLeft : .handUpRight,

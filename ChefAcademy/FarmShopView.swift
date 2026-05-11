@@ -422,7 +422,7 @@ struct PipShopMessage: View {
     var body: some View {
         HStack(alignment: .top, spacing: AppSpacing.md) {
             // Animated Pip waving (frame animation, transparent bg)
-            PipWavingAnimatedView(size: 120)
+            PipWavingAnimatedView(size: .large)
 
             // Message bubble
             VStack(alignment: .leading, spacing: AppSpacing.xs) {

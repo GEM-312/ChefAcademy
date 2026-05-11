@@ -262,7 +262,7 @@ struct InsulinTetrisView: View {
                     .font(.AppTheme.largeTitle)
                     .foregroundColor(Color.AppTheme.darkBrown)
 
-                PipWavingAnimatedView(size: 130)
+                PipWavingAnimatedView(size: .custom(130))
 
                 // Instructions
                 VStack(spacing: AppSpacing.sm) {
@@ -666,7 +666,7 @@ struct InsulinTetrisView: View {
                     .font(.AppTheme.largeTitle)
                     .foregroundColor(Color.AppTheme.sage)
 
-                PipWavingAnimatedView(size: 100)
+                PipWavingAnimatedView(size: .custom(100))
 
                 // Stars
                 HStack(spacing: 8) {

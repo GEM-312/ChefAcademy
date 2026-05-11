@@ -935,7 +935,7 @@ struct FamilyMeetPipStep: View {
             VStack(spacing: AppSpacing.lg) {
                 Spacer()
 
-                PipWavingAnimatedView(size: 160)
+                PipWavingAnimatedView(size: .hero)
                     .scaleEffect(showPip ? 1 : 0.3)
                     .opacity(showPip ? 1 : 0)
 
@@ -1021,7 +1021,7 @@ struct FamilyReadyStep: View {
                 .foregroundColor(Color.AppTheme.goldenWheat)
                 .opacity(showContent ? 1 : 0)
 
-            PipWavingAnimatedView(size: 140)
+            PipWavingAnimatedView(size: .custom(140))
                 .scaleEffect(showContent ? 1 : 0.5)
                 .opacity(showContent ? 1 : 0)
 

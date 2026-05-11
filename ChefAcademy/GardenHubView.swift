@@ -125,7 +125,7 @@ struct SiblingPickerView: View {
                 VStack(spacing: AppSpacing.lg) {
                     Spacer()
 
-                    PipWavingAnimatedView(size: 100)
+                    PipWavingAnimatedView(size: .custom(100))
 
                     Text("Visit a Friend's Garden!")
                         .font(.AppTheme.title2)

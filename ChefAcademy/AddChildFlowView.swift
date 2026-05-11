@@ -85,7 +85,7 @@ struct AddChildFlowView: View {
                 VStack(spacing: AppSpacing.xl) {
                     Spacer()
 
-                    PipWavingAnimatedView(size: 140)
+                    PipWavingAnimatedView(size: .custom(140))
 
                     VStack(spacing: AppSpacing.sm) {
                         Text("Welcome, \(childName)!")

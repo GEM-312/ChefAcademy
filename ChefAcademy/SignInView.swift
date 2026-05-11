@@ -35,7 +35,7 @@ struct SignInView: View {
                 Spacer()
 
                 // Pip waving hello
-                PipWavingAnimatedView(size: 160)
+                PipWavingAnimatedView(size: .hero)
                     .scaleEffect(showContent ? 1 : 0.5)
                     .opacity(showContent ? 1 : 0)
 

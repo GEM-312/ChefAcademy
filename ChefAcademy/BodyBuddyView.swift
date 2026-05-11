@@ -252,7 +252,7 @@ struct BodyBuddyView: View {
 
     private var pipMessageSection: some View {
         HStack(alignment: .top, spacing: AppSpacing.sm) {
-            PipWavingAnimatedView(size: 60)
+            PipWavingAnimatedView(size: .custom(60))
 
             VStack(alignment: .leading, spacing: 4) {
                 Text("Pip")

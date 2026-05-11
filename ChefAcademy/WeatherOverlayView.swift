@@ -560,6 +560,13 @@ struct SeasonalOverlayView: View {
     @State private var particleOffset: CGFloat = 0
     @State private var particleOpacity: Double = 1.0
 
+    // Stable particle data — generated once per appearance so positions don't
+    // jump on every parent re-render. Bug fix from May 10 weekly review.
+    @State private var springPetals: [SpringPetal] = []
+    @State private var summerDust: [SummerDust] = []
+    @State private var fallLeaves: [FallLeaf] = []
+    @State private var winterSparkles: [WinterSparkle] = []
+
     var body: some View {
         ZStack {
             // Gradient tint
@@ -584,36 +591,40 @@ struct SeasonalOverlayView: View {
             }
         }
         .allowsHitTesting(false)
-        .onAppear { startParticleAnimation() }
+        .onAppear {
+            startParticleAnimation()
+            seedParticleData()
+        }
     }
 
     // MARK: - Spring Particles (floating petals)
 
     var springParticles: some View {
-        // Procedural petal shapes — cheaper than emoji font rendering
-        ForEach(0..<8, id: \.self) { i in
+        // Procedural petal shapes — cheaper than emoji font rendering.
+        // Positions seeded once via @State; only `particleOffset` drives motion.
+        ForEach(springPetals) { petal in
             Ellipse()
                 .fill(Color.pink.opacity(0.35))
-                .frame(width: CGFloat(10 + i % 3 * 3), height: CGFloat(6 + i % 3 * 2))
+                .frame(width: petal.width, height: petal.height)
                 .offset(
-                    x: CGFloat.random(in: -mapWidth/2...mapWidth/2),
-                    y: particleOffset + CGFloat(i * 60)
+                    x: petal.xOffset,
+                    y: particleOffset + petal.baseY
                 )
-                .rotationEffect(.degrees(Double(i) * 15 + Double(particleOffset) * 0.3))
+                .rotationEffect(.degrees(petal.rotationBase + Double(particleOffset) * 0.3))
         }
     }
 
     // MARK: - Summer Particles (heat shimmer / floating dust)
 
     var summerParticles: some View {
-        ForEach(0..<5, id: \.self) { i in
+        ForEach(summerDust) { dust in
             Circle()
                 .fill(Color.AppTheme.goldenWheat.opacity(0.15))
-                .frame(width: CGFloat.random(in: 40...80))
+                .frame(width: dust.diameter)
                 .blur(radius: 20)
                 .offset(
-                    x: CGFloat.random(in: -mapWidth/3...mapWidth/3),
-                    y: CGFloat.random(in: -mapHeight/4...mapHeight/4) + particleOffset * 0.2
+                    x: dust.xOffset,
+                    y: dust.yOffset + particleOffset * 0.2
                 )
                 .opacity(particleOpacity * 0.6)
         }
@@ -621,34 +632,96 @@ struct SeasonalOverlayView: View {
 
     // MARK: - Fall Particles (falling leaves)
 
+    private static let fallLeafColors: [Color] = [
+        Color.AppTheme.terracotta,
+        Color.AppTheme.autumnBrown,
+        Color.AppTheme.goldenWheat
+    ]
+
     var fallParticles: some View {
-        // Procedural leaf shapes — 3 autumn colors, cheaper than emoji
-        ForEach(0..<8, id: \.self) { i in
-            let colors: [Color] = [Color.AppTheme.terracotta, Color.AppTheme.autumnBrown, Color.AppTheme.goldenWheat]
+        // Procedural leaf shapes — 3 autumn colors, cheaper than emoji.
+        ForEach(fallLeaves) { leaf in
             Ellipse()
-                .fill(colors[i % 3].opacity(0.5))
-                .frame(width: CGFloat(12 + i % 3 * 4), height: CGFloat(8 + i % 3 * 2))
+                .fill(Self.fallLeafColors[leaf.colorIndex].opacity(0.5))
+                .frame(width: leaf.width, height: leaf.height)
                 .offset(
-                    x: sin(CGFloat(i) * 0.8 + particleOffset * 0.02) * mapWidth * 0.3,
-                    y: particleOffset * 0.5 + CGFloat(i * 50) - mapHeight * 0.3
+                    x: sin(leaf.phase + particleOffset * 0.02) * mapWidth * 0.3,
+                    y: particleOffset * 0.5 + leaf.baseY - mapHeight * 0.3
                 )
-                .rotationEffect(.degrees(Double(particleOffset) * 0.5 + Double(i) * 30))
+                .rotationEffect(.degrees(Double(particleOffset) * 0.5 + leaf.rotationBase))
         }
     }
 
     // MARK: - Winter Particles (gentle frost sparkles)
 
     var winterParticles: some View {
-        ForEach(0..<6, id: \.self) { i in
+        ForEach(winterSparkles) { sparkle in
             Image(systemName: "sparkle")
-                .font(.system(size: CGFloat.random(in: 8...14)))
+                .font(.AppTheme.rounded(size: sparkle.fontSize))
                 .foregroundColor(Color.AppTheme.frostBlue.opacity(0.5))
-                .offset(
-                    x: CGFloat.random(in: -mapWidth/2.5...mapWidth/2.5),
-                    y: CGFloat.random(in: -mapHeight/3...mapHeight/3)
-                )
+                .offset(x: sparkle.xOffset, y: sparkle.yOffset)
                 .opacity(particleOpacity * 0.7)
                 .scaleEffect(particleOpacity > 0.5 ? 1.0 : 0.6)
+        }
+    }
+
+    // MARK: - Stable Particle Seeding
+
+    private func seedParticleData() {
+        if springPetals.isEmpty { springPetals = makeSpringPetals() }
+        if summerDust.isEmpty   { summerDust   = makeSummerDust() }
+        if fallLeaves.isEmpty   { fallLeaves   = makeFallLeaves() }
+        if winterSparkles.isEmpty { winterSparkles = makeWinterSparkles() }
+    }
+
+    // Each builder is a separate function so the type-checker doesn't choke
+    // on inline `.map` closures with arithmetic + struct init.
+    private func makeSpringPetals() -> [SpringPetal] {
+        (0..<8).map { i in
+            let widthVariant: CGFloat = CGFloat(10 + (i % 3) * 3)
+            let heightVariant: CGFloat = CGFloat(6 + (i % 3) * 2)
+            return SpringPetal(
+                xOffset: CGFloat.random(in: -mapWidth/2...mapWidth/2),
+                baseY: CGFloat(i * 60),
+                width: widthVariant,
+                height: heightVariant,
+                rotationBase: Double(i) * 15
+            )
+        }
+    }
+
+    private func makeSummerDust() -> [SummerDust] {
+        (0..<5).map { _ in
+            SummerDust(
+                xOffset: CGFloat.random(in: -mapWidth/3...mapWidth/3),
+                yOffset: CGFloat.random(in: -mapHeight/4...mapHeight/4),
+                diameter: CGFloat.random(in: 40...80)
+            )
+        }
+    }
+
+    private func makeFallLeaves() -> [FallLeaf] {
+        (0..<8).map { i in
+            let widthVariant: CGFloat = CGFloat(12 + (i % 3) * 4)
+            let heightVariant: CGFloat = CGFloat(8 + (i % 3) * 2)
+            return FallLeaf(
+                phase: CGFloat(i) * 0.8,
+                baseY: CGFloat(i * 50),
+                width: widthVariant,
+                height: heightVariant,
+                rotationBase: Double(i) * 30,
+                colorIndex: i % 3
+            )
+        }
+    }
+
+    private func makeWinterSparkles() -> [WinterSparkle] {
+        (0..<6).map { _ in
+            WinterSparkle(
+                xOffset: CGFloat.random(in: -mapWidth/2.5...mapWidth/2.5),
+                yOffset: CGFloat.random(in: -mapHeight/3...mapHeight/3),
+                fontSize: CGFloat.random(in: 8...14)
+            )
         }
     }
 
@@ -664,4 +737,39 @@ struct SeasonalOverlayView: View {
             particleOpacity = 0.4
         }
     }
+}
+
+// MARK: - Stable Seasonal Particle Data
+
+private struct SpringPetal: Identifiable {
+    let id = UUID()
+    let xOffset: CGFloat
+    let baseY: CGFloat
+    let width: CGFloat
+    let height: CGFloat
+    let rotationBase: Double
+}
+
+private struct SummerDust: Identifiable {
+    let id = UUID()
+    let xOffset: CGFloat
+    let yOffset: CGFloat
+    let diameter: CGFloat
+}
+
+private struct FallLeaf: Identifiable {
+    let id = UUID()
+    let phase: CGFloat
+    let baseY: CGFloat
+    let width: CGFloat
+    let height: CGFloat
+    let rotationBase: Double
+    let colorIndex: Int
+}
+
+private struct WinterSparkle: Identifiable {
+    let id = UUID()
+    let xOffset: CGFloat
+    let yOffset: CGFloat
+    let fontSize: CGFloat
 }

@@ -271,15 +271,17 @@ class USDAFoodService: ObservableObject {
         }
     }
 
-    /// Batch fetch nutrients for multiple items
+    /// Batch fetch nutrients for multiple items.
+    /// Concurrency is bounded to 5 simultaneous requests to keep the Cloudflare
+    /// Worker (and downstream USDA API) from rate-limiting under load.
+    /// Each chunk is processed in parallel; chunks run sequentially.
     func fetchAll(items: [String]) async {
-        await withTaskGroup(of: Void.self) { group in
-            for item in items {
-                if cache[item] == nil {
+        let toFetch = items.filter { cache[$0] == nil }
+        for chunk in toFetch.chunked(into: 5) {
+            await withTaskGroup(of: Void.self) { group in
+                for item in chunk {
                     group.addTask {
                         _ = await self.nutrientProfile(for: item)
-                        // Small delay to respect rate limits
-                        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1s
                     }
                 }
             }
@@ -330,6 +332,18 @@ class USDAFoodService: ObservableObject {
         if let data = UserDefaults.standard.data(forKey: cacheKey),
            let saved = try? JSONDecoder().decode([String: NutrientProfile].self, from: data) {
             cache = saved
+        }
+    }
+}
+
+// MARK: - Array Chunking
+
+private extension Array {
+    /// Splits this array into sub-arrays of length `size` (last chunk may be shorter).
+    /// Used by `USDAFoodService.fetchAll` to bound TaskGroup concurrency.
+    func chunked(into size: Int) -> [[Element]] {
+        stride(from: 0, to: count, by: size).map {
+            Array(self[$0..<Swift.min($0 + size, count)])
         }
     }
 }

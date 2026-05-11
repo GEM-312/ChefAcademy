@@ -65,6 +65,17 @@ struct PipWavingAnimatedView: View {
     }
 }
 
+// Convenience init so call sites can pass PipSize tokens instead of raw CGFloat:
+//   PipWavingAnimatedView(size: .large)        // 120pt — standard headline Pip
+//   PipWavingAnimatedView(size: .hero)         // 160pt — welcome / celebration
+//   PipWavingAnimatedView(size: .custom(140))  // arbitrary size
+// The CGFloat init remains valid for AdaptiveCardSize callers.
+extension PipWavingAnimatedView {
+    init(size: PipSize) {
+        self.init(size: size.points)
+    }
+}
+
 // MARK: - One-Shot Frame Animation
 
 /// Plays a sequence of frame images once, then holds on the last frame.

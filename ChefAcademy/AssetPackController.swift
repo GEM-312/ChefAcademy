@@ -236,7 +236,7 @@ struct EnsureAssetPacksModifier: ViewModifier {
                 ZStack {
                     Color.AppTheme.cream.ignoresSafeArea()
                     VStack(spacing: AppSpacing.md) {
-                        PipWavingAnimatedView(size: 120)
+                        PipWavingAnimatedView(size: .large)
                         Text("Getting things ready...")
                             .font(.AppTheme.body)
                             .foregroundColor(Color.AppTheme.sepia)

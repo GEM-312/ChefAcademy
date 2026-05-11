@@ -112,7 +112,7 @@ struct LocalVersusView: View {
                     .foregroundColor(Color.AppTheme.darkBrown)
             }
 
-            PipWavingAnimatedView(size: 100)
+            PipWavingAnimatedView(size: .custom(100))
 
             if allPlayers.count < 2 {
                 Text("You need at least 2 players!")
@@ -264,7 +264,7 @@ struct LocalVersusView: View {
                 // Winner-side celebration. P1 shown on the left column below,
                 // P2 on the right — Pip raises the matching hand. Tie = wave.
                 if tied {
-                    PipWavingAnimatedView(size: 140)
+                    PipWavingAnimatedView(size: .custom(140))
                 } else {
                     PipGameAnimationView(
                         animation: p1Won ? .handUpLeft : .handUpRight,
