@@ -302,7 +302,9 @@ struct PipCharacterView: View {
             isAnimating = false
         }
         
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.15))
+            guard !Task.isCancelled else { return }
             withAnimation(AnimationConstants.springMedium) {
                 isAnimating = true
             }
@@ -353,7 +355,9 @@ struct PipWithDialogue: View {
         .onAppear {
             if speakOnAppear { PipVoice.shared.speak(message) }
             // Delay speech bubble appearance
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.5))
+                guard !Task.isCancelled else { return }
                 withAnimation(AnimationConstants.fadeMedium) {
                     showMessage = true
                 }
@@ -365,7 +369,9 @@ struct PipWithDialogue: View {
             withAnimation(AnimationConstants.fadeFlyOut) {
                 showMessage = false
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.2))
+                guard !Task.isCancelled else { return }
                 withAnimation(AnimationConstants.fadeFast) {
                     showMessage = true
                 }
@@ -408,7 +414,9 @@ struct PipReactionView: View {
         }
 
         // Hide sparkles after a bit
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(2.0))
+            guard !Task.isCancelled else { return }
             withAnimation(AnimationConstants.revealSlow) {
                 showSparkles = false
             }

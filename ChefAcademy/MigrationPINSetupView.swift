@@ -88,7 +88,9 @@ struct MigrationPINSetupView: View {
                 } else {
                     withAnimation(AnimationConstants.pinShake) { shake = true }
                     showError = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .seconds(0.4))
+                        guard !Task.isCancelled else { return }
                         shake = false
                         confirmPin = ""
                         pin = ""

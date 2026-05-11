@@ -319,7 +319,9 @@ struct PlotView: View {
                                 withAnimation(AnimationConstants.fadeMedium) {
                                     weedOffsets[idx] = -100
                                 }
-                                DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+                                Task { @MainActor in
+                                    try? await Task.sleep(for: .seconds(0.3))
+                                    guard !Task.isCancelled else { return }
                                     weedsRemoved[idx] = true
                                     checkWeedingComplete()
                                 }
@@ -442,7 +444,9 @@ struct PlotView: View {
     private func checkWeedingComplete() {
         if weedsRemoved.allSatisfy({ $0 }) {
             showXPBadge()
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.3))
+                guard !Task.isCancelled else { return }
                 onCareComplete()
             }
         }
@@ -457,15 +461,19 @@ struct PlotView: View {
         withAnimation(AnimationConstants.fadeMedium) {
             ladybugOffsets[index] = 0
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+        // Sequential: 0.3s for ladybug to land, then if all rescued, 0.5s more
+        // before completing care. Single Task for the whole chain.
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.3))
+            guard !Task.isCancelled else { return }
             bugsRescued[index] = true
 
             // Check if all rescued
             if bugsRescued.allSatisfy({ $0 }) {
                 showXPBadge()
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    onCareComplete()
-                }
+                try? await Task.sleep(for: .seconds(0.5))
+                guard !Task.isCancelled else { return }
+                onCareComplete()
             }
         }
     }
@@ -476,7 +484,9 @@ struct PlotView: View {
         withAnimation(AnimationConstants.springMedium) {
             xpRewardVisible = true
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(1.0))
+            guard !Task.isCancelled else { return }
             withAnimation(AnimationConstants.fadeMedium) {
                 xpRewardVisible = false
             }

@@ -140,7 +140,9 @@ struct HeatPanMiniGame: View {
         isDone = true
         Haptic.notify(.success) // pan is hot!
         let score = max(0, 100 - liftCount * 10)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.3))
+            guard !Task.isCancelled else { return }
             onComplete(score)
         }
     }
@@ -242,7 +244,9 @@ struct AddToPanMiniGame: View {
         }
 
         let score = inTarget ? 100 : 50
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.6))
+            guard !Task.isCancelled else { return }
             onComplete(score)
         }
     }
@@ -339,7 +343,9 @@ struct StirMiniGame: View {
         isDone = true
         Haptic.notify(.success) // well stirred!
         let score = min(100, Int(rotations / targetRotations * 100))
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.5))
+            guard !Task.isCancelled else { return }
             onComplete(score)
         }
     }
@@ -471,7 +477,9 @@ struct SeasonMiniGame: View {
         let allDone = items.allSatisfy { (tapCounts[$0.rawValue] ?? 0) >= tapsPerItem }
         if allDone {
             isDone = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.5))
+                guard !Task.isCancelled else { return }
                 onComplete(100)
             }
         }
@@ -577,7 +585,9 @@ struct PeelMiniGame: View {
             isDone = true
             let avgAccuracy = totalAccuracy / CGFloat(targetSwipes)
             let score = Int(avgAccuracy * 100)
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.5))
+                guard !Task.isCancelled else { return }
                 onComplete(score)
             }
         }
@@ -738,7 +748,9 @@ struct CookTimerMiniGame: View {
             score = max(20, 100 - Int(lateness * 100))
         }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.5))
+            guard !Task.isCancelled else { return }
             onComplete(score)
         }
     }
@@ -897,7 +909,9 @@ struct WashMiniGame: View {
             vegScale = 0.85
             vegRotation = Double.random(in: -15...15)
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.12))
+            guard !Task.isCancelled else { return }
             withAnimation(AnimationConstants.springSnappy) {
                 vegScale = 1.0
                 vegRotation = 0
@@ -930,7 +944,9 @@ struct WashMiniGame: View {
                 splashes[idx].opacity = 0
             }
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.5))
+            guard !Task.isCancelled else { return }
             splashes.removeAll { $0.opacity <= 0 }
         }
 
@@ -955,7 +971,9 @@ struct WashMiniGame: View {
                 dirtOpacity = 0
             }
 
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.8))
+                guard !Task.isCancelled else { return }
                 onComplete(100)
             }
         }
@@ -1053,7 +1071,9 @@ struct CrackEggMiniGame: View {
                 cracked = true
             }
             isDone = true
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.6))
+                guard !Task.isCancelled else { return }
                 onComplete(100)
             }
         } else {
@@ -1141,7 +1161,9 @@ struct AssembleMiniGame: View {
         if progress >= 1.0 {
             isDone = true
             Haptic.notify(.success) // beautiful plating!
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.6))
+                guard !Task.isCancelled else { return }
                 onComplete(100)
             }
         } else {

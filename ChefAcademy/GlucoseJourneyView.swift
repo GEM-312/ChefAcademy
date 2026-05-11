@@ -874,8 +874,10 @@ struct CellPhaseView: View {
         withAnimation(.easeInOut(duration: 0.6)) {
             bodyScale = 5.0
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            withAnimation(.spring(response: 0.5)) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.5))
+            guard !Task.isCancelled else { return }
+            withAnimation(AnimationConstants.springMedium) {
                 step = .cellView
                 pipMessage = "Each cell has a MITOCHONDRIA — a tiny power plant! Tap it to make energy!"
             }
@@ -1413,7 +1415,9 @@ struct SmartSnackQuizView: View {
             gameState.addCoins(5)
         }
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.5))
+            guard !Task.isCancelled else { return }
             withAnimation(AnimationConstants.springMedium) {
                 showSugarCubes = true
             }

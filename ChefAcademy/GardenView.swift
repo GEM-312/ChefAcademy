@@ -216,7 +216,9 @@ struct DraggablePipView: View {
         onHarvestPlot(plotIndex)
 
         // Reset burst
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.5))
+            guard !Task.isCancelled else { return }
             showHarvestBurst = false
             nearbyPlotIndex = nil
         }
@@ -533,7 +535,9 @@ struct WalkingPipView: View {
 
         onHarvestPlot(plotIndex)
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.5))
+            guard !Task.isCancelled else { return }
             showHarvestBurst = false
             nearbyPlotIndex = nil
         }
@@ -693,7 +697,9 @@ struct GardenView: View {
         // Visitor greeting is now handled inline by PipGardenMessage in bottomPanel
         .onAppear {
             if isVisiting {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(0.5))
+                    guard !Task.isCancelled else { return }
                     showVisitorGreeting = true
                 }
             }
@@ -1167,12 +1173,15 @@ struct GardenView: View {
         withAnimation(.easeIn(duration: 0.6)) {
             fallingOffset = 0
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.6) {
-            withAnimation(.easeOut(duration: 0.3)) {
+        // Sequential reveal: 0.6s then fade, 0.4s more then clear.
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.6))
+            guard !Task.isCancelled else { return }
+            withAnimation(AnimationConstants.fadeMedium) {
                 fallingOpacity = 0
             }
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+            try? await Task.sleep(for: .seconds(0.4))
+            guard !Task.isCancelled else { return }
             fallingVeggie = nil
         }
 
@@ -1199,7 +1208,9 @@ struct GardenView: View {
         if let recipe = availableRecipes.first {
             suggestedRecipe = recipe
             // Small delay so harvest animation plays first
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.8))
+                guard !Task.isCancelled else { return }
                 showRecipeSuggestion = true
             }
         }

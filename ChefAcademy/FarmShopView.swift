@@ -621,7 +621,9 @@ struct FarmTransitionView: View {
         withAnimation(AnimationConstants.springSlow) {
             doorsOpen = true
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.9))
+            guard !Task.isCancelled else { return }
             onComplete()
         }
     }
