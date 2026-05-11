@@ -674,7 +674,9 @@ struct MultiplayerHealthyPicksView: View {
     }
 
     private func startFirstSpawn(size: CGSize) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.5))
+            guard !Task.isCancelled else { return }
             spawnNextFood(size: size)
         }
     }
@@ -727,7 +729,9 @@ struct MultiplayerHealthyPicksView: View {
         withAnimation(AnimationConstants.springSnappy) {
             pipScale = 1.15
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.15))
+            guard !Task.isCancelled else { return }
             withAnimation(AnimationConstants.springQuick) {
                 pipScale = max(1.0, 1.0 + CGFloat(badChoices) * 0.12)
             }
@@ -784,7 +788,9 @@ struct MultiplayerHealthyPicksView: View {
             goodChoices += 1
             coinsEarned += 5
 
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.4))
+                guard !Task.isCancelled else { return }
                 flyingFoods.removeAll { $0.id == item.id }
             }
         } else {
@@ -796,12 +802,16 @@ struct MultiplayerHealthyPicksView: View {
                 pipRotation = Double.random(in: -10...10)
             }
 
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.4))
+                guard !Task.isCancelled else { return }
                 flyingFoods.removeAll { $0.id == item.id }
             }
 
             if badChoices >= maxBadChoices {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(0.5))
+                    guard !Task.isCancelled else { return }
                     finishGame()
                 }
             }
@@ -827,7 +837,9 @@ struct MultiplayerHealthyPicksView: View {
             manager.matchPhase = .finished
         } else {
             // Safety timeout — if opponent never reports, end after 15 seconds
-            DispatchQueue.main.asyncAfter(deadline: .now() + 15) { [self] in
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(15))
+                guard !Task.isCancelled else { return }
                 if localFinished && !manager.opponentFinished {
                     print("[Multiplayer] Opponent timeout — ending game")
                     manager.opponentFinalScore = manager.opponentScore

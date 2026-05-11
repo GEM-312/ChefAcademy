@@ -596,7 +596,9 @@ struct HealthyChoiceGameView: View {
         scheduleNextSpawn(size: size)
 
         // Throw first food immediately
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.5))
+            guard !Task.isCancelled else { return }
             spawnFood(size: size)
             round += 1
         }
@@ -625,8 +627,10 @@ struct HealthyChoiceGameView: View {
 
         // Sometimes throw 2 at once when going fast
         if goodChoices >= 8 && goodChoices % 4 == 0 {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-                self.spawnFood(size: size)
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.3))
+                guard !Task.isCancelled else { return }
+                spawnFood(size: size)
             }
         }
     }
@@ -655,7 +659,9 @@ struct HealthyChoiceGameView: View {
         withAnimation(AnimationConstants.springSnappy) {
             pipScale = 1.15
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.15))
+            guard !Task.isCancelled else { return }
             withAnimation(AnimationConstants.springQuick) {
                 pipScale = max(1.0, 1.0 + CGFloat(badChoices) * 0.12) // Stay inflated if bad choices
             }
@@ -731,7 +737,9 @@ struct HealthyChoiceGameView: View {
             speedUpSpawning(size: playAreaSize)
 
             // Remove feedback after brief flash
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.4))
+                guard !Task.isCancelled else { return }
                 flyingFoods.removeAll { $0.id == item.id }
             }
         } else {
@@ -746,13 +754,17 @@ struct HealthyChoiceGameView: View {
             }
 
             // Remove feedback
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.4))
+                guard !Task.isCancelled else { return }
                 flyingFoods.removeAll { $0.id == item.id }
             }
 
             // Check game over
             if badChoices >= maxBadChoices {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(0.5))
+                    guard !Task.isCancelled else { return }
                     finishGame(won: false)
                 }
             }
@@ -802,7 +814,9 @@ struct HealthyChoiceGameView: View {
                 pipScale = 2.0
                 pipRotation = 360
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.8))
+                guard !Task.isCancelled else { return }
                 phase = .gameOver
             }
         }

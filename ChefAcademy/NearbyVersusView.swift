@@ -569,7 +569,9 @@ struct NearbyVersusView: View {
     }
 
     private func startFirstSpawn(size: CGSize) {
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.5))
+            guard !Task.isCancelled else { return }
             spawnNextFood(size: size)
         }
     }
@@ -609,7 +611,9 @@ struct NearbyVersusView: View {
             wobbleSpeed: wobbleSpeed, wobbleAmount: wobbleAmount))
 
         withAnimation(AnimationConstants.springSnappy) { pipScale = 1.15 }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.15))
+            guard !Task.isCancelled else { return }
             withAnimation(AnimationConstants.springQuick) {
                 pipScale = max(1.0, 1.0 + CGFloat(badChoices) * 0.12)
             }
@@ -652,7 +656,11 @@ struct NearbyVersusView: View {
         if item.food.isHealthy {
             flyingFoods[index].resultIcon = "\u{2705}"
             goodChoices += 1; coinsEarned += 5
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { flyingFoods.removeAll { $0.id == item.id } }
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.4))
+                guard !Task.isCancelled else { return }
+                flyingFoods.removeAll { $0.id == item.id }
+            }
         } else {
             flyingFoods[index].resultIcon = "\u{274C}"
             badChoices += 1
@@ -660,9 +668,17 @@ struct NearbyVersusView: View {
                 pipScale = 1.0 + CGFloat(badChoices) * 0.15
                 pipRotation = Double.random(in: -10...10)
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { flyingFoods.removeAll { $0.id == item.id } }
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.4))
+                guard !Task.isCancelled else { return }
+                flyingFoods.removeAll { $0.id == item.id }
+            }
             if badChoices >= maxBadChoices {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { finishGame() }
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(0.5))
+                    guard !Task.isCancelled else { return }
+                    finishGame()
+                }
             }
         }
         manager.sendScoreUpdate(score: coinsEarned, goodChoices: goodChoices, badChoices: badChoices)

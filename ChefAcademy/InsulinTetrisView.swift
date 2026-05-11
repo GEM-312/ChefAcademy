@@ -195,7 +195,7 @@ struct InsulinTetrisView: View {
 
     // Pip
     @State private var pipMessage: String? = nil
-    @State private var pipMessageTimer: DispatchWorkItem? = nil
+    @State private var pipMessageTimer: Task<Void, Never>? = nil
 
     // Drag
     @State private var activeDragID: UUID? = nil
@@ -1067,7 +1067,9 @@ struct InsulinTetrisView: View {
         }
 
         // Clear rejected state after brief flash — find by ID, not stale index
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.3))
+            guard !Task.isCancelled else { return }
             if let idx = fallingBlocks.firstIndex(where: { $0.id == blockID }) {
                 fallingBlocks[idx].isRejected = false
             }
@@ -1134,13 +1136,14 @@ struct InsulinTetrisView: View {
         withAnimation(AnimationConstants.fadeFast) {
             pipMessage = message
         }
-        let work = DispatchWorkItem {
+        // Cancellable Task replaces the prior DispatchWorkItem-based timer.
+        pipMessageTimer = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(2.5))
+            guard !Task.isCancelled else { return }
             withAnimation(AnimationConstants.fadeMedium) {
                 pipMessage = nil
             }
         }
-        pipMessageTimer = work
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5, execute: work)
     }
 }
 

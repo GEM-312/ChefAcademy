@@ -601,7 +601,9 @@ struct SplitScreenVersusView: View {
 
     private func startFirstSplitSpawn(size: CGSize) {
         let halfHeight = size.height / 2 - 22
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.3))
+            guard !Task.isCancelled else { return }
             spawnForBoth(halfHeight: halfHeight, width: size.width)
         }
     }
@@ -642,7 +644,9 @@ struct SplitScreenVersusView: View {
             ))
             p1Round += 1
             withAnimation(AnimationConstants.springSnappy) { p1PipScale = 1.15 }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.15))
+                guard !Task.isCancelled else { return }
                 withAnimation(AnimationConstants.springQuick) {
                     p1PipScale = max(1.0, 1.0 + CGFloat(p1Bad) * 0.12)
                 }
@@ -662,7 +666,9 @@ struct SplitScreenVersusView: View {
             ))
             p2Round += 1
             withAnimation(AnimationConstants.springSnappy) { p2PipScale = 1.15 }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.15))
+                guard !Task.isCancelled else { return }
                 withAnimation(AnimationConstants.springQuick) {
                     p2PipScale = max(1.0, 1.0 + CGFloat(p2Bad) * 0.12)
                 }
@@ -736,7 +742,9 @@ struct SplitScreenVersusView: View {
                 }
                 if p1Bad >= maxBadChoices { p1Finished = true }
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.3))
+                guard !Task.isCancelled else { return }
                 p1Foods.removeAll { $0.id == item.id }
             }
         } else {
@@ -754,7 +762,9 @@ struct SplitScreenVersusView: View {
                 }
                 if p2Bad >= maxBadChoices { p2Finished = true }
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.3))
+                guard !Task.isCancelled else { return }
                 p2Foods.removeAll { $0.id == item.id }
             }
         }
