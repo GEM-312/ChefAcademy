@@ -309,11 +309,13 @@ struct PipMessageAnimated: View {
             .cornerRadius(AppSpacing.cardCornerRadius)
         }
         .onChange(of: message) { oldMessage, newMessage in
-            withAnimation(.easeOut(duration: 0.1)) {
+            withAnimation(AnimationConstants.fadeQuick) {
                 messageVisible = false
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
-                withAnimation(.easeIn(duration: 0.2)) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.15))
+                guard !Task.isCancelled else { return }
+                withAnimation(AnimationConstants.fadeFast) {
                     messageVisible = true
                 }
             }

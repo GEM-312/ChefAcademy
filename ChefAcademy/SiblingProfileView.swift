@@ -284,8 +284,10 @@ struct SiblingProfileView: View {
         withAnimation(AnimationConstants.springMedium) {
             showGiftToast = true
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.5) {
-            withAnimation(.easeOut(duration: 0.3)) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(2.5))
+            guard !Task.isCancelled else { return }
+            withAnimation(AnimationConstants.fadeMedium) {
                 showGiftToast = false
             }
         }

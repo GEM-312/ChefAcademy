@@ -103,7 +103,9 @@ struct ChefAcademyApp: App {
                     // Give Apple a moment to verify the credential, then bootstrap.
                     // On first launch this is instant (no saved credential).
                     // On subsequent launches, Apple verifies in ~0.1-0.3s.
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .seconds(0.5))
+                        guard !Task.isCancelled else { return }
                         sessionManager.bootstrap(
                             context: modelContainer.mainContext,
                             authManager: authManager

@@ -532,7 +532,9 @@ struct CookingSessionView: View {
                 transitioning = true
             }
 
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.8))
+                guard !Task.isCancelled else { return }
                 withAnimation(AnimationConstants.fadeMedium) {
                     currentStepIndex += 1
                     showPipTransition = false

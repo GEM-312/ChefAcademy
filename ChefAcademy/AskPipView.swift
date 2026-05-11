@@ -170,7 +170,9 @@ struct AskPipView: View {
                 .onChange(of: followUpQuestions) { _, _ in
                     // Scroll to show follow-up chips
                     if let last = messages.last {
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                        Task { @MainActor in
+                            try? await Task.sleep(for: .seconds(0.2))
+                            guard !Task.isCancelled else { return }
                             withAnimation {
                                 proxy.scrollTo(last.id, anchor: .top)
                             }

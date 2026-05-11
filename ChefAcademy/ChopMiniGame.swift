@@ -338,7 +338,9 @@ struct ChopMiniGame: View {
         }
 
         // Hide result after delay
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.5))
+            guard !Task.isCancelled else { return }
             withAnimation {
                 showResult = false
                 justChopped = false
@@ -359,7 +361,9 @@ struct ChopMiniGame: View {
         let finalScore = totalScore / targetChops
 
         // Delay then call completion
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.8))
+            guard !Task.isCancelled else { return }
             onComplete(finalScore)
         }
     }

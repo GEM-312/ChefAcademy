@@ -220,7 +220,9 @@ struct PantryInfoView: View {
                 withAnimation(AnimationConstants.springMedium) {
                     showCoinReward = "+\(nutrient.coinReward)"
                 }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(1.2))
+                    guard !Task.isCancelled else { return }
                     withAnimation { showCoinReward = nil }
                 }
             }
@@ -280,7 +282,9 @@ struct PantryInfoView: View {
                 withAnimation(AnimationConstants.springMedium) {
                     showCoinReward = "+5"
                 }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(1.2))
+                    guard !Task.isCancelled else { return }
                     withAnimation { showCoinReward = nil }
                 }
             }

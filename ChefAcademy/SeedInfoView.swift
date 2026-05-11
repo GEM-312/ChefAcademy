@@ -421,7 +421,9 @@ struct SeedInfoView: View {
             withAnimation(AnimationConstants.springFly) {
                 appeared = true
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.8))
+                guard !Task.isCancelled else { return }
                 withAnimation(AnimationConstants.fadeMedium) {
                     showPipTip = true
                 }
@@ -472,7 +474,9 @@ struct SeedInfoView: View {
                             withAnimation(AnimationConstants.fadeFlyOut) {
                                 showPipTip = false
                             }
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+                            Task { @MainActor in
+                                try? await Task.sleep(for: .seconds(0.2))
+                                guard !Task.isCancelled else { return }
                                 detectedColorChoice = newChoice
                                 withAnimation(AnimationConstants.fadeFast) {
                                     showPipTip = true
@@ -795,7 +799,9 @@ struct SeedInfoView: View {
                 withAnimation(AnimationConstants.springMedium) {
                     showCoinReward = "+\(nutrient.coinReward)"
                 }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(1.2))
+                    guard !Task.isCancelled else { return }
                     withAnimation { showCoinReward = nil }
                 }
             }
@@ -880,7 +886,9 @@ struct SeedInfoView: View {
                 withAnimation(AnimationConstants.springMedium) {
                     showCoinReward = "+5"
                 }
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(1.2))
+                    guard !Task.isCancelled else { return }
                     withAnimation { showCoinReward = nil }
                 }
             }
