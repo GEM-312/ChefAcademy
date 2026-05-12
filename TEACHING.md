@@ -4,6 +4,22 @@ Personal reference built from real code in Pip's Kitchen Garden. Newest lessons 
 
 ---
 
+## Session: May 12, 2026
+
+### Verify Authority Docs Against Their Source of Truth Before Rewriting
+**Where it came up:** Yesterday's CLAUDE.md cleanup confidently rewrote the color palette section with hex values like `cream: #FDF6E3`, `sage: #9CAF88`, `terracotta: #C4A484`. All eight values were wrong. The real values live in `Assets.xcassets/AppColors/*.colorset/Contents.json` as sRGB float components, and they read as `cream: #F5F0E1`, `sage: #6B7B5E`, `terracotta: #B87333`. STYLES.md had correct values the whole time. Marina caught it today during a follow-up audit when she asked to check the other style docs.
+**What it is:** When rewriting an "authority" document (CLAUDE.md, README, style guide, schema reference), the data going into the doc should be sourced from the actual system of record (the asset catalog, the .swift file, the Info.plist, the schema migration), not from your context window. The risk of fabricating plausible-looking-but-wrong values is highest exactly when you're confidently rewriting "because you know the codebase." Confidence + plausibility + no verification = a quiet bug that propagates downstream as ground truth.
+**In our code:** The fix was a one-shot Python script that read each `*.colorset/Contents.json`, converted the float-component triplet to hex, and printed a comparison table against both docs' claims. Once I saw STYLES.md was right and CLAUDE.md was wrong on every value, the fix took 30 seconds. The actual mistake had taken longer — I rewrote 8 hex values from memory in a doc that's now the authoritative consolidated rules file.
+**Why it matters:** Authority docs are load-bearing. A future contributor reading CLAUDE.md would have used #9CAF88 for sage, gotten a visibly-different color from what's in the build, and either (a) overridden the asset catalog to match the doc (now the doc dictates color, not the catalog), or (b) wasted hours debugging "why does this look off." Before rewriting any reference doc, ask: where does this data actually live? Then read THAT file, not your memory. For numeric values, hex strings, file paths, line numbers, version numbers — always re-check, even when you're sure. Especially when you're sure.
+
+### Audit Reports Don't Audit Themselves
+**Where it came up:** ASSETS.md was last dated March 15 and claimed `~285 imagesets total / 43 AvatarCards`. Actual on-disk counts: 722 / 103. STYLES.md claimed "All clear! Last audit: March 23, 2026" — but five weeks of code had landed since, including yesterday's Pass C raw-color sweep that wouldn't have happened if STYLES.md had been right. Both docs read as authoritative statements about current state when they were actually frozen snapshots.
+**What it is:** A reference doc that includes a self-assessment ("X items complete", "All clear", "Last audit: <date>") makes a claim about freshness. That claim decays the moment the next commit lands and isn't re-verified. Worse, the claim's specificity ("~285", "all clear") makes it feel authoritative — readers don't question it. The fix is either (a) bind the count to a programmatic source the doc points to ("see `WEEKLY_REVIEW_<date>.md`" or "run `find . -name '*.imageset' | wc -l`") or (b) date-stamp every claim and treat anything older than a sprint as suspect.
+**In our code:** Updated ASSETS.md inventory to derive from `find ChefAcademy/Assets.xcassets -name "*.imageset" -type d | wc -l` (722) instead of a hand-maintained number. Replaced STYLES.md's "All clear" with a pointer to the latest dated weekly review. Both docs now footer-date their content and explicitly defer to the live source for tracked counts / violation status.
+**Why it matters:** Self-assessed reference docs are a class of bug that doesn't surface until someone trusts them. The trust radius is wide — every new contributor reads the docs first. Treat reference numbers the same way you treat magic constants in code: either source them from the canonical store, or recompute them at every audit. Never copy-paste a number into a doc and walk away.
+
+---
+
 ## Session: May 11, 2026
 
 ### SourceKit Per-File Diagnostics Are Noise (Trust the Build)
