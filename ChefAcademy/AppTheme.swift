@@ -37,6 +37,13 @@ extension Color {
         static let rainBlue = Color(hex: "4FC3F7")                // weather rain / storm drops
         static let autumnBrown = Color(hex: "8B4513")             // weather fall leaves
         static let frostBlue = Color(hex: "E3F2FD")               // weather winter sparkles
+
+        // High-visibility CTA accents — saturated hues that pop against the
+        // cream/parchment palette for age 6+ visibility. Use sparingly; the
+        // sage / goldenWheat / terracotta tints remain the botanical default.
+        static let brightGreen = Color(hex: "4CAF50")             // high-energy "go" / success
+        static let brightBlue = Color(hex: "2196F3")              // informational / secondary CTA
+        static let sunflowerYellow = Color(hex: "FFD600")         // reward / celebration accent
     }
 }
 
