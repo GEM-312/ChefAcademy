@@ -185,7 +185,7 @@ struct SiblingProfileView: View {
 
                                 ForEach(data.recipeStars, id: \.recipeID) { star in
                                     HStack {
-                                        Text(star.recipeID)
+                                        Text(GardenRecipes.all.first { $0.id == star.recipeID }?.title ?? star.recipeID)
                                             .font(.AppTheme.body)
                                             .foregroundColor(Color.AppTheme.sepia)
                                         Spacer()
