@@ -452,7 +452,7 @@ struct SplitScreenVersusView: View {
                     .font(.AppTheme.rounded(size: 32))
             }
             Text(item.food.name)
-                .font(.AppTheme.rounded(size: 9, weight: .bold))
+                .font(.AppTheme.rounded(size: 12, weight: .bold))
                 .foregroundColor(Color.AppTheme.darkBrown)
                 .lineLimit(1)
         }

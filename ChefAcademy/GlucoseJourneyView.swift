@@ -363,7 +363,7 @@ struct TummyPhaseView: View {
                                     // Glucose label + balls waiting
                                     VStack(spacing: 2) {
                                         Text("Glucose")
-                                            .font(.AppTheme.rounded(size: 9, weight: .bold))
+                                            .font(.AppTheme.rounded(size: 12, weight: .bold))
                                             .foregroundColor(Color.AppTheme.goldenWheat)
 
                                         HStack(spacing: 4) {

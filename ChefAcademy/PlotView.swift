@@ -164,7 +164,7 @@ struct PlotView: View {
                 .frame(width: 70, height: 6)
 
                 Text("\(Int(plot.growthProgress * 100))%")
-                    .font(.AppTheme.rounded(size: 9, weight: .semibold))
+                    .font(.AppTheme.rounded(size: 12, weight: .semibold))
                     .foregroundColor(Color.AppTheme.sepia)
             }
         }

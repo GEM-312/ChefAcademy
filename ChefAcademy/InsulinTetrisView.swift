@@ -471,7 +471,7 @@ struct InsulinTetrisView: View {
 
             // Capacity
             Text(bin.isFull ? "FULL" : "\(Int(bin.currentGrams))/\(Int(bin.type.capacity))g")
-                .font(.AppTheme.rounded(size: 10, weight: .semibold))
+                .font(.AppTheme.rounded(size: 13, weight: .semibold))
                 .foregroundColor(bin.isFull ? Color.AppTheme.terracotta : Color.AppTheme.lightSepia)
         }
     }
@@ -518,7 +518,7 @@ struct InsulinTetrisView: View {
                 .foregroundColor(Color.AppTheme.sepia)
 
             Text(blocksInFat > 0 ? "\(blocksInFat) blocks" : "Empty")
-                .font(.AppTheme.rounded(size: 10, weight: .semibold))
+                .font(.AppTheme.rounded(size: 13, weight: .semibold))
                 .foregroundColor(blocksInFat > 3 ? Color.AppTheme.terracotta : Color.AppTheme.lightSepia)
         }
     }

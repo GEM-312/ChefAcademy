@@ -512,7 +512,7 @@ struct HealthOrb: View {
             }
 
             Text(label)
-                .font(.AppTheme.rounded(size: 9, weight: .medium))
+                .font(.AppTheme.rounded(size: 12, weight: .medium))
                 .foregroundColor(Color.AppTheme.sepia)
         }
     }
@@ -538,7 +538,7 @@ struct MiniOrb: View {
             }
 
             Text(label)
-                .font(.AppTheme.rounded(size: 9, weight: .medium))
+                .font(.AppTheme.rounded(size: 12, weight: .medium))
                 .foregroundColor(Color.AppTheme.sepia)
         }
     }
