@@ -73,6 +73,21 @@ class UserProfile {
         profileRole == .parent
     }
 
+    /// Asset name for the still profile pose shown on cards. Routes parents
+    /// to dedicated mom/dad frames (15-frame source animation, last frame
+    /// used as the static representative pose) and children to the existing
+    /// kid clean frames. Closes the parent-vs-child visual gap in
+    /// ProfilePickerView (previously only crown + lock icons signaled
+    /// "this is the adult" — too subtle for the 6+ audience).
+    var profilePoseImage: String {
+        switch (isParent, gender) {
+        case (true, .girl):  return "mom_avatar_frame_15"
+        case (true, .boy):   return "dad_avatar_frame_15"
+        case (false, .girl): return "girl_card_clean_frame_06"
+        case (false, .boy):  return "boy_card_clean_frame_11"
+        }
+    }
+
     // MARK: - Allergen Helpers
 
     var allergens: [FoodAllergen] {
