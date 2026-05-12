@@ -249,9 +249,15 @@ section "9. Doc footer dates"
 
 NOW_DAYS=$(date -u +%s)
 for f in ChefAcademy/CLAUDE.md STYLES.md ANIMATIONS.md ASSETS.md TEACHING.md; do
+    # Reference docs use a "Last Updated: <date>" footer.
+    # Chronological logs (TEACHING.md) use the topmost "## Session: <date>" header.
     DATE_STR=$(grep -oE 'Last Updated[^*]+' "$f" 2>/dev/null | head -1 | grep -oE '[A-Z][a-z]+ [0-9]+, [0-9]{4}' | head -1)
     if [ -z "$DATE_STR" ]; then
-        echo "  ⚠ $f has no parseable 'Last Updated' date"
+        # Fallback: scan for the topmost dated session header (chronological logs)
+        DATE_STR=$(grep -oE '^## Session: [A-Z][a-z]+ [0-9]+, [0-9]{4}' "$f" 2>/dev/null | head -1 | grep -oE '[A-Z][a-z]+ [0-9]+, [0-9]{4}')
+    fi
+    if [ -z "$DATE_STR" ]; then
+        echo "  ⚠ $f has no parseable 'Last Updated' footer or '## Session: <date>' header"
         continue
     fi
     FILE_DAYS=$(date -j -f "%B %d, %Y" "$DATE_STR" +%s 2>/dev/null || date -d "$DATE_STR" +%s 2>/dev/null)
