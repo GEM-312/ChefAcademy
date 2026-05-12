@@ -72,8 +72,7 @@ ProfilePickerView:
 | `FamilySetupView.swift` | First-launch 8-step family wizard |
 | `AddChildFlowView.swift` | Add subsequent children (3 steps + duplicate name check) |
 | `ParentDashboardView.swift` | Child stats, play time, manage profiles |
-| `ParentPINEntryView.swift` | Reusable PIN pad (setup + verify modes) |
-| `ProfileView.swift` | Me tab: stats, badges, switch player, dashboard |
+| `ParentPINEntryView.swift` | PIN pad host (uses shared `PINPadGrid` from PipComponents) |
 | `MigrationPINSetupView.swift` | Upgrade path for legacy single-user installs |
 
 ### SwiftData Rules (CloudKit Compatibility)
@@ -95,7 +94,7 @@ selectProfile() →
   ├── Existing PlayerData found → loadFromStore(for:) → MainTabView
   └── No PlayerData → createPlayerData() → resetToDefaults() → saveToStore() → MainTabView
 
-resetToDefaults() gives: 100 coins, starter seeds (8 types), 5 garden plots, 2 unlocked recipes
+resetToDefaults() gives: 0 coins (learn-to-earn — kids must tap nutrient cards / color seeds to earn), starter seeds (8 types), 5 garden plots, 2 unlocked recipes
 loadFromStore() safety: if seeds empty → gives starter seeds automatically
 ```
 
@@ -104,28 +103,25 @@ loadFromStore() safety: if seeds empty → gives starter seeds automatically
 ## Visual Style
 
 **Aesthetic:** Vintage botanical watercolor ("paper style")
-**Colors (defined in AppTheme.swift):**
-- Cream: #FDF6E3 (backgrounds)
-- Warm Cream: #FAF0DC
-- Parchment: #F5E6C8
-- Sage: #9CAF88 (primary accent)
-- Golden Wheat: #DAA520
-- Terracotta: #C4A484
-- Sepia: #5D4E37 (text)
-- Dark Brown: #3D2914 (headings)
-- Warm Khaki: #C6BA8B
+**Core palette** (defined as `Color.AppTheme.*` in AppTheme.swift — never inline hex):
+- `cream` #FDF6E3 (backgrounds), `warmCream` #FAF0DC, `parchment` #F5E6C8
+- `sepia` #5D4E37 (text), `darkBrown` #3D2914 (headings), `lightSepia`
+- `sage` #9CAF88 (primary CTAs), `goldenWheat` #DAA520, `terracotta` #C4A484, `softOlive`, `warmKhaki` #C6BA8B
+- **High-energy accents** (added May 11): `brightGreen`, `brightBlue`, `sunflowerYellow` — saturated CTA pop for age 6+ visibility. Use sparingly; sage/goldenWheat/terracotta remain the botanical default.
+- Weather: `weatherSunny/PartlyCloudy/Cloudy/Stormy/Snowy/Rainy`; seasons: `springGradientTop/Blossom/summerGradientTop/Warm/fallGradientTop/Mid/winterGradientMid/Bot`; particles: `springPetal`, `frostBlue`, `autumnBrown`, `rainBlue`, `sunYellow`.
 
-**UX Audit Feedback:** Palette described as "gray/adult/sad" — needs vibrant accent colors for CTAs (see UX_REDESIGN_PLAN.md)
+**Hard rule (per `feedback_no_hardcoded_values.md`):** ZERO hardcoded colors / fonts / spacing / animation curves. Every value must come from `Color.AppTheme.*`, `Font.AppTheme.*`, `AppSpacing.*`, or `AnimationConstants.*`. Use `.softCard()`, `.texturedButton(tint:)`, `BouncyButtonStyle()`, `TexturedButtonStyle` — never hand-roll `.background()+.cornerRadius()+.shadow()` chains.
 
 ---
 
 ## Character: Pip the Hedgehog
 
-- Round, fluffy hedgehog with chef hat
-- 6 static poses + 15-frame walking animation + waving animation
-- `PipWavingAnimatedView(size:)` — reusable animated Pip component
-- Walking frames: pip_walking_frame_01 through 15 (30fps Timer-based)
-- Appears throughout app as interactive guide/mascot
+- Round, fluffy hedgehog with chef hat — kid's guide/mascot
+- 13 static poses (`PipPose` enum in `PipAnimations.swift`) + walking animation + waving animation
+- `PipWavingAnimatedView(size:)` — reusable animated Pip; size flows through the `PipSize` enum (`compact` 40 / `medium` 80 / `large` 120 / `hero` 160 / `.custom(N)` escape hatch)
+- `PipSpeechBubble`, `PipHeaderStack` — two canonical layout components in `PipComponents.swift`; both auto-speak via `PipVoice.shared.speak(...)` on appear and on message change
+- `PipDialogView` — modal confirm prompts ("Spend N coins and plant?") with `BouncyButtonStyle` choices
+- Walking frames: `pip_walking_frame_01..15` at 30fps Timer-based (see `CharacterWalkingView`)
 
 ---
 
@@ -133,14 +129,14 @@ loadFromStore() safety: if seeds empty → gives starter seeds automatically
 
 | Tab | Icon | View | Purpose |
 |-----|------|------|---------|
-| Home | house.fill | HomeView | Main hub, quick actions |
+| Home | house.fill | HomeView | Main hub, sibling visits, switch player, parent dashboard |
 | Garden | leaf.fill | GardenView | Plant & harvest veggies (interactive map) |
-| Kitchen | fork.knife | KitchenView | Cook recipes with Pip (interactive map) |
-| Farm | cart.fill | FarmTabView → FarmShopView | Pip walks to barn, then shop |
-| Recipes | book.fill | RecipeListView | Browse all recipes |
-| Me | person.fill | ProfileView | Stats, badges, switch player, dashboard |
+| Shop | cart.fill | FarmTabView → FarmShopView | Pip walks to barn, then seeds + pantry shop |
+| Kitchen | fork.knife | KitchenView | Cook recipes with Pip; book icon opens RecipeListView |
+| Body | person.fill | BodyBuddyView | "Your Body" — organ health rings + recipe impact |
+| Play | gamecontroller.fill | PlayLearnView | Mini-games hub (Healthy Picks, Insulin Tetris, etc.) |
 
-**UX Audit Recommendation:** Merge Garden + Farm into one tab (see UX_REDESIGN_PLAN.md)
+`Tab.recipes` still exists in the enum for references but is hidden from the tab bar — opened via the Kitchen book icon. `GardenHubView.swift` is orphaned dead code (zero references); planned deletion. The March audit's "merge Garden + Farm" suggestion was deferred — Garden + Shop stay separate tabs.
 
 ---
 
@@ -169,20 +165,39 @@ loadFromStore() safety: if seeds empty → gives starter seeds automatically
 | Category | File | Purpose |
 |----------|------|---------|
 | **App Entry** | `ChefAcademyApp.swift` | ModelContainer, RootRouterView, MainTabView, HomeView |
-| **State** | `GameState.swift` | Central game state, SwiftData load/save, auto-save |
-| **Theme** | `AppTheme.swift` | Colors, fonts, spacing constants |
+| **State** | `GameState.swift` | Central game state, SwiftData load/save, auto-save, `NutrientType` enum |
+| **Theme** | `AppTheme.swift` | Colors, fonts, spacing, animation tokens, button styles |
+| **Adaptive** | `AdaptiveLayout.swift` | iPhone/iPad sizing tokens, `.trailingFade()`, `AdaptiveCardSize` |
+| **Pip Components** | `PipComponents.swift` | `PipSpeechBubble`, `PipHeaderStack`, `PipSize`, `PINPadGrid` |
+| **Pip Animation** | `PipAnimations.swift` | `PipPose` enum, `PipWavingAnimatedView`, walking views |
+| **Pip Voice** | `PipVoice.swift` | Two-tier voice (silent free / ElevenLabs paid). Apple TTS rejected May 10. |
+| **Pip AI Chat** | `AskPipView.swift`, `PipAIService.swift`, `PipFoundationModelService.swift` | Claude Haiku/on-device routing, rate-limited, allergen-aware |
 | **Garden** | `GardenView.swift` | Interactive map with plots + draggable Pip |
-| **Kitchen** | `KitchenView.swift` | Interactive cooking scene map |
-| **Cooking** | `CookingSessionView.swift` | Mini-game sequence manager |
-| **Mini-games** | `CookingMiniGames.swift` | 9 mini-game views |
-| **Recipes** | `RecipeCardExample.swift` | PantryItem enum, Recipe struct, GardenRecipes.all |
-| **Recipe Detail** | `RecipeDetailView.swift` | Full-screen cookbook page |
-| **Farm** | `FarmShopView.swift` | Grid shop for pantry items |
-| **Farm Anim** | `FarmTabView.swift` | Walk transition → shop |
-| **Avatar** | `AvatarModel.swift` | Gender, outfit, head covering, profile load/save |
-| **Onboarding** | `OnboardingView.swift` | Original onboarding flow manager |
-| **Seed Info** | `SeedInfoView.swift` | Educational veggie pages + PencilKit coloring |
-| **Scene Editor** | `SceneEditor.swift` | Dev tool for positioning map items |
+| **Plot** | `PlotView.swift` | Per-plot watering/weeding/bug rescue UX |
+| **Kitchen** | `KitchenView.swift` | Interactive cooking scene map; opens RecipeListView via book icon |
+| **Cooking** | `CookingSessionView.swift` | Multi-step state machine, mini-game sequencer |
+| **Mini-games** | `CookingMiniGames.swift`, `ChopMiniGame.swift` | 9+ cooking mini-game views |
+| **Recipes** | `RecipeCardExample.swift` | `PantryItem` enum, `Recipe` struct, `GardenRecipes.all` |
+| **Recipe Detail** | `RecipeDetailView.swift` | Full-screen cookbook page with sticky "Let's Cook!" footer |
+| **Shop** | `FarmShopView.swift`, `FarmTabView.swift` | Seed bags + pantry items + walk transition |
+| **Body Buddy** | `BodyBuddyView.swift` | "Your Body" organ rings — cooked recipes feed organ health |
+| **Play / Mini-games** | `PlayLearnView.swift`, `HealthyChoiceGameView.swift`, `InsulinTetrisView.swift`, `GlucoseJourneyView.swift`, `LocalVersusView.swift`, `NearbyVersusView.swift`, `SplitScreenVersusView.swift`, `MultiplayerHealthyPicksView.swift` | Game hub + Sugar Sorter + multiplayer modes |
+| **Avatar** | `AvatarModel.swift` | `Gender`, `Outfit`, `HeadCovering` enums |
+| **Avatar Creator** | `AvatarCreatorView.swift` | 2 tabs (Outfit, Covering); Hair tab removed |
+| **Profile Picker** | `ProfilePickerView.swift` | "Who's playing today?" — uses `UserProfile.profilePoseImage` (mom/dad/girl/boy) |
+| **Family Setup** | `FamilySetupView.swift`, `AddChildFlowView.swift` | 8-step wizard + add-child flow |
+| **Parent Dashboard** | `ParentDashboardView.swift` | Child stats, play time, allergen edit |
+| **Paywall** | `PaywallView.swift`, `SubscriptionManager.swift` | Pip Chat $3.99/mo subscription |
+| **Onboarding** | `OnboardingView.swift`, `MeetPipAnimated.swift`, `MeetPipViews.swift` | First-launch / Meet Pip (3-dialog trim) |
+| **Seed Info** | `SeedInfoView.swift` | Educational veggie pages + PencilKit coloring + coin rewards |
+| **Pantry Info** | `PantryInfoView.swift` | Pantry item knowledge cards |
+| **Weather** | `GardenWeatherService.swift`, `WeatherOverlayView.swift` | WeatherKit + animated overlays (rain, snow, storm, seasonal particles) |
+| **Care Animations** | `WaterPourCharacterView.swift` | Kid pour animation + SwiftUI water particles |
+| **Allergens** | `Allergen.swift`, `AllergenEditorSheet.swift`, `AllergenPickerStep.swift` | Allergen safety filtering |
+| **Asset Packs** | `AssetPackController.swift`, `AssetPackImage.swift`, `ODRManager.swift` | Apple-Hosted Asset Packs migration (ODR deprecated WWDC25) |
+| **Networking** | `WorkerClient.swift`, `AppAttestService.swift` | Cloudflare Worker + App Attest for API key security |
+| **External APIs** | `USDAFoodService.swift`, `ElevenLabsVoiceService.swift`, `GameCenterService.swift`, `MultiplayerManager.swift`, `NearbyMultiplayerManager.swift` | USDA nutrition + ElevenLabs voice + Game Center + GameKit/MultipeerConnectivity |
+| **Scene Editor** | `SceneEditor.swift` | Dev-only tool for positioning map items |
 
 ---
 
@@ -198,45 +213,25 @@ find ~/Library/Developer/CoreSimulator/Devices -name "default.store*" -path "*/A
 
 ---
 
-## UX Audit & Redesign (March 2026)
+## Audit / Roadmap Sources of Truth
 
-External UX audit identified critical changes needed for 6+ audience:
-- **Full report:** `UX_AUDIT_REPORT.md`
-- **Implementation plan:** `UX_REDESIGN_PLAN.md`
-- **Test plans:** `PROTOTYPE_TEST_PLAN.md`, `TestingPlan_PipsKitchenGarden.md`
+Don't enumerate live roadmap items in this file — it goes stale. Authoritative sources:
 
-### Top Priority Changes (P0):
-1. Reduce text density — add voice (AVSpeechSynthesizer), max 4 steps
-2. Brighten color palette — vibrant CTAs against paper backgrounds
-3. Scroll-down cues on all scrollable areas
-4. Make Pip bigger and interactive (tap to bounce, drag)
-5. Fix typography consistency (unified bold child-friendly font)
-6. Fix asset masking (transparent character PNGs)
+- **`UX_AUDIT_REPORT.md` / `UX_REDESIGN_PLAN.md`** — March 2026 external audit (most P0s shipped; some declined like Apple TTS free tier; rest deferred)
+- **Latest `UX_REVIEW_<date>.md`** at repo root — Monday auto-routine (kid 6+ flow audit)
+- **Latest `WEEKLY_REVIEW_<date>.md`** at repo root — Sun + Tue auto-routine (perf + hardcoding violations)
+- **`GITHUB_ISSUES_DRAFT.md`** — current pre-launch backlog with priority tiers
+- **`~/.claude/projects/.../memory/MEMORY.md`** and `project_next_priorities.md` — session-to-session priorities
 
-### Next Priority Changes (P1):
-7. Condense Garden + Farm into single tab
-8. Kid-friendly recipe names (verb-object: "Sizzling Veggie Pan" not "Stir Fry")
-9. Non-binary gender option
-10. Pantry "grab all" / quantity stepper
-11. Skippable animations after first viewing
+When a CLAUDE.md statement contradicts one of those files, the dated file wins.
 
----
+### Standing decisions (don't re-litigate without a memory update)
 
-## Next Session Priorities
-
-### Multi-User Polish
-- [ ] Test full flow on clean simulator: fresh install → family setup → play → switch profiles → verify data persists
-- [ ] Verify parent dashboard shows correct child stats
-- [ ] Test adding/removing child profiles
-- [ ] Verify starter seeds work for all new profiles
-
-### Game & UX Improvements
-- [ ] Begin P0 UX redesign items (voice, colors, Pip scaling)
-- [ ] Body Buddy — post-cooking flow: BodyBuddyView → animated food journey → organ highlights
-- [ ] Polish cooking mini-games (visual feedback, scoring balance)
-- [ ] Generate missing veggie/fruit/berry image assets (19 of 27 needed)
-- [ ] Food Encyclopedia view
-- [ ] Recipe gating by garden progress
+- **Free voice = silent text, paid = ElevenLabs.** Apple TTS rejected May 10. Don't re-propose it.
+- **Sage palette stays botanical.** `brightGreen/brightBlue/sunflowerYellow` tokens exist for selective use; do NOT sweep all CTAs to brightGreen.
+- **`Color.AppTheme.*` + `AppSpacing.*` + `AnimationConstants.*` are mandatory.** Zero hardcoded values in any new SwiftUI code. Audit before declaring done.
+- **TEACHING.md gets a session block appended every working session.** Memory notes are not a substitute.
+- **Read all files before changes** when asked. Don't argue context budget.
 
 ---
 
@@ -262,4 +257,4 @@ External UX audit identified critical changes needed for 6+ audience:
 
 ---
 
-*Last Updated: March 3, 2026*
+*Last Updated: May 12, 2026 — architecture stable; live roadmap lives in the dated review files + memory, not here.*
