@@ -308,7 +308,8 @@ struct PipMessageAnimated: View {
             .background(Color.AppTheme.warmCream)
             .cornerRadius(AppSpacing.cardCornerRadius)
         }
-        .onChange(of: message) { oldMessage, newMessage in
+        .onAppear { PipVoice.shared.speak(message) }
+        .onChange(of: message) { _, newMessage in
             withAnimation(AnimationConstants.fadeQuick) {
                 messageVisible = false
             }
@@ -318,6 +319,7 @@ struct PipMessageAnimated: View {
                 withAnimation(AnimationConstants.fadeFast) {
                     messageVisible = true
                 }
+                PipVoice.shared.speak(newMessage)
             }
         }
     }
