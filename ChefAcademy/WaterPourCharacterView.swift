@@ -37,15 +37,11 @@ struct WaterPourCharacterView: View {
     }
 
     /// Spout anchor in normalized coords (relative to character image bounding box).
-    /// Measured via pixel-precise silhouette analysis of frame 08 (the lowermost
-    /// horizontal protrusion below the apron is the watering can spout).
-    /// Girl holds the can in her right hand (image-left); boy holds it in his
-    /// left hand (image-right) — opposite hands, so the anchors mirror around
-    /// the body centerline.
+    /// Eyeballed from frame 08 of each source video.
     private var spoutAnchor: CGPoint {
         switch gender {
-        case .girl: return CGPoint(x: 0.12, y: 0.84)   // spout tip — far left, low
-        case .boy:  return CGPoint(x: 0.76, y: 0.83)   // spout tip — far right, low
+        case .girl: return CGPoint(x: 0.58, y: 0.78)   // watering can at right hip
+        case .boy:  return CGPoint(x: 0.40, y: 0.70)   // hands at waist, slight left
         }
     }
 
