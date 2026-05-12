@@ -54,8 +54,8 @@ struct SunshineOverlay: View {
                     .fill(
                         RadialGradient(
                             colors: [
-                                Color.yellow.opacity(0.3),
-                                Color.orange.opacity(0.1),
+                                Color.AppTheme.sunYellow.opacity(0.3),
+                                Color.AppTheme.weatherPartlyCloudy.opacity(0.1),
                                 Color.clear
                             ],
                             center: .center,
@@ -70,7 +70,7 @@ struct SunshineOverlay: View {
                 // Sun icon
                 Image(systemName: "sun.max.fill")
                     .font(.AppTheme.rounded(size: 40))
-                    .foregroundColor(.yellow.opacity(0.5))
+                    .foregroundColor(Color.AppTheme.sunYellow.opacity(0.5))
                     .rotationEffect(.degrees(pulse ? 15 : -15))
             }
             .offset(x: 60, y: -20)
@@ -96,7 +96,7 @@ struct PartlyCloudyOverlay: View {
             ZStack {
                 // Small sun peeking out
                 Circle()
-                    .fill(Color.yellow.opacity(0.2))
+                    .fill(Color.AppTheme.sunYellow.opacity(0.2))
                     .frame(width: 80, height: 80)
                     .scaleEffect(sunPulse ? 1.1 : 1.0)
                     .offset(x: 40, y: -10)
@@ -104,7 +104,7 @@ struct PartlyCloudyOverlay: View {
                 // Drifting cloud
                 Image(systemName: "cloud.fill")
                     .font(.AppTheme.rounded(size: 50))
-                    .foregroundColor(.white.opacity(0.6))
+                    .foregroundColor(Color.AppTheme.pureWhite.opacity(0.6))
                     .offset(x: cloudOffset, y: 10)
             }
 
@@ -132,12 +132,12 @@ struct CloudOverlay: View {
             ZStack {
                 Image(systemName: "cloud.fill")
                     .font(.AppTheme.rounded(size: 60))
-                    .foregroundColor(.gray.opacity(0.3))
+                    .foregroundColor(Color.AppTheme.weatherCloudy.opacity(0.3))
                     .offset(x: cloud1X, y: 0)
 
                 Image(systemName: "cloud.fill")
                     .font(.AppTheme.rounded(size: 40))
-                    .foregroundColor(.gray.opacity(0.25))
+                    .foregroundColor(Color.AppTheme.weatherCloudy.opacity(0.25))
                     .offset(x: cloud2X, y: 20)
             }
 
@@ -213,13 +213,13 @@ struct RainOverlay: View {
                     )
                     ctx.fill(
                         RoundedRectangle(cornerRadius: 2).path(in: rect),
-                        with: .color(.blue.opacity(0.4))
+                        with: .color(Color.AppTheme.rainBlue.opacity(0.4))
                     )
                 }
             } symbols: {
                 Image(systemName: "cloud.rain.fill")
                     .font(.AppTheme.rounded(size: 50))
-                    .foregroundColor(.gray.opacity(0.4))
+                    .foregroundColor(Color.AppTheme.weatherCloudy.opacity(0.4))
                     .tag("cloud")
             }
             .onChange(of: now) { _, newDate in
@@ -270,7 +270,7 @@ struct StormOverlay: View {
     var body: some View {
         ZStack {
             // Lightning flash only (removed dark tint — it muddied the art)
-            Color.white.opacity(flashOpacity)
+            Color.AppTheme.pureWhite.opacity(flashOpacity)
 
             // Storm particles + cloud via Canvas
             TimelineView(.animation) { context in
@@ -292,13 +292,13 @@ struct StormOverlay: View {
                         )
                         ctx.fill(
                             RoundedRectangle(cornerRadius: 2).path(in: rect),
-                            with: .color(.blue.opacity(0.5))
+                            with: .color(Color.AppTheme.rainBlue.opacity(0.5))
                         )
                     }
                 } symbols: {
                     Image(systemName: "cloud.bolt.rain.fill")
                         .font(.AppTheme.rounded(size: 55))
-                        .foregroundColor(.gray.opacity(0.5))
+                        .foregroundColor(Color.AppTheme.weatherCloudy.opacity(0.5))
                         .tag("stormCloud")
                 }
                 .onChange(of: now) { _, newDate in
@@ -378,7 +378,7 @@ struct SnowOverlay: View {
 
     var body: some View {
         ZStack {
-            Color.cyan.opacity(0.05)
+            Color.AppTheme.weatherSnowy.opacity(0.05)
 
             TimelineView(.animation) { context in
                 let now = context.date
@@ -399,13 +399,13 @@ struct SnowOverlay: View {
                         )
                         ctx.fill(
                             Circle().path(in: rect),
-                            with: .color(.white.opacity(0.7))
+                            with: .color(Color.AppTheme.pureWhite.opacity(0.7))
                         )
                     }
                 } symbols: {
                     Image(systemName: "cloud.snow.fill")
                         .font(.AppTheme.rounded(size: 50))
-                        .foregroundColor(.gray.opacity(0.35))
+                        .foregroundColor(Color.AppTheme.weatherCloudy.opacity(0.35))
                         .tag("snowCloud")
                 }
                 .onChange(of: now) { _, newDate in
@@ -604,7 +604,7 @@ struct SeasonalOverlayView: View {
         // Positions seeded once via @State; only `particleOffset` drives motion.
         ForEach(springPetals) { petal in
             Ellipse()
-                .fill(Color.pink.opacity(0.35))
+                .fill(Color.AppTheme.springPetal.opacity(0.35))
                 .frame(width: petal.width, height: petal.height)
                 .offset(
                     x: petal.xOffset,

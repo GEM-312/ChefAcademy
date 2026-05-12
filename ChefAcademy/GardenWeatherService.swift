@@ -64,12 +64,12 @@ enum GardenWeather: String, CaseIterable {
     /// Icon color tint
     var iconColor: Color {
         switch self {
-        case .sunny:        return .yellow
-        case .partlyCloudy: return .orange
-        case .cloudy:       return .gray
-        case .rainy:        return .blue
-        case .stormy:       return .purple
-        case .snowy:        return .cyan
+        case .sunny:        return Color.AppTheme.sunYellow
+        case .partlyCloudy: return Color.AppTheme.weatherPartlyCloudy
+        case .cloudy:       return Color.AppTheme.weatherCloudy
+        case .rainy:        return Color.AppTheme.rainBlue
+        case .stormy:       return Color.AppTheme.weatherStormy
+        case .snowy:        return Color.AppTheme.weatherSnowy
         case .windy:        return Color.AppTheme.sage
         }
     }
@@ -180,27 +180,27 @@ enum GardenSeason: String, CaseIterable {
         switch self {
         case .spring:
             return [
-                Color(hex: "E8F5E9").opacity(0.25),  // Soft green
-                Color(hex: "FCE4EC").opacity(0.15),  // Cherry blossom pink
+                Color.AppTheme.springGradientTop.opacity(0.25),
+                Color.AppTheme.springGradientBlossom.opacity(0.15),
                 Color.clear
             ]
         case .summer:
             return [
-                Color(hex: "FFF8E1").opacity(0.2),   // Warm golden
-                Color(hex: "FFF3E0").opacity(0.1),   // Light amber
+                Color.AppTheme.summerGradientTop.opacity(0.2),
+                Color.AppTheme.summerGradientWarm.opacity(0.1),
                 Color.clear
             ]
         case .fall:
             return [
-                Color(hex: "FBE9E7").opacity(0.3),   // Warm orange tint
-                Color(hex: "EFEBE9").opacity(0.2),   // Light brown
-                Color(hex: "FFF8E1").opacity(0.1)    // Golden bottom
+                Color.AppTheme.fallGradientTop.opacity(0.3),
+                Color.AppTheme.fallGradientMid.opacity(0.2),
+                Color.AppTheme.summerGradientTop.opacity(0.1)
             ]
         case .winter:
             return [
-                Color(hex: "E3F2FD").opacity(0.3),   // Icy blue
-                Color(hex: "F3E5F5").opacity(0.15),  // Frosty lavender
-                Color(hex: "ECEFF1").opacity(0.2)    // Cold grey
+                Color.AppTheme.frostBlue.opacity(0.3),
+                Color.AppTheme.winterGradientMid.opacity(0.15),
+                Color.AppTheme.winterGradientBot.opacity(0.2)
             ]
         }
     }

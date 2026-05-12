@@ -44,6 +44,27 @@ extension Color {
         static let brightGreen = Color(hex: "4CAF50")             // high-energy "go" / success
         static let brightBlue = Color(hex: "2196F3")              // informational / secondary CTA
         static let sunflowerYellow = Color(hex: "FFD600")         // reward / celebration accent
+
+        // Weather icon tints — botanical-aligned, less saturated than Material.
+        // Sunny + rainy reuse sunYellow / rainBlue defined above.
+        static let weatherPartlyCloudy = Color(hex: "E08A3C")     // warm orange
+        static let weatherCloudy       = Color(hex: "8E9AAB")     // blue-grey
+        static let weatherStormy       = Color(hex: "7A6BA0")     // dusky purple
+        static let weatherSnowy        = Color(hex: "9CC5D8")     // soft icy blue
+
+        // Seasonal gradient stops — exact hexes preserved from prior inline use.
+        // Winter top reuses frostBlue (#E3F2FD) defined above.
+        static let springGradientTop      = Color(hex: "E8F5E9")  // soft green
+        static let springGradientBlossom  = Color(hex: "FCE4EC")  // cherry blossom pink
+        static let summerGradientTop      = Color(hex: "FFF8E1")  // warm golden — also fall bottom
+        static let summerGradientWarm     = Color(hex: "FFF3E0")  // light amber
+        static let fallGradientTop        = Color(hex: "FBE9E7")  // warm orange tint
+        static let fallGradientMid        = Color(hex: "EFEBE9")  // light brown
+        static let winterGradientMid      = Color(hex: "F3E5F5")  // frosty lavender
+        static let winterGradientBot      = Color(hex: "ECEFF1")  // cold grey
+
+        // Spring particle petal color.
+        static let springPetal            = Color(hex: "F48FB1")  // soft cherry blossom
     }
 }
 
