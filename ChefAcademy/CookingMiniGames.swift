@@ -604,6 +604,8 @@ struct CookTimerMiniGame: View {
     @State private var timer: Timer?
     @State private var isDone = false
     @State private var flameScale: CGFloat = 1.0
+    @State private var showWaitCue = false
+    @State private var waitCueTask: Task<Void, Never>?
 
     var body: some View {
         let total = CGFloat(totalSeconds)
@@ -675,10 +677,26 @@ struct CookTimerMiniGame: View {
             }
             .padding(.horizontal, AppSpacing.lg)
 
+            // Transient "wait for green zone" cue (shown on pre-zone tap).
+            if showWaitCue {
+                PipSpeechBubble(
+                    message: "Wait for the green zone!",
+                    pose: .thinking,
+                    size: .compact,
+                    speakOnAppear: false
+                )
+                .padding(.horizontal, AppSpacing.lg)
+                .transition(.opacity)
+            }
+
             // Done button
             if !isDone {
                 Button {
-                    finishCooking()
+                    if elapsed < greenStart {
+                        showWaitCueAndSpeak()
+                    } else {
+                        finishCooking()
+                    }
                 } label: {
                     Text("Done!")
                         .font(.AppTheme.headline)
@@ -698,7 +716,25 @@ struct CookTimerMiniGame: View {
             Spacer()
         }
         .onAppear { startTimer() }
-        .onDisappear { timer?.invalidate() }
+        .onDisappear {
+            timer?.invalidate()
+            waitCueTask?.cancel()
+        }
+    }
+
+    /// Pre-zone tap handler — speaks the cue, shows a transient bubble,
+    /// and gives a warning haptic. Does NOT finish the round so the kid
+    /// can keep waiting for the green zone.
+    private func showWaitCueAndSpeak() {
+        Haptic.notify(.warning)
+        PipVoice.shared.speak("Wait for the green zone!")
+        waitCueTask?.cancel()
+        withAnimation(AnimationConstants.fadeQuick) { showWaitCue = true }
+        waitCueTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(1.5))
+            guard !Task.isCancelled else { return }
+            withAnimation(AnimationConstants.fadeFast) { showWaitCue = false }
+        }
     }
 
     private var timerText: String {
