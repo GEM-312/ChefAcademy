@@ -4,6 +4,52 @@ Personal reference built from real code in Pip's Kitchen Garden. Newest lessons 
 
 ---
 
+## Session: May 11, 2026
+
+### SourceKit Per-File Diagnostics Are Noise (Trust the Build)
+**Where it came up:** Every Edit during the F-03 font sweep — SourceKit yelled "Cannot find type 'GameState' / 'AppSpacing' / 'Color.AppTheme'" on files that compile perfectly.
+**What it is:** SourceKit (the analyzer that powers Xcode autocomplete and the diagnostics surfaced after each Edit) only sees one file at a time when invoked outside a full project build. Cross-file types defined in other Swift files — `Color.AppTheme`, `AppSpacing`, `GameState`, `Recipe`, etc. — are not visible to it, so it claims they don't exist. None of these "errors" prevent the actual build from succeeding.
+**In our code:** After every font edit, SourceKit listed 10+ "errors." Running `xcodebuild -scheme ChefAcademy -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build` returned `** BUILD SUCCEEDED **` every time. The xcodebuild result is authoritative; the per-file diagnostics are not.
+**Why it matters:** If you stop and "fix" what SourceKit complains about in isolation, you'll waste hours chasing imaginary problems. The rule: run an actual build before believing any cross-file error. This applies to Xcode's own live diagnostics too — they sometimes regress after a clean, and you need a real build to clear them.
+
+### Tokens-First Beats Sweeping CTAs Now
+**Where it came up:** L-01 from the UX audit — "brighten the primary CTA color across the app."
+**What it is:** When a UX audit recommends a visual palette shift, you have two paths: (1) add the new color tokens to your design system and stop, or (2) sweep all existing call sites to use the new tokens immediately. Tokens-first is almost always right: a named constant costs nothing to add (one line), documents the intent (the name `brightGreen` says "I want a high-energy CTA"), and lets you A/B in Xcode preview before committing to a palette change that touches a dozen views.
+**In our code:** The audit said "update PrimaryButtonStyle to use brightGreen." A grep showed `.primaryButton()` was used exactly once in the entire codebase — inside its own preview. The actual production CTAs use `.texturedButton(tint: Color.AppTheme.sage)` and similar. Sweeping 6+ sage CTAs to brightGreen would have visibly shifted the app's botanical identity. Instead, we added `Color.AppTheme.brightGreen / brightBlue / sunflowerYellow` to the palette and stopped. Future buttons that need to pop can opt in; existing buttons keep their sage tint.
+**Why it matters:** Design system maturity = the tokens are richer than the call sites. You want a palette that can express new ideas before you commit to them. Adding a token is a 1-line, reversible change; sweeping call sites is a multi-file diff that's harder to undo. Always do the cheap, reversible thing first when an audit suggests a visual shift.
+
+### Audit Recommendations Are Hypotheses — Verify Before Acting
+**Where it came up:** L-01 (PrimaryButtonStyle), D-01 (GardenHubView padding), F-01 (Apple TTS free tier).
+**What it is:** Automated audit agents read the codebase fresh each run. They don't know your history, your prior design calls, or what's actually wired up to what. Three findings in today's audit were structurally miscalibrated: (a) L-01 recommended fixing `PrimaryButtonStyle` which was dead code (1 usage, in its own preview), (b) D-01 recommended padding a button inside `GardenHubView.swift` which has zero references in the rest of the codebase (orphaned dead file), (c) F-01 recommended adding Apple TTS as a free tier — a decision Marina had explicitly rejected on May 10 with strong reasoning. Acting on any of these without verifying would have wasted time, shipped dead code, or contradicted a deliberate product call.
+**In our code:** Before each fix we ran `grep -rn "GardenHubView" ChefAcademy/ --include="*.swift" | grep -v "GardenHubView.swift:"` (zero hits → orphaned) and `grep -rn "\.primaryButton()" ChefAcademy/` (one hit, in a preview → dead). The fixes worth doing (F-03 fonts, G-01 recipe lookup) survived this verification step.
+**Why it matters:** Treat every audit finding as a hypothesis, not an instruction. Grep before you fix. Read the call site before you commit. The audit prompts the question; the code answers it. This applies to code review feedback, Stack Overflow answers, and any external advice — the local context overrides the general recommendation.
+
+### Optional Chaining + Nil-Coalescing for Safe Lookups
+**Where it came up:** G-01 — `SiblingProfileView` was rendering `star.recipeID` (a slug like `"chicken-veggie-platter"`) as the visible recipe name.
+**What it is:** Swift's `?.` (optional chaining) lets you reach through nilable values without crashing — if any link is nil, the whole expression evaluates to nil. The `??` (nil-coalescing) operator then provides a fallback for that nil. Combined, they handle "look this up, but if it's missing, use this default" in one line.
+**In our code:** `Text(GardenRecipes.all.first { $0.id == star.recipeID }?.title ?? star.recipeID)` — `.first { ... }` returns `Recipe?`, `?.title` is `String?`, `??` falls back to the raw slug. If a recipe was renamed or removed, the slug still shows (better for debugging than a generic placeholder).
+**Why it matters:** The pattern `collection.first { predicate }?.field ?? fallback` shows up constantly when bridging stored IDs to live data. It's safer than force-unwrapping (`!` would crash on missing recipes) and cleaner than `if let` blocks for one-shot display.
+
+### Routine Push Failures: GitHub App Install Token Can Get Stale
+**Where it came up:** Both the weekly review routine (May 10) and the UX review routine (May 11) ran successfully but failed silently at `git push origin main` with HTTP 403.
+**What it is:** Anthropic's scheduled routines push commits via a git proxy that uses an *installation token* issued by the GitHub App you've installed (`github.com/settings/installations`). That token is separate from your personal access. It can become stale even when the GitHub App settings look fine — no yellow "Accept new permissions" banner, write permission still granted. The fix is to force GitHub to re-issue the install token, which propagates downstream.
+**In our code:** Toggled the Claude GitHub App's repository access: "All repositories" → "Only select repositories" (pick ChefAcademy) → Save → switch back to "All repositories" → Save. This re-issues the install token. Then re-ran the routine via `RemoteTrigger` — push succeeded on the first try (commit `99ad74a` "Weekly UX review — 2026-05-11" landed on origin).
+**Why it matters:** Any system that pushes git on your behalf (CI runners, scheduled jobs, automation bots) uses a delegated token. When automation pushes fail with 403 but your manual pushes work, the token is the suspect — not the code, not the GitHub App permissions screen. The "toggle access off/on" trick forces a fresh token without an uninstall/reinstall cycle.
+
+### Design Tokens: Reuse Before You Add
+**Where it came up:** L-02 — migrating ~24 hardcoded weather/season color literals to AppTheme tokens.
+**What it is:** Before adding a new design token, grep `AppTheme.swift` for existing tokens that match the hex value or semantic role. Today the audit proposed `winterGradientTop = #E3F2FD` — but `frostBlue = #E3F2FD` already existed for winter sparkles. Two near-duplicate tokens with different names ("which one is canonical?") is *worse* than one token reused across contexts. Same situation with `sunYellow` (existing) vs proposed `weatherSunny`, and `rainBlue` (existing) vs proposed `weatherRainy` — the audit didn't notice them.
+**In our code:** Skipped 3 of the audit's 13 proposed tokens by reusing `frostBlue`, `sunYellow`, `rainBlue`. Renamed the audit's proposed names to match the existing token vocabulary (`weatherPartlyCloudy` etc. for the genuinely new ones). Result: 10 new tokens, not 13. Cleaner palette, no overlap.
+**Why it matters:** Design-system entropy is real — every duplicate token raises the question "which is correct?" and the answer drifts over time. Treat tokens like database normalization: one source of truth per concept. Audit recommendations are a starting point, not a final answer. Always cross-check against what you already have.
+
+### Stable Storage Keys vs Display Labels (Don't Rename `rawValue`)
+**Where it came up:** F-04 — replacing "Antioxidants" / "Probiotics" / "Omega-3" with kid-friendly labels in `NutrientType`.
+**What it is:** Enum `rawValue`s often serve double duty as (a) stable storage keys for persistent state (database rows, UserDefaults dictionary keys, coin claim records keyed by `"seed_carrot_Antioxidants"`) AND (b) UI display labels. When you need to change the user-facing label, *don't* rename the rawValue — every existing user's saved progress would mismatch the new key, and they'd lose their coin claim records / look like they never tapped that nutrient before. Add a separate `var kidFriendlyName: String` property that returns the display text; keep `rawValue` immutable as the storage key.
+**In our code:** Added `var kidFriendlyName: String` to `NutrientType` in `GameState.swift`. Default branch returns `rawValue` (unchanged for 17 cases); explicit cases rename only the 5 truly adult terms. Call sites in `SeedInfoView` and `PantryInfoView` now use `.kidFriendlyName` for display. Coin claim IDs like `"seed_\(veggie)_\(nutrient.rawValue)"` continue to use rawValue and remain stable — no migration needed for kids already mid-progression.
+**Why it matters:** Whenever a string serves both as a stored identifier and a displayed label, separate the two concerns immediately. Storage keys must be immutable forever (or you write a migration); display labels can change freely. This is the same principle behind database primary keys never being human-readable text. The cost of conflating them is paid the first time you want to rename anything user-facing.
+
+---
+
 ## Session: March 24, 2026
 
 ### Dual-Context Data Problem (In-Memory vs Persistent)

@@ -233,7 +233,7 @@ struct PantryInfoView: View {
                     .frame(width: 36)
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(nutrient.rawValue)
+                    Text(nutrient.kidFriendlyName)
                         .font(.AppTheme.rounded(size: 16, weight: .semibold))
                         .foregroundColor(Color.AppTheme.darkBrown)
 

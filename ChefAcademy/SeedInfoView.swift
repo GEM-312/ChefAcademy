@@ -774,7 +774,7 @@ struct SeedInfoView: View {
                     .font(.AppTheme.rounded(size: 20, weight: .bold))
                     .foregroundColor(Color.AppTheme.darkBrown)
                 SpeakerButton(
-                    text: "\(veggie.displayName) has \(veggie.nutrients.map { $0.rawValue }.joined(separator: ", ")). Each one helps a different part of your body!",
+                    text: "\(veggie.displayName) has \(veggie.nutrients.map { $0.kidFriendlyName }.joined(separator: ", ")). Each one helps a different part of your body!",
                     size: 18
                 )
                 Spacer()
@@ -814,7 +814,7 @@ struct SeedInfoView: View {
                     .frame(width: 36)
 
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(nutrient.rawValue)
+                    Text(nutrient.kidFriendlyName)
                         .font(.AppTheme.rounded(size: 16, weight: .semibold))
                         .foregroundColor(Color.AppTheme.darkBrown)
 

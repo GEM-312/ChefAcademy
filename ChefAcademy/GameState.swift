@@ -1220,6 +1220,21 @@ enum NutrientType: String {
         case .manganese: return "Bones"
         }
     }
+
+    /// Kid-friendly display label. Use this for any user-facing text;
+    /// `rawValue` stays as the stable storage key (coin claim records,
+    /// dictionary keys) so renaming UI labels never invalidates saved data.
+    /// Only adult biochem terms are reworded — common vitamins keep their names.
+    var kidFriendlyName: String {
+        switch self {
+        case .antioxidants: return "Helper Shields"
+        case .probiotics:   return "Tummy Helpers"
+        case .omega3:       return "Brain Food"
+        case .healthyFats:  return "Good Fats"
+        case .hydration:    return "Water Power"
+        default:            return rawValue
+        }
+    }
 }
 
 // MARK: - Harvested Ingredient
