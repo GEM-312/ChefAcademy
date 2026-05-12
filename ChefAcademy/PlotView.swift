@@ -21,6 +21,9 @@ struct PlotView: View {
     let onTap: () -> Void
     let onHarvest: () -> Void
     let onCareComplete: () -> Void
+    /// Gender of the active player — drives which kid character renders
+    /// during the watering animation (girl from the left, boy from the right).
+    var playerGender: Gender = .girl
     var rewardLabel: String = "+2 XP"
 
     @State private var isAnimating = false
@@ -260,6 +263,22 @@ struct PlotView: View {
                 .font(.AppTheme.rounded(size: 10, weight: .bold))
                 .foregroundColor(Color.AppTheme.sage)
         }
+        .overlay(alignment: playerGender == .girl ? .leading : .trailing) {
+            // Kid character pours from the side — girl enters from the LEFT,
+            // boy from the RIGHT. Particles flow diagonally toward the plot
+            // center. Overlay is hit-test transparent so adjacent plot taps
+            // still pass through.
+            if isWatering {
+                WaterPourCharacterView(gender: playerGender, isActive: isWatering)
+                    .offset(x: playerGender == .girl ? -110 : 110)
+                    .allowsHitTesting(false)
+                    .transition(
+                        .move(edge: playerGender == .girl ? .leading : .trailing)
+                            .combined(with: .opacity)
+                    )
+            }
+        }
+        .animation(AnimationConstants.springQuick, value: isWatering)
         .gesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in

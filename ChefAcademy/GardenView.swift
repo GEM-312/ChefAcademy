@@ -924,6 +924,7 @@ struct GardenView: View {
                             onHelpWithCare?(index, action)
                         }
                     },
+                    playerGender: sessionManager.activeProfile?.gender ?? .girl,
                     rewardLabel: isVisiting ? "+5 🪙" : "+2 XP"
                 )
                 .frame(width: isIPad ? 160 : 100, height: isIPad ? 160 : 100)
