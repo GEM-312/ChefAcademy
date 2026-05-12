@@ -37,13 +37,33 @@ Defined in `AppTheme.swift`. Use these instead of inline values.
 | `.springMedium` | 0.4s | 0.7 | Cards, dialogs |
 | `.springSlow` | 0.5s | 0.7 | Large elements, reveals |
 | `.springBouncy` | 0.3s | 0.5 | Celebrations, pose changes |
+| `.springSnappy` | 0.2s | 0.5 | Snappy reactions (Pip throws, splashes) — added May 10 |
+| `.springTight` | 0.3s | 0.4 | Tight bounce (inflate, scoring pop) — added May 10 |
+| `.springFly` | 0.6s | 0.7 | Ingredient-fly animations (slower than springMedium) |
 
 ### Easing
 | Constant | Duration | Use For |
 |----------|----------|---------|
-| `.routeTransition` | 0.3s easeInOut | Tab switches, route changes |
+| `.routeTransition` | 0.3s easeInOut | Tab switches, route changes (alias of fadeMedium) |
 | `.fadeQuick` | 0.15s easeInOut | Button press feedback |
+| `.fadeFast` | 0.2s easeInOut | Snappy toggles, subtle reveals |
 | `.fadeMedium` | 0.3s easeInOut | Content appear/disappear |
+| `.fadeFlyOut` | 0.15s easeOut | Pop flying ingredient image after it reaches its target |
+| `.revealSlow` | 0.5s easeInOut | Large element reveals |
+| `.pipTransition` | 0.8s easeInOut | Pip pose / dialog transitions |
+| `.weatherTransition` | 1.0s easeInOut | WeatherOverlayView weather swap |
+
+### Float Loops (idle / breathing animations, run forever)
+| Constant | Duration | Use For |
+|----------|----------|---------|
+| `.floatLoopFast` | 1.0s | Snappy idle bounces |
+| `.floatLoop` | 1.5s | Default breathing animation |
+| `.floatLoopSlow` | 4.0s | Ambient cloud drift, slow float |
+
+### PIN-entry Shake
+| Constant | Response | Damping | Use For |
+|----------|----------|---------|---------|
+| `.pinShake` | 0.2s | 0.3 | Wrong-PIN shake (lower damping than springQuick for visibility) |
 
 ### Morph
 | Constant | Type | Use For |
@@ -55,7 +75,15 @@ Defined in `AppTheme.swift`. Use these instead of inline values.
 |----------|-------|---------|
 | `.walkingFPS` | 8.0 | All character walking (~0.125s/frame) |
 | `.wavingFPS` | 6.0 | Pip waving idle loop (~0.167s/frame) |
+| `.gameFPS` | 30.0 | One-shot game celebrations (~0.033s/frame) |
 | `.walkSpeed` | 54 pts/sec | Character movement speed |
+
+### Kitchen Cooking-Flow Timings
+| Constant | Value | Use For |
+|----------|-------|---------|
+| `.itemFlyDelay` | 0.55s | Wait before fading the flying ingredient image |
+| `.itemFlyCleanup` | 0.7s | Total step length before advancing |
+| `.stovePreRoll` | 1.2s | Stove ignition delay before mini-game |
 
 ### Button Scales
 | Constant | Value | Use For |
@@ -143,11 +171,28 @@ Shared `Haptic` enum in `AppTheme.swift`. Always use these wrappers.
 
 | Style | Background | Use For |
 |-------|-----------|---------|
-| `PrimaryButtonStyle` | Solid goldenWheat | Standard CTA |
-| `SecondaryButtonStyle` | Parchment + border | Alternative actions |
-| `TexturedButtonStyle` | Wooden botanical image | Key CTAs (visit garden, start cooking) |
-| `BouncyButtonStyle` | Custom (per-use) | Interactive elements |
+| `TexturedButtonStyle` | Wooden botanical image + tint | **Default for primary CTAs** ("Let's Cook!", "Visit Garden", "Start Trial"). Pass `tint:` for per-call color. |
+| `BouncyButtonStyle` | Custom (per-use) | Game CTAs, interactive cards, mini-game buttons |
+| `SecondaryButtonStyle` | Parchment + border | Alternative actions (less common) |
+| `PrimaryButtonStyle` | Solid goldenWheat | DEAD CODE — only used in its own preview. Don't add new usages. Prefer Textured. |
+| `PlotButtonStyle` | Custom spring bounce | DEPRECATED — exact duplicate of BouncyButtonStyle. Planned deletion. |
 
 ---
 
-*Last Updated: April 13, 2026*
+## 7. asyncAfter → Task pattern (zero inline asyncAfter)
+
+Per the **Architecture Rules → Concurrency** section in `ChefAcademy/CLAUDE.md`, ALL delayed UI mutations flow through:
+
+```swift
+Task { @MainActor in
+    try? await Task.sleep(for: .seconds(X))
+    guard !Task.isCancelled else { return }
+    // mutate @State here
+}
+```
+
+Assign to `@State var task: Task<Void, Never>?` and cancel in `.onDisappear` when cancellation matters. `DispatchQueue.main.asyncAfter` is banned in new code — would regress on the May 10 evening sweep (Pass F1–F4) that removed all 96 prior instances.
+
+---
+
+*Last Updated: May 12, 2026 — synced with May 10 evening token additions (springSnappy/Tight, floatLoop family, pinShake, weatherTransition).*

@@ -1,64 +1,58 @@
 # ASSETS.md — Full Asset Inventory & Needs
 
-## Current Inventory: ~285 imagesets (ALL code references covered)
+## Current Inventory: ~722 imagesets total (May 12, 2026)
+
+`find ChefAcademy/Assets.xcassets -name "*.imageset" -type d | wc -l` → 722.
 
 | Category | Count | Status |
 |----------|-------|--------|
-| AvatarCards (boy/girl frames) | 43 | Complete |
-| Backgrounds (garden, farm, kitchen) | 7 | Complete |
-| FarmItems/Pantry (farm_eggs, farm_salt, etc.) | 20 | Complete (19 used + 2 bonus: lamb, chili) |
-| Vegetables (27 veggie images) | 27 | Complete |
+| **AvatarCards** (all character frame sets) | **103** | Complete for shipped flows |
+| ├─ `boy_card_frame_01..28` | 28 | Child avatar animation |
+| ├─ `girl_card_frame_01..15` | 15 | Child avatar animation |
+| ├─ `mom_avatar_frame_01..15` | 15 | Parent avatar (May 11) |
+| ├─ `dad_avatar_frame_01..15` | 15 | Parent avatar (May 11) |
+| ├─ `boy_pours_water_frame_01..15` | 15 | Plot watering animation (May 11) |
+| └─ `girl_pours_water_frame_01..15` | 15 | Plot watering animation (May 11) |
+| `boy_card_clean_*` / `girl_card_clean_*` | ~30 | "Profile pose" static frames (catalog root, separate folders) |
+| Backgrounds (garden, farm, kitchen) | ~7 | Complete |
+| FarmItems / Pantry (`farm_eggs`, `farm_salt`, etc.) | ~20 | Complete (19 used + 2 bonus: lamb, chili) |
+| Vegetables (27 veggie images planned) | 8 drawn / 19 pending | See `MEMORY.md` Plants section for the 19-asset list still in Procreate queue |
 | Recipes (17 recipe illustrations) | 17 | Complete |
-| Pip (poses + walking + waving frames) | 27 | Complete |
-| KitchenSink (125 frames + 15 anim) | 140 | Complete |
-| Cooking (frying_pan, empty_plate, egg assets) | 4 | Complete |
+| Pip poses + walking + waving + body + reaction frames | ~60+ | Complete |
+| KitchenSink (cooking-flow frames) | ~140 | Complete |
+| Cooking (`frying_pan`, `empty_plate`, `knife`, `cutting_board`, egg assets) | 6+ | `knife` and `cutting_board` added Mar 24 |
+| AvatarCards colored outfit/hat frames | 20 | Outfits (10 colors × 2 genders) for color-reveal flow |
 
 ---
 
-## NEEDED: Plant Care Assets
+## Plant Care Assets — Status Update May 12
 
-These are needed for the watering, weeding, composting, and bug rescue features (Tasks #5-12).
+Original plan called for drawn `watering_can.png` / `weed_01.png` / `ladybug.png` / `aphid.png` / compost imagesets. Current ship state is **emoji-driven UI** at small plot-tile sizes (100×110pt — too small for botanical illustrations) **plus** a large kid-character pour animation that escapes the tile via overlay. This pattern is intentional, not a deferred plan.
 
-### Watering (Task #5)
-| Asset Name | Description | Style | Priority |
-|-----------|-------------|-------|----------|
-| `watering_can.png` | Cute watering can, side view | Botanical watercolor | HIGH |
-| `water_droplet_01.png` | Small water drop for particle effect | Simple, transparent | MEDIUM |
-| `water_droplet_02.png` | Medium water drop variant | Simple, transparent | MEDIUM |
-| `water_splash.png` | Splash effect when water hits soil | Watercolor splash | MEDIUM |
+### Watering — DONE differently
+- ❌ Standalone `watering_can.png` drawn asset — not shipped
+- ✅ `🚿` emoji visible on plot during watering hold (`PlotView.swift:232`)
+- ✅ `WaterPourCharacterView` (May 11) — 15-frame kid character (boy or girl, gender-driven) slides in from the left/right of the plot with SwiftUI Canvas + TimelineView water particles. Spout anchor measured from frame 08; particle physics gravity + horizontal velocity toward plot.
+- ✅ `boy_pours_water_frame_01..15` / `girl_pours_water_frame_01..15` imagesets (May 11)
 
-### Weeding (Task #7)
-| Asset Name | Description | Style | Priority |
-|-----------|-------------|-------|----------|
-| `weed_01.png` | Small dandelion-style weed | Botanical watercolor | HIGH |
-| `weed_02.png` | Tall grass weed variant | Botanical watercolor | HIGH |
-| `weed_03.png` | Clover-style weed variant | Botanical watercolor | MEDIUM |
+### Weeding — emoji UI, illustrated assets deferred
+- Plot weeds render as `🌿` at 3 sizes (`PlotView.swift:294`) — swipe up to remove with animated offset
+- Drawn `weed_01/02/03.png` deferred unless plot-tile size grows or weeding gets its own dedicated screen
 
-### Bug Rescue (Task #9)
-| Asset Name | Description | Style | Priority |
-|-----------|-------------|-------|----------|
-| `ladybug.png` | Cute ladybug, top-down view | Botanical watercolor | HIGH |
-| `aphid.png` | Small green/black aphid (the pest) | Botanical watercolor | HIGH |
+### Bug Rescue — emoji UI
+- Plot bugs render as `🐛` / `🐞` — tap to rescue with ladybug-from-edge animation
+- `ladybug.png` / `aphid.png` deferred (same rationale as weeding)
 
-### Composting (Task #8)
-| Asset Name | Description | Style | Priority |
-|-----------|-------------|-------|----------|
-| `compost_bin.png` | Garden compost bin, front view | Botanical watercolor | MEDIUM |
-| `food_scraps.png` | Pile of veggie scraps/peels | Botanical watercolor | MEDIUM |
-| `compost_ready.png` | Rich dark compost/soil | Botanical watercolor | LOW |
+### Composting — feature not built
+- No composting flow exists in the codebase. Drop from queue unless reintroduced.
 
-### Sunshade (Task #11)
-| Asset Name | Description | Style | Priority |
-|-----------|-------------|-------|----------|
-| `garden_parasol.png` | Small garden umbrella/shade | Botanical watercolor | LOW |
+### Sunshade — feature not built
+- No sunshade mechanic shipped. Weather affects growth via `GardenPlot.weatherMultiplier`; per-veggie weather preferences via `weatherGroup`. No protective object UI.
 
-### Kid Avatar Caring (Task #12)
-| Asset Name | Description | Style | Priority |
-|-----------|-------------|-------|----------|
-| `boy_watering_01-05.png` | Boy avatar holding watering can (5 frames) | Match avatar style | LOW |
-| `girl_watering_01-05.png` | Girl avatar holding watering can (5 frames) | Match avatar style | LOW |
-| `boy_weeding_01-03.png` | Boy avatar pulling weeds (3 frames) | Match avatar style | LOW |
-| `girl_weeding_01-03.png` | Girl avatar pulling weeds (3 frames) | Match avatar style | LOW |
+### Kid Avatar Caring — DONE for watering (different spec from original plan)
+- Original asked: 5 frames of `boy_watering_NN.png` + `girl_watering_NN.png`
+- Shipped: 15 frames of `boy_pours_water_frame_01..15` + `girl_pours_water_frame_01..15` (different naming convention, 3× the frame count)
+- Weeding / debugging avatar frames not drawn (emoji UI handles those)
 
 ---
 
@@ -106,53 +100,18 @@ These are needed for the watering, weeding, composting, and bug rescue features 
 
 ---
 
-## NEEDED: Pip Voice Assets (ElevenLabs Pre-Recording)
+## Pip Voice — Architecture Update (May 12)
 
-These are audio files, not images. Generate on ElevenLabs with a cute character voice.
+**Current ship state:** voice is **API-on-demand**, not pre-recorded clips.
 
-### Cooking Phrases (~20 clips)
-| Phrase | When Used |
-|--------|-----------|
-| "Let's get cooking!" | CookingSession start |
-| "Chop chop!" | ChopMiniGame |
-| "Into the pan!" | AddToPanMiniGame |
-| "Stir it up!" | StirMiniGame |
-| "A pinch of seasoning!" | SeasonMiniGame |
-| "Crack that egg!" | CrackEggMiniGame |
-| "Hold it steady..." | HeatPanMiniGame |
-| "Smells amazing!" | CookTimerMiniGame |
-| "Beautiful! Plate it up!" | AssembleMiniGame |
-| "Perfect chef!" | 3 stars |
-| "Great job!" | 2 stars |
-| "Good try!" | 1 star |
-| "Nice work!" | Between steps |
-| "Keep going!" | Between steps |
-| "You're a natural!" | Between steps |
-| "Almost there!" | Between steps |
-| "Yummy!" | Between steps |
+- `ElevenLabsVoiceService.swift` calls a Cloudflare Worker proxy (App Attest-secured) for live TTS synthesis with the cached Pip voice ID
+- `PipVoice.swift` is the singleton router: free tier = silent (kid reads on screen); paid tier = ElevenLabs synthesis with audio cache for repeated phrases (`audioCache` dict keyed by text)
+- `PipSpeechBubble` and `PipHeaderStack` auto-speak on appear and on message change — no manual `.speak()` wiring needed at most call sites
+- Apple TTS was rejected May 10 (voices sounded awful) — don't reintroduce
 
-### Garden Phrases (~15 clips)
-| Phrase | When Used |
-|--------|-----------|
-| "Water time!" | needsWater state |
-| "Pull those weeds!" | needsWeeding state |
-| "Ladybugs to the rescue!" | hasBugs state |
-| "Look, it's growing!" | 50% growth |
-| "Ready to harvest!" | ready state |
-| "Let's plant a seed!" | Empty plot tap |
-| "Your garden looks amazing!" | Random gardening tip |
-| "Sunshine helps plants grow!" | Sunny weather |
-| "Rain is watering your garden!" | Rain event |
+**Why no pre-recorded clip list anymore:** the texts speech is being produced for are now generated dynamically (recipe steps, garden weather tips, Pip's AI chat replies). A static clip list would only cover a fraction of what's spoken. The on-demand path + cache covers the variability without a manual recording pipeline.
 
-### General Phrases (~10 clips)
-| Phrase | When Used |
-|--------|-----------|
-| "Hello there, little chef!" | App launch / profile select |
-| "Welcome back!" | Returning player |
-| "What should we do today?" | HomeView |
-| "Time to cook!" | Kitchen tab |
-| "Let's check your garden!" | Garden tab |
-| "Tap to learn!" | Knowledge cards |
+If the cost model later forces a hybrid approach (pre-recorded for the top 50 most-said phrases, live for the rest), see `project_pip_ai_cost_optimizations.md` in memory for the planning notes.
 
 ---
 
@@ -160,17 +119,29 @@ These are audio files, not images. Generate on ElevenLabs with a cute character 
 
 ### For Procreate (Images)
 - Export as **PNG with transparency**
-- Canvas size: **1024x1024** (scales down well for all devices)
+- Canvas size: **1024×1024** (scales down well for all devices)
 - Style: botanical watercolor, warm tones, hand-drawn feel
 - No harsh outlines — soft, organic edges
 - Match the warm cream/sepia/sage palette
+- For airdropping app images to Procreate: use the `/export-procreate` skill (extracts all PNGs from `Assets.xcassets/` into a flat folder)
 
-### For ElevenLabs (Voice)
-- Character: young, enthusiastic, slightly high-pitched
-- Tone: encouraging, warm, excited about food
-- Length: 1-3 seconds per clip (short and punchy)
-- Format: .m4a or .mp3 (iOS supports both)
-- Free tier: ~10,000 characters/month (~100 short phrases)
+### For Multi-Frame Sprite Animations (NEW — May 11)
+**Headless pipeline replaces the Photoshop trip.** From a video file:
+
+```bash
+bash extract-and-trim.sh <video.mp4> [num_frames]
+```
+
+Chains `ffmpeg` (extract) → `rembg` `isnet-anime` model (background removal) → Pillow `getbbox()` with alpha threshold (tight crop). Output ready for `Assets.xcassets` import. Tested against manual Photoshop pass on MomAvatar: bbox within 2 pixels at near-identical quality. ~60s per 15-frame video vs the prior 15-min manual pass.
+
+Use the legacy `extract-frames.sh` only when rembg fumbles (hair wisps, transparent fabric) — it leaves `originals/` populated for a manual Photoshop touch-up.
+
+### For ElevenLabs (Voice) — generation pipeline
+- Voice ID + API key live in the Cloudflare Worker as secrets (`pipVoiceID`, `xi-api-key`)
+- Clips synthesized on-demand at runtime via `ElevenLabsVoiceService.fetchSpeech(text:)`
+- Per-phrase audio cached in memory via `audioCache: [String: Data]`
+- Character voice: young, enthusiastic, slightly high-pitched; tone: encouraging, warm
+- No file format on disk — audio data flows directly into `AVAudioPlayer`
 
 ---
 
@@ -180,4 +151,4 @@ These are audio files, not images. Generate on ElevenLabs with a cute character 
 
 ---
 
-*Last Updated: March 15, 2026*
+*Last Updated: May 12, 2026 — counts re-measured from disk (722 total imagesets, 103 AvatarCards). Plant care section now reflects shipped emoji-UI reality + WaterPourCharacterView; Pip Voice section reflects API-on-demand architecture.*

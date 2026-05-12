@@ -215,10 +215,10 @@ loadFromStore() safety: if seeds empty → gives starter seeds automatically
 ## Visual Style
 
 **Aesthetic:** Vintage botanical watercolor ("paper style")
-**Core palette** (defined as `Color.AppTheme.*` in AppTheme.swift — never inline hex):
-- `cream` #FDF6E3 (backgrounds), `warmCream` #FAF0DC, `parchment` #F5E6C8
-- `sepia` #5D4E37 (text), `darkBrown` #3D2914 (headings), `lightSepia`
-- `sage` #9CAF88 (primary CTAs), `goldenWheat` #DAA520, `terracotta` #C4A484, `softOlive`, `warmKhaki` #C6BA8B
+**Core palette** (defined as `Color.AppTheme.*` in AppTheme.swift — backed by `Assets.xcassets/AppColors/` for Dark Mode support — never inline hex):
+- `cream` #F5F0E1 (backgrounds), `warmCream` #FAF6EB, `parchment` #EDE6D3
+- `sepia` #8B7355 (body text), `darkBrown` #5D4E37 (headlines), `lightSepia` #A89880
+- `sage` #6B7B5E (primary CTAs / nature), `goldenWheat` #C9A227 (rewards / coins), `terracotta` #B87333 (warnings / heat), `softOlive` #8A9A7B (secondary accents), `warmKhaki` #C6BA8B
 - **High-energy accents** (added May 11): `brightGreen`, `brightBlue`, `sunflowerYellow` — saturated CTA pop for age 6+ visibility. Use sparingly; sage/goldenWheat/terracotta remain the botanical default.
 - Weather: `weatherSunny/PartlyCloudy/Cloudy/Stormy/Snowy/Rainy`; seasons: `springGradientTop/Blossom/summerGradientTop/Warm/fallGradientTop/Mid/winterGradientMid/Bot`; particles: `springPetal`, `frostBlue`, `autumnBrown`, `rainBlue`, `sunYellow`.
 

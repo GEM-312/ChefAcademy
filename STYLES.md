@@ -30,6 +30,48 @@ Every view MUST use these — no raw `.red`, `.blue`, or hardcoded hex values.
 | Terracotta | `#B87333` | `Color.AppTheme.terracotta` | Warnings, heat, hard level badge |
 | Warm Khaki | `#C6BA8B` | `Color.AppTheme.warmKhaki` | Warm accent, avatar style elements |
 
+### High-Energy CTA Accents (added May 11)
+For selective use on age-6+ visibility moments. Use sparingly — the sage / goldenWheat / terracotta tints remain the botanical default.
+
+| Name | Hex | SwiftUI | Use For |
+|------|-----|---------|---------|
+| Bright Green | `#4CAF50` | `Color.AppTheme.brightGreen` | High-energy "go" / success CTAs |
+| Bright Blue | `#2196F3` | `Color.AppTheme.brightBlue` | Informational / secondary CTA |
+| Sunflower Yellow | `#FFD600` | `Color.AppTheme.sunflowerYellow` | Reward / celebration accents |
+
+### Specialty Surface Colors
+| Name | Hex | SwiftUI | Use For |
+|------|-----|---------|---------|
+| Pure White | `#F7FAFC` | `Color.AppTheme.pureWhite` | Chef hat white, snow particles, lightning flash |
+| Overlay | `Color.black @ 0.4` | `Color.AppTheme.overlay` | Modal dim behind dialogs |
+
+### Weather Icon Tints (May 11 — botanical-aligned, less saturated than Material)
+| Name | Hex | SwiftUI | Use For |
+|------|-----|---------|---------|
+| Sun Yellow | `#FFD54F` | `Color.AppTheme.sunYellow` | Sunny icon + sunshine overlay |
+| Weather Partly Cloudy | `#E08A3C` | `Color.AppTheme.weatherPartlyCloudy` | Partly cloudy icon, sun glow tint |
+| Weather Cloudy | `#8E9AAB` | `Color.AppTheme.weatherCloudy` | Cloudy icon + cloud overlays |
+| Rain Blue | `#4FC3F7` | `Color.AppTheme.rainBlue` | Rainy icon + rain/storm drops |
+| Weather Stormy | `#7A6BA0` | `Color.AppTheme.weatherStormy` | Stormy icon |
+| Weather Snowy | `#9CC5D8` | `Color.AppTheme.weatherSnowy` | Snowy icon + snow background tint |
+
+### Seasonal Gradient Stops (May 11)
+Each season's `gradientColors` array assembles a top→bottom subtle wash. Winter top reuses `frostBlue`. Fall bottom reuses `summerGradientTop` (same hex).
+
+| Name | Hex | Used For |
+|------|-----|----------|
+| `springGradientTop` | `#E8F5E9` | Spring top — soft green |
+| `springGradientBlossom` | `#FCE4EC` | Spring mid — cherry blossom |
+| `summerGradientTop` | `#FFF8E1` | Summer top + fall bottom — warm gold |
+| `summerGradientWarm` | `#FFF3E0` | Summer mid — light amber |
+| `fallGradientTop` | `#FBE9E7` | Fall top — warm orange tint |
+| `fallGradientMid` | `#EFEBE9` | Fall mid — light brown |
+| `frostBlue` | `#E3F2FD` | Winter top + sparkle particles |
+| `winterGradientMid` | `#F3E5F5` | Winter mid — frosty lavender |
+| `winterGradientBot` | `#ECEFF1` | Winter bottom — cold grey |
+| `autumnBrown` | `#8B4513` | Fall leaf particles |
+| `springPetal` | `#F48FB1` | Spring petal particles |
+
 ### Functional
 | Name | SwiftUI | Use For |
 |------|---------|---------|
@@ -52,7 +94,7 @@ These system colors break the botanical watercolor aesthetic. **NEVER** use them
 | `.purple` | `Color.AppTheme.sepia` or `.darkBrown` |
 | `.yellow` | `Color.AppTheme.goldenWheat` |
 | `.gray` | `Color.AppTheme.lightSepia` |
-| `.pink` | `Color.AppTheme.terracotta.opacity(0.6)` |
+| `.pink` | `Color.AppTheme.springPetal` (particles) or `.terracotta.opacity(0.6)` (other) |
 | `.cyan` | `Color.AppTheme.sage` |
 | `.white` | `Color.AppTheme.cream` or `.warmCream` |
 | `.black` | `Color.AppTheme.darkBrown` |
@@ -66,16 +108,14 @@ These system colors break the botanical watercolor aesthetic. **NEVER** use them
 
 ## Current Violations
 
-**All clear!** Last audit: March 23, 2026.
+**Live source of truth:** see the latest `WEEKLY_REVIEW_<date>.md` at repo root for the current Sun/Tue auto-audit. Don't trust a hand-maintained "all clear" claim here — it goes stale fast.
 
-Remaining raw system colors are all in exempt categories:
-- WeatherOverlayView — weather visual effects (rain=blue, snow=white, sun=yellow)
-- SceneEditor — dev-only debug tool
-- SeedInfoView ColorChoice — educational (PencilKit color-to-nutrient mapping)
-- BodyBuddyView / CookingCompletionView — organ-specific educational colors
-- GardenWeatherService badge — weather indicator colors
-- `.shadow(color: .black.opacity(...))` — shadows require real black
-- DEBUG edit-mode pencil buttons (`.red` indicator)
+Exempt categories (raw colors intentionally permitted):
+- **SceneEditor** — dev-only debug tool, not user-facing
+- **SeedInfoView `ColorChoice`** — educational (PencilKit color → pigment-science mapping; in-file teaching comment defends this)
+- **BodyBuddyView / CookingCompletionView organ icons** — organ-specific educational colors (heart = red, brain = purple)
+- **Shadows** must use `Color.AppTheme.sepia.opacity(N)`, never `.black.opacity(N)` (project convention)
+- **Weather overlays** — migrated May 11 to use weather tokens (`weatherSunny`, `rainBlue`, etc.). No more raw `.yellow / .blue / .gray`.
 
 ---
 
@@ -133,11 +173,12 @@ Exception: One-off sizes in components like SeedBadge, PlotView where the size i
 ### Buttons
 | Style | SwiftUI | Use For |
 |-------|---------|---------|
-| Primary | `.buttonStyle(PrimaryButtonStyle())` | Main CTA (golden wheat bg, cream text) |
-| Secondary | `.buttonStyle(SecondaryButtonStyle())` | Alternative action (parchment bg, bordered) |
-| Bouncy | `.buttonStyle(BouncyButtonStyle())` | Interactive elements (scale on press) |
-| Plot | `.buttonStyle(PlotButtonStyle())` | Garden plot buttons (spring bounce) |
-| Plain | `.buttonStyle(.plain)` | Custom-styled buttons (cards, chips) |
+| Textured (PRIMARY) | `.texturedButton(tint: Color.AppTheme.sage)` | Main CTAs — wood-grain capsule, signature look |
+| Primary | `.primaryButton()` | Legacy (dead code — used only in own preview); prefer Textured |
+| Secondary | `.secondaryButton()` | Alternative action (parchment bg, bordered) |
+| Bouncy | `.buttonStyle(BouncyButtonStyle())` | Game CTAs, interactive elements (0.9 scale on press) |
+| Plot | `.buttonStyle(PlotButtonStyle())` | DEPRECATED — exact duplicate of BouncyButtonStyle; planned deletion. Use BouncyButtonStyle. |
+| Plain | `.buttonStyle(.plain)` | NEVER on a primary CTA; only on full-card buttons where the label IS the visual |
 
 ### Cards
 - Use `.cardStyle()` modifier for standard cards
@@ -170,12 +211,17 @@ Haptics: Use shared `Haptic` enum (AppTheme.swift), never raw UIKit generators.
 
 ## Image & Asset Rules
 
-- All veggie images: botanical watercolor style, transparent PNG background
+- All veggie images: botanical watercolor style, transparent PNG background. 8 of 27 drawn so far; 19 still pending (see `MEMORY.md` Plants section).
 - Opacity for backgrounds: `0.8` (farm/garden bg images)
 - Seed bag images: no saturation/color modification on unowned seeds
-- Avatar frames: boy_card_frame_01-28, girl_card_frame_01-15
-- Pip character: always use `PipWavingAnimatedView(size:)` component
+- Avatar frame sets in `Assets.xcassets/AvatarCards/`:
+  - `boy_card_frame_01..28` / `girl_card_frame_01..15` — child avatar animation
+  - `mom_avatar_frame_01..15` / `dad_avatar_frame_01..15` — parent avatar (May 11)
+  - `boy_pours_water_frame_01..15` / `girl_pours_water_frame_01..15` — watering animation (May 11)
+  - Plus separate `boy_card_clean_*` / `girl_card_clean_*` "profile pose" sets at the catalog root
+- Pip character size: always via `PipSize` enum (`.compact 40 / .medium 80 / .large 120 / .hero 160 / .custom(N)`). Use `PipWavingAnimatedView(size:)` or `PipSpeechBubble` / `PipHeaderStack` (both auto-speak via `PipVoice`).
+- Pipeline for new sprite assets: run `bash extract-and-trim.sh <video> [num_frames]` (auto rembg + alpha-thresholded crop). Replaces the manual Photoshop trip — see commit `7b0f8ee`.
 
 ---
 
-*Last Updated: April 13, 2026*
+*Last Updated: May 12, 2026 — palette includes May 11 high-energy accents + weather + season tokens. Authoritative violation tracking lives in `WEEKLY_REVIEW_<date>.md`.*
