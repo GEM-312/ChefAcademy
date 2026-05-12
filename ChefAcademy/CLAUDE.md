@@ -291,7 +291,7 @@ loadFromStore() safety: if seeds empty → gives starter seeds automatically
 | **Mini-games** | `CookingMiniGames.swift`, `ChopMiniGame.swift` | 9+ cooking mini-game views |
 | **Recipes** | `RecipeCardExample.swift` | `PantryItem` enum, `Recipe` struct, `GardenRecipes.all` |
 | **Recipe Detail** | `RecipeDetailView.swift` | Full-screen cookbook page with sticky "Let's Cook!" footer |
-| **Shop** | `FarmShopView.swift`, `FarmTabView.swift` | Seed bags + pantry items + walk transition |
+| **Shop** | `FarmShopView.swift` (also defines `FarmTabView` struct) | Seed bags + pantry items + walk transition |
 | **Body Buddy** | `BodyBuddyView.swift` | "Your Body" organ rings — cooked recipes feed organ health |
 | **Play / Mini-games** | `PlayLearnView.swift`, `HealthyChoiceGameView.swift`, `InsulinTetrisView.swift`, `GlucoseJourneyView.swift`, `LocalVersusView.swift`, `NearbyVersusView.swift`, `SplitScreenVersusView.swift`, `MultiplayerHealthyPicksView.swift` | Game hub + Sugar Sorter + multiplayer modes |
 | **Avatar** | `AvatarModel.swift` | `Gender`, `Outfit`, `HeadCovering` enums |
