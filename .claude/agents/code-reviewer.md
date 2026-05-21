@@ -1,7 +1,7 @@
 ---
 name: code-reviewer
 description: "Use this agent when a coding session is wrapping up or a significant chunk of code has been written or modified. It should be triggered proactively after every logical coding session to review the changes made. Examples:\n\n- User: \"I just finished implementing the new FarmTabView\"\n  Assistant: \"Let me launch the code-reviewer agent to review the changes you made to FarmTabView.\"\n  <uses Agent tool to launch code-reviewer>\n\n- User: \"OK I think that feature is done, what's next?\"\n  Assistant: \"Before moving on, let me run the code-reviewer agent to review the code we just wrote.\"\n  <uses Agent tool to launch code-reviewer>\n\n- After the assistant finishes writing a new view or modifying multiple files:\n  Assistant: \"Now that the implementation is complete, let me use the code-reviewer agent to review the code we just wrote for quality and consistency.\"\n  <uses Agent tool to launch code-reviewer>\n\n- User: \"Can you add a new mini-game for the cooking session?\"\n  Assistant: \"Here's the new mini-game implementation...\" [writes code]\n  Assistant: \"Let me now launch the code-reviewer agent to review this new code.\"\n  <uses Agent tool to launch code-reviewer>"
-model: opus
+model: claude-opus-4-7
 color: blue
 memory: project
 ---
