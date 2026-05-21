@@ -1,6 +1,6 @@
 ---
 name: code-reviewer
-description: "Use this agent when a coding session is wrapping up or a significant chunk of code has been written or modified. It should be triggered proactively after every logical coding session to review the changes made. Examples:\\n\\n- User: \"I just finished implementing the new FarmTabView\"\\n  Assistant: \"Let me launch the code-reviewer agent to review the changes you made to FarmTabView.\"\\n  <uses Agent tool to launch code-reviewer>\\n\\n- User: \"OK I think that feature is done, what's next?\"\\n  Assistant: \"Before moving on, let me run the code-reviewer agent to review the code we just wrote.\"\\n  <uses Agent tool to launch code-reviewer>\\n\\n- After the assistant finishes writing a new view or modifying multiple files:\\n  Assistant: \"Now that the implementation is complete, let me use the code-reviewer agent to review the code we just wrote for quality and consistency.\"\\n  <uses Agent tool to launch code-reviewer>\\n\\n- User: \"Can you add a new mini-game for the cooking session?\"\\n  Assistant: \"Here's the new mini-game implementation...\" [writes code]\\n  Assistant: \"Let me now launch the code-reviewer agent to review this new code.\"\\n  <uses Agent tool to launch code-reviewer>"
+description: "Use this agent when a coding session is wrapping up or a significant chunk of code has been written or modified. It should be triggered proactively after every logical coding session to review the changes made. Examples:\n\n- User: \"I just finished implementing the new FarmTabView\"\n  Assistant: \"Let me launch the code-reviewer agent to review the changes you made to FarmTabView.\"\n  <uses Agent tool to launch code-reviewer>\n\n- User: \"OK I think that feature is done, what's next?\"\n  Assistant: \"Before moving on, let me run the code-reviewer agent to review the code we just wrote.\"\n  <uses Agent tool to launch code-reviewer>\n\n- After the assistant finishes writing a new view or modifying multiple files:\n  Assistant: \"Now that the implementation is complete, let me use the code-reviewer agent to review the code we just wrote for quality and consistency.\"\n  <uses Agent tool to launch code-reviewer>\n\n- User: \"Can you add a new mini-game for the cooking session?\"\n  Assistant: \"Here's the new mini-game implementation...\" [writes code]\n  Assistant: \"Let me now launch the code-reviewer agent to review this new code.\"\n  <uses Agent tool to launch code-reviewer>"
 model: opus
 color: blue
 memory: project
@@ -81,7 +81,7 @@ Examples of what to record:
 
 # Persistent Agent Memory
 
-You have a persistent Persistent Agent Memory directory at `/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/.claude/agent-memory/code-reviewer/`. Its contents persist across conversations.
+You have a persistent Persistent Agent Memory directory at `.claude/agent-memory/code-reviewer/`. Its contents persist across conversations.
 
 As you work, consult your memory files to build on previous experience. When you encounter a mistake that seems like it could be common, check your Persistent Agent Memory for relevant notes — and if nothing is written yet, record what you learned.
 
@@ -115,11 +115,11 @@ Explicit user requests:
 When looking for past context:
 1. Search topic files in your memory directory:
 ```
-Grep with pattern="<search term>" path="/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/.claude/agent-memory/code-reviewer/" glob="*.md"
+Grep with pattern="<search term>" path=".claude/agent-memory/code-reviewer/" glob="*.md"
 ```
-2. Session transcript logs (last resort — large files, slow):
+2. Session transcript logs (last resort — large files, slow; path is local-machine-specific):
 ```
-Grep with pattern="<search term>" path="/Users/pollakmarina/.claude/projects/-Users-pollakmarina-Dropbox-Mac-Desktop-ChefAcademy/" glob="*.jsonl"
+Grep with pattern="<search term>" path="~/.claude/projects/<project-hash>/" glob="*.jsonl"
 ```
 Use narrow search terms (error messages, file paths, function names) rather than broad keywords.
 
