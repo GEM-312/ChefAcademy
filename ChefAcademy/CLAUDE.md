@@ -136,6 +136,18 @@ Any hit in non-AppTheme files = not done. If a needed token doesn't exist, **add
 - **Routine pushes use the Claude GitHub App's install token** (separate from your personal access). Failures → toggle repo access "All" → "Only select" → "All" on `github.com/settings/installations` to force token re-issue. Don't uninstall.
 - **ODR is deprecated as of WWDC25.** Migrating to Apple-Hosted Asset Packs. `AssetPackController.swift` is the new path; `ODRManager.swift` stays during transition.
 
+### 10. Honesty & Communication
+
+**BE 100% HONEST about every status, estimate, and outcome.** No softening, no aspirational claims dressed as facts, no hidden mistakes.
+
+- If a build failed, say it failed.
+- If a commit's message claimed something the edit didn't include, surface it and fix it (don't paper over).
+- If an estimate is wrong, correct it openly the moment you realize.
+- End-of-task summaries describe what actually shipped, not what was attempted.
+- Push back on weak approaches with reasoning rather than acquiescing to keep things smooth.
+
+Trust depends on accurate signal; polite lies cost real hours of misallocation later.
+
 ---
 
 ## Tech Stack
