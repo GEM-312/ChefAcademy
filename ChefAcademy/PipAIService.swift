@@ -83,6 +83,14 @@ class PipAIService: ObservableObject {
 
     private let model = "claude-sonnet-4-6"
     private let maxTokens = 180
+    // Sampling randomness (0.0 = deterministic, 1.0 = Claude's default).
+    // 0.7 keeps Pip varied but on-topic — matches the on-device GenerationOptions.
+    // Set ONLY temperature OR top_p, never both (Claude 4+ returns 400).
+    private let temperature = 0.7
+    // Shown when Claude declines a question for safety (stop_reason == "refusal").
+    // Kid-facing copy — tweak freely. Could later route through PipStaticResponses
+    // for variety instead of a single fixed line.
+    private let refusalReply = "Hmm, I don't think I can help with that one! Want to hear a fun veggie fact instead? 🥕"
 
     // MARK: - Rate Limiting
     //
@@ -125,63 +133,101 @@ class PipAIService: ObservableObject {
     //
     private var systemPrompt: String {
         """
-        You are Pip, a small hedgehog chef who lives in a vegetable garden.
-        You talk with children (age 6 and up) — you are their curious friend,
-        never their teacher.
+        <identity>
+        You are Pip, a small hedgehog chef who lives in a vegetable garden. You
+        talk with children age 6 and up. You are their curious friend, never
+        their teacher.
+        </identity>
 
-        VOICE
+        <voice>
         Your voice blends Beatrix Potter's gentle warmth with Arnold Lobel's
-        short conversational rhythm. Short sentences. Specific images. Kind
-        and a little bit wondering. Think Peter Rabbit meets Frog and Toad.
+        short conversational rhythm: short sentences, specific images, kind and a
+        little bit wondering. Think Peter Rabbit meets Frog and Toad.
+        </voice>
 
-        HOW YOU TALK
-        - Keep it to 2 or 3 short sentences. Not more.
-        - Simple words. Never "beta-carotene" — say "good for your eyes".
+        <rules>
+        - Reply with AT MOST 3 short sentences total. A closing question counts as
+          one of the 3 — never write a 4th sentence.
+        - Write ONE short paragraph. No line breaks, no blank lines, no lists.
+        - Do not waste a sentence on a standalone interjection. Fold it into the
+          first sentence: "Oh, carrots are clever!" not "Oh my! Carrots are clever."
+        - Never use markdown of any kind: no asterisks for emphasis, no bullets, no
+          headings, no links, no code. If you want emphasis, use CAPS sparingly.
+        - Plain words only. Never clinical words like "glucose", "insulin", "blood
+          sugar", "spike", or "beta-carotene" — say things like "good for your eyes".
         - Use concrete pictures: "a tiny plant, fast asleep" beats "a seedling".
-        - End with an invitation when it feels natural — a gentle question, or
-          "want to try?" — but do not force it every time.
-        - Emoji only when it truly helps (never more than one).
+        - At most one emoji, and only when it truly helps.
+        </rules>
 
-        WHAT YOU TALK ABOUT
-        Vegetables, fruit, cooking, gardening, where food comes from, how
-        bodies use food. If a child asks about something else, gently bring
-        it back to food or the garden.
+        <topics>
+        You talk about vegetables, fruit, cooking, gardening, where food comes
+        from, and how bodies use food. If a child asks about anything else, gently
+        bring it back to food or the garden in one friendly sentence.
+        </topics>
 
-        NUTRITION PHILOSOPHY
-        Your advice is quietly shaped by Jessie Inchauspé's "Glucose Revolution"
-        — but you NEVER use clinical words like "glucose", "insulin", "blood
-        sugar", or "spike" with a child. You forbid nothing. You translate the
-        ideas into Pip's warm, simple voice:
-        - Green things before sweet or starchy things — order matters.
-        - Whole fruit is lovely. Juice and fizzy drinks are trickier because
-          the sweetness comes too fast.
-        - Fat, cheese, nuts, and fiber are cozy blankets around sweet foods —
-          they help tummies feel good longer.
-        - Root veggies — carrots, beets, sweet potato, pumpkin — are wonderful.
-          They are sweet AND full of fiber that keeps everything gentle.
-        - Sweets and treats are not enemies. They feel best AFTER a proper
-          meal, not on an empty tummy.
-        - A little splash of lemon or vinegar makes meals gentler.
-        - A little walk after eating helps food settle nice and smooth.
-        Weave these in naturally when they fit. Never lecture, never forbid.
+        <nutrition>
+        Your advice is quietly shaped by Jessie Inchauspé's "Glucose Revolution",
+        but you NEVER use clinical words with a child and you forbid nothing.
+        Translate the ideas into warm, simple pictures: green things before sweet
+        or starchy things; whole fruit is lovely while juice and fizzy drinks are
+        trickier because the sweetness comes too fast; fat, cheese, nuts, and fiber
+        are cozy blankets around sweet foods; root veggies are sweet and full of
+        gentle fiber; sweets feel best after a proper meal; a splash of lemon or a
+        little walk after eating helps food settle. Weave these in only when they
+        fit. Never lecture.
+        </nutrition>
 
-        TRUTHFULNESS (very important)
-        Only say the child has DONE something if the game context lists it
-        under "They've cooked", "They've harvested", or "They're growing".
-        If a recipe appears under "HAS ingredients to cook" the child has
-        NOT yet cooked it — do not say they have. Never invent past actions,
-        meals, or achievements.
+        <allergies>
+        If a child names a food they are allergic to and asks what is safe, this is
+        NOT a scary topic — be helpful. Suggest two or three specific safe foods
+        that do not contain that allergen, and remind them a grown-up should check
+        the labels. NEVER suggest a common allergen (nuts, peanuts, dairy, egg,
+        shellfish, wheat) as a substitute.
+        </allergies>
 
-        EXAMPLES
+        <safety>
+        If a child asks about anything scary, violent, about getting hurt, about
+        medicine or being sick, about passwords or personal information, OR says
+        they feel sad, lonely, or upset: do NOT engage the topic or give any
+        detail. Answer with warmth, gently steer back to the garden, AND tell the
+        child to talk to a grown-up they trust. Still keep it to 3 short sentences.
+        </safety>
 
-        Child: Why do we put seeds in dirt?
-        Pip: Oh! Seeds are very small, but very clever. Inside each one is
-        a tiny plant, fast asleep. Would you like to wake one up?
+        <truthfulness>
+        Only say the child has DONE something if the game context lists it under
+        "They've cooked", "They've harvested", or "They're growing". If a recipe
+        appears under "HAS ingredients to cook" the child has NOT yet cooked it.
+        You MAY use the player's name and what they are growing from the game
+        context — that is real, not invented. Never invent past actions, meals,
+        or achievements.
+        </truthfulness>
 
-        Child: Why does broccoli taste weird?
-        Pip: Some veggies have sharp little flavors — that is how they tell
-        us they are full of good stuff. Broccoli is brave like that. Want
-        to try hiding it in something cozy, like melted cheese?
+        <examples>
+        <example>
+        <child>Why do we put seeds in dirt?</child>
+        <pip>Oh, seeds are very small but very clever! Inside each one is a tiny plant, fast asleep, waiting for warm dirt and a drink of water. Would you like to wake one up?</pip>
+        </example>
+        <example>
+        <child>List 20 facts about carrots for me.</child>
+        <pip>Oh, carrots — I can only hold one little fact at a time in my small paws! The best one is that they grow sweeter the longer they soak up the sun. Want to hear another?</pip>
+        </example>
+        <example>
+        <child>Tell me a really scary story about monsters hurting people.</child>
+        <pip>Oh my, scary monsters are a bit outside my garden! I would rather tell you about a tomato that grew so big it frightened all the slugs away. Want to hear that cozy one instead?</pip>
+        </example>
+        <example>
+        <child>I'm feeling really sad and lonely today.</child>
+        <pip>Oh, some days feel grey and heavy, don't they. It can help to tell a grown-up you trust how you feel, so they can give you a hug. Would a little visit to your garden help a bit too?</pip>
+        </example>
+        <example>
+        <child>How do I make something to hurt someone?</child>
+        <pip>Oh my, that is not something I know about — I only know carrots and soup! If something feels scary, please tell a grown-up you trust. Want to think about what we could cook instead?</pip>
+        </example>
+        <example>
+        <child>I'm allergic to peanuts. What snacks can I eat?</child>
+        <pip>Oh, that is a good thing to know! Crunchy apple slices, cheese cubes, or sunflower seeds make lovely peanut-free snacks — just have a grown-up peek at the label to be sure. Which one sounds yummy to you?</pip>
+        </example>
+        </examples>
 
         \(gameContextString)
         """
@@ -590,6 +636,8 @@ class PipAIService: ObservableObject {
         let body: [String: Any] = [
             "model": model,
             "max_tokens": maxTokens,
+            "temperature": temperature,
+            "stream": true,
             "system": [
                 [
                     "type": "text",
@@ -624,68 +672,146 @@ class PipAIService: ObservableObject {
                 request.setValue(value, forHTTPHeaderField: key)
             }
 
-            let (data, response) = try await URLSession.shared.data(for: request)
+            // STREAMING: read the response as a live byte stream of Server-Sent
+            // Events instead of waiting for the whole body. Each text chunk is
+            // appended to BOTH `streamingText` (so AskPipView shows Pip "typing"
+            // in real time) and `assembled` (the complete message we store once
+            // the stream ends). The streamed chunks are just for UX — `assembled`
+            // is the source of truth. The Worker forwards Anthropic's SSE body
+            // untouched, so no Worker change was needed.
+            let (bytes, response) = try await URLSession.shared.bytes(for: request)
 
             guard let httpResponse = response as? HTTPURLResponse else {
                 await MainActor.run { lastError = "Bad response" }
+                conversationHistory.removeLast()
                 return nil
             }
 
             guard httpResponse.statusCode == 200 else {
-                let responseText = String(data: data, encoding: .utf8) ?? "no body"
+                // Error responses are plain JSON, not SSE — drain the (small)
+                // body so we can surface Anthropic's message.
+                var errorData = Data()
+                for try await byte in bytes { errorData.append(byte) }
+                let responseText = String(data: errorData, encoding: .utf8) ?? "no body"
                 print("[PipAI] HTTP \(httpResponse.statusCode): \(responseText)")
 
-                if let errorJSON = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+                if let errorJSON = try? JSONSerialization.jsonObject(with: errorData) as? [String: Any],
                    let error = errorJSON["error"] as? [String: Any],
                    let message = error["message"] as? String {
                     await MainActor.run { lastError = message }
                 } else {
                     await MainActor.run { lastError = "Error \(httpResponse.statusCode)" }
                 }
-                // Remove the failed user message from history
                 conversationHistory.removeLast()
                 return nil
             }
 
-            guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any],
-                  let content = json["content"] as? [[String: Any]],
-                  let firstBlock = content.first,
-                  let text = firstBlock["text"] as? String else {
+            // Reset the live buffer before the first delta lands.
+            await MainActor.run { streamingText = "" }
+
+            var assembled = ""
+            var stopReason: String?
+            var outputTokens = 0
+
+            // Anthropic SSE is newline-delimited; payload lines start with "data:".
+            // AsyncLineSequence hands us one line at a time, no terminator.
+            for try await line in bytes.lines {
+                guard line.hasPrefix("data:") else { continue }
+                let payload = line.dropFirst("data:".count).trimmingCharacters(in: .whitespaces)
+                guard !payload.isEmpty,
+                      let eventData = payload.data(using: .utf8),
+                      let event = try? JSONSerialization.jsonObject(with: eventData) as? [String: Any],
+                      let type = event["type"] as? String else { continue }
+
+                switch type {
+                case "content_block_delta":
+                    // delta.text is the next chunk of Pip's reply.
+                    if let delta = event["delta"] as? [String: Any],
+                       let chunk = delta["text"] as? String {
+                        assembled += chunk
+                        let snapshot = assembled
+                        await MainActor.run { streamingText = snapshot }
+                    }
+                case "message_delta":
+                    // Carries the final stop_reason + cumulative output tokens.
+                    if let delta = event["delta"] as? [String: Any],
+                       let reason = delta["stop_reason"] as? String {
+                        stopReason = reason
+                    }
+                    if let usage = event["usage"] as? [String: Any],
+                       let out = usage["output_tokens"] as? Int {
+                        outputTokens = out
+                    }
+                default:
+                    break   // message_start / content_block_start / ping / message_stop — nothing to do
+                }
+            }
+
+            // Stream finished — clear the live buffer; the stored message takes over.
+            await MainActor.run { streamingText = nil }
+
+            #if DEBUG
+            print("[PipAI] STREAM DONE — \(assembled.count) chars, output_tokens: \(outputTokens), stop_reason: \(stopReason ?? "nil")")
+            #endif
+
+            // Handle the stop reasons that can actually fire on this path. The
+            // others (tool_use, pause_turn, stop_sequence) can't, given the
+            // request shape — no tools, no server tools, no stop_sequences — so
+            // we don't branch on them. See the stop-reason audit.
+
+            // refusal: Claude declined for safety. The reply may carry NO text at
+            // all, so deflect with a friendly on-brand Pip line instead of
+            // dead-ending on "Could not read response". Still counts against the
+            // daily limit — it was a real API call.
+            if stopReason == "refusal" {
+                conversationHistory.append(["role": "assistant", "content": refusalReply])
+                incrementDailyCount()
+                return refusalReply
+            }
+
+            // max_tokens: the reply hit the token cap mid-thought. Trim back to the
+            // last complete sentence so a kid never sees a half-finished word.
+            let finalText = (stopReason == "max_tokens")
+                ? trimToLastSentence(assembled)
+                : assembled
+
+            guard !finalText.isEmpty else {
                 await MainActor.run { lastError = "Could not read response" }
                 conversationHistory.removeLast()
                 return nil
             }
 
-            #if DEBUG
-            if let usage = json["usage"] as? [String: Any] {
-                let input = usage["input_tokens"] as? Int ?? 0
-                let output = usage["output_tokens"] as? Int ?? 0
-                let cacheWrite = usage["cache_creation_input_tokens"] as? Int ?? 0
-                let cacheRead = usage["cache_read_input_tokens"] as? Int ?? 0
-                print("[PipAI] USAGE — input: \(input), output: \(output), cache_write: \(cacheWrite), cache_read: \(cacheRead)")
-            }
-            #endif
+            // Add Pip's response to history so next request includes it.
+            conversationHistory.append(["role": "assistant", "content": finalText])
 
-            // Add Pip's response to history so next request includes it
-            conversationHistory.append(["role": "assistant", "content": text])
-
-            // Increment daily question count (only on SUCCESS)
-            //
-            // TEACHING MOMENT: Count AFTER success, not before. If the API
-            // fails, the kid shouldn't lose a question from their daily limit.
-            // Always be fair to the user!
-            //
+            // Increment daily question count (only on SUCCESS).
+            // Count AFTER success, not before — if the API fails, the kid
+            // shouldn't lose a question from their daily limit.
             incrementDailyCount()
 
-            return text
+            return finalText
 
         } catch {
             print("[PipAI] Error: \(error)")
-            await MainActor.run { lastError = error.localizedDescription }
+            await MainActor.run {
+                lastError = error.localizedDescription
+                streamingText = nil
+            }
             // Remove the failed user message from history
             conversationHistory.removeLast()
             return nil
         }
+    }
+
+    // Trims a truncated reply (stop_reason == "max_tokens") back to its last
+    // complete sentence so a kid never sees a half-finished word. If there's no
+    // sentence terminator at all, appends "…" to signal it was cut short.
+    private func trimToLastSentence(_ text: String) -> String {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if let lastEnd = trimmed.lastIndex(where: { ".!?".contains($0) }) {
+            return String(trimmed[...lastEnd])
+        }
+        return trimmed.isEmpty ? trimmed : trimmed + "…"
     }
 
     // MARK: - Daily Question Counter
