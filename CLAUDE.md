@@ -2,14 +2,7 @@
 
 ## Project Overview
 
-**App Name:** Pip's Kitchen Garden
-**Platform:** iOS (iPhone/iPad)
-**Language:** Swift / SwiftUI
-**Target:** Ages 6+ (shifted from 8-12 based on UX audit)
-**Developer:** Marina Pollak
----
-
-## What Is This App?
+**App Name:** Pip's Kitchen Garden · **Platform:** iOS (iPhone/iPad) · **Language:** Swift / SwiftUI · **Target:** Ages 6+ (shifted from 8-12 based on UX audit) · **Developer:** Marina Pollak
 
 A kid-friendly mobile GAME (not just an app) where players:
 1. **GROW** vegetables in a garden (simulation + mini-games)
@@ -18,7 +11,117 @@ A kid-friendly mobile GAME (not just an app) where players:
 
 The core loop is: **GROW → COOK → FEED → REWARDS → repeat**
 
----
+## Project Structure
+
+Source is **flat** — all `.swift` files sit directly in `ChefAcademy/` (no Views/Models/ViewModels folders). Grouped below by purpose. Deep relationships → `graphify-out/GRAPH_REPORT.md` (`graphify query/explain`, rebuilt May 27).
+
+```
+ChefAcademy/
+├── Entry & core state
+│   ├── ChefAcademyApp.swift          # @main, AppRoute router (RootRouterView), MainTabView, HomeView
+│   ├── ContentView.swift             # legacy root (mostly superseded by ChefAcademyApp)
+│   ├── SessionManager.swift          # AppRoute state machine, profile CRUD, PIN, play-time
+│   └── GameState.swift               # central state, SwiftData load/save, NutrientType enum
+├── SwiftData models
+│   ├── FamilyProfile.swift           # @Model, one per device (familyID)
+│   ├── UserProfile.swift             # @Model parent|child, profilePoseImage
+│   ├── PlayerData.swift              # @Model coins/seeds/plots/recipes/health (ownerID)
+│   └── Allergen.swift                # FoodAllergen enum + filtering
+├── Profiles / family / PIN / auth
+│   ├── ProfilePickerView.swift       # "Who's playing today?"
+│   ├── FamilySetupView.swift         # 8-step first-launch wizard
+│   ├── AddChildFlowView.swift        # add child (3 steps + dup-name check)
+│   ├── MigrationPINSetupView.swift   # legacy single-user upgrade
+│   ├── ParentDashboardView.swift     # child stats, play time, allergen edit
+│   ├── ParentPINEntryView.swift      # PIN pad host (shared PINPadGrid)
+│   ├── PINKeychain.swift             # parent PIN in Keychain (iCloud-synced)
+│   ├── AuthManager.swift             # Sign in with Apple
+│   └── SignInView.swift              # Apple sign-in screen
+├── Design system & shared UI
+│   ├── AppTheme.swift                # color/font/spacing/animation tokens, button styles
+│   ├── AdaptiveLayout.swift          # iPhone/iPad sizing, .trailingFade(), AdaptiveCardSize
+│   ├── PipComponents.swift           # PipSpeechBubble/PipHeaderStack/PipSize/PINPadGrid
+│   ├── MorphTransition.swift         # morph + card transitions
+│   ├── BackgroundView.swift          # cottage background
+│   └── PipDialogView.swift           # modal confirm prompts (BouncyButtonStyle)
+├── Pip character & voice
+│   ├── PipAnimations.swift           # PipPose enum, PipWavingAnimatedView, walking
+│   ├── CharacterWalkingView.swift    # Timer-based walk engine (30fps)
+│   ├── PipVoice.swift                # two-tier voice (silent free / ElevenLabs paid)
+│   ├── PipGameAnimationView.swift    # game-screen Pip animations
+│   └── PipStaticResponses.swift      # hand-written Pip starter replies (free tier)
+├── Pip AI chat
+│   ├── AskPipView.swift              # chat UI (starter Qs, typing indicator, streaming)
+│   ├── PipAIService.swift            # Claude cloud chat — streaming, rate-limited, allergen-aware
+│   └── PipFoundationModelService.swift  # on-device FoundationModels (iOS 26+)
+├── Garden / shop / plants / weather
+│   ├── GardenView.swift              # interactive plot map + draggable Pip
+│   ├── PlotView.swift                # per-plot water / weed / bug UX
+│   ├── PlantingSheet.swift           # plant-a-seed sheet
+│   ├── FarmShopView.swift            # seeds + pantry shop (defines FarmTabView)
+│   ├── SeedInfoView.swift            # veggie knowledge cards + PencilKit coloring
+│   ├── PantryInfoView.swift          # pantry knowledge cards
+│   ├── GardenWeatherService.swift    # WeatherKit (30-min cache)
+│   ├── WeatherOverlayView.swift      # rain/snow/storm/seasonal overlays
+│   ├── WaterPourCharacterView.swift  # kid pour animation + particles
+│   └── GardenHubView.swift           # ORPHAN dead code — planned delete
+├── Kitchen / cooking / recipes
+│   ├── KitchenView.swift             # cooking scene map; book icon → RecipeListView
+│   ├── CookingSessionView.swift      # multi-step mini-game sequencer (state machine)
+│   ├── CookingMiniGames.swift        # 9 cooking mini-games
+│   ├── ChopMiniGame.swift            # chop (tap-timing)
+│   ├── CookingCompletionView.swift   # stars + organ-boost rewards
+│   ├── RecipeCardExample.swift       # PantryItem / Recipe / GardenRecipes.all
+│   └── RecipeDetailView.swift        # cookbook page, sticky "Let's Cook!" footer
+├── Body Buddy & learn/play games
+│   ├── BodyBuddyView.swift           # organ health rings
+│   ├── PlayLearnView.swift           # mini-games hub
+│   ├── HealthyChoiceGameView.swift   # Healthy Picks
+│   ├── InsulinTetrisView.swift       # Sugar Sorter
+│   └── GlucoseJourneyView.swift      # Pip's Glucose Journey
+├── Multiplayer / versus
+│   ├── LocalVersusView.swift         # local pass-and-play
+│   ├── SplitScreenVersusView.swift   # split-screen versus
+│   ├── NearbyVersusView.swift        # nearby (MultipeerConnectivity)
+│   ├── MultiplayerHealthyPicksView.swift  # online Healthy Picks
+│   ├── MultiplayerManager.swift      # Game Center match
+│   ├── NearbyMultiplayerManager.swift  # MultipeerConnectivity
+│   ├── GameCenterService.swift       # auth, leaderboards, achievements
+│   ├── GameCenterMatchmakerView.swift  # GKMatchmaker bridge
+│   └── SeededRandomGenerator.swift   # deterministic RNG for lockstep
+├── Avatar / onboarding / profiles
+│   ├── AvatarModel.swift             # Gender / Outfit / HeadCovering enums
+│   ├── AvatarCreatorView.swift       # outfit + covering tabs
+│   ├── OnboardingView.swift          # first-launch onboarding
+│   ├── MeetPipAnimated.swift, MeetPipViews.swift  # Meet Pip intro
+│   ├── ProfileView.swift             # profile screen
+│   ├── SiblingProfileView.swift      # sibling profile
+│   └── SiblingGardenView.swift       # visit a sibling's garden (read-only)
+├── Subscription / networking / external APIs
+│   ├── PaywallView.swift             # Pip Chat $3.99/mo paywall
+│   ├── SubscriptionManager.swift     # StoreKit 2
+│   ├── WorkerClient.swift            # Cloudflare Worker client
+│   ├── AppAttestService.swift        # App Attest device auth
+│   ├── APIKeys.swift                 # local dev key — gitignored, NEVER read (see §11)
+│   ├── CloudKeyManager.swift         # legacy CloudKit key (Phase 4 delete)
+│   ├── USDAFoodService.swift         # USDA FoodData Central nutrition
+│   ├── ElevenLabsVoiceService.swift  # paid voice synthesis
+│   ├── VoicePickerView.swift         # voice picker UI
+│   └── VideoPlayerView.swift         # looping / one-shot video player
+├── Asset packs / audio / dev tools
+│   ├── AssetPackController.swift     # Apple-Hosted Asset Packs (replaces ODR)
+│   ├── AssetPackImage.swift          # async asset-pack image view
+│   ├── ODRManager.swift              # legacy ODR (kept during transition)
+│   ├── AmbientAudioPlayer.swift      # ambient loop player
+│   ├── SceneEditor.swift             # DEV-only map-item positioning
+│   ├── PipTestView.swift             # DEV-only test view
+│   └── HomeAnimated.swift            # animated Home variant
+├── Assets.xcassets/                  # images, AppColors/ (Dark Mode), imagesets
+├── Sounds/                           # audio files
+└── Pips Animaions for the games/     # Pip game-animation frames
+AssetPackDownloader/
+└── BackgroundDownloadHandler.swift   # separate target — background asset-pack download
+```
 
 ## Available Agent Skills (Auto-Activate)
 
@@ -30,7 +133,7 @@ Five user-level SwiftUI/Apple-platform skills are installed at `~/.claude/skills
 - **`app-intents`** (Anton Novoselov) — `AppIntent` / `AppEntity` / Apple Intelligence (`AssistantEntity`/`AssistantIntent`), Spotlight, Snippets
 - **`swift-security-expert`** (Ivan Magda) — Keychain, biometrics, CryptoKit, Secure Enclave, certificate pinning, OWASP MASTG
 
-**Also available (user-invocable, not auto-activating):** `prompt-eval` — scaffolds a prompt-evaluation harness (auto-generated test set + Sonnet model-as-judge grading, 1–10 with mandatory pass/fail criteria, JSON + HTML report). Use it to measure and improve `PipAIService` (Pip's kid-facing Claude Haiku chat) — the same eval workflow proven on the RAA bird companion (caught fabrication, tightened replies). Trigger: "test the prompt" / "/prompt-eval".
+**Also available (user-invocable, not auto-activating):** `prompt-eval` (scaffolds a prompt-evaluation harness — auto-generated test set + Sonnet model-as-judge grading, 1–10 with mandatory pass/fail criteria, JSON + HTML report) and `prompt-engineering` (eval-driven prompt improvement). Use them to measure and improve `PipAIService` (Pip's kid-facing Claude chat). Trigger: "test the prompt" / "/prompt-eval".
 
 When a skill's generic guidance conflicts with the project-specific Architecture Rules below, **Architecture Rules win** (project decisions, history, and file refs are non-negotiable).
 
@@ -58,13 +161,9 @@ Canonical source for all hard rules. When statements elsewhere in this file (or 
   }
   ```
   Assign to a `@State var task: Task<Void, Never>?` and cancel in `.onDisappear` when cancellation matters (animation chains, repeat loops, transient cues).
-
 - **Timer callbacks must wrap state mutations in `Task { @MainActor in }`.** `Timer.scheduledTimer` fires on the RunLoop; direct `@Published` / `@State` writes from there race with the renderer and produce data-race warnings under strict concurrency.
-
 - **Game physics loops use `TimelineView(.animation)` with delta-time**, not `Timer.scheduledTimer` at 60fps. Pattern lives in `RainOverlay`, `StormOverlay`, `SnowOverlay`, `InsulinTetrisView`, `WaterPourCharacterView`. Timer-based physics ties speed to frame rate; ProMotion 120Hz devices and CPU throttling break it.
-
 - **`@EnvironmentObject` propagation is selective.** `SiblingGardenView` swaps `gameState` (sibling's data) while inheriting `sessionManager` (visitor identity) — that's why visitor gender drives the right water-pour character without explicit wiring. Use this pattern when two flows share most but not all context.
-
 - **`async/await` + `await MainActor.run { ... }` for any code touching `@Published` from a background context.** `PipAIService`, `USDAFoodService`, `ElevenLabsVoiceService` follow this.
 
 ### 3. Design System — No Hardcoded Values
@@ -74,8 +173,8 @@ Zero hardcoded colors / fonts / spacing / animation curves / stroke widths in an
 | Category | Token namespace | Examples |
 |---|---|---|
 | **Colors** | `Color.AppTheme.*` | `cream`, `sage`, `goldenWheat`, `terracotta`, `sepia`, `darkBrown`, `weatherSunny`, `springGradientTop`. Shadows: `Color.AppTheme.sepia.opacity(N)` — never `Color.black.opacity(N)`. |
-| **Fonts** | `Font.AppTheme.*` | `caption / subheadline / body / bodyBold / headline / title3 / title / largeTitle`. For one-offs: `Font.AppTheme.rounded(size: N, weight: .X)`. Never `.font(.system(size:))`. |
-| **Spacing** | `AppSpacing.*` | `xxs (4) / xs (8) / sm (12) / md (16) / lg (24) / xl (32) / xxl (48)`, `buttonHeight (52)`, `pillCornerRadius (8)`, `smallCornerRadius (12)`, `cardCornerRadius (16)`, `largeCornerRadius (20)`, `strokeThin (1) / strokeMedium (2) / strokeBold (3)`, `tabBarClearance (100)`, `pinButtonWidth (75)`, `pinButtonHeight (55)`, `infoCardImageSize (200)`. |
+| **Fonts** | `Font.AppTheme.*` | `caption / subheadline / body / bodyBold / headline / title3 / title / largeTitle`. One-offs: `Font.AppTheme.rounded(size: N, weight: .X)`. Never `.font(.system(size:))`. |
+| **Spacing** | `AppSpacing.*` | `xxs (4) / xs (8) / sm (12) / md (16) / lg (24) / xl (32) / xxl (48)`, `buttonHeight (52)`, corner radii `pill (8) / small (12) / card (16) / large (20)`, strokes `thin (1) / medium (2) / bold (3)`, `tabBarClearance (100)`, `pinButtonWidth (75)`, `pinButtonHeight (55)`, `infoCardImageSize (200)`. |
 | **iPad sizing** | `AdaptiveCardSize.*(for: sizeClass)` | `pipMessage`, `pipReadyScreen`, `kitchenSpotRing`, etc. Never inline `isIPad ? 280 : 200`. |
 | **Animations** | `AnimationConstants.*` | Springs: `springQuick / Medium / Slow / Bouncy / Snappy / Tight / Fly`. Easings: `fadeQuick / Fast / Medium / revealSlow / pipTransition / morphTransition / weatherTransition`. Loops: `floatLoopFast / floatLoop / floatLoopSlow / pinShake`. Frame rates: `walkingFPS / wavingFPS / gameFPS / walkSpeed`. Never inline `.spring(response:)` or `.easeInOut(duration:)`. |
 
@@ -90,10 +189,7 @@ Any hit in non-AppTheme files = not done. If a needed token doesn't exist, **add
 
 ### 4. UI Components — Reuse Mandatory
 
-- **Buttons:**
-  - Primary CTAs → `.texturedButton(tint:)` (wood-grain capsule)
-  - Secondary → `.buttonStyle(BouncyButtonStyle())`
-  - Never `.buttonStyle(.plain)` with a custom-styled label. Never hand-roll `.background() + .cornerRadius() + .shadow()` on a `Button`.
+- **Buttons:** Primary CTAs → `.texturedButton(tint:)` (wood-grain capsule); secondary → `.buttonStyle(BouncyButtonStyle())`. Never `.buttonStyle(.plain)` with a custom-styled label; never hand-roll `.background() + .cornerRadius() + .shadow()` on a `Button`.
 - **Cards:** `.softCard()` for the warm-cream surface (80% case). `.cardStyle()` for the parchment variant (rare).
 - **Pip avatars:** Size via the `PipSize` enum (`.compact 40 / .medium 80 / .large 120 / .hero 160 / .custom(N)`). Never raw `Image("pip_...")` with hardcoded `.frame(width: N, height: N)`.
 - **Pip dialogue:** `PipSpeechBubble` and `PipHeaderStack` **auto-speak** via `PipVoice.shared.speak(...)` on appear and on message change. Do NOT manually call `PipVoice.shared.speak(...)` next to these components — it double-speaks. Use `speakOnAppear: false` only for decorative usage.
@@ -111,7 +207,7 @@ Any hit in non-AppTheme files = not done. If a needed token doesn't exist, **add
 
 ### 6. SwiftUI Coding Conventions
 
-- **SwiftUI for all views.** No new UIKit views except UIViewControllerRepresentable bridges to legacy frameworks (`GameCenterMatchmakerView`, `VeggieCanvasView` for PencilKit).
+- **SwiftUI for all views.** No new UIKit views except `UIViewControllerRepresentable` bridges to legacy frameworks (`GameCenterMatchmakerView`, `VeggieCanvasView` for PencilKit).
 - **MVVM + ObservableObject + SwiftData `@Model`.** No new architectures.
 - **`@EnvironmentObject`** for shared state: `GameState`, `SessionManager`, `AvatarModel`. Inject via `.environmentObject(...)` at the highest reasonable ancestor.
 - **`@Environment(\.modelContext)`** for SwiftData queries from views. Requires `.modelContainer` set on the WindowGroup.
@@ -122,7 +218,7 @@ Any hit in non-AppTheme files = not done. If a needed token doesn't exist, **add
 ### 7. Build & Verification
 
 - **Build command:** `xcodebuild -scheme ChefAcademy -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build`
-- **Trust `xcodebuild`, not SourceKit per-file diagnostics.** SourceKit doesn't see cross-file types — it will claim `Color.AppTheme`, `AppSpacing`, `GameState`, `Recipe` are missing in any single file. Ignore these. `xcodebuild` is authoritative.
+- **Trust `xcodebuild`, not SourceKit per-file diagnostics.** SourceKit doesn't see cross-file types — it will claim `Color.AppTheme`, `AppSpacing`, `GameState`, `PipFoundationModelService` are missing in any single file. Ignore these. `xcodebuild` is authoritative.
 - **Build after every Edit batch** before declaring done. Don't push commits that haven't been built.
 - **Reset simulator data:** `find ~/Library/Developer/CoreSimulator/Devices -name "default.store*" -path "*/Application Support/*" -exec rm -f {} \;`
 
@@ -130,26 +226,25 @@ Any hit in non-AppTheme files = not done. If a needed token doesn't exist, **add
 
 - **Read all relevant files before changes** when Marina says so. No context-budget arguments. Style/architecture files (`AppTheme.swift`, `AdaptiveLayout.swift`, `PipComponents.swift`) are mandatory pre-reads before any UI work. Memory files in `~/.claude/projects/.../memory/` count as "all files."
 - **Plan-first for non-trivial changes.** Surface the diff intent, token usage, risk, and reversibility before editing. Don't sweep call sites without explicit sign-off (the "tokens-first, sweep-later" pattern).
-- **One focused commit per audit item / feature.** Easy to revert, easy to bisect. Bundle only when items are genuinely the same change. The May 11 batch was 5 separate commits for F-03 / L-01 / G-01 / L-02 / F-04.
+- **One focused commit per audit item / feature.** Easy to revert, easy to bisect. Bundle only when items are genuinely the same change.
 - **Audit findings are hypotheses, not instructions.** Before fixing: grep that the file is still referenced, the function still exists, the rationale still holds. Several audit items have been miscalibrated (PrimaryButtonStyle dead code, GardenHubView orphaned, Apple TTS already-rejected) — don't act on them blind.
-- **Append teaching moments to `TEACHING.md` before declaring a session done.** Memory notes are not a substitute. 3-7 entries per session is the right density. Each entry uses the existing 4-field format: `**Where it came up** / **What it is** / **In our code** / **Why it matters**`. Skip trivial wins (font bumps, single-line patches).
+- **Log teaching moments every session** — see Teaching System below.
 
 ### 9. Standing Decisions (Don't Re-Litigate)
 
 - **Free voice = silent text on screen. Paid = ElevenLabs.** Apple TTS was rejected May 10 — "Enhanced" voices sounded awful, decision is documented and intentional. Don't re-propose. Audit items recommending Apple TTS are stale.
 - **Sage / goldenWheat / terracotta are the botanical default for CTAs.** `brightGreen / brightBlue / sunflowerYellow` tokens exist for selective high-energy use; don't sweep all CTAs to brightGreen. The audit's "L-01 full sweep" path was declined.
 - **Gender enum is binary (boy / girl).** Parent vs child role + gender combination drives mom/dad frame selection via `UserProfile.profilePoseImage`. Non-binary expansion is K-01 on the audit; deferred pending dedicated assets.
-- **ColorChoice (Lycopene / Beta-carotene / Anthocyanins / Allicin / Anthocyanins) is intentional plant-pigment-science education.** In-file teaching comment in `SeedInfoView.swift:559-562` defends this. Don't replace with generic nutrient names. The kid-friendly rename only applies to `NutrientType.rawValue`, not `ColorChoice.nutrientName`.
-- **`USDAFoodService.topNutrients()` is consumed only by `PipFoundationModelService.swift:505` (AI tools layer), not user UI.** Audit recommendations targeting "kid-unfriendly" tuple labels here are misdirected. Don't apply renames.
-- **`GardenHubView.swift` is orphaned dead code** (zero references in the codebase). Planned deletion. Don't add features to it; don't trust audit findings inside it.
-- **`Tab.recipes` case is kept for compatibility** but hidden from the tab bar. Access via Kitchen book icon. The 6 visible tabs are Home / Garden / Shop / Kitchen / Body / Play.
-- **Routine pushes use the Claude GitHub App's install token** (separate from your personal access). Failures → toggle repo access "All" → "Only select" → "All" on `github.com/settings/installations` to force token re-issue. Don't uninstall.
+- **ColorChoice (Lycopene / Beta-carotene / Anthocyanins / Allicin) is intentional plant-pigment-science education.** In-file teaching comment in `SeedInfoView.swift:559-562` defends this. Don't replace with generic nutrient names. The kid-friendly rename only applies to `NutrientType.rawValue`, not `ColorChoice.nutrientName`.
+- **`USDAFoodService.topNutrients()` is consumed only by `PipFoundationModelService.swift:505` (AI tools layer), not user UI.** Audit recommendations targeting "kid-unfriendly" tuple labels here are misdirected.
+- **`GardenHubView.swift` is orphaned dead code** (zero references). Planned deletion. Don't add features to it; don't trust audit findings inside it.
+- **`Tab.recipes` case is kept for compatibility** but hidden from the tab bar. Access via Kitchen book icon. The 6 visible tabs are Home / Garden / Shop / Kitchen / Body / Play. The March audit's "merge Garden + Farm" was deferred — Garden + Shop stay separate.
+- **Routine pushes use the Claude GitHub App's install token** (separate from personal access). Failures → toggle repo access "All" → "Only select" → "All" on `github.com/settings/installations` to force token re-issue. Don't uninstall.
 - **ODR is deprecated as of WWDC25.** Migrating to Apple-Hosted Asset Packs. `AssetPackController.swift` is the new path; `ODRManager.swift` stays during transition.
 
 ### 10. Honesty & Communication
 
 **BE 100% HONEST about every status, estimate, and outcome.** No softening, no aspirational claims dressed as facts, no hidden mistakes.
-
 - If a build failed, say it failed.
 - If a commit's message claimed something the edit didn't include, surface it and fix it (don't paper over).
 - If an estimate is wrong, correct it openly the moment you realize.
@@ -165,46 +260,32 @@ Trust depends on accurate signal; polite lies cost real hours of misallocation l
 2. Use `export VAR=$(cat ~/path/to/gitignored-file)` then run the bare command, OR
 3. Source from `.env`: `set -a; source .env; set +a; node script.mjs`
 
-The command that hits the shell must contain **no secret material**. The script reads the env var internally.
+The command that hits the shell must contain **no secret material** (the script reads the env var internally). **Why:** Claude Code's permission system stores "Always allow" approvals as the literal command string — a secret inlined into an approved command gets written into `.claude/settings.local.json` permanently. RAA incident (May 7 2026): an inlined `PROXY_TOKEN="4dbd…"` sat in `settings.local.json:33` for two weeks. ChefAcademy is clean — keep it.
 
-**Why:** Claude Code's permission system stores "Always allow" approvals as the literal command string pattern. When a Bash command containing a secret is approved with Always allow, the **entire command including the secret** gets written into `.claude/settings.local.json` and persists indefinitely. Past incident in the RAA project (May 7 2026): a Claude session inlined `PROXY_TOKEN="4dbd…"` into a `node scripts/generate-sfx.mjs` call, Marina clicked Always allow, the token sat in `settings.local.json:33` for two weeks until discovered. ChefAcademy is clean — keep it that way.
-
-**Also: never read App Attest / proxy token files.** Files like `AppAttestService.swift` are fine to read (logic is public), but any file holding raw secrets (e.g. a future `APIKeys.swift`-style file) should be added to `permissions.deny` in `.claude/settings.json` the moment it's created. The deny pattern:
-```json
-"permissions": {
-  "deny": [
-    "Read(//absolute/path/to/Secrets.swift)",
-    "Edit(//absolute/path/to/Secrets.swift)",
-    "Write(//absolute/path/to/Secrets.swift)"
-  ]
-}
-```
-
----
+**Never read raw-secret files** by Read/Edit/Write **or** Bash (`cat`/`grep`/`head`/`xxd`). `APIKeys.swift` is **already denied** in `.claude/settings.json` (Read/Edit/Write on both the absolute path and `**/APIKeys.swift`) — the harness enforces it. Add any new secret file's deny rules there the moment it exists. (`AppAttestService.swift` is fine — logic is public.)
 
 ## General Coding Behavior — Karpathy Guidelines
 
-*Added 2026-05-27 from [andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) (MIT), derived from Andrej Karpathy's notes on LLM coding pitfalls. This is general coding-behavior guidance that **complements** the Architecture Rules above — where it overlaps an existing rule, the specific Architecture Rule wins. Bias toward caution over speed; for trivial edits, use judgment.*
+*Added 2026-05-27 from [andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) (MIT), derived from Andrej Karpathy's notes on LLM coding pitfalls. Complements the Architecture Rules above — where it overlaps, the specific Architecture Rule wins. Bias toward caution over speed; for trivial edits, use judgment.*
 
 ### K1. Think Before Coding
 Don't assume. Don't hide confusion. Surface tradeoffs.
 - State your assumptions explicitly; if uncertain, ask.
 - If multiple interpretations exist, present them — don't pick silently.
-- If a simpler approach exists, say so. Push back when warranted (see also §10 Honesty & Communication).
+- If a simpler approach exists, say so. Push back when warranted (see also §10).
 - If something is unclear, stop, name what's confusing, and ask.
 
 ### K2. Simplicity First
 Minimum code that solves the problem. Nothing speculative.
 - No features beyond what was asked. No abstractions for single-use code.
-- No "flexibility" or "configurability" that wasn't requested.
-- No error handling for impossible scenarios.
+- No "flexibility" or "configurability" that wasn't requested. No error handling for impossible scenarios.
 - If you write 200 lines and it could be 50, rewrite it. Test: *"Would a senior engineer say this is overcomplicated?"*
 
 ### K3. Surgical Changes
 Touch only what you must. Clean up only your own mess.
 - Don't "improve" adjacent code, comments, or formatting. Don't refactor what isn't broken.
 - Match existing style, even if you'd do it differently.
-- Notice unrelated dead code → mention it, don't delete it (e.g. `GardenHubView` stays until explicitly removed — see Standing Decisions).
+- Notice unrelated dead code → mention it, don't delete it (e.g. `GardenHubView` stays until explicitly removed).
 - Remove imports/variables/functions that YOUR change orphaned; leave pre-existing dead code alone.
 - The test: every changed line traces directly to the request. (Reinforces §8 "don't sweep call sites without sign-off.")
 
@@ -212,220 +293,115 @@ Touch only what you must. Clean up only your own mess.
 Define success criteria, then loop until verified.
 - Turn tasks into verifiable goals: "fix the bug" → "reproduce it, then make the repro pass"; "refactor X" → "verify behavior before and after."
 - For multi-step work, state a brief numbered plan with a `verify:` check per step.
-- ChefAcademy has no XCTest suite, so "verify" here = a green Xcode build (§7), a passing eval run (`eval/`), or a traced-through user flow — not an automated test. Strong criteria let work proceed without constant clarification.
+- ChefAcademy has no XCTest suite, so "verify" = a green Xcode build (§7), a passing eval run (`/prompt-eval`), or a traced-through user flow — not an automated test.
 
----
+## Teaching System (PROACTIVE)
+
+Marina learns as we build — teach **while** coding, not after.
+- **Trigger:** introducing a pattern, avoiding a pitfall, fixing a non-obvious bug, or writing non-trivial logic. Skip trivial wins (font bumps, one-line patches).
+- **Print the title in green**, then explain: `echo -e "\n\033[1;32m━━━ TEACHING MOMENT: [Title] ━━━\033[0m\n"` → CONCEPT (1–2 sentences) → STEP BY STEP (numbered) → IN OUR CODE (specific file/symbol) → KEY TAKEAWAY (1 line). MIT-professor tone: clear, real-world analogies, no fluff. On demand: `/teach [topic]`.
+- **Append every moment to `TEACHING.md`** in its existing 4-field format — `**Where it came up** / **What it is** / **In our code** / **Why it matters**` — 3–7 per session. Memory notes are not a substitute.
 
 ## Tech Stack
 
-- **UI Framework:** SwiftUI
-- **Persistence:** SwiftData with iCloud CloudKit sync
-- **Mini-games:** SwiftUI with gestures
-- **Minimum iOS:** 16.0
-- **Architecture:** MVVM with ObservableObject + SwiftData @Model
-- **Security:** Keychain for parent PIN (iCloud Keychain sync)
-
----
+- **UI Framework:** SwiftUI · **Mini-games:** SwiftUI with gestures
+- **Persistence:** SwiftData with iCloud CloudKit sync · **Minimum iOS:** 16.0
+- **Architecture:** MVVM with ObservableObject + SwiftData `@Model`
+- **Security:** Keychain for parent PIN (iCloud Keychain sync); Cloudflare Worker + App Attest for the Claude API key (never in the bundle)
+- **External:** WeatherKit, USDA FoodData Central, ElevenLabs (paid voice), Game Center + MultipeerConnectivity (multiplayer)
 
 ## Multi-User Family System (COMPLETE)
 
-The app supports multiple players per device via a family profile system.
+Multiple players per device via a family profile system.
 
-### Architecture
-- **FamilyProfile** (@Model) — one per device, linked to UserProfiles via `familyID`
-- **UserProfile** (@Model) — parent or child, linked to PlayerData via `ownerID` UUID
-- **PlayerData** (@Model) — per-user game progress (coins, seeds, plots, recipes, health)
-- **SessionManager** (ObservableObject) — central coordinator: routing, profile CRUD, PIN, play time
-- **No @Relationship macros** — all linking via UUID fields (CloudKit compatibility)
+- **`FamilyProfile`** (@Model) — one per device; members found via `familyID` query.
+- **`UserProfile`** (@Model) — parent or child; role, gender, avatar; `PlayerData` found via `ownerID` query.
+- **`PlayerData`** (@Model) — per-user progress (coins, seeds, plots, pantry, recipes, health).
+- **`SessionManager`** (ObservableObject) — central coordinator: routing state machine, profile CRUD, PIN verify, play-time.
+- No `@Relationship` macros — all linking via UUID fields (see §1). File refs in **Key File Locations**.
 
-### App Route Flow
+**App Route Flow** — this is the **top-level router only** (`AppRoute` enum in `SessionManager`, rendered in `ChefAcademyApp.swift`). In-app navigation (6 tabs + their sheets/`fullScreenCover`s: cooking session, sibling-garden visit, Ask Pip, paywall, recipe book, seed/pantry info) is a separate, larger layer not shown here.
 ```
-App Launch → bootstrap()
-  ├── Family exists → ProfilePickerView ("Who's playing today?")
-  ├── Legacy data exists → MigrationPINSetupView
-  └── Brand new → FamilySetupView (8-step wizard)
+App Launch → SessionManager.bootstrap() sets an AppRoute (9 states):
+  .loading           → loading screen (waving Pip) while bootstrap runs
+  .signIn            → SignInView (Sign in with Apple) → on success find/create family
+  .familySetup       → FamilySetupView (8-step: Welcome→Parent Name→Parent Avatar→
+                       PIN→Child Name→Child Avatar→Meet Pip→Ready)
+  .migrationPINSetup → MigrationPINSetupView (legacy single-user upgrade)
+  .profilePicker     → ProfilePickerView ("Who's playing today?")
+  .parentPINEntry(p) → ParentPINEntryView → success/cancel → .profilePicker
+  .childOnboarding   → STUB (renders ProfilePickerView; "future per-child onboarding")
+  .mainApp(id)       → MainTabView   ← the actual game (6 tabs)
+  .parentDashboard   → ParentDashboardView
 
-FamilySetupView: Welcome → Parent Name → Parent Avatar → Set PIN → Child Name → Child Avatar → Meet Pip → Ready
-
-ProfilePickerView:
-  ├── Tap child card → selectProfile() → MainTabView
-  ├── Tap parent card → PIN entry → selectProfile() or ParentDashboardView
-  └── Add Little Chef → PIN entry → AddChildFlowView (3 steps)
-```
-
-### Key Files
-| File | Purpose |
-|------|---------|
-| `SessionManager.swift` | Route state machine, profile CRUD, PIN verify, play time |
-| `FamilyProfile.swift` | @Model: familyID-based queries for members |
-| `UserProfile.swift` | @Model: role, gender, avatar, familyID, playerData lookup |
-| `PlayerData.swift` | @Model: coins, seeds, plots, pantry, recipes, health |
-| `PINKeychain.swift` | Secure parent PIN via Keychain Services |
-| `ProfilePickerView.swift` | "Who's playing today?" profile selection |
-| `FamilySetupView.swift` | First-launch 8-step family wizard |
-| `AddChildFlowView.swift` | Add subsequent children (3 steps + duplicate name check) |
-| `ParentDashboardView.swift` | Child stats, play time, manage profiles |
-| `ParentPINEntryView.swift` | PIN pad host (uses shared `PINPadGrid` from PipComponents) |
-| `MigrationPINSetupView.swift` | Upgrade path for legacy single-user installs |
-
-### SwiftData / PIN Rules
-
-See **Architecture Rules → SwiftData / CloudKit Compatibility** (above) for the full list. PIN-specific rules:
-
-### PIN System
-- Stored in Keychain (not SwiftData) for security
-- Syncs across devices via iCloud Keychain
-- `PINKeychain.save(pin:)` / `PINKeychain.load()` / `PINKeychain.delete()`
-- Parent PIN required for: accessing parent profile, adding children, dashboard, changing PIN
-
-### Profile Data Flow
-```
-selectProfile() →
-  ├── Existing PlayerData found → loadFromStore(for:) → MainTabView
-  └── No PlayerData → createPlayerData() → resetToDefaults() → saveToStore() → MainTabView
-
-resetToDefaults() gives: 0 coins (learn-to-earn — kids must tap nutrient cards / color seeds to earn), starter seeds (8 types), 5 garden plots, 2 unlocked recipes
-loadFromStore() safety: if seeds empty → gives starter seeds automatically
+ProfilePickerView taps: child card → selectProfile() → .mainApp ·
+  parent card → .parentPINEntry → dashboard/picker ·
+  "Add Little Chef" → .parentPINEntry → AddChildFlowView (3 steps + dup-name check)
 ```
 
----
+**Profile data flow:** `selectProfile()` → existing `PlayerData` found → `loadFromStore(for:)` → MainTabView; else → `createPlayerData()` → `resetToDefaults()` → `saveToStore()`. `resetToDefaults()` gives **0 coins** (learn-to-earn — kids tap nutrient cards / color seeds to earn), **8 starter seeds, 5 plots, 2 recipes**. `loadFromStore()` safety: re-grants starter seeds if empty.
+
+**PIN:** stored in Keychain (not SwiftData), iCloud-synced — `PINKeychain.save/load/delete`. Required for parent profile, adding children, dashboard, changing PIN.
 
 ## Visual Style
 
-**Aesthetic:** Vintage botanical watercolor ("paper style")
-**Core palette** (defined as `Color.AppTheme.*` in AppTheme.swift — backed by `Assets.xcassets/AppColors/` for Dark Mode support — never inline hex):
+**Aesthetic:** Vintage botanical watercolor ("paper style"). **Palette** is defined as `Color.AppTheme.*` in `AppTheme.swift` (backed by `Assets.xcassets/AppColors/` for Dark Mode) — never inline hex:
 - `cream` #F5F0E1 (backgrounds), `warmCream` #FAF6EB, `parchment` #EDE6D3
 - `sepia` #8B7355 (body text), `darkBrown` #5D4E37 (headlines), `lightSepia` #A89880
-- `sage` #6B7B5E (primary CTAs / nature), `goldenWheat` #C9A227 (rewards / coins), `terracotta` #B87333 (warnings / heat), `softOlive` #8A9A7B (secondary accents), `warmKhaki` #C6BA8B
-- **High-energy accents** (added May 11): `brightGreen`, `brightBlue`, `sunflowerYellow` — saturated CTA pop for age 6+ visibility. Use sparingly; sage/goldenWheat/terracotta remain the botanical default.
-- Weather: `weatherSunny/PartlyCloudy/Cloudy/Stormy/Snowy/Rainy`; seasons: `springGradientTop/Blossom/summerGradientTop/Warm/fallGradientTop/Mid/winterGradientMid/Bot`; particles: `springPetal`, `frostBlue`, `autumnBrown`, `rainBlue`, `sunYellow`.
+- `sage` #6B7B5E (primary CTAs / nature), `goldenWheat` #C9A227 (rewards / coins), `terracotta` #B87333 (warnings / heat), `softOlive` #8A9A7B (secondary), `warmKhaki` #C6BA8B
+- **High-energy accents** (May 11): `brightGreen`, `brightBlue`, `sunflowerYellow` — saturated CTA pop for age-6+ visibility. Use sparingly; the botanical trio remains default.
+- Weather: `weatherSunny/PartlyCloudy/Cloudy/Stormy/Snowy/Rainy`; seasons: `spring/summer/fall/winter` gradient + particle tokens (`springPetal`, `frostBlue`, `autumnBrown`, `rainBlue`, `sunYellow`).
 
-**Hard rule:** Zero hardcoded colors / fonts / spacing / animation curves. Full rules + token tables + pre-commit audit grep are in **Architecture Rules → Design System** (above).
-
----
+Full token rules + pre-commit grep are in **§3 Design System**.
 
 ## Character: Pip the Hedgehog
 
-- Round, fluffy hedgehog with chef hat — kid's guide/mascot
-- 13 static poses (`PipPose` enum in `PipAnimations.swift`) + walking animation + waving animation
-- `PipWavingAnimatedView(size:)` — reusable animated Pip; size flows through the `PipSize` enum (`compact` 40 / `medium` 80 / `large` 120 / `hero` 160 / `.custom(N)` escape hatch)
-- `PipSpeechBubble`, `PipHeaderStack` — two canonical layout components in `PipComponents.swift`; both auto-speak via `PipVoice.shared.speak(...)` on appear and on message change
-- `PipDialogView` — modal confirm prompts ("Spend N coins and plant?") with `BouncyButtonStyle` choices
-- Walking frames: `pip_walking_frame_01..15` at 30fps Timer-based (see `CharacterWalkingView`)
-
----
+- Round, fluffy hedgehog with chef hat — the kid's guide/mascot.
+- 13 static poses (`PipPose` enum in `PipAnimations.swift`) + walking + waving animations.
+- `PipWavingAnimatedView(size:)` — reusable animated Pip; size flows through `PipSize` (`compact 40 / medium 80 / large 120 / hero 160 / .custom(N)`).
+- `PipSpeechBubble`, `PipHeaderStack` (`PipComponents.swift`) — canonical layouts; both auto-speak via `PipVoice.shared.speak(...)` on appear and message change.
+- `PipDialogView` — modal confirm prompts ("Spend N coins and plant?") with `BouncyButtonStyle` choices.
+- Walking frames: `pip_walking_frame_01..15` at 30fps Timer-based (`CharacterWalkingView`).
 
 ## Current Tab Structure (6 tabs)
 
 | Tab | Icon | View | Purpose |
 |-----|------|------|---------|
-| Home | house.fill | HomeView | Main hub, sibling visits, switch player, parent dashboard |
-| Garden | leaf.fill | GardenView | Plant & harvest veggies (interactive map) |
-| Shop | cart.fill | FarmTabView → FarmShopView | Pip walks to barn, then seeds + pantry shop |
-| Kitchen | fork.knife | KitchenView | Cook recipes with Pip; book icon opens RecipeListView |
-| Body | person.fill | BodyBuddyView | "Your Body" — organ health rings + recipe impact |
-| Play | gamecontroller.fill | PlayLearnView | Mini-games hub (Healthy Picks, Insulin Tetris, etc.) |
+| Home | house.fill | `HomeView` | Main hub, sibling visits, switch player, parent dashboard |
+| Garden | leaf.fill | `GardenView` | Plant & harvest veggies (interactive map) |
+| Shop | cart.fill | `FarmTabView` → `FarmShopView` | Pip walks to barn, then seeds + pantry shop |
+| Kitchen | fork.knife | `KitchenView` | Cook recipes with Pip; book icon opens `RecipeListView` |
+| Body | person.fill | `BodyBuddyView` | "Your Body" — organ health rings + recipe impact |
+| Play | gamecontroller.fill | `PlayLearnView` | Mini-games hub (Healthy Picks, Insulin Tetris, etc.) |
 
-`Tab.recipes` still exists in the enum for references but is hidden from the tab bar — opened via the Kitchen book icon. `GardenHubView.swift` is orphaned dead code (zero references); planned deletion. The March audit's "merge Garden + Farm" suggestion was deferred — Garden + Shop stay separate tabs.
-
----
+`Tab.recipes` still exists in the enum for references but is hidden from the tab bar (opened via the Kitchen book icon). `GardenHubView.swift` is orphaned dead code; planned deletion.
 
 ## Mini-Game System (COMPLETE)
 
-9 mini-game types in `CookingMiniGames.swift`:
-| Type | Gesture | File |
-|------|---------|------|
-| HeatPan | Hold finger | CookingMiniGames.swift |
-| AddToPan | Drag ingredient | CookingMiniGames.swift |
-| Stir | Circular swipe | CookingMiniGames.swift |
-| Season | Tap sprinkle | CookingMiniGames.swift |
-| Peel | Swipe down | CookingMiniGames.swift |
-| CookTimer | Green zone timing | CookingMiniGames.swift |
-| Wash | Tap rapidly | CookingMiniGames.swift |
-| CrackEgg | Tap to crack | CookingMiniGames.swift |
-| Assemble | Tap to plate | CookingMiniGames.swift |
-| Chop | Tap timing | ChopMiniGame.swift |
+9 mini-games in `CookingMiniGames.swift` — HeatPan (hold), AddToPan (drag), Stir (circular swipe), Season (tap), Peel (swipe down), CookTimer (green-zone), Wash (tap), CrackEgg (tap), Assemble (tap) — plus Chop (`ChopMiniGame.swift`, tap-timing). `CookingSessionView.swift` is the state machine: parses recipe steps → sequences mini-games → scores 0-100/game → averages to stars (85+ = 3, 60-84 = 2, <60 = 1).
 
-`CookingSessionView.swift` — state machine: parses recipe steps → generates mini-game sequence → scores 0-100 per game → averages for star rating (85+=3, 60-84=2, <60=1)
+## Roadmap (high-level — dated/active detail lives in `project_next_priorities.md` + `MEMORY.md` + the routine reports)
 
----
+**Done:** multi-user family system; 9 cooking mini-games; WeatherKit + plant care; Pip AI chat (Claude Sonnet, streaming, XML prompt — eval 8.2/10); App Attest + Cloudflare Worker; Apple-Hosted Asset Packs migration; USDA + ElevenLabs + Game Center/multiplayer; learn-to-earn coins + seed/pantry knowledge cards.
 
-## Key File Locations
+**Remaining (pre-launch):**
+- Paywall placement audit — guarantee one free cook-and-feed cycle before any paywall fires.
+- Clear weekly-review debt: banned `DispatchQueue.main.async` sites, `try? save()` sites, `profilePoseImage` bypasses.
+- UX P0s (05-25): ≥44pt bug-rescue taps, seed-carousel `.trailingFade()`, persistent Drag-Pip affordance.
+- Privacy/COPPA copy review (chat sends game context to the cloud).
+- TestFlight upload + App Review screenshot for the Pip Chat subscription.
+- Remaining art: 19 veggie image assets, Body Buddy figure, non-binary gender (K-01), water-pour spout anchor.
+- Cloudflare Phase 4 (delete `CloudKeyManager` + AppConfig record); Subscription Phase 2 (Pip Voice / Premium tiers).
 
-| Category | File | Purpose |
-|----------|------|---------|
-| **App Entry** | `ChefAcademyApp.swift` | ModelContainer, RootRouterView, MainTabView, HomeView |
-| **State** | `GameState.swift` | Central game state, SwiftData load/save, auto-save, `NutrientType` enum |
-| **Theme** | `AppTheme.swift` | Colors, fonts, spacing, animation tokens, button styles |
-| **Adaptive** | `AdaptiveLayout.swift` | iPhone/iPad sizing tokens, `.trailingFade()`, `AdaptiveCardSize` |
-| **Pip Components** | `PipComponents.swift` | `PipSpeechBubble`, `PipHeaderStack`, `PipSize`, `PINPadGrid` |
-| **Pip Animation** | `PipAnimations.swift` | `PipPose` enum, `PipWavingAnimatedView`, walking views |
-| **Pip Voice** | `PipVoice.swift` | Two-tier voice (silent free / ElevenLabs paid). Apple TTS rejected May 10. |
-| **Pip AI Chat** | `AskPipView.swift`, `PipAIService.swift`, `PipFoundationModelService.swift` | Claude Haiku/on-device routing, rate-limited, allergen-aware |
-| **Garden** | `GardenView.swift` | Interactive map with plots + draggable Pip |
-| **Plot** | `PlotView.swift` | Per-plot watering/weeding/bug rescue UX |
-| **Kitchen** | `KitchenView.swift` | Interactive cooking scene map; opens RecipeListView via book icon |
-| **Cooking** | `CookingSessionView.swift` | Multi-step state machine, mini-game sequencer |
-| **Mini-games** | `CookingMiniGames.swift`, `ChopMiniGame.swift` | 9+ cooking mini-game views |
-| **Recipes** | `RecipeCardExample.swift` | `PantryItem` enum, `Recipe` struct, `GardenRecipes.all` |
-| **Recipe Detail** | `RecipeDetailView.swift` | Full-screen cookbook page with sticky "Let's Cook!" footer |
-| **Shop** | `FarmShopView.swift` (also defines `FarmTabView` struct) | Seed bags + pantry items + walk transition |
-| **Body Buddy** | `BodyBuddyView.swift` | "Your Body" organ rings — cooked recipes feed organ health |
-| **Play / Mini-games** | `PlayLearnView.swift`, `HealthyChoiceGameView.swift`, `InsulinTetrisView.swift`, `GlucoseJourneyView.swift`, `LocalVersusView.swift`, `NearbyVersusView.swift`, `SplitScreenVersusView.swift`, `MultiplayerHealthyPicksView.swift` | Game hub + Sugar Sorter + multiplayer modes |
-| **Avatar** | `AvatarModel.swift` | `Gender`, `Outfit`, `HeadCovering` enums |
-| **Avatar Creator** | `AvatarCreatorView.swift` | 2 tabs (Outfit, Covering); Hair tab removed |
-| **Profile Picker** | `ProfilePickerView.swift` | "Who's playing today?" — uses `UserProfile.profilePoseImage` (mom/dad/girl/boy) |
-| **Family Setup** | `FamilySetupView.swift`, `AddChildFlowView.swift` | 8-step wizard + add-child flow |
-| **Parent Dashboard** | `ParentDashboardView.swift` | Child stats, play time, allergen edit |
-| **Paywall** | `PaywallView.swift`, `SubscriptionManager.swift` | Pip Chat $3.99/mo subscription |
-| **Onboarding** | `OnboardingView.swift`, `MeetPipAnimated.swift`, `MeetPipViews.swift` | First-launch / Meet Pip (3-dialog trim) |
-| **Seed Info** | `SeedInfoView.swift` | Educational veggie pages + PencilKit coloring + coin rewards |
-| **Pantry Info** | `PantryInfoView.swift` | Pantry item knowledge cards |
-| **Weather** | `GardenWeatherService.swift`, `WeatherOverlayView.swift` | WeatherKit + animated overlays (rain, snow, storm, seasonal particles) |
-| **Care Animations** | `WaterPourCharacterView.swift` | Kid pour animation + SwiftUI water particles |
-| **Allergens** | `Allergen.swift`, `AllergenEditorSheet.swift`, `AllergenPickerStep.swift` | Allergen safety filtering |
-| **Asset Packs** | `AssetPackController.swift`, `AssetPackImage.swift`, `ODRManager.swift` | Apple-Hosted Asset Packs migration (ODR deprecated WWDC25) |
-| **Networking** | `WorkerClient.swift`, `AppAttestService.swift` | Cloudflare Worker + App Attest for API key security |
-| **External APIs** | `USDAFoodService.swift`, `ElevenLabsVoiceService.swift`, `GameCenterService.swift`, `MultiplayerManager.swift`, `NearbyMultiplayerManager.swift` | USDA nutrition + ElevenLabs voice + Game Center + GameKit/MultipeerConnectivity |
-| **Scene Editor** | `SceneEditor.swift` | Dev-only tool for positioning map items |
-
----
-
-## Build & Test
-
-```bash
-# Build
-xcodebuild -scheme ChefAcademy -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build
-
-# Reset data (delete SwiftData store on simulator)
-find ~/Library/Developer/CoreSimulator/Devices -name "default.store*" -path "*/Application Support/*" -exec rm -f {} \;
-```
-
----
-
-## Audit / Roadmap Sources of Truth
-
-Don't enumerate live roadmap items in this file — it goes stale. Authoritative sources:
-
-- **`UX_AUDIT_REPORT.md` / `UX_REDESIGN_PLAN.md`** — March 2026 external audit (most P0s shipped; some declined like Apple TTS free tier; rest deferred)
-- **Latest `UX_REVIEW_<date>.md`** at repo root — Monday auto-routine (kid 6+ flow audit)
-- **Latest `WEEKLY_REVIEW_<date>.md`** at repo root — Sun + Tue auto-routine (perf + hardcoding violations)
-- **`GITHUB_ISSUES_DRAFT.md`** — current pre-launch backlog with priority tiers
-- **`~/.claude/projects/.../memory/MEMORY.md`** and `project_next_priorities.md` — session-to-session priorities
-
-When a CLAUDE.md statement contradicts one of those files, the dated file wins.
-
-Standing decisions live in **Architecture Rules → Standing Decisions** (above). Coding conventions live in **Architecture Rules → SwiftUI Coding Conventions** (above).
-
----
+**Durable constraints (not just TODOs):**
+- 🚫 Never run repeated CLI `xcodebuild`, never `pkill actool` — it wedges the asset catalog and needs a Mac reboot. Verify in Xcode or read the xcactivitylog.
+- Free voice = silent text; paid = ElevenLabs (don't re-propose Apple TTS).
+- Gender enum is binary (non-binary deferred); zero hardcoded design values (§3).
+- When CLAUDE.md contradicts a dated review file, the dated file wins.
 
 ## Contact & Attribution
 
-**Developer:** Marina Pollak
-**Course:** PROG-360A, Columbia College Chicago
-**Instructor:** Janell Baxter
-**Nutrition Research:** Jessie Inchauspé ("Glucose Goddess")
+**Developer:** Marina Pollak ·  Chicago · **Instructor:** Janell Baxter · **Nutrition Research:** Jessie Inchauspé ("Glucose Goddess")
 
 ---
-
-*Last Updated: May 27, 2026 — architecture stable; live roadmap lives in the dated review files + memory, not here.*
+*Last Updated: 2026-05-27 — architecture stable; high-level Roadmap above, dated detail in the review files + memory.*
