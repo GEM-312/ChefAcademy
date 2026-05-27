@@ -4,6 +4,34 @@ Personal reference built from real code in Pip's Kitchen Garden. Newest lessons 
 
 ---
 
+## Session: May 24, 2026
+
+### Trace the Code — Memory and the Knowledge Graph Are Both Stale-able
+**Where it came up:** A `/graphify` build flagged `PipFoundationModelService` as a heavy "bridge" node in the AI subsystem, and project memory confidently said *"PipAIService is dual-mode (on-device + cloud), falls back to Claude."* Tracing the actual routing told a different story: `PipAIService.askPip()` (PipAIService.swift:482-485) is hard-wired to `await askCloud(question)` with the comment *"Cloud Claude only — on-device is too small for reliable multi-tool chat."* The on-device path still exists and is wired, but no longer answers chat — it only updates context.
+**What it is:** Two derived artifacts — long-term memory notes and a generated dependency graph — both described an *intended* architecture that the code had since moved past (the cloud-only flip happened Apr 19; memory wasn't fully reconciled). A graph edge says "these symbols are connected," not "this connection is live in the current control flow." Memory says "this was true when written." Neither is the running code.
+**In our code:** The graph's `path` query confirmed the structural wiring (`PipAIService → askCloud() → WorkerClient`; `PipAIService → PipFoundationModelService`), but only reading `askPip()` revealed which branch actually executes. The single source of truth was 4 lines of Swift, not the 6 memory files that referenced it.
+**Why it matters:** Use the graph and memory to *locate* and *orient* — "where does AI routing live, what touches it" — then open the function and read it before asserting behavior. The more confident a derived source sounds, the more it's worth a 10-second code check. After verifying, fix the stale source (we corrected 6 memory claims) so the next reader isn't misled again.
+
+### Dynamic Asset Names Defeat Naive Grep (Dead-Asset Detection)
+**Where it came up:** Auditing 715 imagesets for unused ones. A first pass — "does the asset name appear as a literal string in any .swift file?" — flagged ~290 candidates, including whole families like `pip_throw_veggie_frame_01..30` and `boy_hat_colored_brown`. Tracing the call sites showed ~100 of those were actually live.
+**What it is:** Code rarely hardcodes every frame name. It stores a *base* (`"pip_throw_veggie"`) and builds the full name at runtime: `Image(String(format: "%@_frame_%02d", base, i))` or `"\(base)_\(color)"`. The literal `pip_throw_veggie_frame_07` never appears in source, so a naive substring search reports it unused — a false positive. Conversely, `kitchen_sink_frame_001..125` looked the same but WAS dead: the code builds `kitchen_sink_%02d` (→ a *different*, 15-frame set `kitchen_sink_01..15`), so the 125-frame `_frame_NNN` originals were genuinely orphaned.
+**In our code:** The reliable check was: strip the trailing variant suffix (`_NN`, `_color`) to get the base, search for the base, and when it matched, open the actual builder to confirm the format string maps to *these* assets and not a sibling set. `grep -rlF "pip_throw_veggie"` → `PipGameAnimationView.swift` (live); `grep -rlF "kitchen_sink_frame"` → nothing, while `kitchen_sink_%02d` pointed at the 2-digit set (dead originals confirmed).
+**Why it matters:** Static "is this string referenced" analysis has a known blind spot for runtime-constructed identifiers — asset names, notification names, UserDefaults keys, segue IDs. Always verify a "dead" candidate by reading the construction site, and verify a "live" one isn't matching a same-prefix sibling. The audit caught 187 truly-dead imagesets only because the 100 false positives were filtered out by hand.
+
+### Modern Xcode Catalogs: File-System-Synchronized Groups (no pbxproj edits)
+**Where it came up:** Deleting 187 dead imagesets. The worry: "do I have to edit `project.pbxproj` to remove each imageset reference, or will the build break?"
+**What it is:** `ChefAcademy.xcodeproj/project.pbxproj` has `objectVersion = 77` (Xcode 16+) and uses `fileSystemSynchronizedGroups`. Instead of listing every file as an individual `PBXFileReference`, Xcode syncs an entire directory tree from disk — it discovers files at build time. So deleting a `.imageset` folder from disk is automatically reflected; there's no per-file entry to clean up, and no dangling reference to break the build.
+**In our code:** `rm -rf` on the dead imageset folders was the entire change — zero pbxproj edits, zero `Contents.json` group edits (the ODR tags lived in each imageset's own Contents.json, deleted along with the folder). Confirmed the catalog still compiled via `actool`.
+**Why it matters:** On older `.pbxproj` formats, deleting a file outside Xcode left a stale reference that broke the build until you removed it in the project navigator. With synchronized groups, the filesystem IS the project — you can add/remove resources with plain shell commands. Know which era your project is in (`objectVersion` tells you) before deciding whether a file change needs a project-file edit.
+
+### Metal Toolchain Is a Separate Component; `actool` and `metal` Are Independent Build Steps
+**Where it came up:** After deleting the assets, `xcodebuild` ended in `** BUILD FAILED **`. The instinct is "my change broke the build" — but the only error was `cannot execute tool 'metal' due to missing Metal Toolchain`.
+**What it is:** Xcode 16+/26 unbundles the Metal Toolchain — `.metal` shader files (we have `Ripple.metal`) won't compile until you run `xcodebuild -downloadComponent MetalToolchain`. Separately, the asset catalog is compiled by `actool`, a totally independent build task. A failure in one says nothing about the other. Reading the log showed `actool … Assets.xcassets` ran with zero errors/warnings; the single `error:` line was the Metal one.
+**In our code:** Deleting PNGs cannot affect shader compilation, so the Metal failure was pre-existing and environmental. The actual verification target — does the catalog still compile after removing 187 imagesets — was answered "yes" by the clean `actool` step, even though the overall build couldn't finish.
+**Why it matters:** "Build failed" is not "my change failed." Read the log for the *specific* failing command and ask whether your change could plausibly cause it. An asset deletion that breaks a Metal compile is a logical impossibility — which means the build was already broken for an unrelated reason (here, a missing toolchain component this machine never downloaded). Scope your verification to what your change actually touched.
+
+---
+
 ## Session: May 12, 2026
 
 ### Verify Authority Docs Against Their Source of Truth Before Rewriting

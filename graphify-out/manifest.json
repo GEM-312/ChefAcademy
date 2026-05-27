@@ -1,0 +1,657 @@
+{
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/AssetPackDownloader/BackgroundDownloadHandler.swift": {
+    "mtime": 1777332901.624957,
+    "ast_hash": "d9f029b315d622ebd4f4f3340b2a5fd9",
+    "semantic_hash": "d9f029b315d622ebd4f4f3340b2a5fd9"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/GardenHubView.swift": {
+    "mtime": 1778458091.249633,
+    "ast_hash": "f49eacf36ce5089caef2e58513fe96fd",
+    "semantic_hash": "f49eacf36ce5089caef2e58513fe96fd"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/AppAttestService.swift": {
+    "mtime": 1777754660.0,
+    "ast_hash": "295d2b2946b74dc6e817b4fe4912a6ec",
+    "semantic_hash": "295d2b2946b74dc6e817b4fe4912a6ec"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/HealthyChoiceGameView.swift": {
+    "mtime": 1778459982.904753,
+    "ast_hash": "4efc4e6b81a0abba364e9d9e2e1ca64d",
+    "semantic_hash": "4efc4e6b81a0abba364e9d9e2e1ca64d"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/SubscriptionManager.swift": {
+    "mtime": 1776651617.0,
+    "ast_hash": "27b3cd36900c2c0dc1a9077a9e28624a",
+    "semantic_hash": "27b3cd36900c2c0dc1a9077a9e28624a"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/FarmShopView.swift": {
+    "mtime": 1778463235.3870847,
+    "ast_hash": "3bfcc6c9244498ce5a5a265439dd4b26",
+    "semantic_hash": "3bfcc6c9244498ce5a5a265439dd4b26"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/ChefAcademyApp.swift": {
+    "mtime": 1778459100.0147817,
+    "ast_hash": "76222bdd2dd6a2705f1014fa1490887a",
+    "semantic_hash": "76222bdd2dd6a2705f1014fa1490887a"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/PipFoundationModelService.swift": {
+    "mtime": 1778377958.0,
+    "ast_hash": "944703c99bad482d96ea98f81b22cf72",
+    "semantic_hash": "944703c99bad482d96ea98f81b22cf72"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/CloudKeyManager.swift": {
+    "mtime": 1776814530.0,
+    "ast_hash": "916b31af67b481f25dd19a254797859f",
+    "semantic_hash": "916b31af67b481f25dd19a254797859f"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/WorkerClient.swift": {
+    "mtime": 1777755511.0,
+    "ast_hash": "aa5d4bd5064e66af58dad4e719c124f3",
+    "semantic_hash": "aa5d4bd5064e66af58dad4e719c124f3"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/AskPipView.swift": {
+    "mtime": 1778459093.4301608,
+    "ast_hash": "e5fd926da76380d5314b50307afe71b5",
+    "semantic_hash": "e5fd926da76380d5314b50307afe71b5"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/WeatherOverlayView.swift": {
+    "mtime": 1778544142.7372942,
+    "ast_hash": "3f8b38720e0bcb2d713eeccd3b093c69",
+    "semantic_hash": "3f8b38720e0bcb2d713eeccd3b093c69"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/GameCenterMatchmakerView.swift": {
+    "mtime": 1775451978.0,
+    "ast_hash": "f8f3ca50b9e60fcbc437cc2fb868b87b",
+    "semantic_hash": "f8f3ca50b9e60fcbc437cc2fb868b87b"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/ChopMiniGame.swift": {
+    "mtime": 1778459113.1153464,
+    "ast_hash": "488c0f12e7e6855170055de949aa54dc",
+    "semantic_hash": "488c0f12e7e6855170055de949aa54dc"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/SceneEditor.swift": {
+    "mtime": 1770691778.0,
+    "ast_hash": "d1d2f97c6296fd9288868d098f72de9e",
+    "semantic_hash": "d1d2f97c6296fd9288868d098f72de9e"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/PipStaticResponses.swift": {
+    "mtime": 1776649387.0,
+    "ast_hash": "6a97c58c873314705e1b4072dfd5589f",
+    "semantic_hash": "6a97c58c873314705e1b4072dfd5589f"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/KitchenView.swift": {
+    "mtime": 1777758424.0,
+    "ast_hash": "c4dece40b00a72df4ab3cd4e34634e8e",
+    "semantic_hash": "c4dece40b00a72df4ab3cd4e34634e8e"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/VoicePickerView.swift": {
+    "mtime": 1778376854.0,
+    "ast_hash": "c595cb59e6a5a651b1c61a88f1ea19e0",
+    "semantic_hash": "c595cb59e6a5a651b1c61a88f1ea19e0"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/AssetPackImage.swift": {
+    "mtime": 1777331827.0,
+    "ast_hash": "3141bfb2938de999c574e54dbc2e2cb2",
+    "semantic_hash": "3141bfb2938de999c574e54dbc2e2cb2"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/PipDialogView.swift": {
+    "mtime": 1778458160.7249184,
+    "ast_hash": "8472a77ccbce1f2167c1c6f6e2d10bb9",
+    "semantic_hash": "8472a77ccbce1f2167c1c6f6e2d10bb9"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/ProfileView.swift": {
+    "mtime": 1776564647.0,
+    "ast_hash": "d0cb51930d7f8c346c8f580fba440fdd",
+    "semantic_hash": "d0cb51930d7f8c346c8f580fba440fdd"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/PipAIService.swift": {
+    "mtime": 1778377952.0,
+    "ast_hash": "4105b806ddd9e9caefe99f29f34eed45",
+    "semantic_hash": "4105b806ddd9e9caefe99f29f34eed45"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/AvatarModel.swift": {
+    "mtime": 1778446995.6574562,
+    "ast_hash": "3ff037130fcff8c8896827e197a98834",
+    "semantic_hash": "3ff037130fcff8c8896827e197a98834"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/ParentDashboardView.swift": {
+    "mtime": 1778377309.0,
+    "ast_hash": "30ccdfcffa9ec429d67b64da42acda2f",
+    "semantic_hash": "30ccdfcffa9ec429d67b64da42acda2f"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/APIKeys.swift": {
+    "mtime": 1779395113.3896306,
+    "ast_hash": "94e901bb9d213c9732cc95677404c8b2",
+    "semantic_hash": "94e901bb9d213c9732cc95677404c8b2"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/VideoPlayerView.swift": {
+    "mtime": 1773543319.0,
+    "ast_hash": "9f38b25baa9c547630da7d30e123d58d",
+    "semantic_hash": "9f38b25baa9c547630da7d30e123d58d"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/PaywallView.swift": {
+    "mtime": 1778377931.0,
+    "ast_hash": "09941332275f645c7a2b5ecc14ed9c57",
+    "semantic_hash": "09941332275f645c7a2b5ecc14ed9c57"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/LocalVersusView.swift": {
+    "mtime": 1778460034.1134248,
+    "ast_hash": "1f9e9ee70ab10f3fad2ef396769cea79",
+    "semantic_hash": "1f9e9ee70ab10f3fad2ef396769cea79"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/SplitScreenVersusView.swift": {
+    "mtime": 1778541901.1941042,
+    "ast_hash": "a7b35ead8776b9207c35bc6ae1a27c22",
+    "semantic_hash": "a7b35ead8776b9207c35bc6ae1a27c22"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/AmbientAudioPlayer.swift": {
+    "mtime": 1777765310.0,
+    "ast_hash": "527f1143e1c21664203cf39dcd506826",
+    "semantic_hash": "527f1143e1c21664203cf39dcd506826"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/Allergen.swift": {
+    "mtime": 1775592795.0,
+    "ast_hash": "bbad2d8ce08c6a62fee4f801c3c7f81b",
+    "semantic_hash": "bbad2d8ce08c6a62fee4f801c3c7f81b"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/CookingSessionView.swift": {
+    "mtime": 1778459126.7725666,
+    "ast_hash": "72e7cf477fd1e96ec419f2197b833495",
+    "semantic_hash": "72e7cf477fd1e96ec419f2197b833495"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/ElevenLabsVoiceService.swift": {
+    "mtime": 1777755518.0,
+    "ast_hash": "a97dc16bd1cf296d467ecc0287dfeb10",
+    "semantic_hash": "a97dc16bd1cf296d467ecc0287dfeb10"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/GlucoseJourneyView.swift": {
+    "mtime": 1778541898.209975,
+    "ast_hash": "2120dde9e0e65781eef8194440d57d43",
+    "semantic_hash": "2120dde9e0e65781eef8194440d57d43"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/AllergenEditorSheet.swift": {
+    "mtime": 1776564647.0,
+    "ast_hash": "9a8624216721c1e98b4f16b3cbfa07f2",
+    "semantic_hash": "9a8624216721c1e98b4f16b3cbfa07f2"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/MultiplayerHealthyPicksView.swift": {
+    "mtime": 1778460065.8164399,
+    "ast_hash": "254991600ee05b79701f902f918e27cb",
+    "semantic_hash": "254991600ee05b79701f902f918e27cb"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/BodyBuddyView.swift": {
+    "mtime": 1778541904.514207,
+    "ast_hash": "e928a5e4695c752597235e5a2fc2a1a6",
+    "semantic_hash": "e928a5e4695c752597235e5a2fc2a1a6"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/NearbyVersusView.swift": {
+    "mtime": 1778460095.629474,
+    "ast_hash": "5b99ad57cfb5c56cff71758a08eea398",
+    "semantic_hash": "5b99ad57cfb5c56cff71758a08eea398"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/CharacterWalkingView.swift": {
+    "mtime": 1778447000.3562176,
+    "ast_hash": "de64c1c13751ad9283ba5d3616d647bf",
+    "semantic_hash": "de64c1c13751ad9283ba5d3616d647bf"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/SeededRandomGenerator.swift": {
+    "mtime": 1773682307.0,
+    "ast_hash": "066df3c1be9deb71d75f28c2786fd72d",
+    "semantic_hash": "066df3c1be9deb71d75f28c2786fd72d"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/CookingMiniGames.swift": {
+    "mtime": 1778548224.8607535,
+    "ast_hash": "f2a7b45b1b9f8baa583f0abd1f0ffac8",
+    "semantic_hash": "f2a7b45b1b9f8baa583f0abd1f0ffac8"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/FamilyProfile.swift": {
+    "mtime": 1773002521.0,
+    "ast_hash": "125d784f4d378b23bc22c9a7de1d82f9",
+    "semantic_hash": "125d784f4d378b23bc22c9a7de1d82f9"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/ODRManager.swift": {
+    "mtime": 1778458144.2625148,
+    "ast_hash": "850760711cd9e2256b45352394bb2a44",
+    "semantic_hash": "850760711cd9e2256b45352394bb2a44"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/MigrationPINSetupView.swift": {
+    "mtime": 1778463168.9435375,
+    "ast_hash": "93eaabbe90492c8bd4f26c948bb2fb82",
+    "semantic_hash": "93eaabbe90492c8bd4f26c948bb2fb82"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/SeedInfoView.swift": {
+    "mtime": 1778545587.243983,
+    "ast_hash": "c6f533ce5a0523de00ac4f28c887dff5",
+    "semantic_hash": "c6f533ce5a0523de00ac4f28c887dff5"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/AddChildFlowView.swift": {
+    "mtime": 1778451354.0618868,
+    "ast_hash": "7fbc9cdec223e86d224b8fe5d8d0fdca",
+    "semantic_hash": "7fbc9cdec223e86d224b8fe5d8d0fdca"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/UserProfile.swift": {
+    "mtime": 1778548785.1253319,
+    "ast_hash": "d79fcc9b3dfb0761e2396b54c5150485",
+    "semantic_hash": "d79fcc9b3dfb0761e2396b54c5150485"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/PipVoice.swift": {
+    "mtime": 1778458662.0337143,
+    "ast_hash": "6fbeef42a42faa22ced56449f2756206",
+    "semantic_hash": "6fbeef42a42faa22ced56449f2756206"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/GardenView.swift": {
+    "mtime": 1778549545.3647485,
+    "ast_hash": "b9a05ce4c24b814ca5f93daef523c406",
+    "semantic_hash": "b9a05ce4c24b814ca5f93daef523c406"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/PipComponents.swift": {
+    "mtime": 1778448058.6561809,
+    "ast_hash": "fa03cbf0c276a99f7cb6fb2419fc9238",
+    "semantic_hash": "fa03cbf0c276a99f7cb6fb2419fc9238"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/AvatarCreatorView.swift": {
+    "mtime": 1776560811.0,
+    "ast_hash": "80d32488aa75692554387e0be4f62a9a",
+    "semantic_hash": "80d32488aa75692554387e0be4f62a9a"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/BackgroundView.swift": {
+    "mtime": 1778448630.3362992,
+    "ast_hash": "c389fa84034a839ff63c383c69785c05",
+    "semantic_hash": "c389fa84034a839ff63c383c69785c05"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/ParentPINEntryView.swift": {
+    "mtime": 1778463175.9535441,
+    "ast_hash": "841d22eb84ae38b97a44a2a593942022",
+    "semantic_hash": "841d22eb84ae38b97a44a2a593942022"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/HomeAnimated.swift": {
+    "mtime": 1778547940.7377176,
+    "ast_hash": "07103c832001310ae04e674c5b3148bd",
+    "semantic_hash": "07103c832001310ae04e674c5b3148bd"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/PlayerData.swift": {
+    "mtime": 1775447636.0,
+    "ast_hash": "96b1d56f3947af0eead1f595b77c0588",
+    "semantic_hash": "96b1d56f3947af0eead1f595b77c0588"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/PINKeychain.swift": {
+    "mtime": 1772490770.0,
+    "ast_hash": "7079001060dfd7500175df8e7086082a",
+    "semantic_hash": "7079001060dfd7500175df8e7086082a"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/MultiplayerManager.swift": {
+    "mtime": 1776560201.0,
+    "ast_hash": "150ceefaa5065cb694903ce33c31c5c8",
+    "semantic_hash": "150ceefaa5065cb694903ce33c31c5c8"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/ProfilePickerView.swift": {
+    "mtime": 1778548787.0694683,
+    "ast_hash": "24d3cf232d62b768f89316164d206019",
+    "semantic_hash": "24d3cf232d62b768f89316164d206019"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/MeetPipAnimated.swift": {
+    "mtime": 1778459637.2171996,
+    "ast_hash": "5006345d981f75b16dc1b71de1ad7350",
+    "semantic_hash": "5006345d981f75b16dc1b71de1ad7350"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/PantryInfoView.swift": {
+    "mtime": 1778545589.3534412,
+    "ast_hash": "994b3c50e741dc3786d9ea2181d3f476",
+    "semantic_hash": "994b3c50e741dc3786d9ea2181d3f476"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/SignInView.swift": {
+    "mtime": 1778458187.3815398,
+    "ast_hash": "125ec3c0f3b7d678e4b1533f4ad5ceb9",
+    "semantic_hash": "125ec3c0f3b7d678e4b1533f4ad5ceb9"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/MorphTransition.swift": {
+    "mtime": 1776112648.0,
+    "ast_hash": "43c2ab5ca863f292dd8eb53111b071f0",
+    "semantic_hash": "43c2ab5ca863f292dd8eb53111b071f0"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/GameCenterService.swift": {
+    "mtime": 1776121357.0,
+    "ast_hash": "3cd0d0ffde5b39fea95f08d7a9d6f8a4",
+    "semantic_hash": "3cd0d0ffde5b39fea95f08d7a9d6f8a4"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/PlantingSheet.swift": {
+    "mtime": 1778459120.6113195,
+    "ast_hash": "b269fbc057cd3e46468070a142eb9b82",
+    "semantic_hash": "b269fbc057cd3e46468070a142eb9b82"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/RecipeDetailView.swift": {
+    "mtime": 1778447032.1204443,
+    "ast_hash": "d8ca460cd793ef0469537fbf012d68f4",
+    "semantic_hash": "d8ca460cd793ef0469537fbf012d68f4"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/AdaptiveLayout.swift": {
+    "mtime": 1778458706.1656988,
+    "ast_hash": "076e5466e21bd7ad7be915b260499116",
+    "semantic_hash": "076e5466e21bd7ad7be915b260499116"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/PipGameAnimationView.swift": {
+    "mtime": 1776740841.0,
+    "ast_hash": "e0e487842136d59fff913a615523b0d7",
+    "semantic_hash": "e0e487842136d59fff913a615523b0d7"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/AppTheme.swift": {
+    "mtime": 1778545829.580507,
+    "ast_hash": "21d3bc18744febb04b90b7a76f0732fd",
+    "semantic_hash": "21d3bc18744febb04b90b7a76f0732fd"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/AuthManager.swift": {
+    "mtime": 1773003827.0,
+    "ast_hash": "e59c5904197c16d1021d0bc7c5092988",
+    "semantic_hash": "e59c5904197c16d1021d0bc7c5092988"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/GameState.swift": {
+    "mtime": 1778545575.1949224,
+    "ast_hash": "5fabb9bba79207174bf85851db88ec17",
+    "semantic_hash": "5fabb9bba79207174bf85851db88ec17"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/MeetPipViews.swift": {
+    "mtime": 1778459649.1708431,
+    "ast_hash": "281fbaa1c52a6d9b6b31f6501268cfbd",
+    "semantic_hash": "281fbaa1c52a6d9b6b31f6501268cfbd"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/SessionManager.swift": {
+    "mtime": 1777912031.0,
+    "ast_hash": "6102b3639e70868d101f6158cbc18724",
+    "semantic_hash": "6102b3639e70868d101f6158cbc18724"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/SiblingProfileView.swift": {
+    "mtime": 1778543387.3681996,
+    "ast_hash": "b3fa778effb6e94ca2763b66c1301b3c",
+    "semantic_hash": "b3fa778effb6e94ca2763b66c1301b3c"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/FamilySetupView.swift": {
+    "mtime": 1778459691.5628648,
+    "ast_hash": "736ca4c8da44d5befc3381a5f24ca093",
+    "semantic_hash": "736ca4c8da44d5befc3381a5f24ca093"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/GardenWeatherService.swift": {
+    "mtime": 1778544118.308407,
+    "ast_hash": "0589fdbd7c5bb4a8e669b475584e17cb",
+    "semantic_hash": "0589fdbd7c5bb4a8e669b475584e17cb"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/AssetPackController.swift": {
+    "mtime": 1778458017.8740482,
+    "ast_hash": "2053deb2789d95d217bf51129ff8a747",
+    "semantic_hash": "2053deb2789d95d217bf51129ff8a747"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/AllergenPickerStep.swift": {
+    "mtime": 1778449023.5500696,
+    "ast_hash": "d44b47719f0ebc1d1bde20dd8674d983",
+    "semantic_hash": "d44b47719f0ebc1d1bde20dd8674d983"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/WaterPourCharacterView.swift": {
+    "mtime": 1778552036.119138,
+    "ast_hash": "380afda94cabdc806da426864527305d",
+    "semantic_hash": "380afda94cabdc806da426864527305d"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/USDAFoodService.swift": {
+    "mtime": 1778450582.4037046,
+    "ast_hash": "7cc8a30f5b10b81a4dd0cbdfa84cfa99",
+    "semantic_hash": "7cc8a30f5b10b81a4dd0cbdfa84cfa99"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/RecipeCardExample.swift": {
+    "mtime": 1778447027.2736397,
+    "ast_hash": "5bbba274c1ad01ae570ad3f9abea82f4",
+    "semantic_hash": "5bbba274c1ad01ae570ad3f9abea82f4"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/OnboardingView.swift": {
+    "mtime": 1778450289.310903,
+    "ast_hash": "28092270740d38f8a2169b54f90b3337",
+    "semantic_hash": "28092270740d38f8a2169b54f90b3337"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/ContentView.swift": {
+    "mtime": 1769473491.0,
+    "ast_hash": "1649f61232306c5c95a03de9c3058f0f",
+    "semantic_hash": "1649f61232306c5c95a03de9c3058f0f"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/SiblingGardenView.swift": {
+    "mtime": 1778459071.1679826,
+    "ast_hash": "357f3c9443c4242b3a9a45536d6a9d13",
+    "semantic_hash": "357f3c9443c4242b3a9a45536d6a9d13"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/PlotView.swift": {
+    "mtime": 1778549499.4632823,
+    "ast_hash": "fef7996ed42214cc1c75beca28ea034b",
+    "semantic_hash": "fef7996ed42214cc1c75beca28ea034b"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/CookingCompletionView.swift": {
+    "mtime": 1778459664.4442887,
+    "ast_hash": "49a44384bade7e458617b8c29fc304f8",
+    "semantic_hash": "49a44384bade7e458617b8c29fc304f8"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/InsulinTetrisView.swift": {
+    "mtime": 1778541899.9656537,
+    "ast_hash": "b5bd6f9a0be75885ac26321cfbffdf32",
+    "semantic_hash": "b5bd6f9a0be75885ac26321cfbffdf32"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/PipTestView.swift": {
+    "mtime": 1778458577.5105639,
+    "ast_hash": "627e2c1d119192a5c23af9fb83ccd804",
+    "semantic_hash": "627e2c1d119192a5c23af9fb83ccd804"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/PlayLearnView.swift": {
+    "mtime": 1778458175.399292,
+    "ast_hash": "3b07ada51052e6e0d9aee4198d2bd728",
+    "semantic_hash": "3b07ada51052e6e0d9aee4198d2bd728"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/PipAnimations.swift": {
+    "mtime": 1778463129.6489744,
+    "ast_hash": "c1ad100c91f715c04edc859d5c5e5757",
+    "semantic_hash": "c1ad100c91f715c04edc859d5c5e5757"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/NearbyMultiplayerManager.swift": {
+    "mtime": 1776560201.0,
+    "ast_hash": "98e99ee9a0326ad36a3dafc10b253ff2",
+    "semantic_hash": "98e99ee9a0326ad36a3dafc10b253ff2"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/UX_AUDIT_REPORT.md": {
+    "mtime": 1772578271.5724833,
+    "ast_hash": "dda94d7ec8621c22c0d66fc768e68794",
+    "semantic_hash": "dda94d7ec8621c22c0d66fc768e68794"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ASSETS.md": {
+    "mtime": 1778620032.5362387,
+    "ast_hash": "72023e198574d923999a1b0c08d7c1b4",
+    "semantic_hash": "72023e198574d923999a1b0c08d7c1b4"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/WEEKLY_REVIEW_2026-05-10.md": {
+    "mtime": 1778445427.8796754,
+    "ast_hash": "2408b2121d943641ed447ee8fd1470bf",
+    "semantic_hash": "2408b2121d943641ed447ee8fd1470bf"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/TestingPlan_PipsKitchenGarden.md": {
+    "mtime": 1772427644.615077,
+    "ast_hash": "7d6556a2a547dfbb64de58437222939f",
+    "semantic_hash": "7d6556a2a547dfbb64de58437222939f"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/UX_REVIEW_2026-05-11.md": {
+    "mtime": 1778541536.3573112,
+    "ast_hash": "1b57a624acdbe7b932a0910bc8659039",
+    "semantic_hash": "1b57a624acdbe7b932a0910bc8659039"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/STYLES.md": {
+    "mtime": 1778619939.3401105,
+    "ast_hash": "ee18bd73d8ecf67d3a9228be4b53a89d",
+    "semantic_hash": "ee18bd73d8ecf67d3a9228be4b53a89d"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/WEEKLY_REVIEW_2026-05-05.md": {
+    "mtime": 1778439409.522369,
+    "ast_hash": "87f5dab5e7bf32a97f03917c852a00c8",
+    "semantic_hash": "87f5dab5e7bf32a97f03917c852a00c8"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/UX_REVIEW_2026-05-04.md": {
+    "mtime": 1777911131.674294,
+    "ast_hash": "d859cc8e9e0dd2e2e242e42ff31d1570",
+    "semantic_hash": "d859cc8e9e0dd2e2e242e42ff31d1570"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/PIP_ANIMATIONS.md": {
+    "mtime": 1774303170.9158347,
+    "ast_hash": "8929ec151c1603fc60ae1fb27e7ea2a4",
+    "semantic_hash": "8929ec151c1603fc60ae1fb27e7ea2a4"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/GITHUB_ISSUES_DRAFT.md": {
+    "mtime": 1778465305.620651,
+    "ast_hash": "d7cf5b25ca10a2666cf1204d4433206c",
+    "semantic_hash": "d7cf5b25ca10a2666cf1204d4433206c"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/PROTOTYPE_TEST_PLAN.md": {
+    "mtime": 1772425301.001658,
+    "ast_hash": "f753f323a7242b7228db59234cf70394",
+    "semantic_hash": "f753f323a7242b7228db59234cf70394"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/README.md": {
+    "mtime": 1775455461.659642,
+    "ast_hash": "a7efd8351edfb15598477d8916c510a3",
+    "semantic_hash": "a7efd8351edfb15598477d8916c510a3"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/USABILITY_TEST_REPORT.md": {
+    "mtime": 1776653330.9631164,
+    "ast_hash": "4cad6b590ccd428ec18b129b7a6755ef",
+    "semantic_hash": "4cad6b590ccd428ec18b129b7a6755ef"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/SKILLS.md": {
+    "mtime": 1773613337.3099575,
+    "ast_hash": "8a6f0dbc37b6616356cb533c95099bbb",
+    "semantic_hash": "8a6f0dbc37b6616356cb533c95099bbb"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/USABILITY_OBSERVER_NOTES.md": {
+    "mtime": 1776565761.7890086,
+    "ast_hash": "c978f5dde15bfc30965e957f902c1fb0",
+    "semantic_hash": "c978f5dde15bfc30965e957f902c1fb0"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/TEACHING.md": {
+    "mtime": 1778620288.827454,
+    "ast_hash": "c346983592fc2a050f3b276fcb658f95",
+    "semantic_hash": "c346983592fc2a050f3b276fcb658f95"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ANIMATIONS.md": {
+    "mtime": 1778619967.9539287,
+    "ast_hash": "e304760fce158a5c2a6360eb582e1b1b",
+    "semantic_hash": "e304760fce158a5c2a6360eb582e1b1b"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/WEEKLY_REVIEW_2026-05-19.md": {
+    "mtime": 1779330346.9027638,
+    "ast_hash": "5e93c25941a767266c6f5149eb12555a",
+    "semantic_hash": "5e93c25941a767266c6f5149eb12555a"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/UX_REDESIGN_PLAN.md": {
+    "mtime": 1772578192.185364,
+    "ast_hash": "7b74de69c5a90b717f5e0018e5a54a41",
+    "semantic_hash": "7b74de69c5a90b717f5e0018e5a54a41"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/USABILITY_TEST_SCRIPT.md": {
+    "mtime": 1776565736.127963,
+    "ast_hash": "dffa33b7afb2346f7d98a6492e0adeed",
+    "semantic_hash": "dffa33b7afb2346f7d98a6492e0adeed"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/GLUCOSE_GAMES.md": {
+    "mtime": 1774298220.2351778,
+    "ast_hash": "25f6b3ec9c5eb4b00432c1cce3ee0fba",
+    "semantic_hash": "25f6b3ec9c5eb4b00432c1cce3ee0fba"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/UX_REVIEW_2026-05-18.md": {
+    "mtime": 1779330346.9022996,
+    "ast_hash": "c0902be0e9d340a998511f15516a4be6",
+    "semantic_hash": "c0902be0e9d340a998511f15516a4be6"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/MIDTERM_PRESENTATION.md": {
+    "mtime": 1773627165.646926,
+    "ast_hash": "48fe6a51a421987cf24fb1f70019544d",
+    "semantic_hash": "48fe6a51a421987cf24fb1f70019544d"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/WEEKLY_REVIEW_2026-05-03.md": {
+    "mtime": 1777911131.674548,
+    "ast_hash": "0dac5edfb30f751820dae261fdf9b088",
+    "semantic_hash": "0dac5edfb30f751820dae261fdf9b088"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/BACKGROUND_ASSETS_GUIDE.md": {
+    "mtime": 1777475634.6570837,
+    "ast_hash": "644bff48e5e1b84274685a8276a6c6b7",
+    "semantic_hash": "644bff48e5e1b84274685a8276a6c6b7"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/WEEKLY_REVIEW_2026-05-17.md": {
+    "mtime": 1779330346.9025671,
+    "ast_hash": "3b94df44eb40d82b47d4fddaa0c9116b",
+    "semantic_hash": "3b94df44eb40d82b47d4fddaa0c9116b"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/cloudflare-worker/README.md": {
+    "mtime": 1776812953.08908,
+    "ast_hash": "ece22a8370d812f71dca464f235bf9bd",
+    "semantic_hash": "ece22a8370d812f71dca464f235bf9bd"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/.claude/agents/code-reviewer.md": {
+    "mtime": 1779330493.4915724,
+    "ast_hash": "8eb7ade3b417d5edcd78b29a56db8d65",
+    "semantic_hash": "8eb7ade3b417d5edcd78b29a56db8d65"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/.claude/agents/adaptive-layout-engineer.md": {
+    "mtime": 1772999342.009077,
+    "ast_hash": "a97ce562cd9f294d6913f6a5f60e3f61",
+    "semantic_hash": "a97ce562cd9f294d6913f6a5f60e3f61"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/.claude/agent-memory/code-reviewer/MEMORY.md": {
+    "mtime": 1776112529.8389318,
+    "ast_hash": "f40adac00fd3d02a2a1f95f62f6f6b1c",
+    "semantic_hash": "f40adac00fd3d02a2a1f95f62f6f6b1c"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/.claude/agent-memory/code-reviewer/multiplayer_system.md": {
+    "mtime": 1773687131.6902964,
+    "ast_hash": "2d4d58776a595953eaeab04d2a9853ae",
+    "semantic_hash": "2d4d58776a595953eaeab04d2a9853ae"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/.claude/agent-memory/code-reviewer/foundation_models_integration.md": {
+    "mtime": 1776645330.3285377,
+    "ast_hash": "5013a4a60e6d052a541f05d95e3fd0ab",
+    "semantic_hash": "5013a4a60e6d052a541f05d95e3fd0ab"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/.claude/agent-memory/code-reviewer/recurring_patterns.md": {
+    "mtime": 1776112523.6642528,
+    "ast_hash": "6c5dcf529353bc6504e2e88f0136139a",
+    "semantic_hash": "6c5dcf529353bc6504e2e88f0136139a"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/.claude/skills/add-asset/SKILL.md": {
+    "mtime": 1774403715.9400501,
+    "ast_hash": "974f1998dd3384fe42634132abc1b737",
+    "semantic_hash": "974f1998dd3384fe42634132abc1b737"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/.claude/skills/extract-frames/SKILL.md": {
+    "mtime": 1774397740.5729563,
+    "ast_hash": "36f4b9a87042a1a1728497d3b312388e",
+    "semantic_hash": "36f4b9a87042a1a1728497d3b312388e"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/.claude/skills/run-chefacademy/SKILL.md": {
+    "mtime": 1779330269.7861075,
+    "ast_hash": "e21b54001b5cc4152caa4c4f8d1bf575",
+    "semantic_hash": "e21b54001b5cc4152caa4c4f8d1bf575"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/.claude/skills/add-pantry-item/SKILL.md": {
+    "mtime": 1774403717.8169944,
+    "ast_hash": "30a2f2c170c8aaae05ff0951122f053e",
+    "semantic_hash": "30a2f2c170c8aaae05ff0951122f053e"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/.claude/skills/export-procreate/SKILL.md": {
+    "mtime": 1774403717.0604894,
+    "ast_hash": "0f3eb0a4b6f60c5b34fc416984869c41",
+    "semantic_hash": "0f3eb0a4b6f60c5b34fc416984869c41"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/docs/research/kid_cooking_app_research_prompt.md": {
+    "mtime": 1778552527.9965801,
+    "ast_hash": "107c5b47ccc1bfeb88c9d859358429ee",
+    "semantic_hash": "107c5b47ccc1bfeb88c9d859358429ee"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/CLAUDE_CODE_SETUP.md": {
+    "mtime": 1769565226.0,
+    "ast_hash": "0e033b31e4ae2a8b51903d3491bff957",
+    "semantic_hash": "0e033b31e4ae2a8b51903d3491bff957"
+  },
+  "/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/CLAUDE.md": {
+    "mtime": 1779400183.5305078,
+    "ast_hash": "03f18bf5e50aabee30b7775e37571036",
+    "semantic_hash": "03f18bf5e50aabee30b7775e37571036"
+  }
+}

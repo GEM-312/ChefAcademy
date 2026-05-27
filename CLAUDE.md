@@ -7,9 +7,6 @@
 **Language:** Swift / SwiftUI
 **Target:** Ages 6+ (shifted from 8-12 based on UX audit)
 **Developer:** Marina Pollak
-**Deadline:** May 15, 2026
-**Course:** PROG-360A Project Studio, Columbia College Chicago
-
 ---
 
 ## What Is This App?
@@ -22,6 +19,20 @@ A kid-friendly mobile GAME (not just an app) where players:
 The core loop is: **GROW → COOK → FEED → REWARDS → repeat**
 
 ---
+
+## Available Agent Skills (Auto-Activate)
+
+Five user-level SwiftUI/Apple-platform skills are installed at `~/.claude/skills/` and auto-activate when relevant. Use them as the primary reference for generic Swift/SwiftUI/SwiftData/concurrency/security questions — this CLAUDE.md is for project-specific rules ONLY (decisions, file refs, past bugs, counter-defaults).
+
+- **`swiftui-pro`** (Paul Hudson) — SwiftUI code review: modern API, views, data flow, navigation, accessibility, performance, hygiene
+- **`swiftdata-pro`** (Paul Hudson) — SwiftData core rules, predicate safety, CloudKit constraints, indexing, class inheritance
+- **`swift-concurrency`** (Antoine van der Lee) — `@MainActor` judgment, Task isolation, Sendable, Swift 6 strict concurrency, data races
+- **`app-intents`** (Anton Novoselov) — `AppIntent` / `AppEntity` / Apple Intelligence (`AssistantEntity`/`AssistantIntent`), Spotlight, Snippets
+- **`swift-security-expert`** (Ivan Magda) — Keychain, biometrics, CryptoKit, Secure Enclave, certificate pinning, OWASP MASTG
+
+**Also available (user-invocable, not auto-activating):** `prompt-eval` — scaffolds a prompt-evaluation harness (auto-generated test set + Sonnet model-as-judge grading, 1–10 with mandatory pass/fail criteria, JSON + HTML report). Use it to measure and improve `PipAIService` (Pip's kid-facing Claude Haiku chat) — the same eval workflow proven on the RAA bird companion (caught fabrication, tightened replies). Trigger: "test the prompt" / "/prompt-eval".
+
+When a skill's generic guidance conflicts with the project-specific Architecture Rules below, **Architecture Rules win** (project decisions, history, and file refs are non-negotiable).
 
 ## Architecture Rules
 
@@ -105,9 +116,8 @@ Any hit in non-AppTheme files = not done. If a needed token doesn't exist, **add
 - **`@EnvironmentObject`** for shared state: `GameState`, `SessionManager`, `AvatarModel`. Inject via `.environmentObject(...)` at the highest reasonable ancestor.
 - **`@Environment(\.modelContext)`** for SwiftData queries from views. Requires `.modelContainer` set on the WindowGroup.
 - **UUID-based model linking** between `@Model`s (no `@Relationship` — see SwiftData rules above).
-- **`// MARK: -`** for section breaks within any file >100 lines.
-- **`#Preview`** for every new view, with at least one realistic data state.
 - **`@Generable` / Apple FoundationModels** types live in `PipFoundationModelService.swift` only, gated by `#if canImport(FoundationModels)`. Don't proliferate.
+- Code hygiene (`MARK: -`, `#Preview`, deprecated APIs, etc.) — handled by `swiftui-pro` skill, no need to repeat here.
 
 ### 7. Build & Verification
 
@@ -147,6 +157,62 @@ Any hit in non-AppTheme files = not done. If a needed token doesn't exist, **add
 - Push back on weak approaches with reasoning rather than acquiescing to keep things smooth.
 
 Trust depends on accurate signal; polite lies cost real hours of misallocation later.
+
+### 11. Secrets & API Keys
+
+**NEVER inline a secret value into a Bash command line.** No `PROXY_TOKEN="<hex>" node script.js`, no `curl -H "Authorization: Bearer <key>"` with the literal key, no `ANTHROPIC_API_KEY="sk-..." python run.py`. If a command needs a secret:
+1. Ask Marina to `export VAR=...` in her own shell once (ephemeral, never seen by Claude Code), OR
+2. Use `export VAR=$(cat ~/path/to/gitignored-file)` then run the bare command, OR
+3. Source from `.env`: `set -a; source .env; set +a; node script.mjs`
+
+The command that hits the shell must contain **no secret material**. The script reads the env var internally.
+
+**Why:** Claude Code's permission system stores "Always allow" approvals as the literal command string pattern. When a Bash command containing a secret is approved with Always allow, the **entire command including the secret** gets written into `.claude/settings.local.json` and persists indefinitely. Past incident in the RAA project (May 7 2026): a Claude session inlined `PROXY_TOKEN="4dbd…"` into a `node scripts/generate-sfx.mjs` call, Marina clicked Always allow, the token sat in `settings.local.json:33` for two weeks until discovered. ChefAcademy is clean — keep it that way.
+
+**Also: never read App Attest / proxy token files.** Files like `AppAttestService.swift` are fine to read (logic is public), but any file holding raw secrets (e.g. a future `APIKeys.swift`-style file) should be added to `permissions.deny` in `.claude/settings.json` the moment it's created. The deny pattern:
+```json
+"permissions": {
+  "deny": [
+    "Read(//absolute/path/to/Secrets.swift)",
+    "Edit(//absolute/path/to/Secrets.swift)",
+    "Write(//absolute/path/to/Secrets.swift)"
+  ]
+}
+```
+
+---
+
+## General Coding Behavior — Karpathy Guidelines
+
+*Added 2026-05-27 from [andrej-karpathy-skills](https://github.com/multica-ai/andrej-karpathy-skills) (MIT), derived from Andrej Karpathy's notes on LLM coding pitfalls. This is general coding-behavior guidance that **complements** the Architecture Rules above — where it overlaps an existing rule, the specific Architecture Rule wins. Bias toward caution over speed; for trivial edits, use judgment.*
+
+### K1. Think Before Coding
+Don't assume. Don't hide confusion. Surface tradeoffs.
+- State your assumptions explicitly; if uncertain, ask.
+- If multiple interpretations exist, present them — don't pick silently.
+- If a simpler approach exists, say so. Push back when warranted (see also §10 Honesty & Communication).
+- If something is unclear, stop, name what's confusing, and ask.
+
+### K2. Simplicity First
+Minimum code that solves the problem. Nothing speculative.
+- No features beyond what was asked. No abstractions for single-use code.
+- No "flexibility" or "configurability" that wasn't requested.
+- No error handling for impossible scenarios.
+- If you write 200 lines and it could be 50, rewrite it. Test: *"Would a senior engineer say this is overcomplicated?"*
+
+### K3. Surgical Changes
+Touch only what you must. Clean up only your own mess.
+- Don't "improve" adjacent code, comments, or formatting. Don't refactor what isn't broken.
+- Match existing style, even if you'd do it differently.
+- Notice unrelated dead code → mention it, don't delete it (e.g. `GardenHubView` stays until explicitly removed — see Standing Decisions).
+- Remove imports/variables/functions that YOUR change orphaned; leave pre-existing dead code alone.
+- The test: every changed line traces directly to the request. (Reinforces §8 "don't sweep call sites without sign-off.")
+
+### K4. Goal-Driven Execution
+Define success criteria, then loop until verified.
+- Turn tasks into verifiable goals: "fix the bug" → "reproduce it, then make the repro pass"; "refactor X" → "verify behavior before and after."
+- For multi-step work, state a brief numbered plan with a `verify:` check per step.
+- ChefAcademy has no XCTest suite, so "verify" here = a green Xcode build (§7), a passing eval run (`eval/`), or a traced-through user flow — not an automated test. Strong criteria let work proceed without constant clarification.
 
 ---
 
@@ -362,4 +428,4 @@ Standing decisions live in **Architecture Rules → Standing Decisions** (above)
 
 ---
 
-*Last Updated: May 12, 2026 — architecture stable; live roadmap lives in the dated review files + memory, not here.*
+*Last Updated: May 27, 2026 — architecture stable; live roadmap lives in the dated review files + memory, not here.*

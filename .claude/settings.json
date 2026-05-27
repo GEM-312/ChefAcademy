@@ -8,6 +8,14 @@
       "Bash(git show:*)",
       "Bash(gh pr view:*)",
       "Bash(gh pr list:*)"
+    ],
+    "deny": [
+      "Read(//Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/APIKeys.swift)",
+      "Edit(//Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/APIKeys.swift)",
+      "Write(//Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/ChefAcademy/APIKeys.swift)",
+      "Read(**/APIKeys.swift)",
+      "Edit(**/APIKeys.swift)",
+      "Write(**/APIKeys.swift)"
     ]
   }
 }

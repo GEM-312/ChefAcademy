@@ -46,3 +46,10 @@ ChefAcademy/Pips Animaions for the games/
 
 # Background Assets build artifacts
 *.aar
+
+# Eval API key (never commit)
+eval/apikey.env
+apikey.env
+
+# graphify regenerable cache (AST + semantic) — not the graph outputs
+graphify-out/cache/
