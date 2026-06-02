@@ -36,10 +36,6 @@ struct PlantingSheet: View {
     @State private var expandedVeg: VegetableType?
     @State private var npcAppeared: Bool = false
 
-    // Confirm-before-spend: tap "Buy & Plant" sets this; the PipDialog
-    // overlay then asks the kid to confirm. Pattern (b) from the UX plan.
-    @State private var pendingBuyVeg: VegetableType?
-
     // Adaptive sizes
     private var isIPad: Bool { sizeClass != .compact }
     private var seedImageSize: CGFloat { isIPad ? 120 : 80 }
@@ -64,31 +60,7 @@ struct PlantingSheet: View {
                         .transition(.opacity)
                         .zIndex(10)
                 }
-
-                // Layer 3: Confirm-spend dialog (top of stack)
-                if let veg = pendingBuyVeg {
-                    PipDialogView(
-                        message: "Spend \(veg.seedCost) coins and plant \(veg.displayName)?",
-                        choices: [
-                            PipDialogChoice(label: "Yes!", style: .primary, action: {
-                                let toBuy = veg
-                                pendingBuyVeg = nil
-                                if gameState.buySeed(toBuy) {
-                                    if let seed = gameState.seeds.first(where: { $0.vegetableType == toBuy }) {
-                                        plantSeed(seed)
-                                    }
-                                }
-                            }),
-                            PipDialogChoice(label: "Maybe later", style: .subtle, action: {
-                                pendingBuyVeg = nil
-                            })
-                        ]
-                    )
-                    .transition(.opacity)
-                    .zIndex(20)
-                }
             }
-            .animation(AnimationConstants.fadeMedium, value: pendingBuyVeg)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -298,7 +270,10 @@ struct PlantingSheet: View {
                     .transition(.opacity)
                 }
 
-                // Plant Button
+                // Plant Button — single consistent affordance:
+                // - Owned: green Plant button, free
+                // - Not owned + affordable: gold Buy & Plant button, immediate (no confirm dialog)
+                // - Not owned + broke: same gold button, but disabled + grayed out
                 if npcAppeared {
                     if isOwned {
                         Button("Plant \(veg.displayName)") {
@@ -309,18 +284,19 @@ struct PlantingSheet: View {
                         .texturedButton(tint: Color.AppTheme.sage)
                         .padding(.horizontal, isIPad ? AppSpacing.xxl : AppSpacing.lg)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
-                    } else if canAfford {
+                    } else {
                         Button("Buy & Plant \(veg.displayName)") {
-                            pendingBuyVeg = veg
+                            if gameState.buySeed(veg) {
+                                if let bought = gameState.seeds.first(where: { $0.vegetableType == veg }) {
+                                    plantSeed(bought)
+                                }
+                            }
                         }
                         .texturedButton(tint: Color.AppTheme.goldenWheat)
+                        .opacity(canAfford ? 1.0 : 0.5)
+                        .disabled(!canAfford)
                         .padding(.horizontal, isIPad ? AppSpacing.xxl : AppSpacing.lg)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
-                    } else {
-                        Text("Not enough coins!")
-                            .font(.AppTheme.headline)
-                            .foregroundColor(Color.AppTheme.terracotta)
-                            .transition(.opacity)
                     }
                 }
 
