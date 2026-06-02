@@ -40,7 +40,7 @@ struct WaterPourCharacterView: View {
     /// Eyeballed from frame 08 of each source video.
     private var spoutAnchor: CGPoint {
         switch gender {
-        case .girl: return CGPoint(x: 0.58, y: 0.78)   // watering can at right hip
+        case .girl: return CGPoint(x: 0.71, y: 0.75)   // watering can at right hip
         case .boy:  return CGPoint(x: 0.40, y: 0.70)   // hands at waist, slight left
         }
     }
