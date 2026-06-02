@@ -625,6 +625,12 @@ struct AskPipView: View {
 
         let name = sessionManager.activeProfile?.name ?? "Little Chef"
 
+        // Scope the daily-question counter by profile so each kid on a shared
+        // device has their own 20/day limit. Without this, switching kids
+        // carries over the previous kid's exhausted count and the new kid
+        // sees the "I talked a lot today" rate-limit message.
+        aiService.activeProfileID = sessionManager.activeProfile?.id
+
         // Basic context (player, garden, recipes, coins)
         aiService.updateGameContext(
             playerName: name,

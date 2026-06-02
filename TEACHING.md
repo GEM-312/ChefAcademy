@@ -4,6 +4,14 @@ Personal reference built from real code in Pip's Kitchen Garden. Newest lessons 
 
 ---
 
+### Anthropic Tool Use + Prompt Caching (Phase 1)
+**Where it came up:** PipAIService.swift `askCloud` refactor — adding `get_garden_status` and `get_cookable_recipes` tools.
+**What it is:** Instead of stuffing live game data into the system prompt every turn, you declare "tools" Claude can call. When Claude wants live data, the SSE stream emits `content_block_start` with `type:"tool_use"`, then `input_json_delta` chunks for the tool's input, then a final `stop_reason:"tool_use"`. You execute the tool, send `tool_result` back as a user message, and Claude continues with text. This is a multi-round-trip pattern: 1 turn becomes 2+ HTTP calls.
+**In our code:** `askCloud` now loops `for hop in 1...maxHops` (capped at 2). Hop 1 sends `"tools": cloudTools` + `"tool_choice": ["type": "auto", "disable_parallel_tool_use": true]`. On `stop_reason == "tool_use"`, we append the assistant turn (with tool_use blocks) and a user turn (with tool_result blocks) to a *local* `modelMessages` buffer, then `continue`. Hop 2 omits the `tools` key — that forces a text response (no infinite recursion). The kid sees "Pip is looking at your garden..." via `streamingText` during the gap. The **bigger win** is that `gameContextString` no longer interpolates kid-specific data the tools cover → the system prompt with `cache_control:ephemeral` is now stable across a session → 60-80% input-token savings on turn 2+ (verify via `usage.cache_read_input_tokens` in the `message_start` SSE event, logged in DEBUG).
+**Why it matters:** The naive way to "give the AI context" is to dump everything into the system prompt. That works for one-shot apps but ruins prompt caching the moment any per-user data goes in. Tools split the prompt into a cacheable static part and dynamic data fetched on demand. For multi-turn chat (like Pip), this is the single biggest cost optimization. Trade-off: each tool-using turn adds one HTTP round-trip (~1.5–2 s extra latency), so cap recursion and pick tools that pay for themselves (always-needed data, not edge cases).
+
+---
+
 ## Session: May 24, 2026
 
 ### Trace the Code — Memory and the Knowledge Graph Are Both Stale-able

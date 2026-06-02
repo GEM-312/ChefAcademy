@@ -105,8 +105,32 @@ class PipAIService: ObservableObject {
     //
     private let paidDailyLimit = 20
     private let trialDailyLimit = 5
-    private let questionsCountKey = "com.chefacademy.pip.dailyQuestionCount"
-    private let questionsDateKey = "com.chefacademy.pip.dailyQuestionDate"
+
+    /// Active profile UUID — set by AskPipView from SessionManager.activeProfile?.id.
+    /// Rate-limit UserDefaults keys are scoped by this so each kid on a shared device
+    /// gets their own daily counter. Nil falls back to the legacy device-wide key.
+    var activeProfileID: UUID? {
+        didSet {
+            guard oldValue != activeProfileID else { return }
+            // New profile selected — refresh the rate-limit flag from THIS kid's counter.
+            resetCountIfNewDay()
+            let used = UserDefaults.standard.integer(forKey: questionsCountKey)
+            let limit = dailyQuestionLimit
+            Task { @MainActor in
+                self.isRateLimited = used >= limit
+            }
+        }
+    }
+
+    private var profileSuffix: String {
+        activeProfileID.map { ".\($0.uuidString)" } ?? ""
+    }
+    private var questionsCountKey: String {
+        "com.chefacademy.pip.dailyQuestionCount" + profileSuffix
+    }
+    private var questionsDateKey: String {
+        "com.chefacademy.pip.dailyQuestionDate" + profileSuffix
+    }
 
     /// Set by SubscriptionManager when the active subscription is in a free-trial period.
     /// During trial we cap API calls to protect margins (~$0.035 max trial cost).
@@ -243,6 +267,103 @@ class PipAIService: ObservableObject {
     //
     var gameContextString: String = ""
 
+    // MARK: - Cloud Tool Use (Phase 1)
+    //
+    // The cloud Claude path uses a tiny set of Anthropic-style tools to fetch
+    // live game data on demand. Two benefits over stuffing everything in the
+    // system prompt: (1) the system prompt becomes STATIC so the existing
+    // `cache_control: ephemeral` block actually hits the cache on turn 2+;
+    // (2) Pip can't invent details about what the kid is growing/cooked —
+    // the truthfulness rule has a real data source behind it.
+    //
+    // Phase 1 covers garden status + cookable recipes only. Pantry, organs,
+    // weather, allergies, siblings, plots needing care, quests, and progress
+    // stay in gameContextString until Phase 2 measures Phase 1's cost.
+
+    private struct CloudGameContextData {
+        var playerName: String = "friend"
+        var growingVeggies: [String] = []
+        var harvestedVeggies: [String] = []
+        var cookedRecipes: [String] = []
+        var coins: Int = 0
+        var recipesReadyNow: [String] = []
+        var recipesAlmostReady: [PipAlmostReadyRecipe] = []
+    }
+
+    private var cloudContext = CloudGameContextData()
+
+    // TODO(Phase 2): when adding tools with non-empty input_schema (e.g.
+    // get_veggie_fact(vegetableName), get_nutrient_profile(foodName)), enable
+    // fine-grained tool streaming so input_json_delta chunks arrive as the
+    // model generates them instead of in one validated burst at the end:
+    //   request.setValue("fine-grained-tool-streaming-2025-05-14",
+    //                    forHTTPHeaderField: "anthropic-beta")
+    // No-op for Phase 1 — both tools take zero inputs, so there's nothing to
+    // stream incrementally. Trade-off: partial JSON may briefly be malformed
+    // during streaming; we already parse only at content_block_stop so it's safe.
+    private let cloudTools: [[String: Any]] = [
+        [
+            "name": "get_garden_status",
+            "description": "Live snapshot of what the kid is growing, has harvested, has cooked, and how many coins they have. Call before referring to anything the kid has done in the game.",
+            "input_schema": ["type": "object", "properties": [String: Any](), "required": [String]()]
+        ],
+        [
+            "name": "get_cookable_recipes",
+            "description": "Real game recipes the kid can cook RIGHT NOW or is almost-ready to cook (with missing items listed). Call before suggesting any recipe — never invent recipe names.",
+            "input_schema": ["type": "object", "properties": [String: Any](), "required": [String]()]
+        ]
+    ]
+
+    private func cloudGardenStatus() -> String {
+        var parts: [String] = ["Player: \(cloudContext.playerName)"]
+        if !cloudContext.growingVeggies.isEmpty {
+            parts.append("Growing: \(cloudContext.growingVeggies.joined(separator: ", "))")
+        }
+        if !cloudContext.harvestedVeggies.isEmpty {
+            parts.append("Harvested: \(cloudContext.harvestedVeggies.joined(separator: ", "))")
+        }
+        if !cloudContext.cookedRecipes.isEmpty {
+            parts.append("Cooked: \(cloudContext.cookedRecipes.joined(separator: ", "))")
+        }
+        parts.append("Coins: \(cloudContext.coins)")
+        return parts.joined(separator: ". ")
+    }
+
+    private func cloudCookableRecipes() -> String {
+        var parts: [String] = []
+        if !cloudContext.recipesReadyNow.isEmpty {
+            parts.append("Ready to cook right now: \(cloudContext.recipesReadyNow.joined(separator: ", "))")
+        }
+        if !cloudContext.recipesAlmostReady.isEmpty {
+            let almost = cloudContext.recipesAlmostReady.map {
+                "\($0.title) (need \($0.missingItems.joined(separator: ", ")))"
+            }
+            parts.append("Almost ready: \(almost.joined(separator: "; "))")
+        }
+        if parts.isEmpty {
+            return "No recipes are cookable yet — the kid needs to grow veggies and stock the pantry first."
+        }
+        return parts.joined(separator: ". ")
+    }
+
+    private func executeCloudTool(name: String) -> String {
+        switch name {
+        case "get_garden_status":   return cloudGardenStatus()
+        case "get_cookable_recipes": return cloudCookableRecipes()
+        default:                     return "Unknown tool: \(name)"
+        }
+    }
+
+    // Per-tool indicator shown in the chat bubble while Pip "checks" something.
+    // Reuses `streamingText` so AskPipView needs no change.
+    private func toolInFlightMessage(name: String) -> String {
+        switch name {
+        case "get_garden_status":   return "Pip is looking at your garden..."
+        case "get_cookable_recipes": return "Pip is checking your recipes..."
+        default:                     return "Pip is checking..."
+        }
+    }
+
     // MARK: - Init
     //
     // TEACHING MOMENT: "Graceful Degradation" — we try the BEST option
@@ -312,22 +433,16 @@ class PipAIService: ObservableObject {
         }
         #endif
 
-        // Also update cloud context string (used if cloud is active)
-        var context = "GAME CONTEXT (use this to personalize your responses):\n"
-        context += "- The kid's name is \(playerName).\n"
-
-        if !growingVeggies.isEmpty {
-            context += "- They're currently growing: \(growingVeggies.joined(separator: ", ")).\n"
-        }
-        if !harvestedVeggies.isEmpty {
-            context += "- They've harvested: \(harvestedVeggies.joined(separator: ", ")).\n"
-        }
-        if !cookedRecipes.isEmpty {
-            context += "- They've cooked: \(cookedRecipes.joined(separator: ", ")).\n"
-        }
-        context += "- They have \(coins) coins."
-
-        gameContextString = context
+        // Phase 1: live data fetched via tools (see cloudTools). Store the raw
+        // fields the get_garden_status tool reads. Reset gameContextString here
+        // so subsequent update*Context calls (pantry, organs, weather, etc.)
+        // start fresh — they still append to it during Phase 1.
+        cloudContext.playerName = playerName
+        cloudContext.growingVeggies = growingVeggies
+        cloudContext.harvestedVeggies = harvestedVeggies
+        cloudContext.cookedRecipes = cookedRecipes
+        cloudContext.coins = coins
+        gameContextString = ""
     }
 
     // MARK: - Extended Context (Pantry, Organs, Weather)
@@ -446,19 +561,13 @@ class PipAIService: ObservableObject {
         }
         #endif
 
-        if !readyNow.isEmpty {
-            let lines = readyNow.map { title -> String in
-                if let tip = glucoseTips[title], !tip.isEmpty {
-                    return "    • \(title) — \(tip)"
-                }
-                return "    • \(title)"
-            }
-            gameContextString += "\n- HAS ingredients to cook (NOT yet cooked):\n" + lines.joined(separator: "\n")
-        }
-        if !almostReady.isEmpty {
-            let bits = almostReady.map { "\($0.title) (need \($0.missingItems.joined(separator: ", ")))" }
-            gameContextString += "\n- Almost ready (missing a few items): \(bits.joined(separator: "; "))."
-        }
+        // Phase 1: live data fetched via get_cookable_recipes tool.
+        // Store raw fields; the tool format mirrors the on-device summary.
+        // glucoseTips dropped from the cloud path for parity with the
+        // on-device cookableRecipesSummary() (which never used them).
+        _ = glucoseTips
+        cloudContext.recipesReadyNow = readyNow
+        cloudContext.recipesAlmostReady = almostReady
     }
 
     func updatePlotsNeedingCareContext(_ plots: [PipPlotNeedCare]) {
@@ -627,180 +736,258 @@ class PipAIService: ObservableObject {
         var request = URLRequest(url: WorkerClient.chatURL)
         request.httpMethod = "POST"
         request.timeoutInterval = 15
-
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-        // TEACHING MOMENT: Notice "messages" now contains the FULL history,
-        // not just one message. Claude reads the whole conversation and
-        // responds in context — just like texting a friend who can scroll up.
-        let body: [String: Any] = [
-            "model": model,
-            "max_tokens": maxTokens,
-            "temperature": temperature,
-            "stream": true,
-            "system": [
-                [
-                    "type": "text",
-                    "text": systemPrompt,
-                    "cache_control": ["type": "ephemeral"]
-                ]
-            ],
-            "messages": conversationHistory
-        ]
-
-        #if DEBUG
-        print("[PipAI] ===== REQUEST =====")
-        print("[PipAI] Model: \(model)  max_tokens: \(maxTokens)")
-        print("[PipAI] --- game context ---")
-        print(gameContextString.isEmpty ? "(empty)" : gameContextString)
-        print("[PipAI] --- history (\(conversationHistory.count)) ---")
-        for msg in conversationHistory.suffix(4) {
-            let role = msg["role"] ?? "?"
-            let text = (msg["content"] ?? "").prefix(120)
-            print("[PipAI]   \(role): \(text)")
+        // Local message buffer for this single askCloud() call. May grow with
+        // assistant tool_use + user tool_result blocks during the hop loop —
+        // only the final assistant text is persisted to conversationHistory.
+        var modelMessages: [[String: Any]] = conversationHistory.map { msg in
+            ["role": msg["role"] ?? "", "content": msg["content"] ?? ""]
         }
-        print("[PipAI] ===================")
-        #endif
 
-        do {
-            let bodyData = try JSONSerialization.data(withJSONObject: body)
-            request.httpBody = bodyData
+        let maxHops = 2
+        var finalText: String?
+        var lastStopReason: String?
 
-            // Bind the assertion (or fall back to proxy token) to the exact body bytes.
-            let auth = await WorkerClient.authHeaders(for: bodyData)
-            for (key, value) in auth {
-                request.setValue(value, forHTTPHeaderField: key)
-            }
+        for hop in 1...maxHops {
+            // Last hop sets tool_choice:none so the model MUST respond with text.
+            // Tools array is kept in the request either way — Anthropic caches the
+            // tools+system prefix together, so removing `tools` would invalidate the
+            // cache on hop 2 of every tool-using turn (verified empirically:
+            // cache_read drops from ~1994 to 0).
+            let allowTools = (hop < maxHops)
 
-            // STREAMING: read the response as a live byte stream of Server-Sent
-            // Events instead of waiting for the whole body. Each text chunk is
-            // appended to BOTH `streamingText` (so AskPipView shows Pip "typing"
-            // in real time) and `assembled` (the complete message we store once
-            // the stream ends). The streamed chunks are just for UX — `assembled`
-            // is the source of truth. The Worker forwards Anthropic's SSE body
-            // untouched, so no Worker change was needed.
-            let (bytes, response) = try await URLSession.shared.bytes(for: request)
+            // Pull these out so the type-checker doesn't time out on the big body literal.
+            let systemBlock: [[String: Any]] = [[
+                "type": "text",
+                "text": systemPrompt,
+                "cache_control": ["type": "ephemeral"]
+            ]]
+            let toolChoice: [String: Any] = allowTools
+                ? ["type": "auto", "disable_parallel_tool_use": true]
+                : ["type": "none"]
 
-            guard let httpResponse = response as? HTTPURLResponse else {
-                await MainActor.run { lastError = "Bad response" }
-                conversationHistory.removeLast()
-                return nil
-            }
-
-            guard httpResponse.statusCode == 200 else {
-                // Error responses are plain JSON, not SSE — drain the (small)
-                // body so we can surface Anthropic's message.
-                var errorData = Data()
-                for try await byte in bytes { errorData.append(byte) }
-                let responseText = String(data: errorData, encoding: .utf8) ?? "no body"
-                print("[PipAI] HTTP \(httpResponse.statusCode): \(responseText)")
-
-                if let errorJSON = try? JSONSerialization.jsonObject(with: errorData) as? [String: Any],
-                   let error = errorJSON["error"] as? [String: Any],
-                   let message = error["message"] as? String {
-                    await MainActor.run { lastError = message }
-                } else {
-                    await MainActor.run { lastError = "Error \(httpResponse.statusCode)" }
-                }
-                conversationHistory.removeLast()
-                return nil
-            }
-
-            // Reset the live buffer before the first delta lands.
-            await MainActor.run { streamingText = "" }
-
-            var assembled = ""
-            var stopReason: String?
-            var outputTokens = 0
-
-            // Anthropic SSE is newline-delimited; payload lines start with "data:".
-            // AsyncLineSequence hands us one line at a time, no terminator.
-            for try await line in bytes.lines {
-                guard line.hasPrefix("data:") else { continue }
-                let payload = line.dropFirst("data:".count).trimmingCharacters(in: .whitespaces)
-                guard !payload.isEmpty,
-                      let eventData = payload.data(using: .utf8),
-                      let event = try? JSONSerialization.jsonObject(with: eventData) as? [String: Any],
-                      let type = event["type"] as? String else { continue }
-
-                switch type {
-                case "content_block_delta":
-                    // delta.text is the next chunk of Pip's reply.
-                    if let delta = event["delta"] as? [String: Any],
-                       let chunk = delta["text"] as? String {
-                        assembled += chunk
-                        let snapshot = assembled
-                        await MainActor.run { streamingText = snapshot }
-                    }
-                case "message_delta":
-                    // Carries the final stop_reason + cumulative output tokens.
-                    if let delta = event["delta"] as? [String: Any],
-                       let reason = delta["stop_reason"] as? String {
-                        stopReason = reason
-                    }
-                    if let usage = event["usage"] as? [String: Any],
-                       let out = usage["output_tokens"] as? Int {
-                        outputTokens = out
-                    }
-                default:
-                    break   // message_start / content_block_start / ping / message_stop — nothing to do
-                }
-            }
-
-            // Stream finished — clear the live buffer; the stored message takes over.
-            await MainActor.run { streamingText = nil }
+            let body: [String: Any] = [
+                "model": model,
+                "max_tokens": maxTokens,
+                "temperature": temperature,
+                "stream": true,
+                "system": systemBlock,
+                "tools": cloudTools,
+                "tool_choice": toolChoice,
+                "messages": modelMessages
+            ]
 
             #if DEBUG
-            print("[PipAI] STREAM DONE — \(assembled.count) chars, output_tokens: \(outputTokens), stop_reason: \(stopReason ?? "nil")")
+            print("[PipAI] ===== REQUEST hop \(hop)/\(maxHops) tools:\(allowTools) =====")
+            if hop == 1 {
+                print("[PipAI] Model: \(model)  max_tokens: \(maxTokens)")
+                print("[PipAI] --- game context ---")
+                print(gameContextString.isEmpty ? "(empty)" : gameContextString)
+                print("[PipAI] --- history (\(conversationHistory.count)) ---")
+                for msg in conversationHistory.suffix(4) {
+                    let role = msg["role"] ?? "?"
+                    let text = (msg["content"] ?? "").prefix(120)
+                    print("[PipAI]   \(role): \(text)")
+                }
+            }
+            print("[PipAI] ===================")
             #endif
 
-            // Handle the stop reasons that can actually fire on this path. The
-            // others (tool_use, pause_turn, stop_sequence) can't, given the
-            // request shape — no tools, no server tools, no stop_sequences — so
-            // we don't branch on them. See the stop-reason audit.
+            do {
+                let bodyData = try JSONSerialization.data(withJSONObject: body)
+                request.httpBody = bodyData
 
-            // refusal: Claude declined for safety. The reply may carry NO text at
-            // all, so deflect with a friendly on-brand Pip line instead of
-            // dead-ending on "Could not read response". Still counts against the
-            // daily limit — it was a real API call.
-            if stopReason == "refusal" {
-                conversationHistory.append(["role": "assistant", "content": refusalReply])
-                incrementDailyCount()
-                return refusalReply
-            }
+                // Bind the assertion (or fall back to proxy token) to the exact body bytes.
+                let auth = await WorkerClient.authHeaders(for: bodyData)
+                for (key, value) in auth {
+                    request.setValue(value, forHTTPHeaderField: key)
+                }
 
-            // max_tokens: the reply hit the token cap mid-thought. Trim back to the
-            // last complete sentence so a kid never sees a half-finished word.
-            let finalText = (stopReason == "max_tokens")
-                ? trimToLastSentence(assembled)
-                : assembled
+                let (bytes, response) = try await URLSession.shared.bytes(for: request)
+                guard let httpResponse = response as? HTTPURLResponse else {
+                    await MainActor.run { lastError = "Bad response" }
+                    conversationHistory.removeLast()
+                    return nil
+                }
 
-            guard !finalText.isEmpty else {
-                await MainActor.run { lastError = "Could not read response" }
+                guard httpResponse.statusCode == 200 else {
+                    // Error responses are plain JSON, not SSE — drain to surface Anthropic's message.
+                    var errorData = Data()
+                    for try await byte in bytes { errorData.append(byte) }
+                    let responseText = String(data: errorData, encoding: .utf8) ?? "no body"
+                    print("[PipAI] HTTP \(httpResponse.statusCode): \(responseText)")
+
+                    if let errorJSON = try? JSONSerialization.jsonObject(with: errorData) as? [String: Any],
+                       let error = errorJSON["error"] as? [String: Any],
+                       let message = error["message"] as? String {
+                        await MainActor.run { lastError = message }
+                    } else {
+                        await MainActor.run { lastError = "Error \(httpResponse.statusCode)" }
+                    }
+                    conversationHistory.removeLast()
+                    return nil
+                }
+
+                await MainActor.run { streamingText = "" }
+
+                var assembled = ""
+                var stopReason: String?
+                var outputTokens = 0
+                var cacheCreationTokens = 0
+                var cacheReadTokens = 0
+
+                // Tool-use accumulators keyed by content-block index. Anthropic streams
+                // input_json_delta chunks for each tool's input; we concatenate then parse.
+                var toolBlocks: [(index: Int, id: String, name: String, jsonString: String)] = []
+
+                for try await line in bytes.lines {
+                    guard line.hasPrefix("data:") else { continue }
+                    let payload = line.dropFirst("data:".count).trimmingCharacters(in: .whitespaces)
+                    guard !payload.isEmpty,
+                          let eventData = payload.data(using: .utf8),
+                          let event = try? JSONSerialization.jsonObject(with: eventData) as? [String: Any],
+                          let type = event["type"] as? String else { continue }
+
+                    switch type {
+                    case "message_start":
+                        // Capture cache usage so we can verify caching actually hits in DEBUG.
+                        if let message = event["message"] as? [String: Any],
+                           let usage = message["usage"] as? [String: Any] {
+                            cacheCreationTokens = usage["cache_creation_input_tokens"] as? Int ?? 0
+                            cacheReadTokens = usage["cache_read_input_tokens"] as? Int ?? 0
+                        }
+                    case "content_block_start":
+                        // Open a tool_use block — id/name come up front, input arrives via deltas.
+                        if let index = event["index"] as? Int,
+                           let block = event["content_block"] as? [String: Any],
+                           block["type"] as? String == "tool_use",
+                           let id = block["id"] as? String,
+                           let name = block["name"] as? String {
+                            toolBlocks.append((index: index, id: id, name: name, jsonString: ""))
+                        }
+                    case "content_block_delta":
+                        if let delta = event["delta"] as? [String: Any] {
+                            if let chunk = delta["text"] as? String {
+                                // Normal text delta — live-stream to the bubble.
+                                assembled += chunk
+                                let snapshot = assembled
+                                await MainActor.run { streamingText = snapshot }
+                            } else if delta["type"] as? String == "input_json_delta",
+                                      let partial = delta["partial_json"] as? String,
+                                      let index = event["index"] as? Int,
+                                      let pos = toolBlocks.firstIndex(where: { $0.index == index }) {
+                                toolBlocks[pos].jsonString += partial
+                            }
+                        }
+                    case "message_delta":
+                        if let delta = event["delta"] as? [String: Any],
+                           let reason = delta["stop_reason"] as? String {
+                            stopReason = reason
+                        }
+                        if let usage = event["usage"] as? [String: Any],
+                           let out = usage["output_tokens"] as? Int {
+                            outputTokens = out
+                        }
+                    default:
+                        break   // content_block_stop / ping / message_stop — nothing to do
+                    }
+                }
+
+                await MainActor.run { streamingText = nil }
+
+                #if DEBUG
+                print("[PipAI] STREAM DONE hop \(hop) — text:\(assembled.count) tools:\(toolBlocks.count) stop:\(stopReason ?? "nil") out:\(outputTokens) cache_create:\(cacheCreationTokens) cache_read:\(cacheReadTokens)")
+                #endif
+
+                lastStopReason = stopReason
+
+                // Refusal short-circuits even before tool execution.
+                if stopReason == "refusal" {
+                    conversationHistory.append(["role": "assistant", "content": refusalReply])
+                    incrementDailyCount()
+                    return refusalReply
+                }
+
+                // Tool call: execute, append assistant + tool_result turns, recurse.
+                if stopReason == "tool_use" && !toolBlocks.isEmpty {
+                    var assistantContent: [[String: Any]] = []
+                    if !assembled.isEmpty {
+                        assistantContent.append(["type": "text", "text": assembled])
+                    }
+                    for tb in toolBlocks {
+                        var inputDict: [String: Any] = [:]
+                        if !tb.jsonString.isEmpty,
+                           let jsonData = tb.jsonString.data(using: .utf8),
+                           let parsed = try? JSONSerialization.jsonObject(with: jsonData) as? [String: Any] {
+                            inputDict = parsed
+                        }
+                        assistantContent.append([
+                            "type": "tool_use",
+                            "id": tb.id,
+                            "name": tb.name,
+                            "input": inputDict
+                        ])
+                    }
+                    modelMessages.append(["role": "assistant", "content": assistantContent])
+
+                    var userContent: [[String: Any]] = []
+                    for tb in toolBlocks {
+                        // Show per-tool indicator in the chat bubble while the tool runs.
+                        let indicator = toolInFlightMessage(name: tb.name)
+                        await MainActor.run { streamingText = indicator }
+                        let resultStr = executeCloudTool(name: tb.name)
+                        #if DEBUG
+                        print("[PipAI] TOOL \(tb.name) → \(resultStr.prefix(140))")
+                        #endif
+                        userContent.append([
+                            "type": "tool_result",
+                            "tool_use_id": tb.id,
+                            "content": resultStr
+                        ])
+                    }
+                    modelMessages.append(["role": "user", "content": userContent])
+
+                    continue   // next hop
+                }
+
+                // Text response: done.
+                let trimmed = (stopReason == "max_tokens")
+                    ? trimToLastSentence(assembled)
+                    : assembled
+
+                guard !trimmed.isEmpty else {
+                    await MainActor.run { lastError = "Could not read response" }
+                    conversationHistory.removeLast()
+                    return nil
+                }
+
+                finalText = trimmed
+                break
+
+            } catch {
+                print("[PipAI] Error: \(error)")
+                await MainActor.run {
+                    lastError = error.localizedDescription
+                    streamingText = nil
+                }
                 conversationHistory.removeLast()
                 return nil
             }
+        }
 
-            // Add Pip's response to history so next request includes it.
-            conversationHistory.append(["role": "assistant", "content": finalText])
-
-            // Increment daily question count (only on SUCCESS).
-            // Count AFTER success, not before — if the API fails, the kid
-            // shouldn't lose a question from their daily limit.
-            incrementDailyCount()
-
-            return finalText
-
-        } catch {
-            print("[PipAI] Error: \(error)")
-            await MainActor.run {
-                lastError = error.localizedDescription
-                streamingText = nil
-            }
-            // Remove the failed user message from history
+        guard let finalText else {
+            // Exhausted hops without text. Rare — final hop has tools disabled,
+            // so this only fires if the API returns empty content.
+            print("[PipAI] Hop limit reached without text — stop:\(lastStopReason ?? "nil")")
+            await MainActor.run { lastError = "Pip couldn't quite finish that thought" }
             conversationHistory.removeLast()
             return nil
         }
+
+        conversationHistory.append(["role": "assistant", "content": finalText])
+        incrementDailyCount()
+        return finalText
     }
 
     // Trims a truncated reply (stop_reason == "max_tokens") back to its last
