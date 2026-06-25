@@ -1223,7 +1223,7 @@ struct GardenView: View {
         let hasGrowing = gameState.gardenPlots.contains(where: { $0.state == .growing })
 
         if hasReady {
-            return "Drag Pip to a glowing plot to harvest!"
+            return "Tap a glowing plot to harvest!"
         } else if hasGrowing {
             return "Pip is patrolling the garden while your plants grow!"
         } else {
@@ -1402,7 +1402,7 @@ struct GardenView: View {
             return "\(namePrefix)weeds are crowding your \(veg.displayName.lowercased())! Swipe up to pull them out!"
         }
         if let plot = ready.first, let veg = plot.vegetable {
-            return "\(namePrefix)your \(veg.displayName.lowercased()) \(ready.count == 1 ? "is" : "are") ready to pick! Drag me over to harvest!"
+            return "\(namePrefix)your \(veg.displayName.lowercased()) \(ready.count == 1 ? "is" : "are") ready to pick! Tap the glowing plot to harvest!"
         }
 
         // Non-urgent: ROTATE between growing info, empty plots, and fun facts
@@ -1578,7 +1578,7 @@ struct PipGardenMessage: View {
         // Context-specific tips based on actual garden state
         if !readyPlots.isEmpty {
             let vegName = readyPlots.first?.vegetable?.displayName ?? "veggies"
-            tips.append("Your \(vegName) \(readyPlots.count == 1 ? "is" : "are") ready to harvest! Drag Pip over to pick!")
+            tips.append("Your \(vegName) \(readyPlots.count == 1 ? "is" : "are") ready to harvest! Tap the glowing plot to pick!")
         }
         if !thirstyPlots.isEmpty {
             tips.append("Some plants are thirsty! Hold on a plot to water it!")
