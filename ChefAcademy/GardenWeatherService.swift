@@ -354,13 +354,13 @@ class GardenWeatherService: NSObject, ObservableObject, CLLocationManagerDelegat
             return
         }
         print("[Weather] Got location: \(location.coordinate.latitude), \(location.coordinate.longitude)")
-        currentLocation = location
 
-        // Update season based on hemisphere
-        currentSeason = GardenSeason.current(latitude: location.coordinate.latitude)
-
-        // Fetch weather with new location
+        // Delegate callbacks arrive off the main actor — mutate @Published state inside the Task (§2)
         Task { @MainActor in
+            self.currentLocation = location
+            // Update season based on hemisphere
+            self.currentSeason = GardenSeason.current(latitude: location.coordinate.latitude)
+            // Fetch weather with new location
             await fetchWeather()
         }
     }
