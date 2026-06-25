@@ -1040,7 +1040,6 @@ struct CrackEggMiniGame: View {
 
     @State private var tapCount = 0
     @State private var cracked = false
-    @State private var eggParts: CGFloat = 0 // 0→1
     @State private var isDone = false
 
     private let targetTaps = 4
