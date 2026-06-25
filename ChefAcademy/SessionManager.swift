@@ -97,7 +97,7 @@ class SessionManager: ObservableObject {
             if !family.parentPIN.isEmpty, PINKeychain.load() == nil {
                 PINKeychain.save(pin: family.parentPIN)
                 family.parentPIN = ""
-                try? context.save()
+                do { try context.save() } catch { print("[SessionManager] PIN-migration save failed: \(error)") }
             }
 
             // Require Apple sign-in before showing profiles
@@ -203,7 +203,7 @@ class SessionManager: ObservableObject {
             // Link Apple ID if needed
             if family.appleUserID.isEmpty, let userID = authManager.appleUserID {
                 family.appleUserID = userID
-                try? context.save()
+                do { try context.save() } catch { print("[SessionManager] Apple-ID link save failed: \(error)") }
             }
             self.familyProfile = family
             withAnimation(AnimationConstants.fadeMedium) {
@@ -227,7 +227,7 @@ class SessionManager: ObservableObject {
             avatarModel.saveTo(profile: profile)
             recordPlayTime(for: profile)
             gameState.saveToStore()
-            try? modelContext?.save()
+            do { try modelContext?.save() } catch { print("[SessionManager] signOut save failed: \(error)") }
         }
 
         // Change route FIRST (before clearing data) so the view
@@ -268,7 +268,7 @@ class SessionManager: ObservableObject {
         } else if let ctx = modelContext {
             // Create new PlayerData for this profile
             profile.createPlayerData(in: ctx)
-            try? ctx.save()
+            do { try ctx.save() } catch { print("[SessionManager] new PlayerData save failed: \(error)") }
             gameState.activeProfileID = profile.id
             gameState.resetToDefaults()
             // Save starter data (seeds, plots, pantry) to the new PlayerData
@@ -291,7 +291,7 @@ class SessionManager: ObservableObject {
             avatarModel.saveTo(profile: profile)
             recordPlayTime(for: profile)
             gameState.saveToStore()
-            try? modelContext?.save()
+            do { try modelContext?.save() } catch { print("[SessionManager] switchToProfilePicker save failed: \(error)") }
         }
 
         stopPlayTimeTracking()
@@ -352,7 +352,7 @@ class SessionManager: ObservableObject {
         }
 
         context.delete(profile)
-        try? context.save()
+        do { try context.save() } catch { print("[SessionManager] removeChildProfile save failed: \(error)") }
     }
 
     // MARK: - PIN Verification (Keychain-backed)
@@ -370,7 +370,7 @@ class SessionManager: ObservableObject {
         PINKeychain.save(pin: newPIN)
         // Clear from SwiftData (don't store PIN in CloudKit)
         familyProfile?.parentPIN = ""
-        try? modelContext?.save()
+        do { try modelContext?.save() } catch { print("[SessionManager] updateParentPIN save failed: \(error)") }
     }
 
     // MARK: - Legacy Migration
@@ -416,7 +416,7 @@ class SessionManager: ObservableObject {
         family.addMember(childProfile)
         // Create parent's PlayerData
         parentProfile.createPlayerData(in: context)
-        try? context.save()
+        do { try context.save() } catch { print("[SessionManager] legacy-migration save failed: \(error)") }
 
         self.familyProfile = family
 
@@ -451,7 +451,7 @@ class SessionManager: ObservableObject {
         let elapsed = Int(Date().timeIntervalSince(start))
         profile.totalPlayTimeSeconds += elapsed
         profile.lastPlayedDate = Date()
-        try? modelContext?.save()
+        do { try modelContext?.save() } catch { print("[SessionManager] recordPlayTime save failed: \(error)") }
     }
 
     // MARK: - App Lifecycle
@@ -462,7 +462,7 @@ class SessionManager: ObservableObject {
             recordPlayTime(for: profile)
             sessionStartTime = Date()
             gameState.saveToStore()
-            try? modelContext?.save()
+            do { try modelContext?.save() } catch { print("[SessionManager] appWillBackground save failed: \(error)") }
         }
     }
 

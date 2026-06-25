@@ -458,7 +458,7 @@ struct ParentDashboardView: View {
         for item in playerData { modelContext.delete(item) }
         for item in profiles { modelContext.delete(item) }
         for item in families { modelContext.delete(item) }
-        try? modelContext.save()
+        do { try modelContext.save() } catch { print("[ParentDashboardView] deleteAllData save failed: \(error)") }
 
         // 2. Clear Keychain PIN
         PINKeychain.delete()
@@ -487,7 +487,7 @@ struct ParentDashboardView: View {
             // After successful sign-in, link the Apple ID to the existing family
             if let userID = authManager.appleUserID {
                 sessionManager.familyProfile?.appleUserID = userID
-                try? modelContext.save()
+                do { try modelContext.save() } catch { print("[ParentDashboardView] linkAppleID save failed: \(error)") }
             }
         }
         signInCoordinator = coordinator

@@ -116,7 +116,7 @@ struct AllergenEditorSheet: View {
     private func saveAndDismiss() {
         profile.setAllergens(selectedAllergens)
         profile.allergenStrictMode = strictMode
-        try? modelContext.save()
+        do { try modelContext.save() } catch { print("[AllergenEditorSheet] saveAndDismiss save failed: \(error)") }
 
         // Update active GameState if this is the current player
         if gameState.activeProfileID == profile.id {

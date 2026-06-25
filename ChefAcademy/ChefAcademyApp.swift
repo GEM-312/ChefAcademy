@@ -461,7 +461,7 @@ struct HomeView: View {
         guard let profile = sessionManager.activeProfile,
               let data = profile.playerData(in: modelContext) else { return }
         data.lastSeenHelpCount = data.receivedHelp.count
-        try? modelContext.save()
+        do { try modelContext.save() } catch { print("[ChefAcademyApp] dismissHelpMessages save failed: \(error)") }
     }
 
     private var siblings: [UserProfile] {

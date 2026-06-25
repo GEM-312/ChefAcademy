@@ -33,7 +33,7 @@ struct SiblingGardenView: View {
                 onLikeGarden: {
                     if let data = sibling.playerData(in: modelContext) {
                         data.gardenLikes += 1
-                        try? modelContext.save()
+                        do { try modelContext.save() } catch { print("[SiblingGardenView] gardenLikes save failed: \(error)") }
                     }
                 },
                 onHelpWithCare: { plotIndex, action in
@@ -173,7 +173,7 @@ struct SiblingGardenView: View {
             }
         }
 
-        try? modelContext.save()
+        do { try modelContext.save() } catch { print("[SiblingGardenView] handleHelpAction save failed: \(error)") }
 
         // Report social achievements to Game Center
         GameCenterService.shared.reportAchievement(AchievementID.helpingHand)

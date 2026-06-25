@@ -272,7 +272,7 @@ struct SiblingProfileView: View {
 
         // Persist
         visitorGameState.saveToStore()
-        try? modelContext.save()
+        do { try modelContext.save() } catch { print("[SiblingProfileView] giftVeggie save failed: \(error)") }
 
         // Report achievement
         GameCenterService.shared.reportAchievement(AchievementID.generousChef)

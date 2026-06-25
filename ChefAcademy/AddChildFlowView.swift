@@ -129,7 +129,7 @@ struct AddChildFlowView: View {
         // Force SwiftData to persist immediately so ProfilePickerView
         // sees the new child right away (fixes delayed appearance)
         if newChild != nil {
-            try? modelContext.save()
+            do { try modelContext.save() } catch { print("[AddChildFlowView] new child save failed: \(error)") }
             sessionManager.objectWillChange.send()
         }
 

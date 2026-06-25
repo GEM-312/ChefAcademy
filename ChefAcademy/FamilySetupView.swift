@@ -201,7 +201,7 @@ struct FamilySetupView: View {
         family.addMember(childProfile)
         // Don't pre-create PlayerData — selectProfile() will create it
         // with starter seeds, coins, and garden plots via resetToDefaults()
-        try? context.save()
+        do { try context.save() } catch { print("[FamilySetupView] finishSetup save failed: \(error)") }
 
         sessionManager.familyProfile = family
 
