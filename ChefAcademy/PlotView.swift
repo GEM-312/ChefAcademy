@@ -307,11 +307,12 @@ struct PlotView: View {
                         .opacity(0.7)
                 }
 
-                // Weeds — swipe up to remove
+                // Weeds — swipe up to remove (the DragGesture below covers the
+                // whole 80pt circle, so these glyphs just need to be visible).
                 ForEach(0..<3, id: \.self) { i in
                     if !weedsRemoved[i] {
                         Text("🌿")
-                            .font(.AppTheme.rounded(size: [14, 12, 10][i]))
+                            .font(.AppTheme.rounded(size: 28))
                             .offset(
                                 x: [-28, 25, -5][i],
                                 y: [20, 22, 30][i] + weedOffsets[i]
@@ -379,11 +380,14 @@ struct PlotView: View {
                         .opacity(0.7)
                 }
 
-                // Bugs — tap to rescue
+                // Bugs — tap to rescue. Glyph sits inside a ≥44pt frame so the
+                // whole HIG-minimum area is tappable, not just the tiny emoji.
                 ForEach(0..<3, id: \.self) { i in
                     if !bugsRescued[i] {
                         Text("🐛")
-                            .font(.AppTheme.rounded(size: [12, 10, 11][i]))
+                            .font(.AppTheme.rounded(size: 30))
+                            .frame(width: AppSpacing.minTapTarget, height: AppSpacing.minTapTarget)
+                            .contentShape(Rectangle())
                             .offset(
                                 x: [-20, 22, 5][i],
                                 y: [-15, 5, 25][i]
