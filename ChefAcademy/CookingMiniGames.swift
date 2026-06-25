@@ -235,11 +235,13 @@ struct AddToPanMiniGame: View {
         withAnimation(AnimationConstants.springQuick) {
             dropped = true
             if inTarget {
+                // Hit: drop into the pan and shrink as it lands
                 dragOffset = CGSize(width: panCenter.x, height: panCenter.y)
                 itemScale = 0.3
             } else {
-                dragOffset = CGSize(width: panCenter.x, height: panCenter.y)
-                itemScale = 0.3
+                // Miss: bounce back to the start so the kid sees it didn't land
+                dragOffset = .zero
+                itemScale = 1.0
             }
         }
 
