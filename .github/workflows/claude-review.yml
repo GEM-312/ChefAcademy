@@ -1,0 +1,42 @@
+name: Claude PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read           # read the diff
+      pull-requests: write     # post the review comments
+      issues: read
+      id-token: write          # OIDC auth for the action
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0        # full history so the diff base resolves
+
+      - name: Run Claude review
+        uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            Review pull request #${{ github.event.pull_request.number }} in
+            ${{ github.repository }}. Read CLAUDE.md first — its Architecture Rules
+            are authoritative for this project.
+
+            Focus on, in priority order:
+            1. Correctness bugs and crashes.
+            2. Architecture Rule violations: hardcoded design values (§3 token grep),
+               missing @Model defaults / @Relationship macros / dict-on-@Model (§1),
+               banned DispatchQueue.main.asyncAfter and Timer-based physics (§2),
+               try? on SwiftData saves (§1), profilePoseImage bypasses (§4).
+            3. Reuse/simplification opportunities.
+
+            Post findings as inline PR review comments tied to file:line. Be concise
+            and specific — skip nits and praise. If the diff is clean, say so in one
+            short top-level comment. Note: CI runs on Linux, so you cannot build the
+            Xcode project — do not claim a change compiles.
+          claude_args: "--allowedTools 'Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh pr comment:*),Bash(gh api:*)'"
