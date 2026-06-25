@@ -152,7 +152,7 @@ class NearbyMultiplayerManager: NSObject, ObservableObject {
     // MARK: - Receive
 
     private func handleMessage(_ message: NearbyMessage) {
-        DispatchQueue.main.async { [weak self] in
+        Task { @MainActor [weak self] in
             guard let self = self else { return }
 
             switch message {
@@ -195,15 +195,17 @@ class NearbyMultiplayerManager: NSObject, ObservableObject {
     private func startCountdown() {
         matchPhase = .countdown(3)
         var count = 3
-        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
+        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             count -= 1
-            DispatchQueue.main.async {
-                if count > 0 {
-                    self?.matchPhase = .countdown(count)
+            let remaining = count  // snapshot before hopping actors (avoids capturing the mutable var)
+            Task { @MainActor in
+                guard let self = self else { return }
+                if remaining > 0 {
+                    self.matchPhase = .countdown(remaining)
                 } else {
-                    timer.invalidate()
-                    self?.countdownTimer = nil
-                    self?.matchPhase = .playing
+                    self.countdownTimer?.invalidate()
+                    self.countdownTimer = nil
+                    self.matchPhase = .playing
                 }
             }
         }
@@ -218,7 +220,7 @@ class NearbyMultiplayerManager: NSObject, ObservableObject {
         guard let opponent = session?.connectedPeers.first else { return }
         isHost = myPeerID.displayName < opponent.displayName
 
-        DispatchQueue.main.async {
+        Task { @MainActor in
             self.matchPhase = .connected
         }
 
@@ -238,7 +240,7 @@ class NearbyMultiplayerManager: NSObject, ObservableObject {
 
 extension NearbyMultiplayerManager: MCSessionDelegate {
     func session(_ session: MCSession, peer peerID: MCPeerID, didChange state: MCSessionState) {
-        DispatchQueue.main.async {
+        Task { @MainActor in
             switch state {
             case .connected:
                 print("[Nearby] Connected to: \(peerID.displayName)")
@@ -283,7 +285,7 @@ extension NearbyMultiplayerManager: MCNearbyServiceAdvertiserDelegate {
     }
 
     func advertiser(_ advertiser: MCNearbyServiceAdvertiser, didNotStartAdvertisingPeer error: Error) {
-        DispatchQueue.main.async {
+        Task { @MainActor in
             self.matchPhase = .error("Couldn't start searching nearby.")
         }
     }
@@ -305,7 +307,7 @@ extension NearbyMultiplayerManager: MCNearbyServiceBrowserDelegate {
     }
 
     func browser(_ browser: MCNearbyServiceBrowser, didNotStartBrowsingForPeers error: Error) {
-        DispatchQueue.main.async {
+        Task { @MainActor in
             self.matchPhase = .error("Couldn't search for nearby players.")
         }
     }

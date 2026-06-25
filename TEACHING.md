@@ -282,6 +282,12 @@ Personal reference built from real code in Pip's Kitchen Garden. Newest lessons 
 **In our code:** Child profiles weren't persisting because `try? context.save()` was hiding SwiftData errors. We switched to `do/catch` with logging so we can see `[Session] FAILED to save child profile` in the console.
 **Why it matters:** Never use `try?` for important operations (saving data, API calls). Silent failures are the hardest bugs to find. Always log errors so you can diagnose problems.
 
+### Snapshot mutable vars before crossing actors (Swift 6 concurrency)
+**Where it came up:** MultiplayerManager.swift / NearbyMultiplayerManager.swift `startCountdown()`, during the DispatchQueue→Task sweep
+**What it is:** A `Task { @MainActor in }` closure runs later, on a different actor. If it references a mutable `var` from the enclosing synchronous scope, it captures the *variable* (shared, mutable) — not a value. Swift 6 makes this a hard error (`sendable-closure-captures`); two contexts could read/write it concurrently.
+**In our code:** The countdown Timer decremented `var count`, then a `DispatchQueue.main.async` block read `count`. Converting that block to `Task { @MainActor in }` turned the latent race into a compiler warning. Fix: `let remaining = count` *before* the Task, pass the immutable snapshot in. Also dropped the `timer` param (`_`) and invalidated via `self.countdownTimer?` — capturing a non-Sendable `Timer` into a `@MainActor` closure is the same class of problem.
+**Why it matters:** When you cross into a Task or actor, capture *values*, never mutable variables. Snapshot to a `let` on the synchronous side first. This is exactly the kind of bug strict concurrency is designed to catch before it ships.
+
 ---
 
 *This file grows every session. Use it as a study reference for iOS development concepts.*

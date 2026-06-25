@@ -62,7 +62,7 @@ class MultiplayerManager: NSObject, ObservableObject {
         matchPhase = .authenticating
 
         GKLocalPlayer.local.authenticateHandler = { [weak self] viewController, error in
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 guard let self = self else { return }
 
                 if let vc = viewController {
@@ -193,7 +193,7 @@ class MultiplayerManager: NSObject, ObservableObject {
     // MARK: - Receive Messages
 
     private func handleMessage(_ message: MultiplayerMessage) {
-        DispatchQueue.main.async { [weak self] in
+        Task { @MainActor [weak self] in
             guard let self = self else { return }
 
             switch message {
@@ -237,15 +237,17 @@ class MultiplayerManager: NSObject, ObservableObject {
     private func startCountdown() {
         matchPhase = .countdown(3)
         var count = 3
-        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
+        countdownTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] _ in
             count -= 1
-            DispatchQueue.main.async {
-                if count > 0 {
-                    self?.matchPhase = .countdown(count)
+            let remaining = count  // snapshot before hopping actors (avoids capturing the mutable var)
+            Task { @MainActor in
+                guard let self = self else { return }
+                if remaining > 0 {
+                    self.matchPhase = .countdown(remaining)
                 } else {
-                    timer.invalidate()
-                    self?.countdownTimer = nil
-                    self?.matchPhase = .playing
+                    self.countdownTimer?.invalidate()
+                    self.countdownTimer = nil
+                    self.matchPhase = .playing
                 }
             }
         }
@@ -294,7 +296,7 @@ extension MultiplayerManager: GKMatchDelegate {
     }
 
     func match(_ match: GKMatch, player: GKPlayer, didChange state: GKPlayerConnectionState) {
-        DispatchQueue.main.async { [weak self] in
+        Task { @MainActor [weak self] in
             guard let self = self else { return }
 
             switch state {
@@ -318,7 +320,7 @@ extension MultiplayerManager: GKMatchDelegate {
     }
 
     func match(_ match: GKMatch, didFailWithError error: Error?) {
-        DispatchQueue.main.async { [weak self] in
+        Task { @MainActor [weak self] in
             print("[Multiplayer] Match error: \(error?.localizedDescription ?? "unknown")")
             self?.matchPhase = .error("Connection lost. Try again!")
         }
