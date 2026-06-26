@@ -28,7 +28,27 @@ if re.search(r"\b(pkill|killall)\b.*(actool|ibtoold)", cmd) or \
     )
     sys.exit(2)
 
-# 2. inlined-secret guard (CLAUDE.md §11). Require a real secret-shaped value
+# 2. CLI xcodebuild build guard. Repeated CLI builds orphan actool and wedge
+# the asset catalog (needs a Mac reboot). Match only a real build INVOCATION —
+# `xcodebuild` followed (same command segment) by a build action or a
+# build-config flag — so prose/commit messages that merely mention the word,
+# and info-only calls like `xcodebuild -version`, are not blocked.
+if re.search(
+    r"\bxcodebuild\b[^\n;&|]*?\s"
+    r"(build|clean|test|archive|analyze|install|docbuild|"
+    r"-scheme|-project|-workspace|-target|-destination|-configuration|"
+    r"-sdk|-arch|-derivedDataPath|-resultBundlePath|-only-testing)\b",
+    cmd,
+):
+    sys.stderr.write(
+        "BLOCKED: CLI xcodebuild builds are banned in ChefAcademy — repeated "
+        "CLI builds orphan actool and wedge the asset catalog (needs a Mac "
+        "reboot). Build in Xcode (Clean Build Folder -> Build) or read the "
+        "xcactivitylog. (CLAUDE.md §7 / Roadmap durable constraints)\n"
+    )
+    sys.exit(2)
+
+# 3. inlined-secret guard (CLAUDE.md §11). Require a real secret-shaped value
 # (a long token), so merely *mentioning* the patterns (docs, commit messages,
 # grep) doesn't trip it — only an actual inlined key/token does.
 _SECRET = (
