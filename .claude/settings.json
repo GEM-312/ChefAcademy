@@ -36,5 +36,8 @@
         ]
       }
     ]
+  },
+  "attribution": {
+    "sessionUrl": false
   }
 }
