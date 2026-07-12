@@ -1,7 +1,8 @@
 ---
 name: add-asset
 description: Create an Xcode .imageset from a loose PNG file. Moves the image into Assets.xcassets with proper Contents.json.
-argument-hint: [path-to-png] [category]
+metadata:
+  argument-hint: "[path-to-png] [category]"
 allowed-tools: Bash,Read,Write,Glob
 ---
 

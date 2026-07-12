@@ -1,7 +1,8 @@
 ---
 name: add-pantry-item
 description: Add a new PantryItem to the enum with all required switch branches (displayName, emoji, imageName, shopPrice, shopCategory, etc.)
-argument-hint: [item-name]
+metadata:
+  argument-hint: "[item-name]"
 allowed-tools: Read,Edit,Grep
 ---
 
