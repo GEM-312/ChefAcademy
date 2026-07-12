@@ -178,14 +178,7 @@ Zero hardcoded colors / fonts / spacing / animation curves / stroke widths in an
 | **iPad sizing** | `AdaptiveCardSize.*(for: sizeClass)` | `pipMessage`, `pipReadyScreen`, `kitchenSpotRing`, etc. Never inline `isIPad ? 280 : 200`. |
 | **Animations** | `AnimationConstants.*` | Springs: `springQuick / Medium / Slow / Bouncy / Snappy / Tight / Fly`. Easings: `fadeQuick / Fast / Medium / revealSlow / pipTransition / morphTransition / weatherTransition`. Loops: `floatLoopFast / floatLoop / floatLoopSlow / pinShake`. Frame rates: `walkingFPS / wavingFPS / gameFPS / walkSpeed`. Never inline `.spring(response:)` or `.easeInOut(duration:)`. |
 
-**Pre-commit audit grep** — run on your own diff before declaring done:
-```
-Color.black            Color.white           .font(.system(
-.spring(response:      easeInOut(duration:   easeOut(duration:    easeIn(duration:
-RoundedRectangle(cornerRadius:    .shadow(color: Color.black    Color(hex: "
-DispatchQueue.main.asyncAfter    Timer.scheduledTimer
-```
-Any hit in non-AppTheme files = not done. If a needed token doesn't exist, **add it to `AppTheme.swift` / `AppSpacing` / `AnimationConstants` / `AdaptiveLayout`** with a comment explaining what it's for. Never inline as a one-off.
+**Pre-commit enforcement:** the `design-guard.py` hook (`.claude/hooks/`) auto-blocks `git commit` when the staged diff's added lines contain hardcoded values (`Color.black/white`, `Color(hex:`, `.system(size:`, inline spring/easing, numeric corner radius, `DispatchQueue.main.asyncAfter`) in non-AppTheme files. Still audit your own diff — the hook only catches unambiguous literals, not wrong-token misuse. Any hit in non-AppTheme files = not done. If a needed token doesn't exist, **add it to `AppTheme.swift` / `AppSpacing` / `AnimationConstants` / `AdaptiveLayout`** with a comment explaining what it's for. Never inline as a one-off.
 
 ### 4. UI Components — Reuse Mandatory
 
@@ -217,10 +210,9 @@ Any hit in non-AppTheme files = not done. If a needed token doesn't exist, **add
 
 ### 7. Build & Verification
 
-- **Build command:** `xcodebuild -scheme ChefAcademy -destination 'platform=iOS Simulator,name=iPhone 17 Pro' build`
-- **Trust `xcodebuild`, not SourceKit per-file diagnostics.** SourceKit doesn't see cross-file types — it will claim `Color.AppTheme`, `AppSpacing`, `GameState`, `PipFoundationModelService` are missing in any single file. Ignore these. `xcodebuild` is authoritative.
+- **Building & launching → the `run-chefacademy` skill** (`.claude/skills/run-chefacademy/`). It holds the mechanics: Marina builds in Xcode, Claude reads the newest `.xcactivitylog` to confirm success, then optionally launches via `xcrun simctl`. The reset-simulator command lives there too. **Never run CLI `xcodebuild` — banned (§7 / `bash-guard.py` hook); it wedges the asset catalog.**
+- **Trust `xcodebuild`, not SourceKit per-file diagnostics.** SourceKit doesn't see cross-file types — it will claim `Color.AppTheme`, `AppSpacing`, `GameState`, `PipFoundationModelService` are missing in any single file. Ignore these. The Xcode build (read via the log) is authoritative.
 - **Build after every Edit batch** before declaring done. Don't push commits that haven't been built.
-- **Reset simulator data:** `find ~/Library/Developer/CoreSimulator/Devices -name "default.store*" -path "*/Application Support/*" -exec rm -f {} \;`
 
 ### 8. Session Protocol
 
@@ -297,10 +289,7 @@ Define success criteria, then loop until verified.
 
 ## Teaching System (PROACTIVE)
 
-Marina learns as we build — teach **while** coding, not after.
-- **Trigger:** introducing a pattern, avoiding a pitfall, fixing a non-obvious bug, or writing non-trivial logic. Skip trivial wins (font bumps, one-line patches).
-- **Print the title in green**, then explain: `echo -e "\n\033[1;32m━━━ TEACHING MOMENT: [Title] ━━━\033[0m\n"` → CONCEPT (1–2 sentences) → STEP BY STEP (numbered) → IN OUR CODE (specific file/symbol) → KEY TAKEAWAY (1 line). MIT-professor tone: clear, real-world analogies, no fluff. On demand: `/teach [topic]`.
-- **Append every moment to `TEACHING.md`** in its existing 4-field format — `**Where it came up** / **What it is** / **In our code** / **Why it matters**` — 3–7 per session. Memory notes are not a substitute.
+Marina learns as we build — teach **while** coding, not after. **Proactively invoke the `teach` skill** (`.claude/skills/teach/`) whenever you introduce a pattern, avoid a pitfall, fix a non-obvious bug, or write non-trivial logic — don't wait for `/teach`. Skip trivial wins (font bumps, one-line patches); aim for 3–7 real moments per session. The skill holds the full format (green in-chat title + the 4-field `TEACHING.md` append) so it stays out of every-session context.
 
 ## Tech Stack
 
