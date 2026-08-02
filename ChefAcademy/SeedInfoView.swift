@@ -516,7 +516,7 @@ struct SeedInfoView: View {
                             Image(systemName: showToolPicker ? "paintbrush.fill" : "paintbrush")
                                 .font(.AppTheme.recipeStep)
                                 .foregroundColor(showToolPicker ? Color.AppTheme.cream : Color.AppTheme.sepia)
-                                .frame(width: 42, height: 42)
+                                .frame(width: AppSpacing.minTapTarget, height: AppSpacing.minTapTarget)
                                 .background(showToolPicker ? Color.AppTheme.sage : Color.AppTheme.parchment)
                                 .clipShape(Circle())
                                 .shadow(color: Color.AppTheme.sepia.opacity(0.15), radius: 4, y: 2)

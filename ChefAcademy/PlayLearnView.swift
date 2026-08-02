@@ -40,6 +40,8 @@ struct PlayLearnView: View {
                                 Image(systemName: "trophy.fill")
                                     .font(.AppTheme.rounded(size: 24))
                                     .foregroundColor(Color.AppTheme.goldenWheat)
+                                    .frame(width: AppSpacing.minTapTarget, height: AppSpacing.minTapTarget)
+                                    .contentShape(Rectangle())
                             }
                             .buttonStyle(.plain)
                         }

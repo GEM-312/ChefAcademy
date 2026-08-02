@@ -565,6 +565,8 @@ struct InsulinTetrisView: View {
                     Image(systemName: "xmark.circle.fill")
                         .font(.AppTheme.rounded(size: 24))
                         .foregroundColor(Color.AppTheme.sepia.opacity(0.4))
+                        .frame(width: AppSpacing.minTapTarget, height: AppSpacing.minTapTarget)
+                        .contentShape(Rectangle())
                 }
             }
             .padding(.horizontal, AppSpacing.md)

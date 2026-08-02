@@ -192,6 +192,8 @@ struct GlucoseJourneyView: View {
                         Image(systemName: "xmark.circle.fill")
                             .font(.AppTheme.rounded(size: 24))
                             .foregroundColor(Color.AppTheme.lightSepia)
+                            .frame(width: AppSpacing.minTapTarget, height: AppSpacing.minTapTarget)
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
 

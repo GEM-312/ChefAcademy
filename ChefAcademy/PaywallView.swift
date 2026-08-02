@@ -72,6 +72,8 @@ struct PaywallView: View {
                 Image(systemName: "xmark.circle.fill")
                     .font(.AppTheme.title)
                     .foregroundColor(Color.AppTheme.sepia.opacity(0.5))
+                    .frame(width: AppSpacing.minTapTarget, height: AppSpacing.minTapTarget)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
         }
