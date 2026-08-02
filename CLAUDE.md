@@ -143,12 +143,7 @@ Canonical source for all hard rules. When statements elsewhere in this file (or 
 
 ### 1. SwiftData / CloudKit Compatibility
 
-- **All `@Model` properties MUST have default values** at declaration. CloudKit requires it; missing defaults crash the schema migration.
-- **NO `@Relationship` macros** — link models via `UUID` fields. `FamilyProfile` → members via `familyID` query; `UserProfile` → `PlayerData` via `ownerID`.
-- **NO `[String: Int]` dictionaries on `@Model`** — use `[CodableStruct]` arrays. SwiftData doesn't reliably persist dictionary types.
-- **`.modelContainer(modelContainer)` MUST be on the WindowGroup.** Required for `@Environment(\.modelContext)` to resolve in any descendant. Missing this caused an infinite loop bug.
-- **Use `do { try save() } catch { print(error) }` for SwiftData saves** — never `try?`. Silent failures destroyed child profiles for a week (March bug). Always log errors so they're diagnosable.
-- **Codable backwards compatibility:** every new field on a persisted struct needs `decodeIfPresent(...) ?? defaultValue`. Old saved data doesn't have the new keys → crash without it.
+Full rules → **`.claude/rules/swiftdata-persistence.md`** (path-scoped; loads automatically when you edit a `@Model` / core persistence file). **Global backstop — applies everywhere, not just model files:** SwiftData saves use `do { try save() } catch { print(error) }`, never `try?` (the March bug silently destroyed child profiles); every new field on a persisted struct needs `decodeIfPresent(...) ?? default`.
 
 ### 2. Concurrency & State Updates
 
@@ -168,29 +163,11 @@ Canonical source for all hard rules. When statements elsewhere in this file (or 
 
 ### 3. Design System — No Hardcoded Values
 
-Zero hardcoded colors / fonts / spacing / animation curves / stroke widths in any new SwiftUI code. Period.
-
-| Category | Token namespace | Examples |
-|---|---|---|
-| **Colors** | `Color.AppTheme.*` | `cream`, `sage`, `goldenWheat`, `terracotta`, `sepia`, `darkBrown`, `weatherSunny`, `springGradientTop`. Shadows: `Color.AppTheme.sepia.opacity(N)` — never `Color.black.opacity(N)`. |
-| **Fonts** | `Font.AppTheme.*` | `caption / subheadline / body / bodyBold / headline / title3 / title / largeTitle`. One-offs: `Font.AppTheme.rounded(size: N, weight: .X)`. Never `.font(.system(size:))`. |
-| **Spacing** | `AppSpacing.*` | `xxs (4) / xs (8) / sm (12) / md (16) / lg (24) / xl (32) / xxl (48)`, `buttonHeight (52)`, corner radii `pill (8) / small (12) / card (16) / large (20)`, strokes `thin (1) / medium (2) / bold (3)`, `tabBarClearance (100)`, `pinButtonWidth (75)`, `pinButtonHeight (55)`, `infoCardImageSize (200)`. |
-| **iPad sizing** | `AdaptiveCardSize.*(for: sizeClass)` | `pipMessage`, `pipReadyScreen`, `kitchenSpotRing`, etc. Never inline `isIPad ? 280 : 200`. |
-| **Animations** | `AnimationConstants.*` | Springs: `springQuick / Medium / Slow / Bouncy / Snappy / Tight / Fly`. Easings: `fadeQuick / Fast / Medium / revealSlow / pipTransition / morphTransition / weatherTransition`. Loops: `floatLoopFast / floatLoop / floatLoopSlow / pinShake`. Frame rates: `walkingFPS / wavingFPS / gameFPS / walkSpeed`. Never inline `.spring(response:)` or `.easeInOut(duration:)`. |
-
-**Pre-commit enforcement:** the `design-guard.py` hook (`.claude/hooks/`) auto-blocks `git commit` when the staged diff's added lines contain hardcoded values (`Color.black/white`, `Color(hex:`, `.system(size:`, inline spring/easing, numeric corner radius, `DispatchQueue.main.asyncAfter`) in non-AppTheme files. Still audit your own diff — the hook only catches unambiguous literals, not wrong-token misuse. Any hit in non-AppTheme files = not done. If a needed token doesn't exist, **add it to `AppTheme.swift` / `AppSpacing` / `AnimationConstants` / `AdaptiveLayout`** with a comment explaining what it's for. Never inline as a one-off.
+Full token tables + `design-guard.py` pre-commit enforcement → **`.claude/rules/swiftui-views.md`** (path-scoped; loads when you edit a `*View.swift`). One line to remember: zero hardcoded colors / fonts / spacing / animation / stroke widths — use `Color.AppTheme` / `Font.AppTheme` / `AppSpacing` / `AdaptiveCardSize` / `AnimationConstants` tokens. The commit hook blocks unambiguous literals regardless of whether the rule loaded.
 
 ### 4. UI Components — Reuse Mandatory
 
-- **Buttons:** Primary CTAs → `.texturedButton(tint:)` (wood-grain capsule); secondary → `.buttonStyle(BouncyButtonStyle())`. Never `.buttonStyle(.plain)` with a custom-styled label; never hand-roll `.background() + .cornerRadius() + .shadow()` on a `Button`.
-- **Cards:** `.softCard()` for the warm-cream surface (80% case). `.cardStyle()` for the parchment variant (rare).
-- **Pip avatars:** Size via the `PipSize` enum (`.compact 40 / .medium 80 / .large 120 / .hero 160 / .custom(N)`). Never raw `Image("pip_...")` with hardcoded `.frame(width: N, height: N)`.
-- **Pip dialogue:** `PipSpeechBubble` and `PipHeaderStack` **auto-speak** via `PipVoice.shared.speak(...)` on appear and on message change. Do NOT manually call `PipVoice.shared.speak(...)` next to these components — it double-speaks. Use `speakOnAppear: false` only for decorative usage.
-- **PIN UI:** Use the shared `PINPadGrid<Leading, Trailing>` and `PINButton` from `PipComponents.swift`. Three views previously had local copies — never reintroduce.
-- **Horizontal carousels:** Apply `.trailingFade()` (from `AdaptiveLayout.swift`) as the at-rest scroll cue. iOS's default scrollbar only appears mid-gesture; kids don't intuit swipe without this.
-- **Primary CTAs that must always be reachable:** sticky footer pattern (see `RecipeDetailView` "Let's Cook!"). Don't bury below an un-cued `ScrollView(showsIndicators: false)`.
-- **Profile pose image:** use `UserProfile.profilePoseImage` — never inline `gender == .boy ? "boy_card_clean_..." : "girl_card_clean_..."`. The helper routes parents to mom/dad frames.
-- **Recipe display:** look up by ID, fall back to slug — `GardenRecipes.all.first { $0.id == star.recipeID }?.title ?? star.recipeID`. Never render raw recipe-ID slugs.
+Full component-reuse rules (buttons, cards, `PipSize`, auto-speak bubbles, `PINPadGrid`, `.trailingFade()`, sticky CTAs, `profilePoseImage`, recipe-ID lookup) → **`.claude/rules/swiftui-views.md`** (path-scoped; loads when you edit a `*View.swift`).
 
 ### 5. Storage Keys vs Display Labels
 
