@@ -354,14 +354,33 @@ class PipAIService: ObservableObject {
         }
     }
 
-    // Per-tool indicator shown in the chat bubble while Pip "checks" something.
-    // Reuses `streamingText` so AskPipView needs no change.
-    private func toolInFlightMessage(name: String) -> String {
+    // Short phrase naming what a tool looks at, e.g. "your garden".
+    private func toolSubject(name: String) -> String {
         switch name {
-        case "get_garden_status":   return "Pip is looking at your garden..."
-        case "get_cookable_recipes": return "Pip is checking your recipes..."
-        default:                     return "Pip is checking..."
+        case "get_garden_status":   return "your garden"
+        case "get_cookable_recipes": return "your recipes"
+        default:                     return "your game"
         }
+    }
+
+    // ONE indicator covering every tool this turn, shown in the chat bubble while
+    // Pip "checks". Combined rather than per-tool because parallel tool use means
+    // the tools run back-to-back — a per-tool line would flash past unread.
+    // Reuses `streamingText` so AskPipView needs no change.
+    private func toolInFlightMessage(for names: [String]) -> String {
+        // De-dupe, preserving order — two tools can share a subject.
+        var subjects: [String] = []
+        for name in names {
+            let subject = toolSubject(name: name)
+            if !subjects.contains(subject) { subjects.append(subject) }
+        }
+        guard let last = subjects.last else { return "Pip is checking..." }
+        // 1 → "your garden" · 2 → "your garden and your recipes"
+        // 3+ → "your garden, your recipes and your pantry"
+        let list = subjects.count == 1
+            ? last
+            : subjects.dropLast().joined(separator: ", ") + " and " + last
+        return "Pip is looking at \(list)..."
     }
 
     // MARK: - Init
@@ -763,8 +782,16 @@ class PipAIService: ObservableObject {
                 "text": systemPrompt,
                 "cache_control": ["type": "ephemeral"]
             ]]
+            // Parallel tool use is ON. With maxHops = 2 the model gets exactly ONE
+            // tool-calling turn, so a question like "what can I cook with what I'm
+            // growing?" needs both tools answered in that single turn — otherwise
+            // Pip has to invent the half it couldn't look up, which is exactly what
+            // the <truthfulness> rule forbids.
+            // All tool_result blocks go back in ONE user message below (the single
+            // `modelMessages.append` of a "user" turn) — splitting them across
+            // separate messages teaches the model to stop requesting tools in parallel.
             let toolChoice: [String: Any] = allowTools
-                ? ["type": "auto", "disable_parallel_tool_use": true]
+                ? ["type": "auto"]
                 : ["type": "none"]
 
             let body: [String: Any] = [
@@ -932,10 +959,14 @@ class PipAIService: ObservableObject {
                     modelMessages.append(["role": "assistant", "content": assistantContent])
 
                     var userContent: [[String: Any]] = []
+
+                    // Set the combined indicator ONCE, before any tool runs — the tools
+                    // execute back-to-back, so a per-tool line would be replaced before
+                    // a kid could read it.
+                    let indicator = toolInFlightMessage(for: toolBlocks.map { $0.name })
+                    await MainActor.run { streamingText = indicator }
+
                     for tb in toolBlocks {
-                        // Show per-tool indicator in the chat bubble while the tool runs.
-                        let indicator = toolInFlightMessage(name: tb.name)
-                        await MainActor.run { streamingText = indicator }
                         let resultStr = executeCloudTool(name: tb.name)
                         #if DEBUG
                         print("[PipAI] TOOL \(tb.name) → \(resultStr.prefix(140))")
