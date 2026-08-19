@@ -53,3 +53,6 @@ apikey.env
 
 # graphify regenerable cache (AST + semantic) — not the graph outputs
 graphify-out/cache/
+
+# Python bytecode (from hook test runs)
+__pycache__/
