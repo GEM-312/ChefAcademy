@@ -23,6 +23,7 @@ import sys
 import os
 import re
 import json
+import shlex
 import subprocess
 
 # Files where these literals are DEFINED, not misused. §3 exempts them.
@@ -78,6 +79,31 @@ def git_diff(project_dir, args):
         return ""
 
 
+def stages_tracked_files(cmd):
+    """True if this `git commit` stages tracked files itself (-a / --all).
+
+    Parsed with shlex, not matched with a regex: shlex understands shell
+    quoting, so a flag that only appears inside the commit message
+    (`git commit -m "add -a flag"`) lands in a single argument and is not
+    mistaken for a real flag.
+    """
+    try:
+        tokens = shlex.split(cmd)
+    except ValueError:
+        # Unbalanced quotes: we cannot tell. Scan the unstaged diff anyway --
+        # an unchecked diff must not pass as a clean one (CLAUDE.md S10).
+        return True
+    if "commit" not in tokens:
+        return False
+    for tok in tokens[tokens.index("commit") + 1:]:
+        if tok == "--all":
+            return True
+        # single-dash short flags combine: -a, -am, -va all stage tracked files
+        if tok.startswith("-") and not tok.startswith("--") and "a" in tok[1:]:
+            return True
+    return False
+
+
 def main():
     try:
         data = json.load(sys.stdin)
@@ -93,7 +119,7 @@ def main():
 
     diff = git_diff(project_dir, ["--cached"])
     # `git commit -a/--all` stages tracked files at commit time — include them.
-    if re.search(r"\bcommit\b[^\n]*\s-\w*a|\b--all\b", cmd):
+    if stages_tracked_files(cmd):
         diff += "\n" + git_diff(project_dir, [])
 
     violations = find_violations(diff)
