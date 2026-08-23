@@ -1,14 +1,12 @@
 ---
 name: add-asset
-description: Create an Xcode .imageset from a loose PNG file. Moves the image into Assets.xcassets with proper Contents.json.
+description: Creates an Xcode .imageset from a loose PNG, moving the image into Assets.xcassets with a correct Contents.json. Use when the user wants to add an image to the asset catalog, says "add asset", "/add-asset", or hands over a PNG to wire into the app.
 metadata:
   argument-hint: "[path-to-png] [category]"
 allowed-tools: Bash,Read,Write,Glob
 ---
 
 # Add Asset to Xcode Asset Catalog
-
-The user wants to add a new image to the Xcode project's Assets.xcassets.
 
 ## Instructions
 

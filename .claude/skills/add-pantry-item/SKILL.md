@@ -1,14 +1,12 @@
 ---
 name: add-pantry-item
-description: Add a new PantryItem to the enum with all required switch branches (displayName, emoji, imageName, shopPrice, shopCategory, etc.)
+description: Adds a new PantryItem case to the enum and fills in every required switch branch (displayName, emoji, imageName, shopPrice, shopCategory, shopScale, shopOffset, shopFrameHeight). Use when the user wants a new ingredient in the shop or pantry, or says "add pantry item" / "/add-pantry-item".
 metadata:
   argument-hint: "[item-name]"
 allowed-tools: Read,Edit,Grep
 ---
 
 # Add New Pantry Item
-
-The user wants to add a new ingredient to the PantryItem enum. This requires adding a case and updating 8+ computed properties.
 
 ## Instructions
 

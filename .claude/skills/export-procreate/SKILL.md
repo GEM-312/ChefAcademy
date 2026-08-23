@@ -1,12 +1,10 @@
 ---
 name: export-procreate
-description: Extract all PNGs from Assets.xcassets into a flat folder on Desktop for AirDrop to iPad/Procreate coloring.
+description: Extracts every PNG from Assets.xcassets into a flat, category-organized folder on the Desktop for AirDrop to iPad. Use when the user wants to color assets in Procreate, says "export for Procreate" / "/export-procreate", or asks to get the art onto the iPad — and to copy the colored PNGs back afterward.
 allowed-tools: Bash,Glob
 ---
 
 # Export Assets for Procreate
-
-The user wants to extract all image assets into a flat folder so they can AirDrop them to iPad for coloring in Procreate.
 
 ## Instructions
 
