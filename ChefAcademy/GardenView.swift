@@ -329,9 +329,6 @@ struct WalkingPipView: View {
         // TimelineView drives walk updates; when not walking, it idles
         // (SwiftUI skips redraws when the schedule produces no new dates)
         TimelineView(isWalking && !isDragging ? .animation : .animation) { context in
-            let now = context.date
-            let _ = updateWalkIfNeeded(now: now)
-
             ZStack {
                 // Glow ring when near a harvestable plot
                 if nearbyPlotIndex != nil {
@@ -394,6 +391,11 @@ struct WalkingPipView: View {
                             }
                         }
                     )
+            }
+            // Advance the walk AFTER the frame is drawn, not inside body — @State
+            // writes during a view update are undefined behavior (console spam).
+            .onChange(of: context.date) { _, now in
+                updateWalkIfNeeded(now: now)
             }
         }
         .opacity(isVisible ? 1.0 : 0.0)
@@ -607,11 +609,18 @@ struct GardenView: View {
     @State private var editMode = false
 
     @State private var gardenSceneItems: [SceneItem] = [
-        SceneItem(id: "plot0", label: "Plot 0", icon: "🌱", xPercent: 0.45, yPercent: 0.66),
-        SceneItem(id: "plot1", label: "Plot 1", icon: "🌱", xPercent: 0.79, yPercent: 0.63),
-        SceneItem(id: "plot2", label: "Plot 2", icon: "🌱", xPercent: 0.32, yPercent: 0.78),
-        SceneItem(id: "plot3", label: "Plot 3", icon: "🌱", xPercent: 0.73, yPercent: 0.78),
-        SceneItem(id: "plot4", label: "Plot 4", icon: "🌱", xPercent: 0.82, yPercent: 0.88),
+        // Garden rows; row0 unlocks first. Positions placed by Marina in edit
+        // mode (2026-10-08). Depth size comes from each row's y, not its number.
+        SceneItem(id: "row0", label: "Row 1", icon: "🌱", xPercent: 0.67, yPercent: 0.78),
+        SceneItem(id: "row1", label: "Row 2", icon: "🌱", xPercent: 0.14, yPercent: 0.84),
+        SceneItem(id: "row2", label: "Row 3", icon: "🌱", xPercent: 0.12, yPercent: 0.70),
+        SceneItem(id: "row3", label: "Row 4", icon: "🌱", xPercent: 0.56, yPercent: 0.70),
+        SceneItem(id: "row4", label: "Row 5", icon: "🌱", xPercent: 0.69, yPercent: 0.61),
+        SceneItem(id: "row5", label: "Row 6", icon: "🌱", xPercent: 0.78, yPercent: 0.56),
+        SceneItem(id: "row6", label: "Row 7", icon: "🌱", xPercent: 0.12, yPercent: 0.58),
+        SceneItem(id: "row7", label: "Row 8", icon: "🌱", xPercent: 0.18, yPercent: 0.48),
+        SceneItem(id: "row8", label: "Row 9", icon: "🌱", xPercent: 0.33, yPercent: 0.53),
+        SceneItem(id: "row9", label: "Row 10", icon: "🌱", xPercent: 0.47, yPercent: 0.44),
         SceneItem(id: "pip", label: "Pip Idle", icon: "🦔", xPercent: 0.50, yPercent: 0.90),
         SceneItem(id: "walk0", label: "Walk 0", icon: "👣", xPercent: 0.25, yPercent: 0.88),
         SceneItem(id: "walk1", label: "Walk 1", icon: "👣", xPercent: 0.38, yPercent: 0.72),
@@ -806,7 +815,7 @@ struct GardenView: View {
 
     func gardenMapSection(screenWidth: CGFloat) -> some View {
         // The map image fills the width, plots are positioned on top using overlay
-        Image("bg_garden")
+        Image("garden_map_background")
             .resizable()
             .aspectRatio(contentMode: .fit)
             .frame(maxWidth: .infinity)
@@ -832,30 +841,12 @@ struct GardenView: View {
                         // Positions come from gardenSceneItems
                         // ==========================================
 
-                        // Plot positions from scene items
-                        let plotPositions: [CGPoint] = [
-                            plotPos(for: "plot0", w: w, h: h),
-                            plotPos(for: "plot1", w: w, h: h),
-                            plotPos(for: "plot2", w: w, h: h),
-                            plotPos(for: "plot3", w: w, h: h),
-                            plotPos(for: "plot4", w: w, h: h),
-                        ]
-
-                        // Plot spots (the garden patches)
-                        gardenPlotSpot(index: 0)
-                            .position(plotPositions[0])
-
-                        gardenPlotSpot(index: 1)
-                            .position(plotPositions[1])
-
-                        gardenPlotSpot(index: 2)
-                            .position(plotPositions[2])
-
-                        gardenPlotSpot(index: 3)
-                            .position(plotPositions[3])
-
-                        gardenPlotSpot(index: 4)
-                            .position(plotPositions[4])
+                        // Garden rows, drawn from the top of the map down so
+                        // nearer (lower) rows overlap farther ones.
+                        ForEach(rowsByDepth, id: \.self) { row in
+                            gardenRow(row, mapWidth: w)
+                                .position(plotPos(for: "row\(row)", w: w, h: h))
+                        }
 
                         // Pip removed from map — one Pip only, shown in PipGardenMessage below
                         // Walking/draggable Pip will return once speaking animation is ready
@@ -927,10 +918,69 @@ struct GardenView: View {
                     playerGender: sessionManager.activeProfile?.gender ?? .girl,
                     rewardLabel: isVisiting ? "+5 🪙" : "+2 XP"
                 )
-                .frame(width: isIPad ? 160 : 100, height: isIPad ? 160 : 100)
-                .scaleEffect(isIPad ? 1.4 : 1.0)
+                .frame(width: Self.spotWidth, height: Self.spotWidth)
             }
         }
+    }
+
+    // MARK: - Garden Row (3 planting spots on one soil row)
+
+    /// Unscaled width of one planting spot; a row is three of them.
+    private static let spotWidth: CGFloat = 100
+    /// A full-size (nearest) row spans this fraction of the map width.
+    private static let rowWidthFraction: CGFloat = 0.82
+    /// Depth from screen height: a row at `nearY` (low on the map) draws at
+    /// `nearScale`, one at `farY` (high, by the trees) at `farScale`.
+    /// Marina 2026-10-08: rows 35% smaller than first pass (1.1 / 0.75).
+    /// Far spots stay ≈ 49pt wide; PlotView's tap-anywhere bug rescue keeps
+    /// far bug plots hittable.
+    private static let nearScale: CGFloat = 0.72
+    private static let farScale: CGFloat = 0.49
+    private static let nearY: CGFloat = 0.84
+    private static let farY: CGFloat = 0.44
+
+    /// Row indices ordered top-of-map first, for back-to-front drawing.
+    private var rowsByDepth: [Int] {
+        (0..<GardenPlot.rowCount).sorted { rowY($0) < rowY($1) }
+    }
+
+    private func rowY(_ row: Int) -> CGFloat {
+        gardenSceneItems.first { $0.id == "row\(row)" }?.yPercent ?? Self.nearY
+    }
+
+    private func gardenRow(_ row: Int, mapWidth: CGFloat) -> some View {
+        let perRow = GardenPlot.spotsPerRow
+        let depth = min(1, max(0, (Self.nearY - rowY(row)) / (Self.nearY - Self.farY)))
+        let scale = (mapWidth * Self.rowWidthFraction) / (Self.spotWidth * CGFloat(perRow))
+            * (Self.nearScale + (Self.farScale - Self.nearScale) * depth)
+        let unlocked = row < GardenPlot.unlockedRows(forLevel: gameState.playerLevel)
+
+        return ZStack {
+            Image("garden_plot_row")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: Self.spotWidth * CGFloat(perRow))
+
+            HStack(spacing: 0) {
+                ForEach(0..<perRow, id: \.self) { slot in
+                    gardenPlotSpot(index: row * perRow + slot)
+                }
+            }
+            .opacity(unlocked ? 1 : 0)
+
+            if !unlocked {
+                Text("🔒 Level \(GardenPlot.unlockLevel(forRow: row))")
+                    .font(.AppTheme.rounded(size: 12, weight: .bold))
+                    .foregroundColor(Color.AppTheme.sepia)
+                    .padding(.horizontal, AppSpacing.xs)
+                    .padding(.vertical, AppSpacing.xxs)
+                    .background(Color.AppTheme.warmCream.opacity(0.9))
+                    .cornerRadius(AppSpacing.pillCornerRadius)
+            }
+        }
+        .opacity(unlocked ? 1 : 0.5)
+        .allowsHitTesting(unlocked)
+        .scaleEffect(scale)
     }
 
     // MARK: - Bottom Panel (Seeds + Harvested)

@@ -44,6 +44,11 @@ struct PlotView: View {
     @State private var bugsRescued: [Bool] = [false, false, false]
     @State private var ladybugOffsets: [CGFloat] = [100, 100, 100]
 
+    // Kid care animation (weed pull / bug rescue) — one play per action
+    @State private var careAction: GardenCareAction?
+    @State private var carePlayID = 0
+    @State private var careHideTask: Task<Void, Never>?
+
     // Completion
     @State private var xpRewardVisible = false
 
@@ -51,6 +56,21 @@ struct PlotView: View {
         ZStack {
             plotContent
                 .frame(width: 100, height: 110)
+                .overlay(alignment: playerGender == .girl ? .leading : .trailing) {
+                    // Same side placement as the watering kid. Lives on the
+                    // outer frame, not inside weedingPlot/bugRescuePlot, so the
+                    // last pull keeps playing after the plot flips to growing.
+                    if let careAction {
+                        GardenCareCharacterView(gender: playerGender, action: careAction, playID: carePlayID)
+                            .offset(x: playerGender == .girl ? -110 : 110)
+                            .allowsHitTesting(false)
+                            .transition(
+                                .move(edge: playerGender == .girl ? .leading : .trailing)
+                                    .combined(with: .opacity)
+                            )
+                    }
+                }
+                .animation(AnimationConstants.springQuick, value: careAction)
 
             // XP reward floating text
             if xpRewardVisible {
@@ -82,6 +102,7 @@ struct PlotView: View {
         .onDisappear {
             waterTimer?.invalidate()
             waterTimer = nil
+            careHideTask?.cancel()
         }
     }
 
@@ -112,17 +133,6 @@ struct PlotView: View {
     var emptyPlot: some View {
         VStack(spacing: 6) {
             ZStack {
-                Circle()
-                    .fill(Color.AppTheme.warmCream.opacity(0.7))
-                    .frame(width: 70, height: 70)
-
-                Circle()
-                    .strokeBorder(
-                        Color.AppTheme.sepia.opacity(0.3),
-                        style: StrokeStyle(lineWidth: 2, dash: [6, 4])
-                    )
-                    .frame(width: 70, height: 70)
-
                 Image(systemName: "plus")
                     .font(.AppTheme.rounded(size: 24, weight: .medium))
                     .foregroundColor(Color.AppTheme.sage)
@@ -139,18 +149,7 @@ struct PlotView: View {
     var growingPlot: some View {
         VStack(spacing: 4) {
             ZStack {
-                Circle()
-                    .fill(Color.AppTheme.warmCream.opacity(0.85))
-                    .frame(width: 80, height: 80)
-
-                if let veg = plot.vegetable {
-                    Image(veg.imageName)
-                        .resizable()
-                        .aspectRatio(contentMode: .fit)
-                        .frame(width: 60, height: 60)
-                        .scaleEffect(0.6 + (plot.growthProgress * 0.4))
-                        .opacity(0.5 + (plot.growthProgress * 0.5))
-                }
+                growthStageSprite
             }
 
             VStack(spacing: 2) {
@@ -173,15 +172,36 @@ struct PlotView: View {
         }
     }
 
+    // MARK: - Plot Art
+    //
+    // A plot is ONE planting spot. GardenView draws the soil row under each
+    // group of three spots (10 rows × 3 spots, Marina 2026-10-08), so a spot
+    // draws only its plant.
+
+    /// Relative heights of growth stages 1–4, as a fraction of `plantHeight`.
+    /// Not true-to-life scale: each step must read clearly to a 6-year-old.
+    private static let growthStageHeights: [CGFloat] = [0.25, 0.40, 0.55, 0.75]
+    private static let plantHeight: CGFloat = 80
+
+    /// Seed → sprout → seedling → young plant, picked from growthProgress.
+    /// Only for .growing — growthProgress reads 0 while a plot waits for care,
+    /// so care states keep showing the vegetable instead.
+    private var growthStageSprite: some View {
+        let count = Self.growthStageHeights.count
+        let stage = min(count - 1, Int(plot.growthProgress * Double(count)))
+        let height = Self.plantHeight * Self.growthStageHeights[stage]
+        return Image("garden_growth_stage_\(stage + 1)")
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .frame(height: height)
+            .offset(y: -height / 2)   // stand on the soil row instead of centring on it
+    }
+
     // MARK: - Ready Plot
 
     var readyPlot: some View {
         VStack(spacing: 4) {
             ZStack {
-                Circle()
-                    .fill(Color.AppTheme.warmCream.opacity(0.9))
-                    .frame(width: 85, height: 85)
-
                 if let veg = plot.vegetable {
                     Image(veg.imageName)
                         .resizable()
@@ -216,10 +236,6 @@ struct PlotView: View {
     var wateringPlot: some View {
         VStack(spacing: 4) {
             ZStack {
-                Circle()
-                    .fill(Color.AppTheme.warmCream.opacity(0.7))
-                    .frame(width: 80, height: 80)
-
                 if let veg = plot.vegetable {
                     Image(veg.imageName)
                         .resizable()
@@ -295,10 +311,6 @@ struct PlotView: View {
     var weedingPlot: some View {
         VStack(spacing: 4) {
             ZStack {
-                Circle()
-                    .fill(Color.AppTheme.warmCream.opacity(0.7))
-                    .frame(width: 80, height: 80)
-
                 if let veg = plot.vegetable {
                     Image(veg.imageName)
                         .resizable()
@@ -336,6 +348,7 @@ struct PlotView: View {
                         if let idx = weedsRemoved.firstIndex(of: false) {
                             if value.translation.height < -40 {
                                 // Pulled out!
+                                playCareAnimation(.pullWeed)
                                 withAnimation(AnimationConstants.fadeMedium) {
                                     weedOffsets[idx] = -100
                                 }
@@ -368,10 +381,6 @@ struct PlotView: View {
     var bugRescuePlot: some View {
         VStack(spacing: 4) {
             ZStack {
-                Circle()
-                    .fill(Color.AppTheme.warmCream.opacity(0.7))
-                    .frame(width: 80, height: 80)
-
                 if let veg = plot.vegetable {
                     Image(veg.imageName)
                         .resizable()
@@ -408,6 +417,14 @@ struct PlotView: View {
                             .opacity(ladybugOffsets[i] == 0 ? 0.8 : 0)
                     }
                 }
+            }
+            // Far garden rows are drawn smaller, which can shrink a bug's
+            // 44pt target below the HIG minimum. Tapping anywhere on the plot
+            // rescues the next bug, so a small far-away bug is never hard to hit.
+            .frame(width: AppSpacing.minTapTarget * 2, height: AppSpacing.minTapTarget * 2)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                if let next = bugsRescued.firstIndex(of: false) { rescueBug(index: next) }
             }
 
             let remaining = bugsRescued.filter { !$0 }.count
@@ -479,6 +496,7 @@ struct PlotView: View {
 
     private func rescueBug(index: Int) {
         guard !bugsRescued[index] else { return }
+        playCareAnimation(.rescueBug)
 
         // Ladybug flies in
         withAnimation(AnimationConstants.fadeMedium) {
@@ -498,6 +516,22 @@ struct PlotView: View {
                 guard !Task.isCancelled else { return }
                 onCareComplete()
             }
+        }
+    }
+
+    // MARK: - Kid Care Animation
+
+    /// Slides the kid in (or replays if already showing), then removes them a
+    /// beat after the one-shot play ends. Rapid taps restart the play and push
+    /// the hide back, so the kid stays while the player keeps working.
+    private func playCareAnimation(_ action: GardenCareAction) {
+        careAction = action
+        carePlayID += 1
+        careHideTask?.cancel()
+        careHideTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(GardenCareCharacterView.playDuration + 0.4))
+            guard !Task.isCancelled else { return }
+            careAction = nil
         }
     }
 

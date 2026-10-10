@@ -445,6 +445,14 @@ class GameState: ObservableObject {
         if gardenPlots.isEmpty {
             gardenPlots = GardenPlot.createStarterPlots()
         }
+        // Saves from before the 10-row garden hold 5 plots. Add the missing
+        // empty spots after them: existing plantings keep their place (rows
+        // 1–2, unlocked from level 1) and no saved field changes shape.
+        if gardenPlots.count < GardenPlot.totalSpots {
+            let nextID = (gardenPlots.map(\.id).max() ?? -1) + 1
+            let missing = GardenPlot.totalSpots - gardenPlots.count
+            gardenPlots += (nextID..<nextID + missing).map { GardenPlot(id: $0) }
+        }
 
         // Pantry
         pantryInventory = saved.pantryData.compactMap { data in
@@ -543,6 +551,8 @@ class GameState: ObservableObject {
         }
 
         // Plots
+        // Spot identity is the array POSITION (row * 3 + slot), kept by map() on save
+        // and load. Never sort/filter/dedupe gardenPlots before saving.
         saved.plotsData = gardenPlots.map { plot in
             PlotData(
                 id: plot.id,
@@ -1288,9 +1298,27 @@ struct GardenPlot: Identifiable {
         growthProgress >= 1.0
     }
 
-    /// Create the starter garden plots (5 plots)
+    // Garden layout (Marina, 2026-10-08): 10 rows × 3 independent planting
+    // spots. Rows unlock bottom-up with player level, so a new player starts
+    // with 6 spots (about the old 5). Spot index = row * spotsPerRow + slot,
+    // row 0 being the bottom (nearest) row.
+    static let rowCount = 10
+    static let spotsPerRow = 3
+    static let totalSpots = rowCount * spotsPerRow
+
+    /// Rows a player of `level` can plant in: 2 at level 1, +1 every 2 levels, max 10.
+    static func unlockedRows(forLevel level: Int) -> Int {
+        min(rowCount, 2 + max(0, level - 1) / 2)
+    }
+
+    /// Player level at which `row` (0 = bottom) unlocks.
+    static func unlockLevel(forRow row: Int) -> Int {
+        row < 2 ? 1 : 1 + (row - 1) * 2
+    }
+
+    /// Create the starter garden: every spot exists from the start; locking is by level.
     static func createStarterPlots() -> [GardenPlot] {
-        return (0..<5).map { GardenPlot(id: $0) }
+        return (0..<totalSpots).map { GardenPlot(id: $0) }
     }
 
     /// Plant a seed in this plot

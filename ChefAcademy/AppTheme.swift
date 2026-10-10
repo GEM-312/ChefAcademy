@@ -198,7 +198,9 @@ enum AnimationConstants {
     static let walkingFPS: Double = 8.0       // ~0.125s per frame (walking characters)
     static let wavingFPS: Double = 6.0        // ~0.167s per frame (idle wave loop)
     static let gameFPS: Double = 30.0         // ~0.033s per frame (one-shot game celebrations)
+    static let careFPS: Double = 12.0         // ~0.083s per frame (one-shot weed-pull / bug-rescue kid)
     static let walkSpeed: CGFloat = 54.0      // points per second (character movement)
+    static let mapWalkDuration: Double = 1.5  // seconds for Pip's Home-map walk, whatever the path length
 
     // Button press scales
     static let buttonPressScale: CGFloat = 0.97   // subtle squeeze (PrimaryButtonStyle)
