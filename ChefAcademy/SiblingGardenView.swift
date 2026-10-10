@@ -83,6 +83,10 @@ struct SiblingGardenView: View {
         .onAppear {
             if let data = sibling.playerData(in: modelContext) {
                 siblingGameState.modelContext = modelContext
+                // Without this, saveToStore() falls back to "legacy mode" and
+                // writes the sibling's whole game onto whichever PlayerData the
+                // store returns first — overwriting another profile (found 2026-10-08).
+                siblingGameState.activeProfileID = sibling.id
                 siblingGameState.loadFromStore(for: data)
             }
         }
