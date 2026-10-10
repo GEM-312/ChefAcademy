@@ -4,6 +4,48 @@ Personal reference built from real code in Pip's Kitchen Garden. Newest lessons 
 
 ---
 
+## Session: October 10, 2026
+
+### State Set During a View Update Can Be Silently Dropped
+**Where it came up:** On the Home map, Pip walked to the first station Marina tapped. After that, every tap jumped straight to the station with no walk.
+**What it is:** SwiftUI expects state to change in response to events (a tap, a timer, a task), not while it is computing a view's `body`. `TimelineView` runs its closure as part of drawing the screen, and `WalkEngine.update(now:)` is called inside that closure. When the walk ended, the engine called `onCompleted` from right there, so `arrive(at:)` changed `@State` in the middle of a view update. SwiftUI applied the tab change but dropped `walkTarget = nil`. From then on, `go(to:)` saw a walk "still in progress" and took its "second tap, go now" shortcut every time.
+**In our code:** `ChefAcademyApp.swift` `HomeImageMap.pip(w:h:)`. `onCompleted` now runs `Task { @MainActor in arrive(at: target) }`, which moves the change to the next main-actor turn, after drawing has finished. A second fix, `.onDisappear { walkTarget = nil }`, covers leaving Home through the tab bar while Pip is walking: the `TimelineView` stops, so `onCompleted` never fires at all.
+**Why it matters:** A callback that comes from inside `body`, `TimelineView` or `GeometryReader` is not an event, even if it looks like one. Hop out with `Task { @MainActor in }` before changing state. This is the same pattern §2 requires for delayed UI changes. A bug like this is hard to spot because the first run works and the second fails: the state left behind by the dropped update is what breaks the next tap.
+
+## Session: October 8, 2026
+
+### Edit a Picture With Itself as the Reference to Get Aligned Layers
+**Where it came up:** The shop background. Marina chose a stall with Pip behind the counter, but Pip needs to be a separate layer so he can move and later be swapped for the new-style Pip.
+**What it is:** Asking the image model to *edit* a picture, with that same picture as the only reference, keeps the composition and camera: only the requested parts change. Removing Pip this way gave a Pip-free stall that lines up with the original at a measured offset of zero pixels. Two images that line up exactly work as layers of one scene: background, then the character, then the same background cut from the counter line down, so the counter hides the character's legs.
+**In our code:** `~/Desktop/ShopArt/final/shop_bg_D_noPip_v1.png` (no Pip) and `ideation/D_oak_stand_allItems.png` (with Pip). The planned `FarmShopView` layering reuses one image twice and needs no separately drawn counter.
+**Why it matters:** A generated scene is normally one flat picture. Getting layers out of it usually means hand-masking in Photoshop. "Same picture, minus one thing" turns a single generation into a layered scene cheaply, and the zero-offset check shows whether the layers will actually line up before any code is written.
+
+### A File Only Sees the Frameworks It Imports
+**Where it came up:** The first build under Xcode 27 failed in `SplitScreenVersusView.swift:15` with *"Property 'modelContext' is not available due to missing import of defining module 'SwiftData'."* The same code had built for months under Xcode 26.
+**What it is:** The project turns on `SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES`. With it, a member defined in a framework is only visible in a file that imports that framework itself. Before, one `import SwiftData` anywhere in the module leaked SwiftData's members into every file; the new compiler enforces the per-file rule strictly. `\.modelContext` is declared by SwiftData, so a file that imports only SwiftUI may not use it.
+**In our code:** Two files used SwiftData members without importing it — `SplitScreenVersusView.swift` (`@Environment(\.modelContext)`) and `AskPipView.swift:677` (`sessionManager.modelContext`). One `import SwiftData` line each fixed the build, zero errors. A grep for files that use `modelContext`/`@Query`/`@Model` without the import found exactly those two.
+**Why it matters:** Each file's imports become an honest list of its dependencies — you can read a file and know what it relies on. It also explains a confusing class of "it built yesterday" failures after a toolchain update: the code didn't change, the compiler's enforcement did. When one such error appears, sweep for the pattern rather than fixing one file per build.
+
+### Fixing the First and Last Frame Holds a Character's Identity
+**Where it came up:** Animating the kids pulling weeds and rescuing bugs in Kling 3 Omni from their in-game avatars. With only a start frame, the boy turned sideways and became a different cartoon — glossy hair, pink cheeks, a puffy hat. With the avatar as both start AND end frame, every frame kept his exact pencil style.
+**What it is:** An image-to-video model only knows what the frames it is given show. Anything it must invent — a side of the head never drawn, a pose far from the input — it fills from what it learned from millions of other images, i.e. its own house style. Pinning the end frame forces the whole clip to arrive back at the real drawing, which keeps the in-between frames close to it. The trade-off: the clip has to return to the start pose, so the "return" frames are cut afterwards and only the action is kept.
+**In our code:** `GardenCareCharacterView.swift` plays 15 frames per action (`<boy|girl>_pulls_weed_frame_NN`, `_rescues_bug_frame_NN`), cut from frames ~9–57 of each 73-frame clip — the action only, no return to pose.
+**Why it matters:** It's the same principle as giving a model constraints instead of hoping: the model is reliable where it is anchored and drifts where it is free. It also decided the art-regeneration plan — new characters need master drawings with three-quarter views *before* animation, so the model never has to invent an angle.
+
+### One Shared Crop Box Keeps a Sprite the Same Size
+**Where it came up:** Installing the cleaned animation frames. Cropping each frame to its own outline made the boy 1090 px tall standing and 859 px tall bending.
+**What it is:** The view shows every frame with `.aspectRatio(contentMode: .fit)` inside a fixed box. A frame cropped tighter gets scaled UP to fill the box, so the kid visibly grows each time he bends and shrinks when he straightens. The fix is to measure the union of all 15 outlines and crop every frame to that one box — the character then moves inside a constant canvas, feet planted.
+**In our code:** The install step computes the shared box across a clip's 15 frames (680×1069 for the boy's weed pull) before writing the `AvatarCards` imagesets; the pour frames never had the problem because the pour motion barely changes the outline.
+**Why it matters:** Any frame-by-frame animation drawn into a fixed frame needs a fixed canvas. Per-frame trimming is a good default for a single sticker and the wrong default for a sequence — the scale jitter reads as a bug even when every individual frame looks perfect.
+
+### A Silent Fallback Can Write to the Wrong Record
+**Where it came up:** The persistence-safety reviewer, checking the 30-spot garden change, found an older bug in `SiblingGardenView`: helping a sibling's plant could overwrite a different family member's saved game.
+**What it is:** `GameState.saveToStore()` finds the record to write by `activeProfileID`. When that is nil it falls back to "legacy mode" and writes onto `FetchDescriptor<PlayerData>().first` — whichever record the store returns first. The sibling's `GameState()` never set `activeProfileID`, so every care action saved the sibling's whole game over the parent's or another child's data. A fallback that was meant for one-user installs silently became a wrong-target write in the multi-user app.
+**In our code:** One line in `SiblingGardenView.swift` — `siblingGameState.activeProfileID = sibling.id` before `loadFromStore(for:)`. The same review confirmed the garden growth was safe because it only *appends* empty spots to the saved `plotsData` list (no format change), and noted spot identity is the list position — so a comment on the save path now forbids sorting that list.
+**Why it matters:** A default that "does something reasonable" when an input is missing is far more dangerous in a save path than a crash — the March bug (`try? save()`) was the same family: silent failure, destroyed data. Prefer loud failure when the target of a write is unknown, and set identity at the point of construction so no caller can forget.
+
+---
+
 ## Session: August 19, 2026
 
 ### Use the Guaranteed Thing to Compel the Smart Thing

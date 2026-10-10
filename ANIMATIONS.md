@@ -76,7 +76,9 @@ Defined in `AppTheme.swift`. Use these instead of inline values.
 | `.walkingFPS` | 8.0 | All character walking (~0.125s/frame) |
 | `.wavingFPS` | 6.0 | Pip waving idle loop (~0.167s/frame) |
 | `.gameFPS` | 30.0 | One-shot game celebrations (~0.033s/frame) |
+| `.careFPS` | 12.0 | One-shot weed-pull / bug-rescue kid in `GardenCareCharacterView` (~0.083s/frame) |
 | `.walkSpeed` | 54 pts/sec | Character movement speed |
+| `.mapWalkDuration` | 1.5 s | Pip's Home-map walk — speed is derived from the path length so every trip takes the same time |
 
 ### Kitchen Cooking-Flow Timings
 | Constant | Value | Use For |
