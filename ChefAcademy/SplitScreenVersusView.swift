@@ -8,6 +8,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct SplitScreenVersusView: View {
     @EnvironmentObject var gameState: GameState

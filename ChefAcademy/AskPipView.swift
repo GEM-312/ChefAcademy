@@ -15,6 +15,7 @@
 //
 
 import SwiftUI
+import SwiftData
 
 // MARK: - Parsed Recipe (from AI response)
 
