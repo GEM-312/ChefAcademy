@@ -928,7 +928,7 @@ struct HealthyChoiceGameView: View {
         FoodChoice(name: "Chicken", emoji: "\u{1F357}", isHealthy: true, imageName: "farm_chicken",
                    unlocksVeggie: nil, unlocksPantry: .chicken,
                    pipFact: "Chicken is packed with protein for strong muscles!"),
-        FoodChoice(name: "Greek Yogurt", emoji: "\u{1F95B}", isHealthy: true, imageName: "farm_greekyogurt",
+        FoodChoice(name: "Greek Yogurt", emoji: "\u{1F95B}", isHealthy: true, imageName: "farm_greekYogurt",
                    unlocksVeggie: nil, unlocksPantry: .greekYogurt,
                    pipFact: "Greek yogurt has probiotics for a happy tummy!"),
         FoodChoice(name: "Nuts", emoji: "\u{1F95C}", isHealthy: true, imageName: "farm_nuts",
