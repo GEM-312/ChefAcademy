@@ -9,7 +9,7 @@
 //
 //  Before this file, we had two walking implementations:
 //    1. WalkingPipView (GardenView.swift) — modern TimelineView + delta-time
-//    2. FarmTransitionView (FarmShopView.swift) — legacy Timer at 30fps
+//    2. FarmTransitionView (FarmShopView.swift) — legacy Timer at 30fps (removed 2026-10-08)
 //
 //  Both did the same math (waypoint interpolation + frame cycling) but were
 //  hardcoded to Pip's 15 frames. By extracting the common logic into WalkEngine
@@ -253,8 +253,6 @@ struct CharacterWalkingView: View {
 
     var body: some View {
         TimelineView(.animation) { context in
-            let _ = engine.update(now: context.date)
-
             Image(currentFrameName)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
@@ -262,6 +260,12 @@ struct CharacterWalkingView: View {
                 .scaleEffect(x: engine.facingRight ? 1 : -1, y: 1)
                 .shadow(color: Color.AppTheme.sepia.opacity(0.2), radius: 4, x: 0, y: 3)
                 .position(engine.position)
+                // Advance the engine AFTER the frame is drawn, not inside body —
+                // its @Published writes (and onCompleted) during a view update are
+                // "undefined behavior" and can be dropped. Same driver as InsulinTetrisView.
+                .onChange(of: context.date) { _, now in
+                    engine.update(now: now)
+                }
         }
         .onAppear {
             engine.onCompleted = onCompleted

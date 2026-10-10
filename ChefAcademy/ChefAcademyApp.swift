@@ -320,57 +320,74 @@ struct CustomTabBar: View {
     }
 }
 
-// MARK: - Home Image Map (iPhone)
+// MARK: - Home Image Map
 //
-// Replaces the horizontal QuickActionCard row on iPhone with a tappable
-// scene-style map. Each hotspot is an invisible Button positioned over
-// the matching building/stall on bg_home_map. Coordinates are unit
-// fractions (0..1) of the image's intrinsic size, so they scale with
-// any rendered width.
+// Layered storybook map: a background (paper, misty trees, stepping-stone
+// path, six empty clearings) with each location drawn as its own cut-out
+// sprite on top. Each sprite IS its tap target, so the hit area always
+// matches the artwork, and any one location can be redrawn on its own.
 //
-// Image is 1632×2912 (portrait, aspect ≈ 0.56). The artwork is a
-// placeholder Marina will replace; hotspot rects are easy to retune.
+// Tapping a location sends Pip walking along the stepping stones to it,
+// then switches tab. The walk always takes `mapWalkDuration`, and tapping
+// again while Pip walks skips straight to the tab — the walk must never
+// block the kid (the June UX review flagged the shop walk for exactly that).
+//
+// All positions are unit fractions (0..1) of the background's size, so they
+// scale to any rendered width. They were eyeballed from the 2026-10-08 art;
+// retune here if the art changes.
+//
+// Background is 1296×2304 (portrait, aspect 0.5625).
 
 private struct HomeImageMap: View {
     @Binding var selectedTab: MainTabView.Tab
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private struct Hotspot {
-        let tab: MainTabView.Tab
+    @State private var walkTarget: MainTabView.Tab?
+    @State private var walkID = UUID()
+
+    private struct Location {
+        let tab: MainTabView.Tab?          // nil = Home, the "you are here" marker
         let title: String
-        let centerX: CGFloat   // tap area center, fraction of image width
-        let centerY: CGFloat   // tap area center, fraction of image height
+        let imageName: String
+        let centerX: CGFloat               // sprite centre, fraction of map width
+        let baseY: CGFloat                 // where the sprite's ground sits, fraction of map height
         let widthFraction: CGFloat
-        let heightFraction: CGFloat
-        let labelOffsetY: CGFloat  // label Y offset relative to centerY (negative = above building)
+        let path: [CGPoint]                // stepping-stone waypoints from Home's door to here
     }
 
-    private static let imageAspect: CGFloat = 1632.0 / 2912.0
+    private static let imageAspect: CGFloat = 1296.0 / 2304.0
+    private static let pipSizeFraction: CGFloat = 0.14   // Pip's width as a fraction of map width
 
-    private static let hotspots: [Hotspot] = [
-        Hotspot(tab: .bodyBuddy, title: "Body",
-                centerX: 0.28, centerY: 0.42,
-                widthFraction: 0.30, heightFraction: 0.10,
-                labelOffsetY: -0.06),
-        Hotspot(tab: .playLearn, title: "Play",
-                centerX: 0.65, centerY: 0.56,
-                widthFraction: 0.22, heightFraction: 0.14,
-                labelOffsetY: -0.10),
-        Hotspot(tab: .kitchen, title: "Kitchen",
-                centerX: 0.30, centerY: 0.68,
-                widthFraction: 0.30, heightFraction: 0.16,
-                labelOffsetY: -0.10),
-        Hotspot(tab: .garden, title: "Garden",
-                centerX: 0.22, centerY: 0.88,
-                widthFraction: 0.30, heightFraction: 0.12,
-                labelOffsetY: -0.08),
-        Hotspot(tab: .shop, title: "Shop",
-                centerX: 0.74, centerY: 0.88,
-                widthFraction: 0.32, heightFraction: 0.16,
-                labelOffsetY: -0.10)
+    /// Pip waits here, at the Home cottage door.
+    private static let homeDoor = CGPoint(x: 0.45, y: 0.31)
+
+    // Shared stepping stones down the middle of the map, top to bottom.
+    private static let spine: [CGPoint] = [
+        homeDoor, CGPoint(x: 0.51, y: 0.355), CGPoint(x: 0.54, y: 0.40),
+        CGPoint(x: 0.50, y: 0.45), CGPoint(x: 0.43, y: 0.50), CGPoint(x: 0.39, y: 0.55),
+        CGPoint(x: 0.47, y: 0.61), CGPoint(x: 0.55, y: 0.66), CGPoint(x: 0.42, y: 0.74),
+        CGPoint(x: 0.46, y: 0.79), CGPoint(x: 0.55, y: 0.84)
     ]
 
-    private static let homeIndicatorCenterX: CGFloat = 0.50
-    private static let homeIndicatorCenterY: CGFloat = 0.20
+    private static let locations: [Location] = [
+        Location(tab: nil, title: "Home", imageName: "home_loc_home",
+                 centerX: 0.48, baseY: 0.29, widthFraction: 0.36, path: []),
+        Location(tab: .bodyBuddy, title: "Body", imageName: "home_loc_body",
+                 centerX: 0.28, baseY: 0.50, widthFraction: 0.24,
+                 path: Array(spine[0...4]) + [CGPoint(x: 0.33, y: 0.52)]),
+        Location(tab: .playLearn, title: "Play", imageName: "home_loc_play",
+                 centerX: 0.69, baseY: 0.58, widthFraction: 0.34,
+                 path: Array(spine[0...6]) + [CGPoint(x: 0.60, y: 0.60)]),
+        Location(tab: .kitchen, title: "Kitchen", imageName: "home_loc_kitchen",
+                 centerX: 0.34, baseY: 0.72, widthFraction: 0.36,
+                 path: Array(spine[0...8]) + [CGPoint(x: 0.36, y: 0.74)]),
+        Location(tab: .garden, title: "Garden", imageName: "home_loc_garden",
+                 centerX: 0.27, baseY: 0.89, widthFraction: 0.36,
+                 path: Array(spine[0...9]) + [CGPoint(x: 0.33, y: 0.86)]),
+        Location(tab: .shop, title: "Shop", imageName: "home_loc_shop",
+                 centerX: 0.74, baseY: 0.91, widthFraction: 0.36,
+                 path: Array(spine[0...10]) + [CGPoint(x: 0.65, y: 0.88)])
+    ]
 
     var body: some View {
         GeometryReader { geo in
@@ -378,39 +395,104 @@ private struct HomeImageMap: View {
             let h = w / Self.imageAspect
 
             ZStack(alignment: .topLeading) {
-                Image("bg_home_map")
+                Image("home_map_background")
                     .resizable()
                     .scaledToFit()
                     .frame(width: w, height: h)
 
-                // Home — non-tappable "you are here" marker over the top cottage
-                MapLabel(text: "Home", style: .youAreHere)
-                    .position(x: w * Self.homeIndicatorCenterX,
-                              y: h * Self.homeIndicatorCenterY)
-
-                ForEach(Self.hotspots, id: \.tab) { spot in
-                    // Tap target — invisible button covers the building footprint
-                    Button {
-                        selectedTab = spot.tab
-                    } label: {
-                        Color.clear.contentShape(Rectangle())
-                    }
-                    .buttonStyle(BouncyButtonStyle())
-                    .accessibilityLabel(spot.title)
-                    .frame(width: w * spot.widthFraction,
-                           height: h * spot.heightFraction)
-                    .position(x: w * spot.centerX, y: h * spot.centerY)
-
-                    // Visible label — sits above the building so the artwork stays readable
-                    MapLabel(text: spot.title, style: .destination)
-                        .position(x: w * spot.centerX,
-                                  y: h * (spot.centerY + spot.labelOffsetY))
-                        .allowsHitTesting(false)
+                ForEach(Self.locations, id: \.title) { place in
+                    locationView(place, w: w, h: h)
                 }
+
+                pip(w: w, h: h)
             }
             .frame(width: w, height: h)
         }
         .aspectRatio(Self.imageAspect, contentMode: .fit)
+        // Leaving Home mid-walk (tab bar) stops the TimelineView, so onCompleted never
+        // fires — reset so Pip is back at the door and the next tap walks again.
+        .onDisappear { walkTarget = nil }
+    }
+
+    // MARK: - Locations
+
+    @ViewBuilder
+    private func locationView(_ place: Location, w: CGFloat, h: CGFloat) -> some View {
+        let spriteWidth = w * place.widthFraction
+        let art = Image(place.imageName)
+            .resizable()
+            .scaledToFit()
+            .frame(width: spriteWidth)
+
+        VStack(spacing: AppSpacing.xxs) {
+            MapLabel(text: place.title, style: place.tab == nil ? .youAreHere : .destination)
+            if let tab = place.tab {
+                Button { go(to: tab) } label: { art }
+                    .buttonStyle(BouncyButtonStyle())
+                    .accessibilityLabel(place.title)
+            } else {
+                art.accessibilityHidden(true)
+            }
+        }
+        // Anchor the sprite's bottom (its ground) on baseY: a full-width,
+        // bottom-aligned frame ending at baseY, shifted to centerX. (.position
+        // would centre the sprite on the point instead.) Empty frame space
+        // doesn't take taps — only the label and art do.
+        .frame(width: w, height: h * place.baseY, alignment: .bottom)
+        .offset(x: w * (place.centerX - 0.5))
+    }
+
+    // MARK: - Pip
+
+    @ViewBuilder
+    private func pip(w: CGFloat, h: CGFloat) -> some View {
+        let size = w * Self.pipSizeFraction
+        if let target = walkTarget,
+           let place = Self.locations.first(where: { $0.tab == target }) {
+            let points = place.path.map { CGPoint(x: $0.x * w, y: $0.y * h - size / 2) }
+            CharacterWalkingView(
+                frameSet: .pipWalking,
+                size: size,
+                waypoints: points,
+                loop: false,
+                speed: Self.length(of: points) / AnimationConstants.mapWalkDuration,
+                // The engine fires this from inside TimelineView's body (a view update);
+                // state set there can be dropped, leaving walkTarget stuck so every later
+                // tap skips the walk. Hop to the next main-actor turn first.
+                onCompleted: {
+                    Task { @MainActor in arrive(at: target) }
+                }
+            )
+            .id(walkID)
+            .allowsHitTesting(false)
+        } else {
+            PipWavingAnimatedView(size: .custom(size))
+                .position(x: w * Self.homeDoor.x, y: h * Self.homeDoor.y - size / 2)
+                .allowsHitTesting(false)
+        }
+    }
+
+    // MARK: - Navigation
+
+    private func go(to tab: MainTabView.Tab) {
+        // Second tap while Pip walks, or Reduce Motion: no walk, go now.
+        if walkTarget != nil || reduceMotion {
+            arrive(at: tab)
+            return
+        }
+        walkID = UUID()
+        walkTarget = tab
+    }
+
+    private func arrive(at tab: MainTabView.Tab) {
+        walkTarget = nil
+        selectedTab = tab
+    }
+
+    private static func length(of points: [CGPoint]) -> CGFloat {
+        zip(points, points.dropFirst()).reduce(0) { total, pair in
+            total + hypot(pair.1.x - pair.0.x, pair.1.y - pair.0.y)
+        }
     }
 }
 
