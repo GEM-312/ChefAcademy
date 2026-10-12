@@ -652,7 +652,7 @@ struct GardenView: View {
                             gardenMapSection(screenWidth: screenWidth)
 
                             // MARK: - Bottom Panel: Seeds & Harvest
-                            bottomPanel
+                            bottomPanel(width: screenWidth)
                                 .padding(.top, AppSpacing.md)
 
                             Spacer(minLength: 100)
@@ -985,7 +985,7 @@ struct GardenView: View {
 
     // MARK: - Bottom Panel (Seeds + Harvested)
 
-    var bottomPanel: some View {
+    func bottomPanel(width: CGFloat) -> some View {
         VStack(spacing: AppSpacing.md) {
             // Pip's message — shows recipe suggestion with buttons, or a random tip
             if showRecipeSuggestion, let recipe = suggestedRecipe {
@@ -1063,16 +1063,16 @@ struct GardenView: View {
             }
 
             // Seed inventory
-            seedInventorySection
+            seedInventorySection(width: width)
 
             // Harvested veggies
-            harvestedSection
+            harvestedSection(width: width)
         }
     }
 
     // MARK: - Seed Inventory Section
 
-    var seedInventorySection: some View {
+    func seedInventorySection(width: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: isIPad ? AppSpacing.md : AppSpacing.sm) {
             Text("My Seeds")
                 .font(isIPad ? .AppTheme.title3 : .AppTheme.headline)
@@ -1091,14 +1091,14 @@ struct GardenView: View {
 
                     ForEach(owned, id: \.self) { veg in
                         let seed = gameState.seeds.first(where: { $0.vegetableType == veg })!
-                        SeedBadge(seed: seed, isIPad: isIPad)
+                        SeedBadge(seed: seed, isIPad: isIPad, availableWidth: width)
                             .onTapGesture { selectedSeed = seed }
                     }
 
                     ForEach(unowned, id: \.self) { veg in
                         // Create a placeholder seed for display
                         let placeholderSeed = Seed(vegetableType: veg, quantity: 0)
-                        SeedBadge(seed: placeholderSeed, isIPad: isIPad, showPrice: true)
+                        SeedBadge(seed: placeholderSeed, isIPad: isIPad, showPrice: true, availableWidth: width)
                             .onTapGesture { selectedSeed = placeholderSeed }
                     }
                 }
@@ -1117,7 +1117,7 @@ struct GardenView: View {
 
     // MARK: - Harvested Section
 
-    var harvestedSection: some View {
+    func harvestedSection(width: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: isIPad ? AppSpacing.md : AppSpacing.sm) {
             Text("Harvested Veggies")
                 .font(isIPad ? .AppTheme.title3 : .AppTheme.headline)
@@ -1140,20 +1140,20 @@ struct GardenView: View {
                     }
                     .frame(width: geo.size.width, height: geo.size.width * 0.7)
                 }
-                .frame(height: UIScreen.main.bounds.width * 0.7)
+                .frame(height: width * 0.7)
                 .padding(.vertical, isIPad ? AppSpacing.md : AppSpacing.sm)
             } else {
                 // Basket with veggies + falling animation
                 ZStack {
                     BasketWithVeggiesView(
                         harvestedIngredients: gameState.harvestedIngredients,
-                        basketSize: UIScreen.main.bounds.width * 0.85
+                        basketSize: width * 0.85
                     )
                     .opacity(0.75)
 
                     // Falling veggie animation overlay
                     if let veggie = fallingVeggie {
-                        let sz = UIScreen.main.bounds.width * 0.17
+                        let sz = width * 0.17
                         Image(veggie.imageName)
                             .resizable()
                             .aspectRatio(contentMode: .fit)
@@ -1669,10 +1669,13 @@ struct SeedBadge: View {
     let seed: Seed
     var isIPad: Bool = false
     var showPrice: Bool = false
+    /// The app window's width, not UIScreen's — in an iPad window (Stage
+    /// Manager / Split View) the screen is far wider than the app.
+    let availableWidth: CGFloat
 
     // Badge size — 1.5x on iPad, capped so it doesn't blow up on huge screens
     private var badgeWidth: CGFloat {
-        let screenBased = UIScreen.main.bounds.width * 3 / 8
+        let screenBased = availableWidth * 3 / 8
         return isIPad ? min(screenBased, 240) : screenBased
     }
     private var imgSize: CGFloat { badgeWidth * 0.43 }
