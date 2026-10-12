@@ -819,7 +819,6 @@ struct GardenView: View {
             .resizable()
             .aspectRatio(contentMode: .fit)
             .frame(maxWidth: .infinity)
-            .opacity(0.8)
             .overlay(
                 GeometryReader { mapGeo in
                     let w = mapGeo.size.width
