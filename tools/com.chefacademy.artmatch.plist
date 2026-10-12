@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Art Match watcher: runs tools/art_match.py whenever something lands in "Art Inbox".
+     Install:   cp tools/com.chefacademy.artmatch.plist ~/Library/LaunchAgents/ &&
+                launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/com.chefacademy.artmatch.plist
+     Uninstall: launchctl bootout gui/$(id -u)/com.chefacademy.artmatch &&
+                rm ~/Library/LaunchAgents/com.chefacademy.artmatch.plist -->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.chefacademy.artmatch</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/pollakmarina/miniconda3/bin/python3</string>
+        <string>/Users/pollakmarina/Dropbox/Mac/Desktop/ChefAcademy/tools/art_match.py</string>
+        <string>--inbox</string>
+    </array>
+    <key>WatchPaths</key>
+    <array>
+        <string>/Users/pollakmarina/Dropbox/Mac/Desktop/Art Inbox</string>
+    </array>
+    <key>ThrottleInterval</key>
+    <integer>5</integer>
+    <key>StandardOutPath</key>
+    <string>/Users/pollakmarina/Library/Logs/art_match.log</string>
+    <key>StandardErrorPath</key>
+    <string>/Users/pollakmarina/Library/Logs/art_match.log</string>
+</dict>
+</plist>
