@@ -1034,6 +1034,7 @@ struct PantryStapleItem: View {
 // Speech bubble that floats beside the walking Pip.
 // Auto-flips to the opposite side when Pip is past the scene midpoint
 // so the bubble never spills off the edge of the kitchen map.
+// Also used by the Home map (no Ask Pip button there: pass nil).
 
 struct PipFloatingBubble: View {
     let anchor: CGPoint
@@ -1041,9 +1042,15 @@ struct PipFloatingBubble: View {
     let pipHalfWidth: CGFloat
     let sizeClass: UserInterfaceSizeClass?
     let message: String
-    let onAskPip: () -> Void
+    var onAskPip: (() -> Void)? = nil
 
-    private var bubbleWidth: CGFloat { AdaptiveCardSize.pipBubbleWidth(for: sizeClass) }
+    // The token width, narrowed when the space beside Pip is smaller (iPhone).
+    // softCard adds AppSpacing.md padding on the outer edge, so leave room for it.
+    private var bubbleWidth: CGFloat {
+        let side = anchorOnLeftHalf ? sceneWidth - anchor.x : anchor.x
+        let room = side - pipHalfWidth - gap - AppSpacing.md
+        return min(AdaptiveCardSize.pipBubbleWidth(for: sizeClass), room)
+    }
     private var gap: CGFloat { AdaptiveSpacing.padding(for: sizeClass) }
 
     private var anchorOnLeftHalf: Bool { anchor.x < sceneWidth / 2 }
@@ -1067,8 +1074,10 @@ struct PipFloatingBubble: View {
                 .fixedSize(horizontal: false, vertical: true)
                 .multilineTextAlignment(.leading)
 
-            Button("Ask Pip") { onAskPip() }
-                .texturedButton(tint: Color.AppTheme.sage)
+            if let onAskPip {
+                Button("Ask Pip") { onAskPip() }
+                    .texturedButton(tint: Color.AppTheme.sage)
+            }
         }
         .frame(width: bubbleWidth, alignment: .leading)
         .softCard()

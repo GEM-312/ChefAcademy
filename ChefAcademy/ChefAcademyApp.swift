@@ -341,6 +341,7 @@ struct CustomTabBar: View {
 private struct HomeImageMap: View {
     @Binding var selectedTab: MainTabView.Tab
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     @State private var walkTarget: MainTabView.Tab?
     @State private var walkID = UUID()
@@ -360,6 +361,17 @@ private struct HomeImageMap: View {
 
     /// Pip waits here, at the Home cottage door.
     private static let homeDoor = CGPoint(x: 0.45, y: 0.31)
+
+    private static let greeting = "Welcome back! What would you like to do today?"
+
+    // How much of its square frame Pip fills, and how far his feet sit above
+    // the frame's bottom, in each art set. The wave fills more of its frame than
+    // the walk, so the waiting Pip is drawn smaller and lifted to match the
+    // walker — no size jump or hop when he sets off.
+    private static let walkArtFill: CGFloat = 0.625
+    private static let walkArtFoot: CGFloat = 0.18
+    private static let waveArtFill: CGFloat = 0.86
+    private static let waveArtFoot: CGFloat = 0.02
 
     // Shared stepping stones down the middle of the map, top to bottom.
     private static let spine: [CGPoint] = [
@@ -466,9 +478,23 @@ private struct HomeImageMap: View {
             .id(walkID)
             .allowsHitTesting(false)
         } else {
-            PipWavingAnimatedView(size: .custom(size))
-                .position(x: w * Self.homeDoor.x, y: h * Self.homeDoor.y - size / 2)
+            // Waiting at the door: the wave, matched to the walker's size and
+            // footing, with Pip's greeting beside him.
+            let waveSize = size * Self.walkArtFill / Self.waveArtFill
+            let feetY = h * Self.homeDoor.y - size * Self.walkArtFoot
+            let center = CGPoint(x: w * Self.homeDoor.x,
+                                 y: feetY + waveSize * Self.waveArtFoot - waveSize / 2)
+            PipWavingAnimatedView(size: .custom(waveSize))
+                .position(center)
                 .allowsHitTesting(false)
+            PipFloatingBubble(
+                anchor: center,
+                sceneWidth: w,
+                pipHalfWidth: waveSize / 2,
+                sizeClass: sizeClass,
+                message: Self.greeting
+            )
+            .allowsHitTesting(false)
         }
     }
 
@@ -645,24 +671,11 @@ struct HomeView: View {
                 StreakCard(streak: avatarModel.currentStreak)
                     .padding(.horizontal, AppSpacing.md)
 
-                // Pip's Message
-                PipMessageCard(
-                    message: "Welcome back! Ready to cook something delicious today?",
-                    avatarModel: avatarModel
-                )
-                .padding(.horizontal, AppSpacing.md)
-
                 // Map — universal across iPhone + iPad. Fills available width so
-                // the artwork dominates the layout on both devices.
-                VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    Text("What would you like to do?")
-                        .font(.AppTheme.headline)
-                        .foregroundColor(Color.AppTheme.darkBrown)
-                        .padding(.horizontal, AppSpacing.md)
-
-                    HomeImageMap(selectedTab: $selectedTab)
-                        .padding(.horizontal, AppSpacing.md)
-                }
+                // the artwork dominates the layout on both devices. Pip greets the
+                // kid from the map (his bubble at the Home door), not a separate card.
+                HomeImageMap(selectedTab: $selectedTab)
+                    .padding(.horizontal, AppSpacing.md)
 
                 // Today's Recipe
                 VStack(alignment: .leading, spacing: AppSpacing.sm) {
@@ -916,35 +929,6 @@ struct StreakCard: View {
             }
         }
         .softCard(showShadow: false)
-    }
-}
-
-// MARK: - Pip Message Card
-struct PipMessageCard: View {
-    let message: String
-    @ObservedObject var avatarModel: AvatarModel
-    @Environment(\.horizontalSizeClass) private var sizeClass
-    private var isIPad: Bool { sizeClass == .regular }
-
-    var body: some View {
-        HStack(alignment: .top, spacing: AppSpacing.md) {
-            // Animated Pip — 2x on iPad
-            PipWavingAnimatedView(size: .custom(isIPad ? 240 : 120))
-
-            // Message bubble
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Text("Pip")
-                    .font(.AppTheme.caption)
-                    .foregroundColor(Color.AppTheme.sage)
-
-                Text(message)
-                    .font(.AppTheme.body)
-                    .foregroundColor(Color.AppTheme.darkBrown)
-            }
-            .softCard(showShadow: false)
-        }
-        .onAppear { PipVoice.shared.speak(message) }
-        .onChange(of: message) { _, new in PipVoice.shared.speak(new) }
     }
 }
 
