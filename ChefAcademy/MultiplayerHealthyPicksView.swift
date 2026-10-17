@@ -116,7 +116,7 @@ struct MultiplayerHealthyPicksView: View {
                 .font(.AppTheme.largeTitle)
                 .foregroundColor(Color.AppTheme.darkBrown)
 
-            PipWavingAnimatedView(size: .large)
+            PipCharacterView(pose: .neutral, size: .large)
 
             Text("Challenge another kid to a Healthy Picks race!")
                 .font(.AppTheme.body)
@@ -424,7 +424,7 @@ struct MultiplayerHealthyPicksView: View {
                         fps: 15
                     )
                 } else if tied {
-                    PipWavingAnimatedView(size: .large)
+                    PipCharacterView(pose: .neutral, size: .large)
                 } else {
                     PipGameAnimationView(
                         animation: .fatFlying,

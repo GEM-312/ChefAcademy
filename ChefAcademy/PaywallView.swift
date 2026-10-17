@@ -83,7 +83,7 @@ struct PaywallView: View {
 
     private var heroSection: some View {
         VStack(spacing: AppSpacing.sm) {
-            PipWavingAnimatedView(size: AdaptiveCardSize.pipReadyScreen(for: sizeClass))
+            PipCharacterView(pose: .neutral, size: AdaptiveCardSize.pipReadyScreen(for: sizeClass))
 
             Text("Unlock Pip Chat")
                 .font(.AppTheme.largeTitle)

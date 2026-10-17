@@ -50,7 +50,7 @@ struct PlayLearnView: View {
 
                     // Pip message
                     HStack(alignment: .top, spacing: AppSpacing.sm) {
-                        PipWavingAnimatedView(size: .custom(60))
+                        PipCharacterView(pose: .neutral, size: .custom(60))
 
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Pip")
@@ -240,7 +240,7 @@ struct MiniGameRouterView: View {
                     .font(.AppTheme.body)
                     .foregroundColor(Color.AppTheme.sepia)
 
-                PipWavingAnimatedView(size: .large)
+                PipCharacterView(pose: .neutral, size: .large)
 
                 Button(action: { dismiss() }) {
                     Text("Back to Games")

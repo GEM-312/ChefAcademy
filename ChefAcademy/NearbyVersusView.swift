@@ -97,7 +97,7 @@ struct NearbyVersusView: View {
                 .font(.AppTheme.largeTitle)
                 .foregroundColor(Color.AppTheme.darkBrown)
 
-            PipWavingAnimatedView(size: .large)
+            PipCharacterView(pose: .neutral, size: .large)
 
             Text("Play with someone nearby!\nBoth devices need the app open.")
                 .font(.AppTheme.body)
@@ -404,7 +404,7 @@ struct NearbyVersusView: View {
                     .font(.AppTheme.largeTitle)
                     .foregroundColor(won ? Color.AppTheme.sage : (tied ? Color.AppTheme.goldenWheat : Color.AppTheme.terracotta))
 
-                if won { PipWavingAnimatedView(size: .custom(100)) }
+                if won { PipCharacterView(pose: .neutral, size: .custom(100)) }
 
                 // Score comparison
                 HStack(spacing: AppSpacing.xl) {

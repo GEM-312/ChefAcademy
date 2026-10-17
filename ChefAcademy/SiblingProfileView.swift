@@ -232,7 +232,7 @@ struct SiblingProfileView: View {
                 VStack {
                     Spacer()
                     HStack(spacing: AppSpacing.sm) {
-                        PipWavingAnimatedView(size: .custom(36))
+                        PipCharacterView(pose: .neutral, size: .custom(36))
                         Text(msg)
                             .font(.AppTheme.headline)
                             .foregroundColor(Color.AppTheme.darkBrown)

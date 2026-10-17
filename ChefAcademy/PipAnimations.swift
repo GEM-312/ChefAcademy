@@ -61,7 +61,6 @@ struct PipWavingAnimatedView: View {
             .resizable()
             .aspectRatio(contentMode: .fit)
             .frame(width: size, height: size)
-            .opacity(0.9)
     }
 }
 
@@ -70,6 +69,9 @@ struct PipWavingAnimatedView: View {
 //   PipWavingAnimatedView(size: .hero)         // 160pt — welcome / celebration
 //   PipWavingAnimatedView(size: .custom(140))  // arbitrary size
 // The CGFloat init remains valid for AdaptiveCardSize callers.
+// The wave is a greeting: use it only where the kid arrives (launch, Home map,
+// sign-in, profile picker) or during onboarding. Everywhere else Pip starts
+// neutral — PipCharacterView(pose: .neutral, size:).
 extension PipWavingAnimatedView {
     init(size: PipSize) {
         self.init(size: size.points)
@@ -309,6 +311,14 @@ struct PipCharacterView: View {
                 isAnimating = true
             }
         }
+    }
+}
+
+// PipSize-token convenience, matching PipWavingAnimatedView(size: PipSize).
+// In an extension so the memberwise init (CGFloat size) stays available.
+extension PipCharacterView {
+    init(pose: PipPose, size: PipSize, showBounce: Bool = true) {
+        self.init(pose: pose, size: size.points, showBounce: showBounce)
     }
 }
 

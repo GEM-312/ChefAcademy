@@ -551,7 +551,7 @@ struct CookingSessionView: View {
     private var pipTransitionView: some View {
         VStack(spacing: AppSpacing.md) {
             Spacer()
-            PipWavingAnimatedView(size: .custom(100))
+            PipCharacterView(pose: .neutral, size: .custom(100))
             Text(pipTransitionText)
                 .font(.AppTheme.title3)
                 .foregroundColor(Color.AppTheme.darkBrown)
@@ -564,7 +564,7 @@ struct CookingSessionView: View {
 
     private func pipMessageView(_ message: String) -> some View {
         HStack(spacing: AppSpacing.sm) {
-            PipWavingAnimatedView(size: .custom(44))
+            PipCharacterView(pose: .neutral, size: .custom(44))
             Text(message)
                 .font(.AppTheme.callout)
                 .foregroundColor(Color.AppTheme.sepia)

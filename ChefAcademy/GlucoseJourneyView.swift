@@ -259,7 +259,7 @@ struct GlucoseJourneyView: View {
             VStack(spacing: AppSpacing.lg) {
                 Spacer().frame(height: AppSpacing.xl)
 
-                PipWavingAnimatedView(size: .hero)
+                PipCharacterView(pose: .neutral, size: .hero)
 
                 Text("You're a Glucose Pro!")
                     .font(.AppTheme.title)

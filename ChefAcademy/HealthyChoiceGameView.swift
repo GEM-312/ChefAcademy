@@ -137,7 +137,7 @@ struct HealthyChoiceGameView: View {
                 .font(.AppTheme.largeTitle)
                 .foregroundColor(Color.AppTheme.darkBrown)
 
-            PipWavingAnimatedView(size: .custom(150))
+            PipCharacterView(pose: .neutral, size: .custom(150))
 
             VStack(spacing: AppSpacing.sm) {
                 Text("Pip throws food in the air!")
@@ -464,7 +464,7 @@ struct HealthyChoiceGameView: View {
                     .font(.AppTheme.largeTitle)
                     .foregroundColor(Color.AppTheme.sage)
 
-                PipWavingAnimatedView(size: .large)
+                PipCharacterView(pose: .neutral, size: .large)
 
                 // Stats
                 statsCard

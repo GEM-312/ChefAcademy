@@ -64,7 +64,7 @@ struct CookingCompletionView: View {
                     .foregroundColor(Color.AppTheme.sepia)
 
                 // Celebrating Pip
-                PipWavingAnimatedView(size: .custom(140))
+                PipCharacterView(pose: .neutral, size: .custom(140))
 
                 // Reward chips
                 if showRewards {
