@@ -101,6 +101,17 @@ struct AssetPackImage: View {
             self.loadFailed = false
         }
 
+        // DEBUG only: an image with the same name in the app's asset catalog wins.
+        // Apple-hosted packs don't load in Xcode builds, so this is how new art
+        // gets tried in the simulator before the pack is rebuilt and re-uploaded.
+        // Release builds always read the pack.
+        #if DEBUG
+        if let bundled = UIImage(named: name) {
+            await MainActor.run { self.uiImage = bundled }
+            return
+        }
+        #endif
+
         // Step 1 — make sure the pack is on disk
         let packReady = controller.availablePacks.contains(pack)
             ? true

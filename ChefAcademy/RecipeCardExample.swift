@@ -691,7 +691,7 @@ struct GardenRecipes {
             id: "cheesy-stuffed-pumpkin",
             title: "Cheesy Stuffed Pumpkin",
             description: "Roasted pumpkin stuffed with scrambled eggs, cheese, broccoli, and carrots — no rice needed!",
-            imageName: "recipe_pasta_garden",
+            imageName: "recipe_cheesy_stuffed_pumpkin",
             category: .dinner,
             cookTime: 35,
             difficulty: .hard,
