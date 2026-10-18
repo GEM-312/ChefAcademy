@@ -50,6 +50,10 @@ struct BodyBuddyView: View {
                                 .foregroundColor(Color.AppTheme.sepia)
                         }
                         Spacer()
+
+                        // The way to the other places (there's no tab bar)
+                        StationSignpostView(destinations: [.home, .kitchen, .playLearn],
+                                            selectedTab: $selectedTab, inHeader: true)
                     }
                     .padding(.horizontal, AppSpacing.md)
 

@@ -2,10 +2,12 @@
 //  StationSignpostView.swift
 //  ChefAcademy
 //
-//  A wooden signpost that stands in a scene (Garden, Kitchen, Shop) and
-//  points to the other places. The artwork has three blank arrow boards;
-//  the place names are drawn on them here, and each board is a button
-//  that switches tab.
+//  A wooden signpost that stands in a scene (Garden, Kitchen, Shop) or sits
+//  small in a page header (Body, Play) and points to the other places. With
+//  the bottom tab bar gone (Oct 18 2026), the Home map and these signposts are
+//  the only way around, so every one includes Home. The artwork has three
+//  blank arrow boards; the place names are drawn on them here, and each board
+//  is a button that switches place.
 //
 
 import SwiftUI
@@ -14,6 +16,8 @@ struct StationSignpostView: View {
     /// The places on the boards, top board to bottom board (up to three).
     let destinations: [MainTabView.Tab]
     @Binding var selectedTab: MainTabView.Tab
+    /// The smaller version for a page header (Body, Play) instead of a scene.
+    var inHeader: Bool = false
     @Environment(\.horizontalSizeClass) private var sizeClass
 
     /// Width ÷ height of the signpost artwork (700 × 1112).
@@ -32,7 +36,12 @@ struct StationSignpostView: View {
     private static let labelWidth: CGFloat = 0.58
 
     var body: some View {
-        let height = AdaptiveCardSize.signpostHeight(for: sizeClass)
+        let height = inHeader
+            ? AdaptiveCardSize.signpostHeaderHeight(for: sizeClass)
+            : AdaptiveCardSize.signpostHeight(for: sizeClass)
+        let labelSize = inHeader
+            ? AdaptiveCardSize.signpostHeaderLabelSize(for: sizeClass)
+            : AdaptiveCardSize.signpostLabelSize(for: sizeClass)
         let width = height * Self.artAspect
 
         Image("signpost")
@@ -46,7 +55,7 @@ struct StationSignpostView: View {
                         selectedTab = tab
                     } label: {
                         Text(tab.rawValue)
-                            .font(.AppTheme.rounded(size: AdaptiveCardSize.signpostLabelSize(for: sizeClass), weight: .bold))
+                            .font(.AppTheme.rounded(size: labelSize, weight: .bold))
                             .foregroundColor(Color.AppTheme.darkBrown)
                             .lineLimit(1)
                             .minimumScaleFactor(0.6)

@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct PlayLearnView: View {
+    @Binding var selectedTab: MainTabView.Tab
     @EnvironmentObject var gameState: GameState
     @EnvironmentObject var avatarModel: AvatarModel
     @EnvironmentObject var sessionManager: SessionManager
@@ -45,6 +46,10 @@ struct PlayLearnView: View {
                             }
                             .buttonStyle(.plain)
                         }
+
+                        // The way to the other places (there's no tab bar)
+                        StationSignpostView(destinations: [.home, .garden, .bodyBuddy],
+                                            selectedTab: $selectedTab, inHeader: true)
                     }
                     .padding(.horizontal, AppSpacing.md)
 
@@ -270,6 +275,6 @@ struct MiniGameRouterView: View {
 }
 
 #Preview {
-    PlayLearnView()
+    PlayLearnView(selectedTab: .constant(.playLearn))
         .environmentObject(GameState())
 }

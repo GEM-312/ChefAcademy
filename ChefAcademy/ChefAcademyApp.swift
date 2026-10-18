@@ -220,17 +220,6 @@ struct MainTabView: View {
         case kitchen = "Kitchen"
         case bodyBuddy = "Body"
         case playLearn = "Play"
-
-        var icon: String {
-            switch self {
-            case .home: return "house.fill"
-            case .garden: return "leaf.fill"
-            case .shop: return "cart.fill"
-            case .kitchen: return "fork.knife"
-            case .bodyBuddy: return "figure.stand"
-            case .playLearn: return "gamecontroller.fill"
-            }
-        }
     }
     
     var body: some View {
@@ -255,16 +244,14 @@ struct MainTabView: View {
                 case .bodyBuddy:
                     BodyBuddyView(selectedTab: $selectedTab)
                 case .playLearn:
-                    PlayLearnView()
+                    PlayLearnView(selectedTab: $selectedTab)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            // Tab bar at bottom — hidden on Home where the image map provides
-            // navigation. Other tabs need the bar to navigate back to Home.
-            if selectedTab != .home {
-                CustomTabBar(selectedTab: $selectedTab)
-            }
+            // No bottom tab bar (Marina, Oct 18 2026): the game is a storybook
+            // world. The Home map and each place's wooden signpost
+            // (StationSignpostView, always with Home) are the way around.
         }
         .ignoresSafeArea(.keyboard)
         .onChange(of: gameState.pendingAIRecipe) { _, newRecipe in
@@ -276,49 +263,6 @@ struct MainTabView: View {
     }
 }
 
-// MARK: - Custom Tab Bar
-struct CustomTabBar: View {
-    @Binding var selectedTab: MainTabView.Tab
-    @Environment(\.verticalSizeClass) private var verticalSizeClass
-
-    private var isLandscape: Bool {
-        verticalSizeClass == .compact
-    }
-
-    var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                ForEach(MainTabView.Tab.allCases, id: \.self) { tab in
-                    Button(action: {
-                        withAnimation(AnimationConstants.fadeFast) {
-                            selectedTab = tab
-                        }
-                    }) {
-                        VStack(spacing: 4) {
-                            Image(systemName: tab.icon)
-                                .font(.AppTheme.title3)
-                                .frame(width: 28, height: 28)
-                            Text(tab.rawValue)
-                                .font(.AppTheme.rounded(size: 10, weight: .medium))
-                        }
-                        .foregroundColor(selectedTab == tab ? Color.AppTheme.goldenWheat : Color.AppTheme.lightSepia)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, isLandscape ? 2 : AppSpacing.sm)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, AppSpacing.sm)
-            .padding(.top, AppSpacing.sm)
-        }
-        .frame(maxWidth: .infinity)
-        .background(
-            Color.AppTheme.warmCream
-                .shadow(color: Color.AppTheme.sepia.opacity(0.1), radius: 10, x: 0, y: -5)
-                .ignoresSafeArea(.container, edges: [.bottom, .leading, .trailing])
-        )
-    }
-}
 
 // MARK: - Home Image Map
 //

@@ -234,6 +234,16 @@ struct AdaptiveCardSize {
         sizeClass == .compact ? 15 : 24
     }
 
+    /// The smaller signpost in a page header (Body, Play), beside the title.
+    static func signpostHeaderHeight(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 160 : 240
+    }
+
+    /// Place names on the smaller header signpost.
+    static func signpostHeaderLabelSize(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 12 : 18
+    }
+
     /// Height of the Today's Recipe easel, a cut-out prop standing on the kitchen floor.
     static func kitchenTodayProp(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
         sizeClass == .compact ? 130 : 220
