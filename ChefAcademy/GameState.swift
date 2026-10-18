@@ -102,6 +102,17 @@ class GameState: ObservableObject {
     @Published var pantryInventory: [PantryStock] = []
 
     // ============================================
+    // CARRIED-ALONG SAVE DATA (forward compatibility)
+    // ============================================
+    // Saved seeds / harvest / pantry entries this app version doesn't recognize —
+    // items added by a NEWER version and synced here through iCloud. They aren't
+    // shown or usable, but they're written back unchanged on save, so an older
+    // version never deletes items a kid bought or grew on a newer one.
+    private var unknownSeedsData: [SeedData] = []
+    private var unknownHarvestedData: [HarvestedData] = []
+    private var unknownPantryData: [PantryData] = []
+
+    // ============================================
     // RECIPE PROGRESS
     // ============================================
 
@@ -416,12 +427,14 @@ class GameState: ObservableObject {
             return Seed(vegetableType: veg, quantity: data.quantity)
         }
         seeds = loadedSeeds.isEmpty ? Seed.starterSeeds : loadedSeeds
+        unknownSeedsData = saved.seedsData.filter { VegetableType(rawValue: $0.vegetableRawValue) == nil }
 
         // Harvested
         harvestedIngredients = saved.harvestedData.compactMap { data in
             guard let veg = VegetableType(rawValue: data.vegetableRawValue) else { return nil }
             return HarvestedIngredient(type: veg, quantity: data.quantity)
         }
+        unknownHarvestedData = saved.harvestedData.filter { VegetableType(rawValue: $0.vegetableRawValue) == nil }
 
         // Plots
         gardenPlots = saved.plotsData.map { data in
@@ -459,6 +472,7 @@ class GameState: ObservableObject {
             guard let item = PantryItem(rawValue: data.itemRawValue) else { return nil }
             return PantryStock(item: item, quantity: data.quantity)
         }
+        unknownPantryData = saved.pantryData.filter { PantryItem(rawValue: $0.itemRawValue) == nil }
 
         // Recipes
         unlockedRecipeIDs = Set(saved.unlockedRecipeIDs)
@@ -523,16 +537,15 @@ class GameState: ObservableObject {
                 return
             }
         } else {
-            print("[GameState] saveToStore — no activeProfileID, using legacy mode")
-            // Fallback: legacy single-user mode
-            let descriptor = FetchDescriptor<PlayerData>()
-            if let existing = try? context.fetch(descriptor).first {
-                saved = existing
-            } else {
-                let newData = PlayerData()
-                context.insert(newData)
-                saved = newData
-            }
+            // No kid selected → nothing to save. This used to fall back to "legacy
+            // mode" (the first PlayerData in the store), but a debounced autosave
+            // firing just after Switch Player / Sign Out (both clear the ID) then
+            // wrote one kid's whole game over a sibling's record, and after
+            // "Delete all data" it created an ownerless record that the next
+            // launch mistook for a legacy save to migrate. Legacy migration
+            // writes PlayerData directly (SessionManager), not through here.
+            print("[GameState] saveToStore SKIPPED — no activeProfileID (no kid selected)")
+            return
         }
 
         // Currency
@@ -540,15 +553,15 @@ class GameState: ObservableObject {
         saved.xp = xp
         saved.playerLevel = playerLevel
 
-        // Seeds
+        // Seeds (+ entries from a newer version, written back unchanged)
         saved.seedsData = seeds.map {
             SeedData(vegetableRawValue: $0.vegetableType.rawValue, quantity: $0.quantity)
-        }
+        } + unknownSeedsData
 
         // Harvested
         saved.harvestedData = harvestedIngredients.map {
             HarvestedData(vegetableRawValue: $0.type.rawValue, quantity: $0.quantity)
-        }
+        } + unknownHarvestedData
 
         // Plots
         // Spot identity is the array POSITION (row * 3 + slot), kept by map() on save
@@ -572,7 +585,7 @@ class GameState: ObservableObject {
         // Pantry
         saved.pantryData = pantryInventory.map {
             PantryData(itemRawValue: $0.item.rawValue, quantity: $0.quantity)
-        }
+        } + unknownPantryData
 
         // Recipes
         saved.unlockedRecipeIDs = Array(unlockedRecipeIDs)
@@ -608,7 +621,7 @@ class GameState: ObservableObject {
 
         do {
             try context.save()
-            print("[GameState] Saved: \(coins) coins, \(recipeStars.count) recipes, \(harvestedIngredients.count) harvested, profile=\(activeProfileID?.uuidString.prefix(8) ?? "legacy")")
+            print("[GameState] Saved: \(coins) coins, \(recipeStars.count) recipes, \(harvestedIngredients.count) harvested, profile=\(activeProfileID?.uuidString.prefix(8) ?? "none")")
         } catch {
             print("[GameState] SAVE FAILED: \(error)")
         }
@@ -623,6 +636,9 @@ class GameState: ObservableObject {
         harvestedIngredients = []
         gardenPlots = GardenPlot.createStarterPlots()
         pantryInventory = []
+        unknownSeedsData = []
+        unknownHarvestedData = []
+        unknownPantryData = []
         unlockedRecipeIDs = ["veggie-wrap", "garden-salad"]
         recipeStars = [:]
         brainHealth = 50

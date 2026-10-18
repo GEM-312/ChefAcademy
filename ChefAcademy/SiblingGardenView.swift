@@ -33,6 +33,10 @@ struct SiblingGardenView: View {
                 onLikeGarden: {
                     if let data = sibling.playerData(in: modelContext) {
                         data.gardenLikes += 1
+                        // Keep the visit's in-memory copy in step: a help action
+                        // saves siblingGameState, which would otherwise write the
+                        // old count back over this like (found 2026-10-18).
+                        siblingGameState.gardenLikes = data.gardenLikes
                         do { try modelContext.save() } catch { print("[SiblingGardenView] gardenLikes save failed: \(error)") }
                     }
                 },
@@ -83,9 +87,10 @@ struct SiblingGardenView: View {
         .onAppear {
             if let data = sibling.playerData(in: modelContext) {
                 siblingGameState.modelContext = modelContext
-                // Without this, saveToStore() falls back to "legacy mode" and
-                // writes the sibling's whole game onto whichever PlayerData the
-                // store returns first — overwriting another profile (found 2026-10-08).
+                // saveToStore() writes to the record of activeProfileID. Without
+                // this it once fell back to "legacy mode" and wrote the sibling's
+                // whole game over another profile (found 2026-10-08); since Oct 18
+                // it skips the save when no ID is set, so set it before loading.
                 siblingGameState.activeProfileID = sibling.id
                 siblingGameState.loadFromStore(for: data)
             }
