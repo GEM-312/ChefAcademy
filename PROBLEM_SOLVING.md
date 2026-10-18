@@ -5,6 +5,55 @@ Newest first. Each entry: **Symptom → Cause → Solution → How it works → 
 
 ---
 
+## 2026-10-17
+
+### 1. The harvest basket looked tiny next to the veggies
+
+**Symptom.** Under "Harvested Veggies" a small basket sat in a big empty area, with huge veggies stacked around it instead of in it.
+
+**Cause.** The basket picture was 2912×1632 px, but the basket covered only about a third of its width. The rest was empty canvas. The view sized the *canvas* to the section, so the basket came out small, while the veggies were sized from the same number and looked enormous.
+
+**Solution.** A new empty wheelbarrow drawing, cut out and trimmed tight so the object *is* the image, in three layers:
+1. the whole wheelbarrow
+2. the veggies, at fixed spots matched to the tub's rim
+3. only the front wall (`harvest_wheelbarrow_front`), drawn again on top
+
+**How it works.** Drawing the front wall last covers the bottom of each veggie, so they look like they're inside the tub. The same trick puts Pip behind the shop counter: a second copy of the shop picture, masked to everything below the counter edge, is drawn over him.
+
+**Where.** `FarmShopView.swift` (`BasketWithVeggiesView`, `shopMapSection`), `Assets.xcassets/Backgrounds/harvest_wheelbarrow*`.
+
+### 2. Cut-outs from the shop picture were too small to use
+
+**Symptom.** The shop items were meant to be cut straight out of the stall background, but a jar on the shelf was only about 70 px wide. The shop card needs about 300 px and the info card about 600 px.
+
+**Cause.** The whole stall is one 1296 px picture, so each item is only a tiny part of it.
+
+**Solution.** Crop each item, enlarge the crop 4×, and have the image model *redraw exactly that object*, isolated and crisp. Then remove the background and trim. The items stay the same objects as in the scene, just sharp. The old per-item zoom settings (`shopScale`, `shopOffset`, the 2.2× on pantry badges) were deleted, because they only existed to make up for tiny items in huge canvases.
+
+**Where.** `~/Dropbox/Mac/Desktop/ShopArt/items/` (crops, redraws, cutouts), `Assets.xcassets/FarmItems/`.
+
+### 3. Pip's speech bubble covered the shop items
+
+**Symptom.** In the new tappable shop, Pip's bubble sat beside him at shelf height and hid the items on the right.
+
+**Cause.** `PipFloatingBubble` always places itself beside its anchor, which was Pip's position, and Pip stands in the middle of the shelves. The bubble also caught taps meant for the items under it.
+
+**Solution.** Anchor the bubble to the open grass below the counter instead of to Pip, and give it `.allowsHitTesting(false)` so taps reach the items underneath.
+
+**Where.** `FarmShopView.swift`, `shopMapSection` (`bubbleY`).
+
+### 4. Recipe pictures looked too realistic next to the game's vegetables
+
+**Symptom.** The recipe pictures were drawn like fine engravings, so the food looked far more realistic than the soft, round pencil vegetables in the garden.
+
+**Cause.** The reference images were the Game Center icons and the older recipe drawings, which use dense engraving lines. Each new image copied that detail.
+
+**Solution.** Use only the game's own vegetable drawings (a sheet of 8 from `Assets.xcassets/Vegetables`) as the style reference, and describe the dish in words. Passing the old drawing pulled the engraving back in. Smaller side vegetables were done as *edits* of the approved drawings ("keep everything, make only the vegetables half size"), so the dishes didn't change.
+
+**Where.** `~/Dropbox/Mac/Desktop/RecipeArt/veggie_style/` (reference sheet, prompts in `jobs.txt`).
+
+---
+
 ## 2026-10-11
 
 ### 1. The Garden looked hugely zoomed in on iPad, but Home looked fine
