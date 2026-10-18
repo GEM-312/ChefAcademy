@@ -5,6 +5,95 @@ Newest first. Each entry: **Symptom → Cause → Solution → How it works → 
 
 ---
 
+## 2026-10-18
+
+### 1. Switching players could overwrite a sibling's whole game
+
+**Symptom.** None seen yet, but it was found while reviewing the save code: after "Switch player", one kid's coins, garden and pantry could end up in a sibling's record.
+
+**Cause.** Autosave waits 0.5 s after a change, then saves. Switch Player and Sign Out clear the selected kid (`activeProfileID = nil`) right away. If an autosave was still waiting, `saveToStore()` ran with no kid and fell back to an old "legacy mode": it saved into *the first PlayerData in the store*, which can be any kid. "Delete all data" hit the same fallback and created an ownerless record, which the next launch mistook for an old single-player save to migrate.
+
+**Solution.** With no kid selected, `saveToStore()` now logs `SKIPPED` and returns. Nothing in the app needed the fallback: new kids, family setup and the legacy migration all set the kid first or write directly.
+
+**How it works.** A save can only go to the record of the kid who is playing. A late save that has no kid is dropped, and that's safe because Switch Player and Sign Out already saved just before clearing the kid. Verified on device: the save log showed every save under the right kid's ID, and one `SKIPPED` exactly at the switch.
+
+**Where.** `GameState.swift` (`saveToStore`), commit `0b5fa6a`.
+
+### 2. An older app version would delete items a newer one added
+
+**Symptom.** None seen yet; found by the persistence review of the new grains & legumes items. A device with an older build would wipe a kid's oats after syncing.
+
+**Cause.** Loading skips saved items whose name the app doesn't know (fine), but saving rebuilt the pantry from memory, so the skipped items were left out and the deletion synced back through iCloud. Seeds and harvest worked the same way.
+
+**Solution.** Unknown entries are kept aside on load (`unknownSeedsData`, `unknownHarvestedData`, `unknownPantryData`) and written back unchanged on save.
+
+**How it works.** Forward compatibility: if you don't understand it, carry it, don't delete it. It only protects from the version that has it onward, so it had to go in before the first App Store release. Still open: a garden plot growing an unknown vegetable loses it (board card).
+
+**Where.** `GameState.swift` (`loadFromStore`, `saveToStore`), commit `0b5fa6a`.
+
+### 3. Likes on a sibling's garden disappeared
+
+**Symptom.** After visiting a sibling's garden, help showed up for them but likes didn't.
+
+**Cause.** A visit loads the sibling's game into a temporary in-memory copy. "Cool garden!" added the like straight to the saved record, but the copy kept the old count. A help action then saved the copy, writing the old like count back over the new one. Help messages survived because they're added straight to the record and aren't part of the copy.
+
+**Solution.** The like also updates the copy (`siblingGameState.gardenLikes = data.gardenLikes`).
+
+**How it works.** When two places hold the same data, every change has to update both, or the last one to save wins. Likes lost before the fix can't be recovered.
+
+**Where.** `SiblingGardenView.swift` (`onLikeGarden`), commit `0b5fa6a`.
+
+### 4. Cooking kept re-teaching steps the player already knew
+
+**Symptom.** After making instructions show only the first time, the cooking steps were still read out for a player who had cooked before.
+
+**Cause.** First wrong guess: the app on the phone was built before the change. True (the newest build log was older than the edit), but after rebuilding it still happened. Reading the app's saved settings off the iPhone (`xcrun devicectl … --domain-type appDataContainer`) showed the real cause: skills are recorded when a mini-game is finished, and recording started with that day's build. One profile had cooked only before it, so it had no skills saved.
+
+**Solution.** When a cook starts, every recipe the player has already finished (it has stars) counts: all of its mini-game skills are marked learned. The Kitchen's first-cook instructions use the same check.
+
+**How it works.** Skills are tracked per mini-game (chop / slice / dice share one skill), not per dish, so a new dish still teaches a skill the player has never used.
+
+**Where.** `CookingSessionView.swift` (`markSkillsFromFinishedRecipes`, `CookingStepType.skill`), `PipComponents.swift` (`PipTutorial`), `KitchenView.swift`.
+
+### 5. Pip stood on the Counter button and started up on the shelves
+
+**Symptom.** In the Kitchen, Pip walked onto the Counter spot, so it couldn't be tapped. When the Kitchen opened he appeared up on the shelves and walked down.
+
+**Cause.** For each cooking step Pip walked to the station's exact centre. His home spot was calculated once, on the first layout pass, when the picture was still measured smaller than its final size, and a `pipDidInit` flag stopped it from being recalculated.
+
+**Solution.** Pip stays on the floor line and stops a little left of each station, under it, showing the "points up" pose. His home spot is recalculated whenever the picture's size changes while he's idle (`.onChange(of: size, initial: true)`).
+
+**Where.** `KitchenView.swift` (`walkPipForPhase`, `floorSpot`), `AdaptiveLayout.swift` (`kitchenPipStationGap`).
+
+### 6. Tomato sauce showed a tiny old can
+
+**Symptom.** Found while thinning the item outlines: the tomato sauce item still used an old picture, a tiny red can in a lot of empty space.
+
+**Cause.** On Oct 17 the new picture was copied in as `farm_tomatoSauce.png`, but the set's `Contents.json` still named the old file (`farm_soySauce.png`). Honey had the same problem.
+
+**Solution.** Both sets now point at their new files, and the old files were removed. A check confirmed that every item set names its own picture.
+
+**Where.** `Assets.xcassets/FarmItems/farm_tomatoSauce.imageset`, `farm_honey.imageset`.
+
+### 7. The shop looked darker and yellower than the kitchen
+
+**Symptom.** The shop background read darker and warmer than the kitchen, and the item pictures had heavy outlines.
+
+**Cause.** The shop art had darker shading and a warmer (more yellow and orange) sepia. The kitchen is also drawn at 85% over the cream page in the code, but the shop was drawn at full strength.
+
+**Solution.** It took several tries:
+1. Matching brightness only left the warmth difference.
+2. Adding the kitchen's 85% fade on top doubled the lightening.
+3. Matching colour by *stretching* it as well as shifting it pushed already-tinted items (turmeric) to bright yellow.
+
+The final version shifts the shop's brightness and colour (Lab L curve + a\*/b\* shift, no stretch) onto the kitchen's, starting from the original art, at a light 93% fade. The heavy shop texture went hazy at 85%. The 30 item pictures got the same shift, and their cut-out edge was shrunk 2 px, which removes the outer half of the drawn outline without regenerating.
+
+**How it works.** The darkest lines are left where they are and only mid-tones and paper move, so the drawing stays crisp. Backups: `ShopArt/front_repaint/`, `ShopArt/items/before_outline_oct18/`, `ShopArt/items/cut/`.
+
+**Where.** `Assets.xcassets/Backgrounds/bg_shop.imageset`, `Assets.xcassets/FarmItems/`, `FarmShopView.swift` (`shopMapSection`, opacity 0.93).
+
+---
+
 ## 2026-10-17
 
 ### 1. The harvest basket looked tiny next to the veggies
