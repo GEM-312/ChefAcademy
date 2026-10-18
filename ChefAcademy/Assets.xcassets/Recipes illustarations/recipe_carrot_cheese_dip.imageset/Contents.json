@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "recipe_carrot_cheese_dip.jpg",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

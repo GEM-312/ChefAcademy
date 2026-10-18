@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "recipe_avocado_toast.jpg",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

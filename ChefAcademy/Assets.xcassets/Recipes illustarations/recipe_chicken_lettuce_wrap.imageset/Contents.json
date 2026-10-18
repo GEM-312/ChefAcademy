@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "recipe_chicken_lettuce_wrap.jpg",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

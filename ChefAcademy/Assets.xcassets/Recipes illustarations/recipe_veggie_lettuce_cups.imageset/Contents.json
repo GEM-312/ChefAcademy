@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "recipe_veggie_lettuce_cups.jpg",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

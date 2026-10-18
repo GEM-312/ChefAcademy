@@ -1,0 +1,12 @@
+{
+  "images" : [
+    {
+      "filename" : "todays_recipe_icon.png",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}
