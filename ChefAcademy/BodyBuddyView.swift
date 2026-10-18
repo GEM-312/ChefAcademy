@@ -255,9 +255,6 @@ struct BodyBuddyView: View {
             PipCharacterView(pose: .neutral, size: .custom(60))
 
             VStack(alignment: .leading, spacing: 4) {
-                Text("Pip")
-                    .font(.AppTheme.caption)
-                    .foregroundColor(Color.AppTheme.sage)
                 Text(pipMessage)
                     .font(.AppTheme.body)
                     .foregroundColor(Color.AppTheme.sepia)

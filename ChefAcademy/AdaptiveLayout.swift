@@ -179,12 +179,29 @@ struct AdaptiveCardSize {
 
     /// Walking Pip sprite size in the kitchen scene
     static func pipKitchenWalking(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
-        sizeClass == .compact ? 80 : 110
+        sizeClass == .compact ? 108 : 150
+    }
+
+    /// Extra scale for the Home map's location sprites. The narrow iPhone map
+    /// draws them small, so they're 20% bigger there; iPad keeps the art's size.
+    static func homeStationScale(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 1.2 : 1.0
+    }
+
+    /// Pip beside his message in the Garden's bottom panel
+    static func pipGardenMessage(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 135 : 270
     }
 
     /// Floating speech bubble width beside walking Pip
     static func pipBubbleWidth(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
         sizeClass == .compact ? 200 : 280
+    }
+
+    /// Height of the Ask Pip button in the floating bubble. On iPhone it's a small
+    /// pill that hugs its text; on iPad it keeps the full-size button.
+    static func pipBubbleButtonHeight(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 32 : AppSpacing.buttonHeight
     }
 
     // MARK: Kitchen Scene Tokens
@@ -199,6 +216,27 @@ struct AdaptiveCardSize {
     /// Inner filled circle diameter behind the spot icon.
     static func kitchenSpotInner(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
         sizeClass == .compact ? 40 : 56
+    }
+
+    /// How far left of a kitchen station Pip stops on the floor, so he points
+    /// up at it without standing on its button.
+    static func kitchenPipStationGap(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 40 : 60
+    }
+
+    /// Height of the wooden signpost that points to the other places (Garden / Kitchen / Shop).
+    static func signpostHeight(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 200 : 320
+    }
+
+    /// Font size of the place names written on the signpost boards.
+    static func signpostLabelSize(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 15 : 24
+    }
+
+    /// Height of the Today's Recipe easel, a cut-out prop standing on the kitchen floor.
+    static func kitchenTodayProp(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 130 : 220
     }
 
     /// SF Symbol size for the icon inside a kitchen spot.

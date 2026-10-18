@@ -21,8 +21,13 @@ struct PantryInfoView: View {
 
     @State private var appeared = false
     @State private var showCoinReward: String? = nil
+    @State private var showAllergenCheck = false
 
     private var canAfford: Bool { gameState.coins >= item.shopPrice }
+    /// The child's allergens (set by a parent) that this item contains.
+    private var matchingAllergens: [FoodAllergen] {
+        item.allergens.filter { gameState.activeAllergens.contains($0) }
+    }
     private var ownedQuantity: Int { gameState.pantryQuantity(for: item) }
 
     private func nutrientKnowledgeID(_ nutrient: NutrientType) -> String {
@@ -152,6 +157,18 @@ struct PantryInfoView: View {
                 appeared = true
             }
         }
+        // Buying is one tap, except for an item with one of the child's
+        // allergens: a grown-up says OK first (same alert as the Kitchen).
+        .alert("Allergen Warning", isPresented: $showAllergenCheck) {
+            Button("A grown-up says it's OK!") {
+                Haptic.notify(.success)
+                onBuy?()
+            }
+            Button("Pick something else", role: .cancel) { }
+        } message: {
+            let names = matchingAllergens.map(\.displayName).joined(separator: " and ")
+            Text("Hold on! \(item.displayName) has \(names) in it. Ask a grown-up if it's OK to buy!")
+        }
     }
 
     // MARK: - Buy Button (Sticky CTA)
@@ -159,6 +176,10 @@ struct PantryInfoView: View {
     private var buyButton: some View {
         Button {
             guard canAfford else { return }
+            if !matchingAllergens.isEmpty {
+                showAllergenCheck = true
+                return
+            }
             Haptic.notify(.success)
             onBuy?()
         } label: {

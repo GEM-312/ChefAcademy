@@ -30,7 +30,10 @@ enum PantryItem: String, CaseIterable, Identifiable {
     case eggs, milk, cheese, cream, greekYogurt
     // Protein & Nuts
     case chicken, groundBeef, nuts
-    // (Starch items removed — all recipes are now starch-free!)
+    // Grains & Legumes (Oct 18, 2026): slow, fiber-rich carbs only. Brown rice was
+    // left out for its high glycemic index; the bread is whole-grain sourdough.
+    // None of these grow in the garden.
+    case oats, sourdough, chickpeas, lentils
     // (Honey removed — it's pure sugar, contradicts Glucose Goddess principles)
     // Sauces & Condiments
     case soySauce, tomatoSauce, vinegar, lemon
@@ -58,6 +61,10 @@ enum PantryItem: String, CaseIterable, Identifiable {
         case .chicken: return "Chicken"
         case .groundBeef: return "Ground Beef"
         case .nuts: return "Nuts"
+        case .oats: return "Oats"
+        case .sourdough: return "Sourdough Bread"
+        case .chickpeas: return "Chickpeas"
+        case .lentils: return "Lentils"
         case .soySauce: return "Soy Sauce"
         case .tomatoSauce: return "Tomato Sauce"
         case .vinegar: return "Vinegar"
@@ -85,6 +92,9 @@ enum PantryItem: String, CaseIterable, Identifiable {
         case .chicken: return "🍗"
         case .groundBeef: return "🥩"
         case .nuts: return "🥜"
+        case .oats: return "🌾"
+        case .sourdough: return "🍞"
+        case .chickpeas, .lentils: return "🫘"
         case .soySauce: return "🫙"
         case .tomatoSauce: return "🥫"
         case .vinegar: return "🫙"
@@ -105,7 +115,7 @@ enum PantryItem: String, CaseIterable, Identifiable {
         case .turmeric: return "farm_turmeric"
         case .butter: return "farm_butter"
         case .oliveOil: return "farm_oliveOil"
-        case .vegetableOil: return "farm_oliveOil"
+        case .vegetableOil: return "farm_vegetableOil"
         case .eggs: return "farm_eggs"
         case .milk: return "farm_milk"
         case .cheese: return "farm_cheese"
@@ -114,38 +124,14 @@ enum PantryItem: String, CaseIterable, Identifiable {
         case .chicken: return "farm_chicken"
         case .groundBeef: return "farm_groundBeef"
         case .nuts: return "farm_nuts"
+        case .oats: return "farm_oats"
+        case .sourdough: return "farm_sourdough"
+        case .chickpeas: return "farm_chickpeas"
+        case .lentils: return "farm_lentils"
         case .soySauce: return "farm_soySauce"
         case .tomatoSauce: return "farm_tomatoSauce"
         case .vinegar: return "farm_vinegar"
         case .lemon: return "farm_lemon"
-        }
-    }
-
-    /// Per-item scale for the shop card
-    var shopScale: CGFloat { 2.0 }
-
-    /// Vertical offset to crop transparent top padding (negative = shift up)
-    var shopOffset: CGFloat {
-        switch self {
-        case .salt: return -16
-        case .pepper: return -12
-        case .milk: return -10
-        case .soySauce: return -16
-        case .vinegar: return -16
-        case .cheese: return -14
-        case .cream: return -14
-        case .tomatoSauce: return -18
-        case .lemon: return -18
-        default: return 0
-        }
-    }
-
-    /// Frame height for shop card image area (taller for items that need more room)
-    var shopFrameHeight: CGFloat {
-        switch self {
-        case .cheese, .oliveOil, .vegetableOil, .chicken: return 115
-        case .flour, .cinnamon: return 110
-        default: return 100
         }
     }
 
@@ -169,6 +155,9 @@ enum PantryItem: String, CaseIterable, Identifiable {
         case .chicken: return 12
         case .groundBeef: return 15
         case .nuts: return 6
+        case .oats: return 3
+        case .sourdough: return 5
+        case .chickpeas, .lentils: return 4
         case .soySauce: return 3
         case .tomatoSauce: return 4
         case .vinegar: return 3
@@ -198,6 +187,10 @@ enum PantryItem: String, CaseIterable, Identifiable {
         case .chicken: return [.protein, .vitaminB6, .zinc]
         case .groundBeef: return [.protein, .iron, .zinc]
         case .nuts: return [.healthyFats, .protein, .magnesium, .omega3]
+        case .oats: return [.fiber, .manganese, .magnesium]
+        case .sourdough: return [.carbs, .fiber, .iron]
+        case .chickpeas: return [.protein, .fiber, .iron]
+        case .lentils: return [.protein, .fiber, .iron, .potassium]
         case .soySauce: return [.minerals, .protein]
         case .tomatoSauce: return [.vitaminC, .antioxidants]
         case .vinegar: return [.antioxidants, .minerals]
@@ -227,6 +220,10 @@ enum PantryItem: String, CaseIterable, Identifiable {
         case .chicken: return "Chicken is the most popular meat in the world! It's packed with protein that helps build strong muscles. There are more chickens on Earth than people!"
         case .groundBeef: return "Beef is one of the best sources of iron, which helps carry oxygen in your blood! Cows have 4 stomachs to help them digest their food."
         case .nuts: return "A single walnut looks like a tiny brain — and it's actually great for your brain! Nuts are one of the best plant sources of healthy fats and omega-3."
+        case .oats: return "Oats were once grown mostly to feed horses! Their special fiber soaks up water like a sponge, so a bowl of oats keeps you full for a long time."
+        case .sourdough: return "Sourdough rises without store-bought yeast! Bakers keep a bubbly 'starter' of flour and water full of wild yeast — some starters are over 100 years old."
+        case .chickpeas: return "Chickpeas are also called garbanzo beans! They're the main ingredient in hummus, and people have been eating them for over 7,000 years."
+        case .lentils: return "Lentils come in green, brown, red and even black! People grew them over 9,000 years ago, and they're tiny but packed with protein and iron."
         case .soySauce: return "Soy sauce was invented in China over 2,000 years ago! It's made by fermenting soybeans — tiny living things break down the beans to create the flavor."
         case .tomatoSauce: return "Tomato sauce is actually MORE nutritious than raw tomatoes! Cooking tomatoes releases more lycopene, a powerful antioxidant that protects your heart."
         case .vinegar: return "Vinegar means 'sour wine' in French! People have used it for cooking, cleaning, and even medicine for over 5,000 years."
@@ -241,7 +238,7 @@ enum PantryItem: String, CaseIterable, Identifiable {
             return [.milk]
         case .eggs:
             return [.eggs]
-        case .flour:
+        case .flour, .sourdough:
             return [.wheat]
         case .nuts:
             return [.peanuts, .treeNuts]
@@ -249,7 +246,7 @@ enum PantryItem: String, CaseIterable, Identifiable {
             return [.soy]
         case .salt, .pepper, .cinnamon, .paprika, .cumin, .garlicPowder, .turmeric,
              .oliveOil, .vegetableOil, .chicken, .groundBeef,
-             .tomatoSauce, .vinegar, .lemon:
+             .tomatoSauce, .vinegar, .lemon, .oats, .chickpeas, .lentils:
             return []
         }
     }
@@ -265,6 +262,8 @@ enum PantryItem: String, CaseIterable, Identifiable {
             return .dairy
         case .chicken, .groundBeef, .nuts:
             return .protein
+        case .oats, .sourdough, .chickpeas, .lentils:
+            return .grains
         case .soySauce, .tomatoSauce, .vinegar, .lemon:
             return .sauces
         }
@@ -533,7 +532,7 @@ struct GardenRecipes {
             id: "garden-salad",
             title: "Fresh Garden Salad",
             description: "Crispy lettuce, juicy tomato, and cucumber with eggs, cheese, and olive oil dressing",
-            imageName: "recipe_wrap_rainbow_veggie",
+            imageName: "recipe_garden_salad",
             category: .lunch,
             cookTime: 5,
             difficulty: .easy,
@@ -790,7 +789,7 @@ struct GardenRecipes {
             id: "cheesy-broccoli-bites",
             title: "Cheesy Broccoli Bites",
             description: "Tiny broccoli florets baked with eggs and melted cheese — so yummy!",
-            imageName: "recipe_wrap_rainbow_veggie",
+            imageName: "recipe_cheesy_broccoli_bites",
             category: .snacks,
             cookTime: 15,
             difficulty: .easy,
@@ -939,6 +938,106 @@ struct GardenRecipes {
                 "Add the carrot and onion to the pan and stir until soft.",
                 "Sprinkle cumin and salt for extra flavor.",
                 "Add cheese slices, scoop into lettuce, and roll up!"
+            ]
+        ),
+
+        // MARK: - Grains & Legumes (Oct 18, 2026)
+        // One recipe for each new shop item. Steps name each garden ingredient in
+        // the singular ("strawberry"), because the step generator matches
+        // displayName — "strawberries" wouldn't create a wash/slice mini-game.
+
+        Recipe(
+            id: "berry-oat-bowl",
+            title: "Berry Oat Bowl",
+            description: "Creamy oats and Greek yogurt topped with fresh strawberries, blueberries, nuts, and cinnamon",
+            imageName: "recipe_berry_oat_bowl",
+            category: .breakfast,
+            cookTime: 5,
+            difficulty: .easy,
+            servings: 1,
+            needsAdultHelp: false,
+            nutritionFacts: ["Fiber", "Protein", "Antioxidants"],
+            gardenIngredients: [.strawberry, .blueberry],
+            pantryIngredients: [.oats, .greekYogurt, .nuts, .cinnamon],
+            glucoseTip: "Oats are carbs, so we dress them up! Yogurt adds protein, nuts add healthy fat, and cinnamon adds flavor — no sugar needed, the berries are sweet enough!",
+            steps: [
+                "Wash each strawberry and blueberry.",
+                "Slice the strawberry into small pieces.",
+                "Scoop the oats into a bowl and mix in the Greek yogurt.",
+                "Sprinkle cinnamon on top.",
+                "Add a handful of crunchy nuts.",
+                "Top with the strawberry pieces and blueberry — breakfast is ready!"
+            ]
+        ),
+        Recipe(
+            id: "avocado-toast",
+            title: "Avocado Toast",
+            description: "Golden sourdough toast with smashed avocado, juicy tomato, and a drizzle of olive oil",
+            imageName: "recipe_avocado_toast",
+            category: .breakfast,
+            cookTime: 5,
+            difficulty: .easy,
+            servings: 1,
+            needsAdultHelp: true,
+            nutritionFacts: ["Healthy Fats", "Fiber", "Vitamin C"],
+            gardenIngredients: [.avocado, .tomato],
+            pantryIngredients: [.sourdough, .oliveOil, .salt, .pepper],
+            glucoseTip: "Never eat bread naked! The avocado's healthy fat and the tomato's fiber slow down the bread's sugar rush. Sourdough is gentler on your blood sugar than white bread, too.",
+            steps: [
+                "Wash the tomato.",
+                "Cut the avocado in half and scoop it into a bowl.",
+                "Mash the avocado with a fork with a pinch of salt and pepper.",
+                "Slice the tomato into thin rounds.",
+                "Toast the sourdough bread until golden.",
+                "Spread the avocado on the toast, top with tomato, and drizzle olive oil!"
+            ]
+        ),
+        Recipe(
+            id: "chickpea-salad",
+            title: "Crunchy Chickpea Salad",
+            description: "Chickpeas tossed with cucumber, tomato, and spinach in a zingy olive oil and vinegar dressing",
+            imageName: "recipe_chickpea_salad",
+            category: .lunch,
+            cookTime: 5,
+            difficulty: .easy,
+            servings: 2,
+            needsAdultHelp: false,
+            nutritionFacts: ["Protein", "Fiber", "Iron"],
+            gardenIngredients: [.cucumber, .tomato, .spinach],
+            pantryIngredients: [.chickpeas, .oliveOil, .vinegar, .salt],
+            glucoseTip: "Chickpeas give you plant protein AND fiber, and the vinegar dressing is a real Glucose Goddess hack — it helps keep your energy steady!",
+            steps: [
+                "Wash the cucumber, tomato, and spinach.",
+                "Dice the cucumber into small cubes.",
+                "Chop the tomato into bite-sized pieces.",
+                "Tear the spinach leaves into a big bowl.",
+                "Add the chickpeas and the chopped veggies.",
+                "Drizzle olive oil and vinegar, sprinkle salt, and toss — crunch time!"
+            ]
+        ),
+        Recipe(
+            id: "lentil-veggie-soup",
+            title: "Lentil Veggie Soup",
+            description: "A cozy pot of lentils with carrot, onion, and spinach, warmed up with cumin",
+            imageName: "recipe_lentil_soup",
+            category: .dinner,
+            cookTime: 25,
+            difficulty: .medium,
+            servings: 4,
+            needsAdultHelp: true,
+            nutritionFacts: ["Protein", "Fiber", "Iron", "Vitamin A"],
+            gardenIngredients: [.carrot, .onion, .spinach],
+            pantryIngredients: [.lentils, .oliveOil, .cumin, .salt],
+            glucoseTip: "Lentils are packed with protein and fiber, so this soup gives you slow, steady energy. And the veggies are built right in!",
+            steps: [
+                "Wash the carrot and spinach.",
+                "Peel the carrot with a peeler.",
+                "Dice the carrot and onion into small cubes.",
+                "Heat olive oil in a big pot.",
+                "Add the onion and carrot and stir for 3 minutes.",
+                "Add the lentils, water, and cumin, then simmer for 20 minutes.",
+                "Add the spinach and stir until it wilts.",
+                "Sprinkle salt and ladle into bowls — cozy soup time!"
             ]
         ),
     ]

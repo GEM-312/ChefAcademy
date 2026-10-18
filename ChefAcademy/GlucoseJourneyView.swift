@@ -543,6 +543,12 @@ struct TummyPhaseView: View {
                 // Protein sources
                 case .eggs, .chicken, .greekYogurt, .groundBeef:
                     return .protein
+                // Legumes: plant protein (they're fiber-rich too)
+                case .chickpeas, .lentils:
+                    return .protein
+                // Oats' soluble fiber thickens the tummy wall like veggies do
+                case .oats:
+                    return .fiber
                 // Fat sources
                 case .oliveOil, .vegetableOil, .butter, .cheese, .cream, .nuts:
                     return .fat
@@ -553,8 +559,9 @@ struct TummyPhaseView: View {
                 case .milk:
                     return .protein
                 // Skip seasonings — they add flavor but don't slow glucose
+                // Sourdough is carbs (fermented bread): what the hacks protect against, not a hack itself
                 case .salt, .pepper, .soySauce, .flour, .tomatoSauce,
-                     .paprika, .cumin, .garlicPowder, .turmeric:
+                     .paprika, .cumin, .garlicPowder, .turmeric, .sourdough:
                     return nil
                 }
             }()
@@ -1449,9 +1456,6 @@ struct PipJourneyMessage: View {
                 .frame(width: 80, height: 80)
 
             VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Text("Pip")
-                    .font(.AppTheme.caption)
-                    .foregroundColor(Color.AppTheme.sage)
                 Text(message)
                     .font(.AppTheme.body)
                     .foregroundColor(Color.AppTheme.darkBrown)

@@ -66,7 +66,7 @@ struct GardenHubView: View {
                     onShowFarmShop: { gardenMode = .shop }
                 )
             case .shop:
-                FarmTabView()
+                FarmTabView(selectedTab: $selectedTab)
             case .siblingVisit:
                 SiblingPickerView(
                     siblings: siblings,

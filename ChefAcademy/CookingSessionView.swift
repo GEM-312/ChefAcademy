@@ -28,6 +28,26 @@ enum CookingStepType {
     case assemble(String)           // final instruction
 }
 
+extension CookingStepType {
+    /// The mini-game skill this step teaches. Steps that share a mini-game share
+    /// a skill (chop / slice / dice → chop), so a kid learns each game once,
+    /// whatever dish brings it up.
+    var skill: PipTutorial {
+        switch self {
+        case .heatPan:              return .cookHeatPan
+        case .addFat, .addToPan:    return .cookAddToPan
+        case .wash:                 return .cookWash
+        case .peel, .grate:         return .cookPeel
+        case .chop, .slice, .dice:  return .cookChop
+        case .crack:                return .cookCrack
+        case .stir:                 return .cookStir
+        case .season:               return .cookSeason
+        case .cook:                 return .cookTimer
+        case .assemble:             return .cookAssemble
+        }
+    }
+}
+
 // MARK: - Cooking Step
 
 struct CookingStep: Identifiable {
@@ -301,6 +321,9 @@ struct CookingSessionView: View {
     @State private var showPipTransition = false
     @State private var pipTransitionText = ""
 
+    // A learned step's how-to card, opened by tapping Pip
+    @State private var openedTipStepID: UUID?
+
     private let voice = PipVoice.shared
 
     private let pipEncouragements = [
@@ -332,7 +355,8 @@ struct CookingSessionView: View {
                     // Header with progress
                     headerView
 
-                    // Instruction text — Pip reads it aloud!
+                    // Instruction text — Pip reads it aloud the first time the
+                    // kid meets this skill; after that, the speaker button.
                     if !transitioning, let step = currentStep {
                         HStack {
                             Spacer()
@@ -347,7 +371,9 @@ struct CookingSessionView: View {
                             .padding(.top, AppSpacing.sm)
                             .padding(.bottom, AppSpacing.xs)
                             .transition(.opacity)
-                            .onAppear { voice.speak(step.instruction) }
+                            .onAppear {
+                                if !isLearned(step) { voice.speak(step.instruction) }
+                            }
                     }
 
                     // Mini-game area
@@ -363,14 +389,15 @@ struct CookingSessionView: View {
                             ))
                     }
 
-                    // Pip message
+                    // Pip's how-to
                     if !transitioning, let step = currentStep {
-                        pipMessageView(step.pipMessage)
+                        pipTipView(for: step)
                     }
                 }
             }
         }
         .task {
+            markSkillsFromFinishedRecipes()
             steps = recipe.generateCookingSteps()
         }
         .onAppear {
@@ -517,6 +544,8 @@ struct CookingSessionView: View {
 
     private func handleStepComplete(_ score: Int) {
         stepScores.append(score)
+        // The kid has now done this mini-game once: Pip stops explaining it.
+        currentStep?.type.skill.markDone(for: gameState.activeProfileID)
 
         if currentStepIndex >= steps.count - 1 {
             // All steps done
@@ -562,13 +591,55 @@ struct CookingSessionView: View {
 
     // MARK: - Pip Message
 
-    private func pipMessageView(_ message: String) -> some View {
+    /// Skills are only recorded as they're finished (from Oct 18, 2026), so a
+    /// player who cooked before that — or before updating the app — would be
+    /// taught everything again. Every recipe they've finished (it has stars)
+    /// used its mini-games, so count those skills as learned. Built-in recipes
+    /// only: AI recipes aren't in GardenRecipes.all.
+    private func markSkillsFromFinishedRecipes() {
+        let profileID = gameState.activeProfileID
+        for finished in GardenRecipes.all where gameState.recipeStars[finished.id] != nil {
+            for step in finished.generateCookingSteps() {
+                step.type.skill.markDone(for: profileID)
+            }
+        }
+    }
+
+    private func isLearned(_ step: CookingStep) -> Bool {
+        step.type.skill.isDone(for: gameState.activeProfileID)
+    }
+
+    /// First time a skill comes up, Pip's how-to card shows by itself. Once the
+    /// kid has done it, only Pip with "Tap me!" — tapping opens the card and reads it.
+    @ViewBuilder
+    private func pipTipView(for step: CookingStep) -> some View {
+        let learned = isLearned(step)
+        if !learned || openedTipStepID == step.id {
+            pipMessageView(step.pipMessage, onClose: learned ? { openedTipStepID = nil } : nil)
+        } else {
+            PipCharacterView(pose: .neutral, size: .custom(44))
+                .pipTapMeTag(isShown: true)
+                .onTapGesture {
+                    openedTipStepID = step.id
+                    voice.speak(step.pipMessage)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, AppSpacing.lg)
+                .padding(.bottom, AppSpacing.lg)   // room for the tag hanging below Pip
+        }
+    }
+
+    private func pipMessageView(_ message: String, onClose: (() -> Void)? = nil) -> some View {
         HStack(spacing: AppSpacing.sm) {
             PipCharacterView(pose: .neutral, size: .custom(44))
             Text(message)
                 .font(.AppTheme.callout)
                 .foregroundColor(Color.AppTheme.sepia)
                 .lineLimit(2)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            if let onClose {
+                PipBubbleCloseButton(action: onClose)
+            }
         }
         .padding(.horizontal, AppSpacing.md)
         .padding(.vertical, AppSpacing.sm)

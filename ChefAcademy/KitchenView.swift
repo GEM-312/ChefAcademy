@@ -20,6 +20,7 @@ enum KitchenCookingPhase {
 // MARK: - Kitchen View
 
 struct KitchenView: View {
+    @Binding var selectedTab: MainTabView.Tab
     @EnvironmentObject var gameState: GameState
     @Environment(\.horizontalSizeClass) var sizeClass
 
@@ -32,6 +33,7 @@ struct KitchenView: View {
     // Browse mode
     @State private var showRecipePicker = false
     @State private var showRecipeList = false
+    @State private var showTodaysRecipe = false
 
     // Cooking mode
     @State private var cookingPhase: KitchenCookingPhase = .browsing
@@ -67,8 +69,8 @@ struct KitchenView: View {
 
     // Pip — single, walks across kitchen, bubble anchored beside him
     @StateObject private var pipEngine = WalkEngine(frameSet: .pipWalking)
-    @State private var pipDidInit = false
     @State private var showAskPip = false
+    @State private var showPipBubble = false   // closed until Pip is tapped or a cooking step speaks
 
     // ==========================================
     // SCENE EDITOR
@@ -80,6 +82,8 @@ struct KitchenView: View {
         SceneItem(id: "stove", label: "Stove", icon: "🔥", xPercent: 0.88, yPercent: 0.68),
         SceneItem(id: "pantry", label: "Pantry", icon: "📦", xPercent: 0.45, yPercent: 0.78),
         SceneItem(id: "pip", label: "Pip", icon: "🦔", xPercent: 0.71, yPercent: 0.90),
+        SceneItem(id: "today", label: "Today's Recipe", icon: "📜", xPercent: 0.20, yPercent: 0.89),
+        SceneItem(id: "signpost", label: "Signpost", icon: "🪧", xPercent: 0.86, yPercent: 0.99),
     ]
 
     var body: some View {
@@ -123,6 +127,10 @@ struct KitchenView: View {
             withAnimation(AnimationConstants.pipTransition.repeatForever(autoreverses: true)) {
                 spotPulse = true
             }
+            // A player who has finished a dish already knows pantry → counter → stove.
+            if !gameState.recipeStars.isEmpty {
+                PipTutorial.kitchenCooking.markDone(for: gameState.activeProfileID)
+            }
             if let aiRecipe = gameState.pendingAIRecipe {
                 gameState.pendingAIRecipe = nil
                 cookingRecipe = aiRecipe
@@ -161,6 +169,15 @@ struct KitchenView: View {
         .sheet(isPresented: $showAskPip) {
             AskPipView()
                 .environmentObject(gameState)
+        }
+        // "Let's Cook!" dismisses the sheet first, then this closure runs.
+        .sheet(isPresented: $showTodaysRecipe) {
+            RecipeDetailView(
+                recipe: todaysRecipe,
+                onStartCooking: { cookTodaysRecipe() },
+                childAllergens: gameState.activeAllergens
+            )
+            .ensureAssetPacks(.recipes)
         }
         .onChange(of: gameState.pendingAIRecipe) { _, newRecipe in
             if let aiRecipe = newRecipe {
@@ -326,6 +343,39 @@ struct KitchenView: View {
                         }
                         .position(pantryPos)
 
+                        // MARK: Today's Recipe Easel
+                        // A cut-out prop standing on the floor. The "today" scene
+                        // point is where its feet touch, so it's lifted by half its height.
+                        if cookingPhase == .browsing {
+                            let propHeight = AdaptiveCardSize.kitchenTodayProp(for: sizeClass)
+                            let feet = pos(for: "today", w: w, h: h)
+                            Button { showTodaysRecipe = true } label: {
+                                Image("todays_recipe_icon")
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(height: propHeight)
+                                    .overlay(alignment: .bottom) {
+                                        Text("Today's Recipe")
+                                            .font(.AppTheme.rounded(size: AdaptiveCardSize.kitchenSpotLabelSize(for: sizeClass), weight: .semibold))
+                                            .foregroundColor(Color.AppTheme.darkBrown)
+                                            .padding(.horizontal, AppSpacing.xs)
+                                            .padding(.vertical, AppSpacing.xxs)
+                                            .background(Color.AppTheme.warmCream.opacity(0.9))
+                                            .cornerRadius(AppSpacing.pillCornerRadius)
+                                    }
+                            }
+                            .buttonStyle(BouncyButtonStyle())
+                            .position(x: feet.x, y: feet.y - propHeight / 2)
+                        }
+
+                        // MARK: Signpost — the way to the other places
+                        if cookingPhase == .browsing {
+                            let postHeight = AdaptiveCardSize.signpostHeight(for: sizeClass)
+                            let postFoot = pos(for: "signpost", w: w, h: h)
+                            StationSignpostView(destinations: [.home, .garden, .shop], selectedTab: $selectedTab)
+                                .position(x: postFoot.x, y: postFoot.y - postHeight / 2)
+                        }
+
                         // Items gathered on counter (small images near counter)
                         if !itemsOnCounter.isEmpty {
                             let gatheredSize = AdaptiveCardSize.kitchenGatheredItem(for: sizeClass)
@@ -351,39 +401,53 @@ struct KitchenView: View {
                                 .position(x: stovePos.x, y: stovePos.y - AppSpacing.xl)
                         }
 
-                        // Pip — walks across kitchen, bubble anchored to his side
+                        // Pip — walks along the floor, bubble anchored to his side
                         let pipFrameSize = AdaptiveCardSize.pipKitchenWalking(for: sizeClass)
                         TimelineView(.animation) { context in
                             let _ = pipEngine.update(now: context.date)
 
-                            Image(currentPipFrame)
-                                .resizable()
-                                .aspectRatio(contentMode: .fit)
-                                .frame(width: pipFrameSize, height: pipFrameSize)
-                                .scaleEffect(x: pipEngine.facingRight ? 1 : -1, y: 1)
-                                .shadow(color: Color.AppTheme.sepia.opacity(0.15), radius: 4, x: 0, y: 3)
-                                .position(pipEngine.position)
+                            // Tap Pip to open his bubble. The tap and the tag sit
+                            // before .position so only Pip himself is tappable.
+                            pipSprite(frameSize: pipFrameSize)
+                                .contentShape(Rectangle())
+                                .pipTapMeTag(isShown: !showPipBubble)
+                                .onTapGesture { showPipBubble = true }
+                                .position(pipSpriteCenter(frameSize: pipFrameSize))
                         }
-
-                        PipFloatingBubble(
-                            anchor: pipEngine.position,
-                            sceneWidth: w,
-                            pipHalfWidth: pipFrameSize / 2,
-                            sizeClass: sizeClass,
-                            message: pipMessage,
-                            onAskPip: { showAskPip = true }
-                        )
-                        // C9: attach lifecycle hooks to a real view (the bubble),
-                        // no more Color.clear sentinel. Both closures capture w/h
-                        // from the enclosing GeometryReader, same as before.
-                        .onAppear {
-                            if !pipDidInit {
+                        // C9: lifecycle hooks live on the always-present Pip (the
+                        // bubble comes and goes). The closures capture w/h from the
+                        // enclosing GeometryReader.
+                        // The map's first layout pass reports a smaller size than the
+                        // final one, so placing Pip once on appear left him up on the
+                        // shelves. Re-place him at home whenever the size changes while idle.
+                        .onChange(of: CGSize(width: w, height: h), initial: true) { _, _ in
+                            if cookingPhase == .browsing && !pipEngine.isMoving {
                                 pipEngine.position = pos(for: "pip", w: w, h: h)
-                                pipDidInit = true
                             }
                         }
                         .onChange(of: cookingPhase) { _, newPhase in
                             walkPipForPhase(newPhase, w: w, h: h)
+                        }
+                        // On a player's first cook, each step pops the bubble open
+                        // so they learn the flow. After that it waits for a tap.
+                        .onChange(of: pipMessage) { _, _ in
+                            if cookingPhase != .browsing
+                                && !PipTutorial.kitchenCooking.isDone(for: gameState.activeProfileID) {
+                                showPipBubble = true
+                            }
+                        }
+
+                        if showPipBubble {
+                            PipFloatingBubble(
+                                anchor: CGPoint(x: pipEngine.position.x, y: pipFeetY(frameSize: pipFrameSize)),
+                                sceneWidth: w,
+                                pipHalfWidth: pipFrameSize / 2,
+                                sizeClass: sizeClass,
+                                message: pipMessage,
+                                onAskPip: { showAskPip = true },
+                                onClose: { showPipBubble = false },
+                                bottomAligned: true
+                            )
                         }
 
                         // MARK: Flying Item
@@ -404,6 +468,49 @@ struct KitchenView: View {
 
     // MARK: - Pip Walking
 
+    // How much of its square frame the walk art fills, and how far his feet sit
+    // above the frame's bottom (same art as the Home map walker).
+    private static let walkArtFill: CGFloat = 0.625
+    private static let walkArtFoot: CGFloat = 0.18
+
+    /// Where Pip's feet touch the floor, from the center of his walk frame.
+    private func pipFeetY(frameSize: CGFloat) -> CGFloat {
+        pipEngine.position.y + frameSize * (0.5 - Self.walkArtFoot)
+    }
+
+    /// Standing at a station during cooking, Pip points up at it.
+    private var pipIsPointing: Bool {
+        !pipEngine.isMoving && cookingPhase != .browsing
+    }
+
+    /// The walk frame, or the pointing pose at a station. The pointing art fills
+    /// its whole image, so it's drawn at the walker's visible height.
+    @ViewBuilder
+    private func pipSprite(frameSize: CGFloat) -> some View {
+        if pipIsPointing {
+            Image(PipPose.pointsUpRight.rawValue)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(height: frameSize * Self.walkArtFill)
+                .shadow(color: Color.AppTheme.sepia.opacity(0.15), radius: 4, x: 0, y: 3)
+        } else {
+            Image(currentPipFrame)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: frameSize, height: frameSize)
+                .scaleEffect(x: pipEngine.facingRight ? 1 : -1, y: 1)
+                .shadow(color: Color.AppTheme.sepia.opacity(0.15), radius: 4, x: 0, y: 3)
+        }
+    }
+
+    /// The pointing pose is shorter than the walk frame, so its center sits
+    /// higher to keep the feet on the same floor spot.
+    private func pipSpriteCenter(frameSize: CGFloat) -> CGPoint {
+        guard pipIsPointing else { return pipEngine.position }
+        let pointHeight = frameSize * Self.walkArtFill
+        return CGPoint(x: pipEngine.position.x, y: pipFeetY(frameSize: frameSize) - pointHeight / 2)
+    }
+
     private var currentPipFrame: String {
         if pipEngine.isMoving {
             let names = CharacterFrameSet.pipWalking.frameNames
@@ -414,14 +521,22 @@ struct KitchenView: View {
     }
 
     private func walkPipForPhase(_ phase: KitchenCookingPhase, w: CGFloat, h: CGFloat) {
+        let home = pos(for: "pip", w: w, h: h)
         let target: CGPoint
         switch phase {
-        case .browsing:     target = pos(for: "pip", w: w, h: h)        // home
-        case .gatherPantry: target = pos(for: "pantry", w: w, h: h)
-        case .moveToStove:  target = pos(for: "counter", w: w, h: h)
-        case .stoveReady:   target = pos(for: "stove", w: w, h: h)
+        case .browsing:     target = home
+        case .gatherPantry: target = floorSpot(below: "pantry", floorY: home.y, w: w, h: h)
+        case .moveToStove:  target = floorSpot(below: "counter", floorY: home.y, w: w, h: h)
+        case .stoveReady:   target = floorSpot(below: "stove", floorY: home.y, w: w, h: h)
         }
         pipEngine.start(waypoints: [pipEngine.position, target], loop: false)
+    }
+
+    /// Pip stays on the floor (his home height) and stops just left of a station,
+    /// under it, so he can point up at it without covering its button.
+    private func floorSpot(below id: String, floorY: CGFloat, w: CGFloat, h: CGFloat) -> CGPoint {
+        let station = pos(for: id, w: w, h: h)
+        return CGPoint(x: station.x - AdaptiveCardSize.kitchenPipStationGap(for: sizeClass), y: floorY)
     }
 
     // MARK: - Kitchen Spot
@@ -526,6 +641,29 @@ struct KitchenView: View {
                     pipPose = .thinking
                     pipMessage = "We need ingredients before we can cook! Visit the garden."
                 }
+            }
+        }
+    }
+
+    // MARK: - Today's Recipe
+
+    /// Changes once a day and cycles through every recipe.
+    private var todaysRecipe: Recipe {
+        let day = Calendar.current.ordinality(of: .day, in: .era, for: Date()) ?? 0
+        return GardenRecipes.all[day % GardenRecipes.all.count]
+    }
+
+    private func cookTodaysRecipe() {
+        let recipe = todaysRecipe
+        if recipe.canCookFull(
+            harvestedIngredients: gameState.harvestedIngredients,
+            pantryInventory: gameState.pantryInventory
+        ) {
+            startCooking(recipe: recipe)
+        } else {
+            withAnimation(AnimationConstants.springMedium) {
+                pipPose = .thinking
+                pipMessage = "We need more ingredients for \(recipe.title)! Let's visit the garden and the farm shop."
             }
         }
     }
@@ -659,6 +797,8 @@ struct KitchenView: View {
         stoveFlameOn = true
         pipMessage = "The stove is on! Let's cook!"
         pipPose = .celebrating
+        // Reaching the stove means the kid has done pantry → counter → stove once.
+        PipTutorial.kitchenCooking.markDone(for: gameState.activeProfileID)
 
         cookingTasks.append(Task { @MainActor in
             try? await Task.sleep(for: .seconds(AnimationConstants.stovePreRoll))
@@ -684,6 +824,7 @@ struct KitchenView: View {
         flyingImage = nil
         pipMessage = "Welcome to my kitchen! Tap around to explore!"
         pipPose = .cooking
+        showPipBubble = false
     }
 
     // MARK: - Bottom Panel
@@ -1043,6 +1184,11 @@ struct PipFloatingBubble: View {
     let sizeClass: UserInterfaceSizeClass?
     let message: String
     var onAskPip: (() -> Void)? = nil
+    /// Shows an ✕ that closes the bubble (the scene reopens it when Pip is tapped).
+    var onClose: (() -> Void)? = nil
+    /// When true, `anchor.y` is the bubble's bottom edge (Pip's feet) and the
+    /// bubble grows upward, so it stays inside a scene where Pip walks the floor.
+    var bottomAligned: Bool = false
 
     // The token width, narrowed when the space beside Pip is smaller (iPhone).
     // softCard adds AppSpacing.md padding on the outer edge, so leave room for it.
@@ -1064,23 +1210,37 @@ struct PipFloatingBubble: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: AppSpacing.sm) {
-            Text("Pip")
-                .font(.AppTheme.caption)
-                .foregroundColor(Color.AppTheme.goldenWheat)
+            HStack(alignment: .top, spacing: AppSpacing.xs) {
+                Text(message)
+                    .font(.AppTheme.subheadline)
+                    .foregroundColor(Color.AppTheme.darkBrown)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .multilineTextAlignment(.leading)
+                    .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text(message)
-                .font(.AppTheme.subheadline)
-                .foregroundColor(Color.AppTheme.darkBrown)
-                .fixedSize(horizontal: false, vertical: true)
-                .multilineTextAlignment(.leading)
+                if let onClose {
+                    PipBubbleCloseButton(action: onClose)
+                }
+            }
 
             if let onAskPip {
+                // iPhone: a small pill that hugs its text. iPad: the full-width button.
+                let isCompact = sizeClass == .compact
                 Button("Ask Pip") { onAskPip() }
-                    .texturedButton(tint: Color.AppTheme.sage)
+                    .buttonStyle(TexturedButtonStyle(
+                        tint: Color.AppTheme.sage,
+                        height: AdaptiveCardSize.pipBubbleButtonHeight(for: sizeClass),
+                        fullWidth: !isCompact,
+                        font: isCompact ? .AppTheme.subheadline : .AppTheme.headline
+                    ))
             }
         }
         .frame(width: bubbleWidth, alignment: .leading)
         .softCard()
+        // A zero-height frame aligned to its bottom puts the card's bottom edge
+        // on the anchor; the card overflows upward.
+        .fixedSize(horizontal: false, vertical: true)
+        .frame(height: bottomAligned ? 0 : nil, alignment: .bottom)
         .position(x: bubbleCenterX, y: anchor.y)
         .animation(AnimationConstants.fadeMedium, value: anchorOnLeftHalf)
         .onAppear { PipVoice.shared.speak(message) }
@@ -1091,6 +1251,6 @@ struct PipFloatingBubble: View {
 // MARK: - Preview
 
 #Preview {
-    KitchenView()
+    KitchenView(selectedTab: .constant(.kitchen))
         .environmentObject(GameState.preview)
 }

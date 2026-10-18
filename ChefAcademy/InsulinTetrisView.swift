@@ -595,7 +595,7 @@ struct InsulinTetrisView: View {
     // MARK: - Pip Toast
 
     private func pipToast(_ message: String) -> some View {
-        PipSpeechBubble(message: message, showsLabel: false, tintBackground: false)
+        PipSpeechBubble(message: message, tintBackground: false)
             .shadow(color: Color.AppTheme.sepia.opacity(0.1), radius: 4, y: 2)
             .transition(.move(edge: .bottom).combined(with: .opacity))
     }

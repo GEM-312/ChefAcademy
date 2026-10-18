@@ -45,7 +45,6 @@ struct PipSpeechBubble: View {
     let message: String
     var pose: PipPose = .gotIdea
     var size: PipSize = .compact
-    var showsLabel: Bool = true
     var tintBackground: Bool = true
     var hasTail: Bool = false
     /// Read `message` aloud when the bubble first appears AND whenever
@@ -59,11 +58,6 @@ struct PipSpeechBubble: View {
             avatar
 
             VStack(alignment: .leading, spacing: 2) {
-                if showsLabel {
-                    Text("Pip")
-                        .font(.AppTheme.caption)
-                        .foregroundColor(Color.AppTheme.sage)
-                }
                 Text(message)
                     .font(.AppTheme.body)
                     .foregroundColor(Color.AppTheme.darkBrown)
@@ -111,6 +105,86 @@ private struct SpeechTail: ViewModifier {
         } else {
             content
         }
+    }
+}
+
+// MARK: - Pip "Tap me!" Tag
+// Small pill under a scene Pip whose speech bubble opens when he's tapped
+// (Kitchen, Home map, Shop). Same look as the kitchen station labels.
+// Show it only while the bubble is closed.
+struct PipTapMeTag: View {
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    var body: some View {
+        Text("Tap me!")
+            .font(.AppTheme.rounded(size: AdaptiveCardSize.kitchenSpotLabelSize(for: sizeClass), weight: .semibold))
+            .foregroundColor(Color.AppTheme.sage)
+            .padding(.horizontal, AppSpacing.xs)
+            .padding(.vertical, AppSpacing.xxs)
+            .background(Color.AppTheme.warmCream.opacity(0.9))
+            .cornerRadius(AppSpacing.pillCornerRadius)
+            .fixedSize()   // one line, even under a small Pip
+    }
+}
+
+extension View {
+    /// Hangs the "Tap me!" tag just below this Pip: the tag's top edge sits on
+    /// his bottom edge, so it never covers him.
+    func pipTapMeTag(isShown: Bool) -> some View {
+        overlay(alignment: .bottom) {
+            if isShown {
+                PipTapMeTag()
+                    .alignmentGuide(.bottom) { $0[.top] }
+            }
+        }
+    }
+}
+
+// MARK: - Pip Bubble Close Button
+// The ✕ on a Pip speech bubble (Kitchen / Home / Shop bubbles, Garden message).
+// The icon is small but the tap area is 44pt: the inner padding grows the
+// button, the outer negative padding keeps it from pushing the text.
+struct PipBubbleCloseButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "xmark.circle.fill")
+                .font(.AppTheme.title3)
+                .foregroundColor(Color.AppTheme.lightSepia)
+                .padding(AppSpacing.sm)
+        }
+        .buttonStyle(BouncyButtonStyle())
+        .padding(-AppSpacing.sm)
+        .accessibilityLabel("Close")
+    }
+}
+
+// MARK: - Pip First-Time Instructions
+// Pip's bubble opens by itself only the first time a player uses a feature;
+// after that it waits for a tap. One flag per player profile, kept in
+// UserDefaults on this device (no SwiftData field, so no model migration).
+// A reinstall shows the instructions once more, which is harmless.
+//
+// The rawValue is part of the storage key — never rename a case (§5).
+enum PipTutorial: String {
+    case kitchenCooking
+    case shop
+    // Cooking mini-game skills: one per mini-game the kid has to learn.
+    // Learned when the kid finishes that mini-game once (CookingSessionView).
+    case cookHeatPan, cookAddToPan, cookWash, cookPeel, cookChop
+    case cookCrack, cookStir, cookSeason, cookTimer, cookAssemble
+
+    private func key(for profileID: UUID?) -> String {
+        "pipTutorial_\(rawValue)_\(profileID?.uuidString ?? "legacy")"
+    }
+
+    func isDone(for profileID: UUID?) -> Bool {
+        UserDefaults.standard.bool(forKey: key(for: profileID))
+    }
+
+    func markDone(for profileID: UUID?) {
+        UserDefaults.standard.set(true, forKey: key(for: profileID))
     }
 }
 
@@ -241,7 +315,6 @@ struct PINPadGrid<Leading: View, Trailing: View>: View {
                 PipSpeechBubble(message: "Great job on that recipe!")
                 PipSpeechBubble(message: "Hmm, let me think...", pose: .thinking)
                 PipSpeechBubble(message: "Ready to cook?", pose: .cooking, hasTail: true)
-                PipSpeechBubble(message: "No label version.", showsLabel: false)
                 PipSpeechBubble(message: "No tint.", tintBackground: false)
             }
             .padding(AppSpacing.md)

@@ -248,10 +248,10 @@ struct MainTabView: View {
                     GardenView(selectedTab: $selectedTab, onShowFarmShop: { selectedTab = .shop })
                         .onAppear { ImagePrewarmer.prewarmGarden() }
                 case .shop:
-                    FarmTabView()
+                    FarmTabView(selectedTab: $selectedTab)
                         .onAppear { ImagePrewarmer.prewarmFarm() }
                 case .kitchen:
-                    KitchenView()
+                    KitchenView(selectedTab: $selectedTab)
                 case .bodyBuddy:
                     BodyBuddyView(selectedTab: $selectedTab)
                 case .playLearn:
@@ -345,6 +345,17 @@ private struct HomeImageMap: View {
 
     @State private var walkTarget: MainTabView.Tab?
     @State private var walkID = UUID()
+    @State private var showPipBubble = false   // the greeting opens when Pip is tapped
+
+    // ==========================================
+    // SCENE EDITOR (DEBUG pencil, top right of the map)
+    // ==========================================
+    // Each station's ground point (centerX, baseY), draggable like the Kitchen
+    // and Garden editors. Copy the values from the panel into `locations`.
+    @State private var editMode = false
+    @State private var stationSpots: [SceneItem] = HomeImageMap.locations.map {
+        SceneItem(id: $0.title, label: $0.title, icon: "📍", xPercent: $0.centerX, yPercent: $0.baseY)
+    }
 
     private struct Location {
         let tab: MainTabView.Tab?          // nil = Home, the "you are here" marker
@@ -357,7 +368,7 @@ private struct HomeImageMap: View {
     }
 
     private static let imageAspect: CGFloat = 1296.0 / 2304.0
-    private static let pipSizeFraction: CGFloat = 0.14   // Pip's width as a fraction of map width
+    private static let pipSizeFraction: CGFloat = 0.23   // Pip's width as a fraction of map width
 
     /// Pip waits here, at the Home cottage door.
     private static let homeDoor = CGPoint(x: 0.45, y: 0.31)
@@ -384,21 +395,23 @@ private struct HomeImageMap: View {
     private static let locations: [Location] = [
         Location(tab: nil, title: "Home", imageName: "home_loc_home",
                  centerX: 0.48, baseY: 0.29, widthFraction: 0.36, path: []),
+        // Positions set in the Home scene editor (Oct 18). Each path's last point
+        // keeps its old offset from the station's ground point.
         Location(tab: .bodyBuddy, title: "Body", imageName: "home_loc_body",
-                 centerX: 0.28, baseY: 0.50, widthFraction: 0.24,
-                 path: Array(spine[0...4]) + [CGPoint(x: 0.33, y: 0.52)]),
+                 centerX: 0.29, baseY: 0.46, widthFraction: 0.24,
+                 path: Array(spine[0...4]) + [CGPoint(x: 0.34, y: 0.48)]),
         Location(tab: .playLearn, title: "Play", imageName: "home_loc_play",
-                 centerX: 0.69, baseY: 0.58, widthFraction: 0.34,
-                 path: Array(spine[0...6]) + [CGPoint(x: 0.60, y: 0.60)]),
+                 centerX: 0.73, baseY: 0.59, widthFraction: 0.34,
+                 path: Array(spine[0...6]) + [CGPoint(x: 0.64, y: 0.61)]),
         Location(tab: .kitchen, title: "Kitchen", imageName: "home_loc_kitchen",
-                 centerX: 0.34, baseY: 0.72, widthFraction: 0.36,
-                 path: Array(spine[0...8]) + [CGPoint(x: 0.36, y: 0.74)]),
+                 centerX: 0.31, baseY: 0.74, widthFraction: 0.324,
+                 path: Array(spine[0...8]) + [CGPoint(x: 0.33, y: 0.76)]),
         Location(tab: .garden, title: "Garden", imageName: "home_loc_garden",
-                 centerX: 0.27, baseY: 0.89, widthFraction: 0.36,
-                 path: Array(spine[0...9]) + [CGPoint(x: 0.33, y: 0.86)]),
+                 centerX: 0.21, baseY: 0.93, widthFraction: 0.36,
+                 path: Array(spine[0...9]) + [CGPoint(x: 0.27, y: 0.90)]),
         Location(tab: .shop, title: "Shop", imageName: "home_loc_shop",
-                 centerX: 0.74, baseY: 0.91, widthFraction: 0.36,
-                 path: Array(spine[0...10]) + [CGPoint(x: 0.65, y: 0.88)])
+                 centerX: 0.83, baseY: 0.93, widthFraction: 0.36,
+                 path: Array(spine[0...10]) + [CGPoint(x: 0.74, y: 0.90)])
     ]
 
     var body: some View {
@@ -417,8 +430,28 @@ private struct HomeImageMap: View {
                 }
 
                 pip(w: w, h: h)
+
+                if editMode {
+                    SceneEditorOverlay(mapWidth: w, mapHeight: h, items: $stationSpots, editMode: true)
+                        .frame(width: w, height: h)
+                }
             }
             .frame(width: w, height: h)
+            #if DEBUG
+            .overlay(alignment: .topTrailing) {
+                Button {
+                    withAnimation(AnimationConstants.springMedium) {
+                        editMode.toggle()
+                    }
+                } label: {
+                    Image(systemName: editMode ? "pencil.circle.fill" : "pencil.circle")
+                        .font(.AppTheme.rounded(size: AdaptiveCardSize.kitchenHeaderIconSize(for: sizeClass)))
+                        .foregroundColor(editMode ? Color.AppTheme.terracotta : Color.AppTheme.lightSepia)
+                }
+                .buttonStyle(.plain)
+                .padding(AppSpacing.sm)
+            }
+            #endif
         }
         .aspectRatio(Self.imageAspect, contentMode: .fit)
         // Leaving Home mid-walk (tab bar) stops the TimelineView, so onCompleted never
@@ -430,7 +463,11 @@ private struct HomeImageMap: View {
 
     @ViewBuilder
     private func locationView(_ place: Location, w: CGFloat, h: CGFloat) -> some View {
-        let spriteWidth = w * place.widthFraction
+        let spriteWidth = w * place.widthFraction * AdaptiveCardSize.homeStationScale(for: sizeClass)
+        // The scene editor's spot wins, so a dragged station moves live.
+        let spot = stationSpots.first { $0.id == place.title }
+        let centerX = spot?.xPercent ?? place.centerX
+        let baseY = spot?.yPercent ?? place.baseY
         let art = Image(place.imageName)
             .resizable()
             .scaledToFit()
@@ -450,8 +487,8 @@ private struct HomeImageMap: View {
         // bottom-aligned frame ending at baseY, shifted to centerX. (.position
         // would centre the sprite on the point instead.) Empty frame space
         // doesn't take taps — only the label and art do.
-        .frame(width: w, height: h * place.baseY, alignment: .bottom)
-        .offset(x: w * (place.centerX - 0.5))
+        .frame(width: w, height: h * baseY, alignment: .bottom)
+        .offset(x: w * (centerX - 0.5))
     }
 
     // MARK: - Pip
@@ -479,22 +516,26 @@ private struct HomeImageMap: View {
             .allowsHitTesting(false)
         } else {
             // Waiting at the door: the wave, matched to the walker's size and
-            // footing, with Pip's greeting beside him.
+            // footing. Tapping him opens his greeting beside him.
             let waveSize = size * Self.walkArtFill / Self.waveArtFill
             let feetY = h * Self.homeDoor.y - size * Self.walkArtFoot
             let center = CGPoint(x: w * Self.homeDoor.x,
                                  y: feetY + waveSize * Self.waveArtFoot - waveSize / 2)
             PipWavingAnimatedView(size: .custom(waveSize))
+                .contentShape(Rectangle())
+                .pipTapMeTag(isShown: !showPipBubble)
+                .onTapGesture { showPipBubble = true }
                 .position(center)
-                .allowsHitTesting(false)
-            PipFloatingBubble(
-                anchor: center,
-                sceneWidth: w,
-                pipHalfWidth: waveSize / 2,
-                sizeClass: sizeClass,
-                message: Self.greeting
-            )
-            .allowsHitTesting(false)
+            if showPipBubble {
+                PipFloatingBubble(
+                    anchor: center,
+                    sceneWidth: w,
+                    pipHalfWidth: waveSize / 2,
+                    sizeClass: sizeClass,
+                    message: Self.greeting,
+                    onClose: { showPipBubble = false }
+                )
+            }
         }
     }
 
@@ -550,12 +591,10 @@ struct HomeView: View {
     @EnvironmentObject var gameState: GameState
     @EnvironmentObject var sessionManager: SessionManager
     @Environment(\.modelContext) private var modelContext
-    @State private var selectedRecipe: Recipe? = nil
     @State private var showSwitchConfirm = false
     @State private var showPINForDashboard = false
     @State private var selectedSibling: UserProfile?
     @State private var showAskPip = false
-    @Namespace private var homeRecipeNamespace
 
     // Unseen help messages for the current player
     private var newHelpMessages: [HelpEntry]? {
@@ -676,41 +715,6 @@ struct HomeView: View {
                 // kid from the map (his bubble at the Home door), not a separate card.
                 HomeImageMap(selectedTab: $selectedTab)
                     .padding(.horizontal, AppSpacing.md)
-
-                // Today's Recipe
-                VStack(alignment: .leading, spacing: AppSpacing.sm) {
-                    HStack {
-                        Text("Today's Recipe")
-                            .font(.AppTheme.headline)
-                            .foregroundColor(Color.AppTheme.darkBrown)
-
-                        Spacer()
-
-                        Button(action: { selectedTab = .kitchen }) {
-                            HStack(spacing: 4) {
-                                Text("See All")
-                                    .font(.AppTheme.subheadline)
-                                Image(systemName: "chevron.right")
-                                    .font(.AppTheme.caption)
-                            }
-                            .foregroundColor(Color.AppTheme.goldenWheat)
-                        }
-                        .buttonStyle(.plain)
-                    }
-
-                    let todaysRecipe = GardenRecipes.all.first(where: { $0.id == "chicken-veggie-platter" }) ?? GardenRecipes.all[0]
-                    Button(action: {
-                        Haptic.impact(.light)
-                        withAnimation(AnimationConstants.morphTransition) {
-                            selectedRecipe = todaysRecipe
-                        }
-                    }) {
-                        RecipeCardView(recipe: todaysRecipe)
-                    }
-                    .buttonStyle(.plain)
-                    .morphSource(id: "home-recipe-\(todaysRecipe.id)", in: homeRecipeNamespace, isActive: selectedRecipe == nil)
-                }
-                .padding(.horizontal, AppSpacing.md)
 
                 // Help received messages
                 if let helpMessages = newHelpMessages, !helpMessages.isEmpty {
@@ -841,25 +845,6 @@ struct HomeView: View {
             .padding(.top, AppSpacing.md)
         }
         .background(Color.AppTheme.cream)
-        .overlay {
-            if let recipe = selectedRecipe {
-                RecipeDetailView(recipe: recipe, onStartCooking: {
-                    selectedTab = .kitchen
-                }, onDismiss: {
-                    withAnimation(AnimationConstants.morphTransition) {
-                        selectedRecipe = nil
-                    }
-                })
-                .morphDestination(id: "home-recipe-\(recipe.id)", in: homeRecipeNamespace)
-                .dragToDismiss {
-                    withAnimation(AnimationConstants.morphTransition) {
-                        selectedRecipe = nil
-                    }
-                }
-                .transition(.opacity)
-                .zIndex(10)
-            }
-        }
         .alert("Switch Player?", isPresented: $showSwitchConfirm) {
             Button("Cancel", role: .cancel) {}
             Button("Switch") {

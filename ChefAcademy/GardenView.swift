@@ -590,6 +590,9 @@ struct GardenView: View {
     // Visitor greeting
     @State private var showVisitorGreeting = false
 
+    // Pip's everyday tip stays closed until Pip is tapped
+    @State private var showPipTip = false
+
     // Ask Pip chat (opens when kid taps "Tell me!" on a question tip)
     @State private var showAskPip = false
 
@@ -628,6 +631,7 @@ struct GardenView: View {
         SceneItem(id: "walk3", label: "Walk 3", icon: "👣", xPercent: 0.82, yPercent: 0.72),
         SceneItem(id: "walk4", label: "Walk 4", icon: "👣", xPercent: 0.75, yPercent: 0.90),
         SceneItem(id: "basket", label: "Basket", icon: "🧺", xPercent: 0.50, yPercent: 0.52),
+        SceneItem(id: "signpost", label: "Signpost", icon: "🪧", xPercent: 0.84, yPercent: 0.99),
     ]
 
     var body: some View {
@@ -847,6 +851,15 @@ struct GardenView: View {
                                 .position(plotPos(for: "row\(row)", w: w, h: h))
                         }
 
+                        // Signpost — the way to the other places. The scene point is
+                        // where the post meets the ground, so it's lifted by half its height.
+                        if !isVisiting {
+                            let postHeight = AdaptiveCardSize.signpostHeight(for: sizeClass)
+                            let postFoot = plotPos(for: "signpost", w: w, h: h)
+                            StationSignpostView(destinations: [.home, .shop, .kitchen], selectedTab: $selectedTab)
+                                .position(x: postFoot.x, y: postFoot.y - postHeight / 2)
+                        }
+
                         // Pip removed from map — one Pip only, shown in PipGardenMessage below
                         // Walking/draggable Pip will return once speaking animation is ready
                     }
@@ -1021,7 +1034,8 @@ struct GardenView: View {
                             PipDialogChoice(label: "Keep gardening", style: .subtle) {
                                 showRecipeSuggestion = false
                             },
-                        ]
+                        ],
+                    onClose: { showRecipeSuggestion = false }
                 )
             } else if isVisiting && showVisitorGreeting {
                 PipGardenMessage(
@@ -1038,7 +1052,8 @@ struct GardenView: View {
                         PipDialogChoice(label: "Let me look around", style: .secondary) {
                             showVisitorGreeting = false
                         },
-                    ]
+                    ],
+                    onClose: { showVisitorGreeting = false }
                 )
             } else {
                 let tip = smartPipTip
@@ -1055,9 +1070,12 @@ struct GardenView: View {
                     ] : [],
                     gardenPlots: gameState.gardenPlots,
                     onPipTap: {
-                        // Tap Pip → get the next tip
+                        // Tap Pip → get the next tip and open it
                         fetchSmartPipTip()
-                    }
+                        showPipTip = true
+                    },
+                    showsMessage: showPipTip,
+                    onClose: { showPipTip = false }
                 )
             }
 
@@ -1127,7 +1145,7 @@ struct GardenView: View {
                 // Empty basket + hint text
                 GeometryReader { geo in
                     VStack(spacing: isIPad ? AppSpacing.md : AppSpacing.sm) {
-                        Image("vegetable_basket")
+                        Image("harvest_wheelbarrow")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
                             .frame(width: geo.size.width * 0.9)
@@ -1515,6 +1533,10 @@ struct PipGardenMessage: View {
     var choices: [PipDialogChoice] = []
     var gardenPlots: [GardenPlot] = []
     var onPipTap: (() -> Void)? = nil
+    /// false = only Pip shows, with his "Tap me!" tag; the card opens on tap.
+    var showsMessage: Bool = true
+    /// Shows an ✕ on the card that closes it.
+    var onClose: (() -> Void)? = nil
     @Environment(\.horizontalSizeClass) private var sizeClass
     private var isIPad: Bool { sizeClass == .regular }
 
@@ -1530,82 +1552,81 @@ struct PipGardenMessage: View {
     var body: some View {
         HStack(alignment: .top, spacing: AppSpacing.md) {
             // Static Pip (transparent bg) — will switch to speaking animation once ready
+            let pipSize = AdaptiveCardSize.pipGardenMessage(for: sizeClass)
             Image("pip_waving_frame_01")
                 .resizable()
                 .aspectRatio(contentMode: .fit)
-                .frame(width: isIPad ? 200 : 100, height: isIPad ? 200 : 100)
+                .frame(width: pipSize, height: pipSize)
+                .pipTapMeTag(isShown: onPipTap != nil && !showsMessage)
                 .onTapGesture { onPipTap?() }
-                .overlay(alignment: .bottom) {
-                    if onPipTap != nil {
-                        Text("Tap me!")
-                            .font(.AppTheme.rounded(size: 9, weight: .semibold))
-                            .foregroundColor(Color.AppTheme.sage)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.AppTheme.warmCream.opacity(0.9))
-                            .cornerRadius(6)
-                            .offset(y: 4)
-                    }
-                }
 
             // Message bubble — compact, doesn't fill full width
-            VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                Text("Pip")
-                    .font(.AppTheme.caption)
-                    .foregroundColor(Color.AppTheme.sage)
+            if showsMessage {
+                VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                    HStack(alignment: .top, spacing: AppSpacing.xs) {
+                        Text(displayedMessage)
+                            .font(isIPad ? .AppTheme.body : .AppTheme.subheadline)
+                            .foregroundColor(Color.AppTheme.darkBrown)
+                            .frame(maxWidth: .infinity, alignment: .leading)
 
-                Text(displayedMessage)
-                    .font(isIPad ? .AppTheme.body : .AppTheme.subheadline)
-                    .foregroundColor(Color.AppTheme.darkBrown)
-
-                // Action buttons (shown for recipe suggestions)
-                if !choices.isEmpty {
-                    let actionChoices = choices.filter { $0.style != .subtle }
-                    let subtleChoices = choices.filter { $0.style == .subtle }
-
-                    // Primary + secondary side by side with wood texture
-                    HStack(spacing: AppSpacing.xs) {
-                        ForEach(actionChoices.indices, id: \.self) { index in
-                            let choice = actionChoices[index]
-                            Button(choice.label, action: choice.action)
-                                .buttonStyle(TexturedButtonStyle(
-                                    tint: choice.style == .primary ? Color.AppTheme.sage : Color.AppTheme.warmKhaki,
-                                    height: 38,
-                                    font: .AppTheme.caption
-                                ))
+                        if let onClose {
+                            PipBubbleCloseButton(action: onClose)
                         }
                     }
-                    .padding(.top, AppSpacing.xs)
 
-                    // "Keep gardening" as plain text link below
-                    ForEach(subtleChoices.indices, id: \.self) { index in
-                        let choice = subtleChoices[index]
-                        Button(action: choice.action) {
-                            Text(choice.label)
-                                .font(.AppTheme.caption)
-                                .foregroundColor(Color.AppTheme.sepia)
+                    // Action buttons (shown for recipe suggestions)
+                    if !choices.isEmpty {
+                        let actionChoices = choices.filter { $0.style != .subtle }
+                        let subtleChoices = choices.filter { $0.style == .subtle }
+
+                        // Primary + secondary side by side with wood texture
+                        HStack(spacing: AppSpacing.xs) {
+                            ForEach(actionChoices.indices, id: \.self) { index in
+                                let choice = actionChoices[index]
+                                Button(choice.label, action: choice.action)
+                                    .buttonStyle(TexturedButtonStyle(
+                                        tint: choice.style == .primary ? Color.AppTheme.sage : Color.AppTheme.warmKhaki,
+                                        height: 38,
+                                        font: .AppTheme.caption
+                                    ))
+                            }
                         }
-                        .buttonStyle(.plain)
+                        .padding(.top, AppSpacing.xs)
+
+                        // "Keep gardening" as plain text link below
+                        ForEach(subtleChoices.indices, id: \.self) { index in
+                            let choice = subtleChoices[index]
+                            Button(action: choice.action) {
+                                Text(choice.label)
+                                    .font(.AppTheme.caption)
+                                    .foregroundColor(Color.AppTheme.sepia)
+                            }
+                            .buttonStyle(.plain)
+                        }
                     }
                 }
+                .padding(isIPad ? AppSpacing.md : AppSpacing.sm)
+                .background(Color.AppTheme.warmCream)
+                .cornerRadius(AppSpacing.cardCornerRadius)
             }
-            .padding(isIPad ? AppSpacing.md : AppSpacing.sm)
-            .background(Color.AppTheme.warmCream)
-            .cornerRadius(AppSpacing.cardCornerRadius)
         }
-        .frame(maxWidth: isIPad ? 500 : .infinity)
+        // Leading, so a closed message leaves Pip on the left instead of centered.
+        .frame(maxWidth: isIPad ? 500 : .infinity, alignment: .leading)
         .padding(.horizontal, AppSpacing.md)
         .onAppear {
             // Pick the random fallback tip exactly once per appearance.
             if resolvedTip.isEmpty {
                 resolvedTip = gardeningTips.randomElement() ?? "Happy gardening!"
             }
-            PipVoice.shared.speak(displayedMessage)
+            if showsMessage { PipVoice.shared.speak(displayedMessage) }
         }
         .onChange(of: recipeMessage) { _, _ in
             // Smart-tip updates (Apple Intelligence regen on Pip tap) flow
             // through `recipeMessage`. Re-speak whenever it changes.
-            PipVoice.shared.speak(displayedMessage)
+            if showsMessage { PipVoice.shared.speak(displayedMessage) }
+        }
+        .onChange(of: showsMessage) { _, isShown in
+            if isShown { PipVoice.shared.speak(displayedMessage) }
         }
     }
 

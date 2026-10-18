@@ -317,7 +317,7 @@ struct AskPipView: View {
         VStack(alignment: .leading, spacing: AppSpacing.md) {
             // Pip's intro message
             HStack {
-                PipSpeechBubble(message: pipMessage, pose: .wavingFrame01, showsLabel: false)
+                PipSpeechBubble(message: pipMessage, pose: .wavingFrame01)
                 Spacer(minLength: 20)
             }
 
