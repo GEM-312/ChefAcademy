@@ -92,6 +92,23 @@ The final version shifts the shop's brightness and colour (Lab L curve + a\*/b\*
 
 **Where.** `Assets.xcassets/Backgrounds/bg_shop.imageset`, `Assets.xcassets/FarmItems/`, `FarmShopView.swift` (`shopMapSection`, opacity 0.93).
 
+### 8. The new garden looked washed out, whatever the art
+
+**Symptom.** The new orchard garden looked faded next to the kitchen and shop, even after its colors were matched to the kitchen.
+
+**Cause.** The art was never the problem, though it took three art passes to see that:
+1. matched to the kitchen as shown, then faded again at 93% (lightened twice)
+2. matched to the kitchen's art
+3. matched to the shop's darker lines
+
+Marina said to check the code, and that's where it was: `SeasonalOverlayView` lays a **pale color gradient over the whole garden map**, which in fall is peach and gray at 30% / 20% / 10%. A veil over the whole picture washes out every line, so no amount of re-coloring the art could fix it.
+
+**Solution.** The full-map tint was removed, and the seasonal particles (leaves, petals, sparkles) still show the season. The 93% fade came off the garden, and the art is the version matched to the kitchen as shown.
+
+**How it works.** The order of layers matters as much as the colors in them: anything drawn *over* a picture changes how it looks, whatever the picture's own pixels are. Lesson: when a whole screen looks washed out, look for overlays and opacity in the code before re-grading the art.
+
+**Where.** `WeatherOverlayView.swift` (`SeasonalOverlayView`), `GardenWeatherService.swift` (`gradientColors` removed), `GardenView.swift` (`gardenMapSection`), commit `01a95fb`.
+
 ---
 
 ## 2026-10-17
