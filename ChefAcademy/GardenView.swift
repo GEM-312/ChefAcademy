@@ -612,18 +612,20 @@ struct GardenView: View {
     @State private var editMode = false
 
     @State private var gardenSceneItems: [SceneItem] = [
-        // Garden rows; row0 unlocks first. Positions placed by Marina in edit
-        // mode (2026-10-08). Depth size comes from each row's y, not its number.
-        SceneItem(id: "row0", label: "Row 1", icon: "🌱", xPercent: 0.67, yPercent: 0.78),
-        SceneItem(id: "row1", label: "Row 2", icon: "🌱", xPercent: 0.14, yPercent: 0.84),
-        SceneItem(id: "row2", label: "Row 3", icon: "🌱", xPercent: 0.12, yPercent: 0.70),
-        SceneItem(id: "row3", label: "Row 4", icon: "🌱", xPercent: 0.56, yPercent: 0.70),
-        SceneItem(id: "row4", label: "Row 5", icon: "🌱", xPercent: 0.69, yPercent: 0.61),
-        SceneItem(id: "row5", label: "Row 6", icon: "🌱", xPercent: 0.78, yPercent: 0.56),
-        SceneItem(id: "row6", label: "Row 7", icon: "🌱", xPercent: 0.12, yPercent: 0.58),
-        SceneItem(id: "row7", label: "Row 8", icon: "🌱", xPercent: 0.18, yPercent: 0.48),
-        SceneItem(id: "row8", label: "Row 9", icon: "🌱", xPercent: 0.33, yPercent: 0.53),
-        SceneItem(id: "row9", label: "Row 10", icon: "🌱", xPercent: 0.47, yPercent: 0.44),
+        // Garden rows = the 10 painted raised beds (Oct 18 2026), each point the
+        // centre of a bed's soil, measured from the art. Front beds first:
+        // row0 / row1 unlock at level 1, the back pair last. Depth size comes
+        // from each row's y, not its number. Fine-tune in edit mode.
+        SceneItem(id: "row0", label: "Row 1", icon: "🌱", xPercent: 0.233, yPercent: 0.651),
+        SceneItem(id: "row1", label: "Row 2", icon: "🌱", xPercent: 0.765, yPercent: 0.651),
+        SceneItem(id: "row2", label: "Row 3", icon: "🌱", xPercent: 0.260, yPercent: 0.548),
+        SceneItem(id: "row3", label: "Row 4", icon: "🌱", xPercent: 0.738, yPercent: 0.548),
+        SceneItem(id: "row4", label: "Row 5", icon: "🌱", xPercent: 0.281, yPercent: 0.464),
+        SceneItem(id: "row5", label: "Row 6", icon: "🌱", xPercent: 0.718, yPercent: 0.463),
+        SceneItem(id: "row6", label: "Row 7", icon: "🌱", xPercent: 0.301, yPercent: 0.390),
+        SceneItem(id: "row7", label: "Row 8", icon: "🌱", xPercent: 0.699, yPercent: 0.390),
+        SceneItem(id: "row8", label: "Row 9", icon: "🌱", xPercent: 0.321, yPercent: 0.330),
+        SceneItem(id: "row9", label: "Row 10", icon: "🌱", xPercent: 0.681, yPercent: 0.329),
         SceneItem(id: "pip", label: "Pip Idle", icon: "🦔", xPercent: 0.50, yPercent: 0.90),
         SceneItem(id: "walk0", label: "Walk 0", icon: "👣", xPercent: 0.25, yPercent: 0.88),
         SceneItem(id: "walk1", label: "Walk 1", icon: "👣", xPercent: 0.38, yPercent: 0.72),
@@ -941,15 +943,17 @@ struct GardenView: View {
     private static let spotWidth: CGFloat = 100
     /// A full-size (nearest) row spans this fraction of the map width.
     private static let rowWidthFraction: CGFloat = 0.82
-    /// Depth from screen height: a row at `nearY` (low on the map) draws at
-    /// `nearScale`, one at `farY` (high, by the trees) at `farScale`.
-    /// Marina 2026-10-08: rows 35% smaller than first pass (1.1 / 0.75).
-    /// Far spots stay ≈ 49pt wide; PlotView's tap-anywhere bug rescue keeps
-    /// far bug plots hittable.
-    private static let nearScale: CGFloat = 0.72
-    private static let farScale: CGFloat = 0.49
-    private static let nearY: CGFloat = 0.84
-    private static let farY: CGFloat = 0.44
+    /// Depth from screen height: a row at `nearY` (the front beds) draws at
+    /// `nearScale`, one at `farY` (the back beds, by the fruit trees) at `farScale`.
+    /// Oct 18 2026: the beds are painted into garden_map_background (5 tiers ×
+    /// 2 raised beds). Values measured from the art: front soil ≈ 38% of the
+    /// map width at y 0.651, back ≈ 25% at y 0.329; a row's 3 spots fill ~95%
+    /// of its bed. Back spots are ≈ 32pt on iPhone; PlotView's tap-anywhere
+    /// bug rescue keeps them hittable.
+    private static let nearScale: CGFloat = 0.443
+    private static let farScale: CGFloat = 0.293
+    private static let nearY: CGFloat = 0.651
+    private static let farY: CGFloat = 0.329
 
     /// Row indices ordered top-of-map first, for back-to-front drawing.
     private var rowsByDepth: [Int] {
@@ -967,12 +971,8 @@ struct GardenView: View {
             * (Self.nearScale + (Self.farScale - Self.nearScale) * depth)
         let unlocked = row < GardenPlot.unlockedRows(forLevel: gameState.playerLevel)
 
+        // No soil picture: the raised bed is painted into the background.
         return ZStack {
-            Image("garden_plot_row")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: Self.spotWidth * CGFloat(perRow))
-
             HStack(spacing: 0) {
                 ForEach(0..<perRow, id: \.self) { slot in
                     gardenPlotSpot(index: row * perRow + slot)

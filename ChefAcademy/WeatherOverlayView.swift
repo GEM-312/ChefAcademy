@@ -569,14 +569,9 @@ struct SeasonalOverlayView: View {
 
     var body: some View {
         ZStack {
-            // Gradient tint
-            LinearGradient(
-                colors: season.gradientColors,
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(width: mapWidth, height: mapHeight)
-            .allowsHitTesting(false)
+            // No full-map gradient tint (Oct 18 2026): it laid a pale veil over the
+            // whole garden picture and washed out its lines (Marina: "the whole
+            // background is faded"). The season shows through the particles.
 
             // Seasonal particles
             switch season {

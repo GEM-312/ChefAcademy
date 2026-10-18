@@ -175,36 +175,6 @@ enum GardenSeason: String, CaseIterable {
         }
     }
 
-    /// Gradient colors for the seasonal overlay (top → bottom, subtle)
-    var gradientColors: [Color] {
-        switch self {
-        case .spring:
-            return [
-                Color.AppTheme.springGradientTop.opacity(0.25),
-                Color.AppTheme.springGradientBlossom.opacity(0.15),
-                Color.clear
-            ]
-        case .summer:
-            return [
-                Color.AppTheme.summerGradientTop.opacity(0.2),
-                Color.AppTheme.summerGradientWarm.opacity(0.1),
-                Color.clear
-            ]
-        case .fall:
-            return [
-                Color.AppTheme.fallGradientTop.opacity(0.3),
-                Color.AppTheme.fallGradientMid.opacity(0.2),
-                Color.AppTheme.summerGradientTop.opacity(0.1)
-            ]
-        case .winter:
-            return [
-                Color.AppTheme.frostBlue.opacity(0.3),
-                Color.AppTheme.winterGradientMid.opacity(0.15),
-                Color.AppTheme.winterGradientBot.opacity(0.2)
-            ]
-        }
-    }
-
     /// Pip tip about the season
     var pipTip: String {
         switch self {
