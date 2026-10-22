@@ -321,13 +321,15 @@ struct AdaptiveCardSize {
     }
 
     /// Square size of the flying ingredient image between pantry / counter / stove.
+    /// iPad is 50% bigger than it was (100 → 150, Marina, Oct 22).
     static func kitchenFlyingItem(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
-        sizeClass == .compact ? 80 : 100
+        sizeClass == .compact ? 80 : 150
     }
 
     /// Square size of the small ingredient images stacked on the counter.
+    /// iPad is 50% bigger than it was (60 → 90, Marina, Oct 22).
     static func kitchenGatheredItem(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
-        sizeClass == .compact ? 50 : 60
+        sizeClass == .compact ? 50 : 90
     }
 
     /// Square image size for "Ready to Cook!" recipe rows in the bottom panel.
@@ -405,8 +407,6 @@ extension View {
     }
 }
 
-// MARK: - Trailing Fade
-//
 // MARK: - Zoom
 //
 // `scaleEffect` alone only magnifies the drawing: the view keeps its old size
@@ -469,6 +469,8 @@ private struct ZoomToFitModifier: ViewModifier {
     }
 }
 
+// MARK: - Trailing Fade
+//
 // A non-interactive gradient on the right edge that signals "more content
 // is over here" — gives kids an at-rest scroll cue on horizontal carousels
 // where iOS's default scrollbar only appears mid-gesture. Defaults to the

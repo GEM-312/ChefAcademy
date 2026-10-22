@@ -78,8 +78,8 @@ struct KitchenView: View {
     @State private var editMode = false
 
     @State private var sceneItems: [SceneItem] = [
-        SceneItem(id: "counter", label: "Counter", icon: "🍽️", xPercent: 0.34, yPercent: 0.68),
-        SceneItem(id: "stove", label: "Stove", icon: "🔥", xPercent: 0.88, yPercent: 0.68),
+        SceneItem(id: "counter", label: "Counter", icon: "🍽️", xPercent: 0.33, yPercent: 0.63),
+        SceneItem(id: "stove", label: "Stove", icon: "🔥", xPercent: 0.88, yPercent: 0.63),
         SceneItem(id: "pantry", label: "Pantry", icon: "📦", xPercent: 0.45, yPercent: 0.78),
         // Where Pip's FEET stand on the floor (Oct 22 2026), so any Pip size
         // stands right. 0.95 = where they stood on iPhone before.
