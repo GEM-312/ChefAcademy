@@ -25,6 +25,9 @@ struct PlotView: View {
     /// during the watering animation (girl from the left, boy from the right).
     var playerGender: Gender = .girl
     var rewardLabel: String = "+2 XP"
+    /// Called when the care kid appears (true) or leaves (false), so the
+    /// garden can draw this spot above its row neighbours while he's here.
+    var onKidVisibleChange: (Bool) -> Void = { _ in }
 
     @State private var isAnimating = false
 
@@ -51,6 +54,9 @@ struct PlotView: View {
 
     // Completion
     @State private var xpRewardVisible = false
+
+    /// The kid shows while watering and during a weed / bug care animation.
+    private var isKidVisible: Bool { isWatering || careAction != nil }
 
     var body: some View {
         ZStack {
@@ -99,10 +105,14 @@ struct PlotView: View {
             // Reset care states when plot state changes
             resetCareStates()
         }
+        .onChange(of: isKidVisible) { _, visible in
+            onKidVisibleChange(visible)
+        }
         .onDisappear {
             waterTimer?.invalidate()
             waterTimer = nil
             careHideTask?.cancel()
+            if isKidVisible { onKidVisibleChange(false) }
         }
     }
 

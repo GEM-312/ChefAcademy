@@ -587,6 +587,9 @@ struct GardenView: View {
     // Seed info full-screen cover
     @State private var selectedSeed: Seed?
 
+    // The spot whose care kid is showing; drawn above its row neighbours
+    @State private var plotShowingKid: Int?
+
     // Visitor greeting
     @State private var showVisitorGreeting = false
 
@@ -930,7 +933,14 @@ struct GardenView: View {
                         }
                     },
                     playerGender: sessionManager.activeProfile?.gender ?? .girl,
-                    rewardLabel: isVisiting ? "+5 🪙" : "+2 XP"
+                    rewardLabel: isVisiting ? "+5 🪙" : "+2 XP",
+                    onKidVisibleChange: { visible in
+                        if visible {
+                            plotShowingKid = index
+                        } else if plotShowingKid == index {
+                            plotShowingKid = nil   // another spot's kid may have taken over
+                        }
+                    }
                 )
                 .frame(width: Self.spotWidth, height: Self.spotWidth)
             }
@@ -972,10 +982,15 @@ struct GardenView: View {
         let unlocked = row < GardenPlot.unlockedRows(forLevel: gameState.playerLevel)
 
         // No soil picture: the raised bed is painted into the background.
+        // Spots draw left to right, so the kid (drawn by his own spot, standing
+        // on the next one) would sit under his neighbour's veggie. His spot is
+        // lifted to the top of the row; nearer rows still draw over his legs.
         return ZStack {
             HStack(spacing: 0) {
                 ForEach(0..<perRow, id: \.self) { slot in
-                    gardenPlotSpot(index: row * perRow + slot)
+                    let index = row * perRow + slot
+                    gardenPlotSpot(index: index)
+                        .zIndex(plotShowingKid == index ? 1 : 0)
                 }
             }
             .opacity(unlocked ? 1 : 0)
