@@ -678,23 +678,30 @@ struct GardenView: View {
                     Color.AppTheme.cream
                         .ignoresSafeArea()
 
-                    ScrollView(showsIndicators: false) {
-                        VStack(spacing: 0) {
+                    ScrollViewReader { scroller in
+                        ScrollView(showsIndicators: false) {
+                            VStack(spacing: 0) {
 
-                            // MARK: - Header (overlays the top of the map)
-                            headerView
-                                .padding(.top, AppSpacing.sm)
-                                .padding(.bottom, AppSpacing.sm)
+                                // MARK: - Header (overlays the top of the map)
+                                headerView
+                                    .padding(.top, AppSpacing.sm)
+                                    .padding(.bottom, AppSpacing.sm)
 
-                            // MARK: - Garden Map with Plot Spots
-                            gardenMapSection(screenWidth: screenWidth)
+                                // MARK: - Garden Map with Plot Spots
+                                gardenMapSection(screenWidth: screenWidth)
 
-                            // MARK: - Bottom Panel: Seeds & Harvest
-                            bottomPanel(width: screenWidth)
-                                .padding(.top, AppSpacing.md)
+                                // Scroll target: the map's bottom edge (Pip, gate, tools)
+                                Color.clear.frame(height: 0).id(Self.mapBottomID)
 
-                            Spacer(minLength: 100)
+                                // MARK: - Bottom Panel: Seeds & Harvest
+                                bottomPanel(width: screenWidth)
+                                    .padding(.top, AppSpacing.md)
+
+                                Spacer(minLength: 100)
+                            }
                         }
+                        // Open at the bottom of the map, where Pip stands, not at the trees on top
+                        .onAppear { scroller.scrollTo(Self.mapBottomID, anchor: .bottom) }
                     }
                 }
             }
@@ -1063,6 +1070,9 @@ struct GardenView: View {
     }
 
     // MARK: - Garden Row (3 planting spots on one soil row)
+
+    /// Scroll id of the map's bottom edge; the Garden opens scrolled to it.
+    private static let mapBottomID = "gardenMapBottom"
 
     /// Unscaled width of one planting spot; a row is three of them.
     private static let spotWidth: CGFloat = 100

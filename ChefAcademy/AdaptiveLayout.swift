@@ -177,9 +177,10 @@ struct AdaptiveCardSize {
         sizeClass == .compact ? 3 : 5
     }
 
-    /// Walking Pip sprite size in the kitchen scene
+    /// Walking Pip sprite size in the kitchen scene. iPad matches the Garden
+    /// Pip (~232 pt tall, Marina Oct 22); iPhone keeps 108.
     static func pipKitchenWalking(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
-        sizeClass == .compact ? 108 : 150
+        sizeClass == .compact ? 108 : 370
     }
 
     /// Extra scale for the Home map's location sprites. The narrow iPhone map
@@ -225,9 +226,9 @@ struct AdaptiveCardSize {
     }
 
     /// How far left of a kitchen station Pip stops on the floor, so he points
-    /// up at it without standing on its button.
+    /// up at it without standing on its button (iPad grew with the bigger Pip).
     static func kitchenPipStationGap(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
-        sizeClass == .compact ? 40 : 60
+        sizeClass == .compact ? 40 : 130
     }
 
     /// Height of the wooden signpost that points to the other places (Garden / Kitchen / Shop).

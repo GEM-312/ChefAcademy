@@ -40,24 +40,28 @@ struct FarmShopView: View {
                 Color.AppTheme.cream
                     .ignoresSafeArea()
 
-                ScrollView {
-                    VStack(spacing: 0) {
+                ScrollViewReader { scroller in
+                    ScrollView {
+                        VStack(spacing: 0) {
 
-                        // MARK: - Header
-                        shopHeader
-                            .padding(.top, AppSpacing.sm)
-                            .padding(.bottom, AppSpacing.sm)
+                            // MARK: - Header
+                            shopHeader
+                                .padding(.top, AppSpacing.sm)
+                                .padding(.bottom, AppSpacing.sm)
 
-                        // MARK: - Shop Scene (the shelves are the shop)
-                        shopMapSection
+                            // MARK: - Shop Scene (the shelves are the shop)
+                            shopMapSection
 
-                        // MARK: - My Pantry Section
-                        pantrySection
-                            .padding(.top, AppSpacing.lg)
-                            .padding(.horizontal, AppSpacing.md)
+                            // MARK: - My Pantry Section
+                            pantrySection
+                                .padding(.top, AppSpacing.lg)
+                                .padding(.horizontal, AppSpacing.md)
 
-                        Spacer(minLength: 100)
+                            Spacer(minLength: 100)
+                        }
                     }
+                    // Open with Pip behind the counter in the middle of the screen
+                    .onAppear { scroller.scrollTo(Self.pipScrollID, anchor: .center) }
                 }
             }
             .navigationBarHidden(true)
@@ -120,6 +124,8 @@ struct FarmShopView: View {
     private static let pipAboveCounter: CGFloat = 0.15
     /// Height of Pip's speech bubble: the open grass between the front crates and the flowers.
     private static let bubbleY: CGFloat = 0.81
+    /// Scroll id of Pip behind the counter; the Shop opens centered on him.
+    private static let pipScrollID = "shopPip"
 
     /// One item painted in the shop artwork, and its tap area (fractions: x0, y0, x1, y1).
     private struct ShelfSpot {
@@ -185,6 +191,13 @@ struct FarmShopView: View {
                     let postHeight = AdaptiveCardSize.signpostHeight(for: sizeClass)
 
                     ZStack {
+                        // Scroll target: a 1×1 point on Pip. The id goes BEFORE
+                        // .position, or it would mark the whole map, not Pip.
+                        Color.clear
+                            .frame(width: 1, height: 1)
+                            .id(Self.pipScrollID)
+                            .position(pipCenter)
+
                         PipCharacterView(pose: .neutral, size: .custom(pipSize))
                             .onTapGesture { showPipBubble = true }
                             .position(pipCenter)

@@ -81,10 +81,15 @@ struct KitchenView: View {
         SceneItem(id: "counter", label: "Counter", icon: "🍽️", xPercent: 0.34, yPercent: 0.68),
         SceneItem(id: "stove", label: "Stove", icon: "🔥", xPercent: 0.88, yPercent: 0.68),
         SceneItem(id: "pantry", label: "Pantry", icon: "📦", xPercent: 0.45, yPercent: 0.78),
-        SceneItem(id: "pip", label: "Pip", icon: "🦔", xPercent: 0.71, yPercent: 0.90),
+        // Where Pip's FEET stand on the floor (Oct 22 2026), so any Pip size
+        // stands right. 0.95 = where they stood on iPhone before.
+        SceneItem(id: "pip", label: "Pip", icon: "🦔", xPercent: 0.71, yPercent: 0.95),
         SceneItem(id: "today", label: "Today's Recipe", icon: "📜", xPercent: 0.20, yPercent: 0.89),
         SceneItem(id: "signpost", label: "Signpost", icon: "🪧", xPercent: 0.86, yPercent: 0.99),
     ]
+
+    /// Scroll id of the map's bottom edge; the Kitchen opens scrolled to it.
+    private static let mapBottomID = "kitchenMapBottom"
 
     var body: some View {
         // C11: NavigationStack (iOS 16+) replaces deprecated NavigationView.
@@ -101,19 +106,26 @@ struct KitchenView: View {
                     // would shrink the picture into a tiny centered box on iPad
                     // landscape. Keep the whole screen scrollable so the map
                     // renders at full width and the bottom panel flows below.
-                    ScrollView(showsIndicators: false) {
-                        VStack(spacing: 0) {
-                            kitchenHeader
-                                .padding(.top, AppSpacing.sm)
-                                .padding(.bottom, AppSpacing.sm)
+                    ScrollViewReader { scroller in
+                        ScrollView(showsIndicators: false) {
+                            VStack(spacing: 0) {
+                                kitchenHeader
+                                    .padding(.top, AppSpacing.sm)
+                                    .padding(.bottom, AppSpacing.sm)
 
-                            kitchenMapSection(screenWidth: screenWidth)
+                                kitchenMapSection(screenWidth: screenWidth)
 
-                            bottomPanel
-                                .padding(.top, AppSpacing.md)
+                                // Scroll target: the map's bottom edge (Pip on the floor)
+                                Color.clear.frame(height: 0).id(Self.mapBottomID)
 
-                            Spacer(minLength: AppSpacing.xxl * 2)
+                                bottomPanel
+                                    .padding(.top, AppSpacing.md)
+
+                                Spacer(minLength: AppSpacing.xxl * 2)
+                            }
                         }
+                        // Open at the bottom of the map, where Pip stands
+                        .onAppear { scroller.scrollTo(Self.mapBottomID, anchor: .bottom) }
                     }
                 }
             }
@@ -422,7 +434,7 @@ struct KitchenView: View {
                         // shelves. Re-place him at home whenever the size changes while idle.
                         .onChange(of: CGSize(width: w, height: h), initial: true) { _, _ in
                             if cookingPhase == .browsing && !pipEngine.isMoving {
-                                pipEngine.position = pos(for: "pip", w: w, h: h)
+                                pipEngine.position = pipHome(w: w, h: h)
                             }
                         }
                         .onChange(of: cookingPhase) { _, newPhase in
@@ -472,6 +484,11 @@ struct KitchenView: View {
     // above the frame's bottom (same art as the Home map walker).
     private static let walkArtFill: CGFloat = 0.625
     private static let walkArtFoot: CGFloat = 0.18
+    // The idle "pip_cooking" pose fills more of its square (measured Oct 22),
+    // so it's drawn smaller and lowered to match the walker: no size jump or
+    // sinking feet when he stops.
+    private static let cookingArtFill: CGFloat = 0.84
+    private static let cookingArtFoot: CGFloat = 0.06
 
     /// Where Pip's feet touch the floor, from the center of his walk frame.
     private func pipFeetY(frameSize: CGFloat) -> CGFloat {
@@ -493,22 +510,35 @@ struct KitchenView: View {
                 .aspectRatio(contentMode: .fit)
                 .frame(height: frameSize * Self.walkArtFill)
                 .shadow(color: Color.AppTheme.sepia.opacity(0.15), radius: 4, x: 0, y: 3)
-        } else {
+        } else if pipEngine.isMoving {
             Image(currentPipFrame)
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: frameSize, height: frameSize)
                 .scaleEffect(x: pipEngine.facingRight ? 1 : -1, y: 1)
                 .shadow(color: Color.AppTheme.sepia.opacity(0.15), radius: 4, x: 0, y: 3)
+        } else {
+            let side = frameSize * Self.walkArtFill / Self.cookingArtFill
+            Image(currentPipFrame)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .frame(width: side, height: side)
+                .scaleEffect(x: pipEngine.facingRight ? 1 : -1, y: 1)
+                .shadow(color: Color.AppTheme.sepia.opacity(0.15), radius: 4, x: 0, y: 3)
         }
     }
 
-    /// The pointing pose is shorter than the walk frame, so its center sits
+    /// The still poses are shorter than the walk frame, so their center sits
     /// higher to keep the feet on the same floor spot.
     private func pipSpriteCenter(frameSize: CGFloat) -> CGPoint {
-        guard pipIsPointing else { return pipEngine.position }
-        let pointHeight = frameSize * Self.walkArtFill
-        return CGPoint(x: pipEngine.position.x, y: pipFeetY(frameSize: frameSize) - pointHeight / 2)
+        guard !pipEngine.isMoving else { return pipEngine.position }
+        let feet = pipFeetY(frameSize: frameSize)
+        if pipIsPointing {
+            let pointHeight = frameSize * Self.walkArtFill
+            return CGPoint(x: pipEngine.position.x, y: feet - pointHeight / 2)
+        }
+        let side = frameSize * Self.walkArtFill / Self.cookingArtFill
+        return CGPoint(x: pipEngine.position.x, y: feet + side * Self.cookingArtFoot - side / 2)
     }
 
     private var currentPipFrame: String {
@@ -520,8 +550,16 @@ struct KitchenView: View {
         return "pip_cooking"   // idle pose when not walking
     }
 
+    /// Pip's home as the walk engine's position (his frame's center): the
+    /// "pip" scene spot is where his feet stand, so lift by the frame's foot gap.
+    private func pipHome(w: CGFloat, h: CGFloat) -> CGPoint {
+        let feet = pos(for: "pip", w: w, h: h)
+        let frame = AdaptiveCardSize.pipKitchenWalking(for: sizeClass)
+        return CGPoint(x: feet.x, y: feet.y - frame * (0.5 - Self.walkArtFoot))
+    }
+
     private func walkPipForPhase(_ phase: KitchenCookingPhase, w: CGFloat, h: CGFloat) {
-        let home = pos(for: "pip", w: w, h: h)
+        let home = pipHome(w: w, h: h)
         let target: CGPoint
         switch phase {
         case .browsing:     target = home
