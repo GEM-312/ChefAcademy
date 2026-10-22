@@ -36,6 +36,13 @@ struct PlantingSheet: View {
     @State private var expandedVeg: VegetableType?
     @State private var npcAppeared: Bool = false
 
+    // iPad: the sheet is as tall as the page it shows (Marina, Oct 22), not
+    // the whole screen. Each page reports its content height; the bars and
+    // insets are the sheet's height minus the page area's.
+    @State private var contentHeight: CGFloat = 0
+    @State private var sheetHeight: CGFloat = 0
+    @State private var pageHeight: CGFloat = 0
+
     // Adaptive sizes
     private var isIPad: Bool { sizeClass != .compact }
     private var seedImageSize: CGFloat { isIPad ? 120 : 80 }
@@ -61,6 +68,7 @@ struct PlantingSheet: View {
                         .zIndex(10)
                 }
             }
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { pageHeight = $0 }
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -90,8 +98,19 @@ struct PlantingSheet: View {
                 }
             }
         }
-        .presentationDetents(isIPad ? [.large] : [.medium, .large])
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { sheetHeight = $0 }
+        // iPad: just the page's height (a taller page, like the seed grid, is
+        // capped by the screen and scrolls). iPhone keeps medium / large.
+        .presentationDetents(iPadSheetHeight.map { [.height($0)] } ?? [.medium, .large])
         .presentationDragIndicator(.visible)
+    }
+
+    /// The page's content plus the sheet's bars and insets; nil on iPhone and
+    /// until measured. Asks the DEVICE, not `isIPad`: a sheet on iPad is narrow,
+    /// so its own size class reads compact (the console showed iPad=false).
+    private var iPadSheetHeight: CGFloat? {
+        guard DeviceInfo.isIPad, contentHeight > 0 else { return nil }
+        return contentHeight + max(0, sheetHeight - pageHeight)
     }
 
     // MARK: - Layer 1: Seed Grid
@@ -136,6 +155,7 @@ struct PlantingSheet: View {
 
                 Spacer(minLength: 40)
             }
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { contentHeight = $0 }
         }
     }
 
@@ -302,6 +322,7 @@ struct PlantingSheet: View {
 
                 Spacer(minLength: 40)
             }
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { contentHeight = $0 }
         }
     }
 
@@ -322,6 +343,7 @@ struct PlantingSheet: View {
 
         // Plant in the plot
         gameState.gardenPlots[plotIndex].plant(seed.vegetableType)
+        PipTutorial.gardenPlanted.markDone(for: gameState.activeProfileID)   // "Plant" label retires
 
         // Close the sheet
         onDismiss()
@@ -343,6 +365,5 @@ struct PlantingSheet: View {
 
 #Preview {
     PlantingSheet(plotIndex: 0, onDismiss: {})
-        PipTutorial.gardenPlanted.markDone(for: gameState.activeProfileID)   // "Plant" label retires
         .environmentObject(GameState.preview)
 }
