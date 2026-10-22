@@ -211,8 +211,8 @@ enum AnimationConstants {
     static let itemFlyCleanup: TimeInterval = 0.7   // total step length before advancing
     static let stovePreRoll: TimeInterval = 1.2     // stove ignition delay before mini-game
 
-    // Garden tools — how long the kid holds the watering can on the rack to fill it
-    static let canFillDuration: TimeInterval = 1.0
+    // Garden tools — taps on the watering can (on the rack) to pump it full
+    static let canPumpsToFill = 3
     // Garden tools — the needed tool glows and grows this long / this much
     // when the kid tries a job without it
     static let toolHintDuration: TimeInterval = 2.0

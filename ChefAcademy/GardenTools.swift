@@ -4,7 +4,7 @@
 //
 //  The garden tools on the fence by the gate: shovel, fork and watering can.
 //  Tap a tool to pick it up, tap it again (or the "in hand" badge) to put it
-//  back. The watering can is filled by holding it on the rack.
+//  back. The watering can is filled by tapping it on the rack, a pump per tap.
 //
 //  Jobs need their tool: fork = loosen an empty spot's hard soil, shovel =
 //  plant (in loosened soil) + harvest, a full can = water (one fill waters one
@@ -44,7 +44,7 @@ enum GardenTool: CaseIterable {
         switch self {
         case .fork:        return "This soil is hard! Take the fork and loosen it, so seeds can grow."
         case .shovel:      return "Take the shovel! It plants seeds, and digs up veggies when they're ready."
-        case .wateringCan: return "A thirsty plant! Hold the watering can to fill it, then hold the plant to water it."
+        case .wateringCan: return "A thirsty plant! Tap the watering can to fill it, then hold the plant to water it."
         }
     }
 
@@ -88,9 +88,6 @@ struct GardenToolRack: View {
     /// The tool the kid needs right now (they tried a job without it); it glows.
     var hintTool: GardenTool? = nil
 
-    @State private var isPressingCan = false
-    @State private var fillTask: Task<Void, Never>?
-
     var body: some View {
         ZStack {
             ForEach(GardenTool.allCases, id: \.self) { tool in
@@ -103,7 +100,6 @@ struct GardenToolRack: View {
                 fillMeter
             }
         }
-        .onDisappear { fillTask?.cancel() }
     }
 
     private func frame(for tool: GardenTool) -> CGRect {
@@ -128,19 +124,7 @@ struct GardenToolRack: View {
             .accessibilityAddTraits(.isButton)
 
         if tool == .wateringCan {
-            // Press = pick up (if needed) and fill while held; a full can in
-            // hand goes back with a tap. A long press (not a DragGesture)
-            // because the map scrolls: when the ScrollView takes a touch, a
-            // drag never gets .onEnded, but onPressingChanged still reports
-            // false, so a press can never get stuck "on".
-            picture.onLongPressGesture(
-                minimumDuration: AnimationConstants.canFillDuration,
-                maximumDistance: AppSpacing.minTapTarget,
-                perform: {},
-                onPressingChanged: { pressing in
-                    if pressing { pressCan() } else { releaseCan() }
-                }
-            )
+            picture.onTapGesture { pumpCan() }
         } else {
             picture.onTapGesture { toggle(tool) }
         }
@@ -151,7 +135,7 @@ struct GardenToolRack: View {
     private var fillMeter: some View {
         let f = frame(for: .wateringCan)
         return VStack(spacing: AppSpacing.xxs) {
-            Text(isPressingCan ? "Filling..." : "Hold to fill!")
+            Text("Tap to fill!")
                 .font(.AppTheme.micro.bold())
                 .foregroundColor(Color.AppTheme.sage)
             WaterLevelBar(level: canFill)
@@ -168,39 +152,26 @@ struct GardenToolRack: View {
 
     private func toggle(_ tool: GardenTool) {
         Haptic.selection()
-        fillTask?.cancel()
         withAnimation(AnimationConstants.springQuick) {
             heldTool = (heldTool == tool) ? nil : tool
         }
     }
 
-    private func pressCan() {
-        guard !isPressingCan else { return }
-        isPressingCan = true
+    /// Each tap pumps one step of water in (the first tap also picks the can
+    /// up); a tap on a full can in hand puts it back. Taps, not a hold: the
+    /// map scrolls, and a held finger drifts until the ScrollView steals it.
+    private func pumpCan() {
         if heldTool == .wateringCan && canFill >= 1 {
-            toggle(.wateringCan)                 // full can in hand: tap puts it back
+            toggle(.wateringCan)
             return
         }
         if heldTool != .wateringCan { toggle(.wateringCan) }
-        startFilling()
-    }
-
-    private func releaseCan() {
-        isPressingCan = false
-        fillTask?.cancel()                       // a half-filled can keeps its water
-    }
-
-    private func startFilling() {
-        fillTask?.cancel()
-        fillTask = Task { @MainActor in
-            let tick = 0.05
-            while canFill < 1 {
-                try? await Task.sleep(for: .seconds(tick))
-                guard !Task.isCancelled else { return }
-                canFill = min(1, canFill + tick / AnimationConstants.canFillDuration)
-            }
-            Haptic.notify(.success)
+        // Snap to whole pumps so three thirds make exactly 1 (no 0.9999 can)
+        let pumps = Double(AnimationConstants.canPumpsToFill)
+        withAnimation(AnimationConstants.springQuick) {
+            canFill = min(1, ((canFill * pumps).rounded() + 1) / pumps)
         }
+        if canFill >= 1 { Haptic.notify(.success) } else { Haptic.impact(.light) }
     }
 }
 
