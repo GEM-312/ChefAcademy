@@ -176,6 +176,22 @@ enum PipTutorial: String {
     case cookCrack, cookStir, cookSeason, cookTimer, cookAssemble
     // Garden tools: the first time a kid needs each tool, Pip explains it.
     case gardenFork, gardenShovel, gardenWateringCan
+    // Garden jobs: a spot's label ("Loosen!", "Water me!"…) guides the kid
+    // until they've done that job once (GardenView marks them).
+    case gardenLoosened, gardenPlanted, gardenWatered
+    case gardenWeeded, gardenBugsRescued, gardenHarvested
+
+    /// The job guide for what a garden spot needs now (nil while it grows).
+    static func gardenGuide(for plot: GardenPlot) -> PipTutorial? {
+        switch plot.state {
+        case .empty:        return plot.soilLoosened ? .gardenPlanted : .gardenLoosened
+        case .needsWater:   return .gardenWatered
+        case .needsWeeding: return .gardenWeeded
+        case .hasBugs:      return .gardenBugsRescued
+        case .ready:        return .gardenHarvested
+        case .growing:      return nil
+        }
+    }
 
     private func key(for profileID: UUID?) -> String {
         "pipTutorial_\(rawValue)_\(profileID?.uuidString ?? "legacy")"

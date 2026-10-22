@@ -28,6 +28,9 @@ struct PlotView: View {
     /// Called when the care kid appears (true) or leaves (false), so the
     /// garden can draw this spot above its row neighbours while he's here.
     var onKidVisibleChange: (Bool) -> Void = { _ in }
+    /// Show the job label ("Loosen!", "Water me!"…): only until the kid has
+    /// done this job once (PipTutorial.gardenGuide).
+    var showsGuide: Bool = true
     /// Garden tools: watering needs a full can (weeds and bugs are by hand).
     /// Loosening, planting and harvest taps are checked by GardenView.
     var heldTool: GardenTool? = nil
@@ -177,15 +180,20 @@ struct PlotView: View {
         VStack(spacing: 6) {
             ZStack {
                 Image(systemName: "plus")
-                    .font(.AppTheme.rounded(size: 24, weight: .medium))
-                    .foregroundColor(Color.AppTheme.sage)
+                    .font(.AppTheme.rounded(size: 24, weight: .bold))
+                    .foregroundColor(Color.AppTheme.leafGreen)
+                    .padding(AppSpacing.xs)
+                    .background(Circle().fill(Color.AppTheme.warmCream.opacity(0.9)))
             }
 
-            Text(plot.soilLoosened ? "Plant" : "Loosen!")
-                .font(.AppTheme.rounded(size: 11, weight: .medium))
-                .foregroundColor(Color.AppTheme.sepia)
+            if showsGuide {
+                jobLabel(plot.soilLoosened ? "Plant" : "Loosen!", color: Color.AppTheme.leafGreen)
+            }
         }
         .scaleEffect(soilBounce ? AnimationConstants.soilLoosenScale : 1)
+        // The whole spot takes the tap, not just the "+" and its label
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .contentShape(Rectangle())
         .onChange(of: plot.soilLoosened) { _, loosened in
             guard loosened else { return }
             puff()
@@ -213,7 +221,7 @@ struct PlotView: View {
                             .fill(Color.AppTheme.parchment)
                             .frame(height: 6)
                         Capsule()
-                            .fill(Color.AppTheme.sage)
+                            .fill(Color.AppTheme.leafGreen)
                             .frame(width: geo.size.width * plot.growthProgress, height: 6)
                     }
                 }
@@ -278,14 +286,21 @@ struct PlotView: View {
                     .offset(x: 38, y: -25)
             }
 
-            Text("Harvest!")
-                .font(.AppTheme.rounded(size: 10, weight: .bold))
-                .foregroundColor(Color.AppTheme.goldenWheat)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(Color.AppTheme.warmCream.opacity(0.9))
-                .cornerRadius(AppSpacing.pillCornerRadius)
+            if showsGuide {
+                jobLabel("Harvest!", color: Color.AppTheme.goldenWheat)
+            }
         }
+    }
+
+    /// A spot's job word on a cream pill, so it reads on the dark soil.
+    private func jobLabel(_ text: String, color: Color) -> some View {
+        Text(text)
+            .font(.AppTheme.rounded(size: 10, weight: .bold))
+            .foregroundColor(color)
+            .padding(.horizontal, AppSpacing.xs)
+            .padding(.vertical, AppSpacing.xxs)
+            .background(Color.AppTheme.warmCream.opacity(0.9))
+            .cornerRadius(AppSpacing.pillCornerRadius)
     }
 
     // MARK: - Watering Plot (HOLD to water)
@@ -299,8 +314,7 @@ struct PlotView: View {
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 60, height: 60)
                         .rotationEffect(.degrees(isWatering ? 0 : -5))
-                        .opacity(0.5 + (Double(waterProgress) * 0.5))
-                        .scaleEffect(0.7 + (waterProgress * 0.3))
+                        .scaleEffect(0.7 + (waterProgress * 0.3))   // grows as it drinks
                 }
 
                 // Watering can appears when holding
@@ -327,14 +341,14 @@ struct PlotView: View {
                 // Progress ring
                 Circle()
                     .trim(from: 0, to: waterProgress)
-                    .stroke(Color.AppTheme.sage, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                    .stroke(Color.AppTheme.leafGreen, style: StrokeStyle(lineWidth: 3, lineCap: .round))
                     .frame(width: 85, height: 85)
                     .rotationEffect(.degrees(-90))
             }
 
-            Text(isWatering ? "Watering..." : "Hold me!")
-                .font(.AppTheme.rounded(size: 10, weight: .bold))
-                .foregroundColor(Color.AppTheme.sage)
+            if showsGuide {
+                jobLabel(isWatering ? "Watering..." : "Water me!", color: Color.AppTheme.leafGreen)
+            }
         }
         .overlay(alignment: playerGender == .girl ? .leading : .trailing) {
             // Kid character pours from the side — girl enters from the LEFT,
@@ -380,7 +394,6 @@ struct PlotView: View {
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 50, height: 50)
-                        .opacity(0.7)
                 }
 
                 // Weeds — swipe up to remove (the DragGesture below covers the
@@ -434,9 +447,9 @@ struct PlotView: View {
             )
 
             let remaining = weedsRemoved.filter { !$0 }.count
-            Text(remaining > 0 ? "Swipe up! (\(remaining) left)" : "Clean!")
-                .font(.AppTheme.rounded(size: 10, weight: .bold))
-                .foregroundColor(Color.AppTheme.sage)
+            if showsGuide {
+                jobLabel(remaining > 0 ? "Swipe up! (\(remaining) left)" : "Clean!", color: Color.AppTheme.leafGreen)
+            }
         }
     }
 
@@ -450,7 +463,6 @@ struct PlotView: View {
                         .resizable()
                         .aspectRatio(contentMode: .fit)
                         .frame(width: 55, height: 55)
-                        .opacity(0.7)
                 }
 
                 // Bugs — tap to rescue. Glyph sits inside a ≥44pt frame so the
@@ -492,9 +504,9 @@ struct PlotView: View {
             }
 
             let remaining = bugsRescued.filter { !$0 }.count
-            Text(remaining > 0 ? "Tap bugs! (\(remaining) left)" : "Rescued!")
-                .font(.AppTheme.rounded(size: 10, weight: .bold))
-                .foregroundColor(Color.AppTheme.terracotta)
+            if showsGuide {
+                jobLabel(remaining > 0 ? "Tap bugs! (\(remaining) left)" : "Rescued!", color: Color.AppTheme.carrotOrange)
+            }
         }
     }
 

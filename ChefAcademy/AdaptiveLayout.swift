@@ -200,6 +200,12 @@ struct AdaptiveCardSize {
         sizeClass == .compact ? 40 : 60
     }
 
+    /// Circle of the job bubble floating over a garden spot that needs the kid
+    /// (GardenJobBubble). Same size on every row, near or far.
+    static func gardenJobBubble(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 30 : 48
+    }
+
     /// Floating speech bubble width beside walking Pip
     static func pipBubbleWidth(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
         sizeClass == .compact ? 200 : 280

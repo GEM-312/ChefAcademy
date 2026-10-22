@@ -343,5 +343,6 @@ struct PlantingSheet: View {
 
 #Preview {
     PlantingSheet(plotIndex: 0, onDismiss: {})
+        PipTutorial.gardenPlanted.markDone(for: gameState.activeProfileID)   // "Plant" label retires
         .environmentObject(GameState.preview)
 }

@@ -44,6 +44,10 @@ extension Color {
         static let brightGreen = Color(hex: "4CAF50")             // high-energy "go" / success
         static let brightBlue = Color(hex: "2196F3")              // informational / secondary CTA
         static let sunflowerYellow = Color(hex: "FFD600")         // reward / celebration accent
+        // From Marina's Procreate swatch (RecipeArt/PipsKitchenGarden.swatches):
+        // garden spot labels, plant marker and growth bar, readable on the soil
+        static let leafGreen = Color(hex: "4E950E")               // garden "do this" (plant, water, weeds)
+        static let carrotOrange = Color(hex: "F76D08")            // garden trouble (bugs)
 
         // Weather icon tints — botanical-aligned, less saturated than Material.
         // Sunny + rainy reuse sunYellow / rainBlue defined above.

@@ -915,6 +915,17 @@ struct GardenView: View {
                                 .position(plotPos(for: "row\(row)", w: w, h: h))
                         }
 
+                        // What each spot needs, floating over it. Drawn here, not
+                        // in the scaled rows, so far rows get full-size bubbles.
+                        let bubbleSize = AdaptiveCardSize.gardenJobBubble(for: sizeClass)
+                        ForEach(jobBubbleSpots, id: \.self) { index in
+                            let plot = gameState.gardenPlots[index]
+                            if let icon = GardenJobBubble.icon(for: plot, showsSoilJob: !isVisiting && !isLearned(plot)) {
+                                GardenJobBubble(icon: icon, size: bubbleSize)
+                                    .position(jobBubblePoint(index, w: w, h: h, size: bubbleSize))
+                            }
+                        }
+
                         // Tools on the fence by the gate, in front of the beds
                         GardenToolRack(mapWidth: w, mapHeight: h, heldTool: $heldTool,
                                        canFill: $canFill, hintTool: hintTool)
@@ -1026,6 +1037,8 @@ struct GardenView: View {
                     onCareComplete: {
                         // Care interaction handled inside PlotView — just apply state changes
                         let state = gameState.gardenPlots[index].state
+                        // Done once: this job's label retires
+                        PipTutorial.gardenGuide(for: gameState.gardenPlots[index])?.markDone(for: guideProfileID)
                         let careAction: CareAction?
                         switch state {
                         case .needsWater:
@@ -1060,6 +1073,7 @@ struct GardenView: View {
                             plotShowingKid = nil   // another spot's kid may have taken over
                         }
                     },
+                    showsGuide: !isLearned(gameState.gardenPlots[index]),
                     heldTool: heldTool,
                     canIsFull: canFill >= 1,
                     onNeedTool: { showToolHint($0) }
@@ -1113,6 +1127,35 @@ struct GardenView: View {
         let slot = CGFloat(index % perRow) - CGFloat(perRow - 1) / 2
         let center = plotPos(for: "row\(row)", w: w, h: h)
         return CGPoint(x: center.x + slot * Self.spotWidth * rowScale(row, mapWidth: w), y: center.y)
+    }
+
+    /// Whose job guides count: the kid playing (a visitor keeps their own,
+    /// while gameState holds the sibling's garden).
+    private var guideProfileID: UUID? {
+        sessionManager.activeProfile?.id ?? gameState.activeProfileID
+    }
+
+    /// The kid has done this spot's current job once, so its label is gone.
+    private func isLearned(_ plot: GardenPlot) -> Bool {
+        PipTutorial.gardenGuide(for: plot)?.isDone(for: guideProfileID) ?? true
+    }
+
+    /// Spots that can show a job bubble: every spot in the unlocked rows.
+    private var jobBubbleSpots: [Int] {
+        let unlocked = GardenPlot.unlockedRows(forLevel: gameState.playerLevel) * GardenPlot.spotsPerRow
+        return Array(0..<min(unlocked, gameState.gardenPlots.count))
+    }
+
+    /// How high above a spot's center the bubble's tail tip sits, as a
+    /// fraction of the (scaled) spot: just over the veggie.
+    private static let bubbleTipLift: CGFloat = 0.35
+
+    /// Center of a spot's job bubble, its tail resting just above the veggie.
+    private func jobBubblePoint(_ index: Int, w: CGFloat, h: CGFloat, size: CGFloat) -> CGPoint {
+        let spot = spotCenter(index, w: w, h: h)
+        let scale = rowScale(index / GardenPlot.spotsPerRow, mapWidth: w)
+        let tipY = spot.y - Self.spotWidth * scale * Self.bubbleTipLift
+        return CGPoint(x: spot.x, y: tipY - GardenJobBubble.height(for: size) / 2)
     }
 
     private func gardenRow(_ row: Int, mapWidth: CGFloat) -> some View {
@@ -1339,6 +1382,7 @@ struct GardenView: View {
         case .fork:
             guard plot.state == .empty, !plot.soilLoosened else { return }
             gameState.gardenPlots[job.plotIndex].soilLoosened = true
+            PipTutorial.gardenLoosened.markDone(for: guideProfileID)
             Haptic.impact(.medium)
         case .shovel:
             if plot.state == .ready {
@@ -1495,6 +1539,7 @@ struct GardenView: View {
 
         // Get the harvest yield
         let yield = gameState.gardenPlots[index].harvest()
+        PipTutorial.gardenHarvested.markDone(for: guideProfileID)
 
         // Update the plot in gameState
         gameState.gardenPlots[index].vegetable = nil
