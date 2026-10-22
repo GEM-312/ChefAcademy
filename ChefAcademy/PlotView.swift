@@ -242,6 +242,9 @@ struct PlotView: View {
     /// Not true-to-life scale: each step must read clearly to a 6-year-old.
     private static let growthStageHeights: [CGFloat] = [0.25, 0.40, 0.55, 0.75]
     private static let plantHeight: CGFloat = 80
+    /// How far the growing sprout sits below the spot's centre, in spot points
+    /// (≈ 20 screenshot px on an iPad front row, Marina, Oct 22)
+    private static let sproutDrop: CGFloat = 8
 
     /// Seed → sprout → seedling → young plant, picked from growthProgress.
     /// Only for .growing — growthProgress reads 0 while a plot waits for care,
@@ -254,7 +257,9 @@ struct PlotView: View {
             .resizable()
             .aspectRatio(contentMode: .fit)
             .frame(height: height)
-            .offset(y: -height / 2)   // stand on the soil row instead of centring on it
+            // Centred like the grown veggies (the spot sits on the soil row),
+            // then nudged down so the sprout grows out of the soil
+            .offset(y: Self.sproutDrop)
             // Just planted: the seed falls into the soil (playSeedDrop)
             .offset(y: seedDropping ? -AnimationConstants.seedDropHeight : 0)
             .opacity(seedDropping ? 0 : 1)
