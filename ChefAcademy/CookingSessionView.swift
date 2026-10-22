@@ -304,6 +304,7 @@ struct CookingSessionView: View {
     let recipe: Recipe
     @EnvironmentObject var gameState: GameState
     @Environment(\.dismiss) var dismiss
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     // Step state machine
     @State private var steps: [CookingStep] = []
@@ -379,9 +380,14 @@ struct CookingSessionView: View {
                     // Mini-game area
                     if showPipTransition {
                         pipTransitionView
+                            .zoomedToFit(canvas: AdaptiveCardSize.cookingGameCanvas,
+                                         maxScale: AdaptiveCardSize.cookingMaxZoom)
                             .transition(.opacity)
                     } else if let step = currentStep {
                         miniGameView(for: step)
+                            // iPad: the whole game zooms to fill its area, art and touches together
+                            .zoomedToFit(canvas: AdaptiveCardSize.cookingGameCanvas,
+                                         maxScale: AdaptiveCardSize.cookingMaxZoom)
                             .id(step.id)
                             .transition(.asymmetric(
                                 insertion: .move(edge: .trailing).combined(with: .opacity),
@@ -617,7 +623,7 @@ struct CookingSessionView: View {
         if !learned || openedTipStepID == step.id {
             pipMessageView(step.pipMessage, onClose: learned ? { openedTipStepID = nil } : nil)
         } else {
-            PipCharacterView(pose: .neutral, size: .custom(44))
+            PipCharacterView(pose: .neutral, size: .custom(AdaptiveCardSize.cookingPipTip(for: sizeClass)))
                 .pipTapMeTag(isShown: true)
                 .onTapGesture {
                     openedTipStepID = step.id
@@ -631,7 +637,7 @@ struct CookingSessionView: View {
 
     private func pipMessageView(_ message: String, onClose: (() -> Void)? = nil) -> some View {
         HStack(spacing: AppSpacing.sm) {
-            PipCharacterView(pose: .neutral, size: .custom(44))
+            PipCharacterView(pose: .neutral, size: .custom(AdaptiveCardSize.cookingPipTip(for: sizeClass)))
             Text(message)
                 .font(.AppTheme.callout)
                 .foregroundColor(Color.AppTheme.sepia)

@@ -190,6 +190,12 @@ struct ChopMiniGame: View {
 
     // MARK: - Vegetable View
 
+    /// The veggie on the board: whole, and each chopped piece. Sized to read on
+    /// the 250pt board (they were 50 / 30, lost on it — Marina, Oct 22); 4
+    /// pieces + the whole one still fit across an iPhone board.
+    private static let wholeVeggieSize: CGFloat = 90
+    private static let pieceSize: CGFloat = 44
+
     var vegetableView: some View {
         HStack(spacing: 4) {
             // Show chopped pieces based on progress
@@ -197,7 +203,7 @@ struct ChopMiniGame: View {
                 Image(vegetable.imageName)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(width: 30, height: 30)
+                    .frame(width: Self.pieceSize, height: Self.pieceSize)
                     .opacity(0.6)
             }
 
@@ -206,12 +212,12 @@ struct ChopMiniGame: View {
                 Image(vegetable.imageName)
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(width: 50, height: 50)
+                    .frame(width: Self.wholeVeggieSize, height: Self.wholeVeggieSize)
                     .scaleEffect(justChopped ? 0.8 : 1.0)
                     .animation(AnimationConstants.springSnappy, value: justChopped)
             }
         }
-        .frame(height: 60)
+        .frame(height: Self.wholeVeggieSize + AppSpacing.xs)
     }
 
     // MARK: - Result Popup

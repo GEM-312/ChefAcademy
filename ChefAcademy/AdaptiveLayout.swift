@@ -206,6 +206,39 @@ struct AdaptiveCardSize {
         sizeClass == .compact ? 30 : 48
     }
 
+    // Cooking on iPad (Marina, Oct 22): the screens are designed at iPhone
+    // size, and the iPad zooms each one to fit its space (zoomedToFit). Games
+    // scale content to a design canvas this way; a fixed 1.5× still left the
+    // iPad 13" mini-games filling only ~40% of their area.
+
+    /// Design canvas of a cooking mini-game: iPhone width, tall enough for the
+    /// tallest game (chop, ~420). On an iPad 13" in portrait this zooms 2×.
+    static let cookingGameCanvas = CGSize(width: 420, height: 480)
+
+    /// Design canvas of the cooking completion screen (the whole screen: the
+    /// rewards block plus its buttons). About 1.35× on an iPad 13" in portrait,
+    /// so the rewards fill ~80% of the space above the buttons.
+    static let cookingCompletionCanvas = CGSize(width: 420, height: 985)
+
+    /// Most the cooking screens zoom, so the text inside stays a sane size.
+    static let cookingMaxZoom: CGFloat = 2
+
+    /// How much an iPhone-sized design `canvas` zooms to fill `space`: the
+    /// smaller of the width and height ratios, kept between 1× and `maxScale`.
+    /// iPhone (compact) always stays 1×.
+    static func fitScale(_ space: CGSize, canvas: CGSize, maxScale: CGFloat,
+                         for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        guard sizeClass != .compact else { return 1 }
+        let fit = min(space.width / canvas.width, space.height / canvas.height)
+        return min(maxScale, max(1, fit))
+    }
+
+    /// Pip beside his how-to tip under a cooking mini-game. iPad: easy to spot
+    /// (~8% of the screen height, Marina, Oct 22).
+    static func cookingPipTip(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 44 : 110
+    }
+
     /// Floating speech bubble width beside walking Pip
     static func pipBubbleWidth(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
         sizeClass == .compact ? 200 : 280
@@ -374,6 +407,68 @@ extension View {
 
 // MARK: - Trailing Fade
 //
+// MARK: - Zoom
+//
+// `scaleEffect` alone only magnifies the drawing: the view keeps its old size
+// in the layout, so it spills over its neighbours. ZoomLayout also gives it the
+// room. The content lays out in the space divided by `scale`, then is drawn
+// `scale`× bigger, so it fills exactly that space (a full-width bar still spans
+// the screen) and everything inside, offsets and touches too, grows together.
+
+struct ZoomLayout: Layout {
+    let scale: CGFloat
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        guard let content = subviews.first else { return .zero }
+        let size = content.sizeThatFits(ProposedViewSize(
+            width: proposal.width.map { $0 / scale },
+            height: proposal.height.map { $0 / scale }
+        ))
+        return CGSize(width: size.width * scale, height: size.height * scale)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        subviews.first?.place(
+            at: CGPoint(x: bounds.midX, y: bounds.midY),
+            anchor: .center,
+            proposal: ProposedViewSize(width: bounds.width / scale, height: bounds.height / scale)
+        )
+    }
+}
+
+extension View {
+    /// Draws this view `scale`× bigger and makes room for it (see ZoomLayout).
+    func zoomed(by scale: CGFloat) -> some View {
+        ZoomLayout(scale: scale) { scaleEffect(scale) }
+    }
+
+    /// Zooms this view to fill all the space it's given, as if that space were
+    /// the iPhone-sized design `canvas` (AdaptiveCardSize.fitScale). On iPhone
+    /// the view is left exactly as it is.
+    func zoomedToFit(canvas: CGSize, maxScale: CGFloat) -> some View {
+        modifier(ZoomToFitModifier(canvas: canvas, maxScale: maxScale))
+    }
+}
+
+private struct ZoomToFitModifier: ViewModifier {
+    let canvas: CGSize
+    let maxScale: CGFloat
+    @Environment(\.horizontalSizeClass) private var sizeClass
+
+    func body(content: Content) -> some View {
+        if sizeClass == .compact {
+            content
+        } else {
+            GeometryReader { geo in
+                content
+                    .zoomed(by: AdaptiveCardSize.fitScale(geo.size, canvas: canvas,
+                                                          maxScale: maxScale, for: sizeClass))
+                    .frame(width: geo.size.width, height: geo.size.height)
+            }
+        }
+    }
+}
+
 // A non-interactive gradient on the right edge that signals "more content
 // is over here" — gives kids an at-rest scroll cue on horizontal carousels
 // where iOS's default scrollbar only appears mid-gesture. Defaults to the

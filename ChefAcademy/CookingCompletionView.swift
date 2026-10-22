@@ -20,6 +20,7 @@ struct CookingCompletionView: View {
     @State private var showHealthBoost = false
     @State private var showButton = false
     @State private var showGlucoseJourney = false
+    @Environment(\.horizontalSizeClass) private var sizeClass
 
     var body: some View {
         ZStack {
@@ -27,119 +28,131 @@ struct CookingCompletionView: View {
             Color.AppTheme.cream
                 .ignoresSafeArea()
 
-            VStack(spacing: AppSpacing.lg) {
-                Spacer()
+            // iPad: the rewards block zooms to fill the screen; the buttons stay
+            GeometryReader { screen in
+                VStack(spacing: AppSpacing.lg) {
+                    Spacer()
 
-                // Recipe image (circle, gold border)
-                AssetPackImage(recipe.imageName, in: .recipes)
-                    .scaledToFill()
-                    .frame(width: 140, height: 140)
-                    .clipShape(Circle())
-                    .overlay(
-                        Circle()
-                            .stroke(Color.AppTheme.goldenWheat, lineWidth: 4)
-                    )
-                    .shadow(color: Color.AppTheme.goldenWheat.opacity(0.4), radius: 10, x: 0, y: 4)
+                    VStack(spacing: AppSpacing.lg) {
+                        // Recipe image (circle, gold border)
+                        AssetPackImage(recipe.imageName, in: .recipes)
+                            .scaledToFill()
+                            .frame(width: 140, height: 140)
+                            .clipShape(Circle())
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.AppTheme.goldenWheat, lineWidth: 4)
+                            )
+                            .shadow(color: Color.AppTheme.goldenWheat.opacity(0.4), radius: 10, x: 0, y: 4)
 
-                // Recipe title
-                Text(recipe.title)
-                    .font(.AppTheme.title)
-                    .foregroundColor(Color.AppTheme.darkBrown)
-
-                // Stars
-                HStack(spacing: AppSpacing.md) {
-                    ForEach(0..<3, id: \.self) { index in
-                        Image(systemName: starStates[index] ? "star.fill" : "star")
-                            .font(.AppTheme.rounded(size: 44))
-                            .foregroundColor(Color.AppTheme.goldenWheat)
-                            .scaleEffect(starStates[index] ? 1.0 : 0.3)
-                            .rotationEffect(.degrees(starStates[index] ? 0 : -30))
-                            .opacity(starStates[index] ? 1.0 : 0.3)
-                    }
-                }
-
-                // Star message
-                Text(starMessage)
-                    .font(.AppTheme.title3)
-                    .foregroundColor(Color.AppTheme.sepia)
-
-                // Celebrating Pip
-                PipCharacterView(pose: .neutral, size: .custom(140))
-
-                // Reward chips
-                if showRewards {
-                    HStack(spacing: AppSpacing.lg) {
-                        rewardChip(icon: "circle.fill", value: "+\(coins)", color: Color.AppTheme.goldenWheat)
-                        rewardChip(icon: "star.circle.fill", value: "+\(xp) XP", color: Color.AppTheme.sage)
-                    }
-                    .transition(.opacity)
-                }
-
-                // Body Buddy health boost summary
-                if showHealthBoost {
-                    VStack(spacing: AppSpacing.xs) {
-                        Text("Body Boost!")
-                            .font(.AppTheme.rounded(size: 14, weight: .bold))
+                        // Recipe title
+                        Text(recipe.title)
+                            .font(.AppTheme.title)
                             .foregroundColor(Color.AppTheme.darkBrown)
 
-                        HStack(spacing: AppSpacing.sm) {
-                            ForEach(boostedOrgans, id: \.name) { organ in
-                                VStack(spacing: 2) {
-                                    Image(systemName: organ.icon)
-                                        .font(.AppTheme.recipeStep)
-                                        .foregroundColor(organ.color)
-                                    Text("+\(organ.boost)")
-                                        .font(.AppTheme.rounded(size: 11, weight: .bold))
-                                        .foregroundColor(organ.color)
+                        // Stars
+                        HStack(spacing: AppSpacing.md) {
+                            ForEach(0..<3, id: \.self) { index in
+                                Image(systemName: starStates[index] ? "star.fill" : "star")
+                                    .font(.AppTheme.rounded(size: 44))
+                                    .foregroundColor(Color.AppTheme.goldenWheat)
+                                    .scaleEffect(starStates[index] ? 1.0 : 0.3)
+                                    .rotationEffect(.degrees(starStates[index] ? 0 : -30))
+                                    .opacity(starStates[index] ? 1.0 : 0.3)
+                            }
+                        }
+
+                        // Star message
+                        Text(starMessage)
+                            .font(.AppTheme.title3)
+                            .foregroundColor(Color.AppTheme.sepia)
+
+                        // Celebrating Pip
+                        PipCharacterView(pose: .neutral, size: .custom(140))
+
+                        // Reward chips
+                        if showRewards {
+                            HStack(spacing: AppSpacing.lg) {
+                                rewardChip(icon: "circle.fill", value: "+\(coins)", color: Color.AppTheme.goldenWheat)
+                                rewardChip(icon: "star.circle.fill", value: "+\(xp) XP", color: Color.AppTheme.sage)
+                            }
+                            .transition(.opacity)
+                        }
+
+                        // Body Buddy health boost summary
+                        if showHealthBoost {
+                            VStack(spacing: AppSpacing.xs) {
+                                Text("Body Boost!")
+                                    .font(.AppTheme.rounded(size: 14, weight: .bold))
+                                    .foregroundColor(Color.AppTheme.darkBrown)
+
+                                HStack(spacing: AppSpacing.sm) {
+                                    ForEach(boostedOrgans, id: \.name) { organ in
+                                        VStack(spacing: 2) {
+                                            Image(systemName: organ.icon)
+                                                .font(.AppTheme.recipeStep)
+                                                .foregroundColor(organ.color)
+                                            Text("+\(organ.boost)")
+                                                .font(.AppTheme.rounded(size: 11, weight: .bold))
+                                                .foregroundColor(organ.color)
+                                        }
+                                    }
                                 }
                             }
+                            .softCard(showShadow: false)
+                            .transition(.scale.combined(with: .opacity))
                         }
                     }
-                    .softCard(showShadow: false)
-                    .transition(.scale.combined(with: .opacity))
-                }
+                    .zoomed(by: AdaptiveCardSize.fitScale(
+                        screen.size,
+                        canvas: AdaptiveCardSize.cookingCompletionCanvas,
+                        maxScale: AdaptiveCardSize.cookingMaxZoom,
+                        for: sizeClass
+                    ))
 
-                Spacer()
+                    Spacer()
 
-                // Action buttons
-                if showButton {
-                    VStack(spacing: AppSpacing.sm) {
-                        // Glucose Journey button
-                        Button(action: { showGlucoseJourney = true }) {
-                            HStack(spacing: AppSpacing.xs) {
-                                Image(systemName: "waveform.path.ecg")
-                                Text("See how your food helps!")
-                            }
-                            .font(.AppTheme.headline)
-                            .foregroundColor(Color.AppTheme.cream)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, AppSpacing.md)
-                            .background(Color.AppTheme.goldenWheat)
-                            .cornerRadius(AppSpacing.cardCornerRadius)
-                        }
-                        .buttonStyle(BouncyButtonStyle())
-
-                        // Back to Kitchen button
-                        Button(action: onDismiss) {
-                            Text("Back to Kitchen")
+                    // Action buttons
+                    if showButton {
+                        VStack(spacing: AppSpacing.sm) {
+                            // Glucose Journey button
+                            Button(action: { showGlucoseJourney = true }) {
+                                HStack(spacing: AppSpacing.xs) {
+                                    Image(systemName: "waveform.path.ecg")
+                                    Text("See how your food helps!")
+                                }
                                 .font(.AppTheme.headline)
-                                .foregroundColor(Color.AppTheme.darkBrown)
+                                .foregroundColor(Color.AppTheme.cream)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, AppSpacing.md)
-                                .background(Color.AppTheme.parchment)
+                                .background(Color.AppTheme.goldenWheat)
                                 .cornerRadius(AppSpacing.cardCornerRadius)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: AppSpacing.cardCornerRadius)
-                                        .stroke(Color.AppTheme.sepia.opacity(0.3), lineWidth: 1.5)
-                                )
-                        }
-                        .buttonStyle(BouncyButtonStyle())
-                    }
-                    .padding(.horizontal, AppSpacing.lg)
-                    .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
+                            }
+                            .buttonStyle(BouncyButtonStyle())
 
-                Spacer().frame(height: AppSpacing.lg)
+                            // Back to Kitchen button
+                            Button(action: onDismiss) {
+                                Text("Back to Kitchen")
+                                    .font(.AppTheme.headline)
+                                    .foregroundColor(Color.AppTheme.darkBrown)
+                                    .frame(maxWidth: .infinity)
+                                    .padding(.vertical, AppSpacing.md)
+                                    .background(Color.AppTheme.parchment)
+                                    .cornerRadius(AppSpacing.cardCornerRadius)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: AppSpacing.cardCornerRadius)
+                                            .stroke(Color.AppTheme.sepia.opacity(0.3), lineWidth: 1.5)
+                                    )
+                            }
+                            .buttonStyle(BouncyButtonStyle())
+                        }
+                        .padding(.horizontal, AppSpacing.lg)
+                        .transition(.move(edge: .bottom).combined(with: .opacity))
+                    }
+
+                    Spacer().frame(height: AppSpacing.lg)
+                }
+                .frame(width: screen.size.width, height: screen.size.height)
             }
         }
         .onAppear {
