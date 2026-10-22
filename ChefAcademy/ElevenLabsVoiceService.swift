@@ -26,6 +26,7 @@
 import Foundation
 import AVFoundation
 import Combine
+import CryptoKit
 
 // MARK: - ElevenLabs Voice Service
 
@@ -64,8 +65,12 @@ class ElevenLabsVoiceService: NSObject, ObservableObject, AVAudioPlayerDelegate 
     // MARK: - Private State
 
     private var audioPlayer: AVAudioPlayer?
-    private var audioCache: [String: Data] = [:]
-    private let cacheLimit = 50  // Max cached phrases
+
+    /// On-device voice cache: Library/Caches/pip_voice/<sha256>.mp3
+    private let cacheDirectory: URL = FileManager.default
+        .urls(for: .cachesDirectory, in: .userDomainMask)[0]
+        .appendingPathComponent("pip_voice", isDirectory: true)
+    private let cacheByteLimit = 30 * 1024 * 1024  // ~600 short lines
 
     // MARK: - Init
 
@@ -98,14 +103,20 @@ class ElevenLabsVoiceService: NSObject, ObservableObject, AVAudioPlayerDelegate 
 
     func speak(_ text: String) async {
         guard !text.isEmpty else { return }
-        guard await WorkerClient.isReady() else {
-            await MainActor.run { lastError = "Voice needs a real device (App Attest not available here)" }
+
+        // Check the on-device cache first. A saved line needs no network,
+        // no App Attest, no Worker call (no KV ops) and no ElevenLabs
+        // characters, so it plays offline and on the simulator too.
+        if let cached = cachedAudio(for: text) {
+            #if DEBUG
+            print("[ElevenLabs] cache hit: \(text.prefix(40))")
+            #endif
+            await playAudio(cached)
             return
         }
 
-        // Check cache first — saves API calls for repeated phrases!
-        if let cached = audioCache[text] {
-            await playAudio(cached)
+        guard await WorkerClient.isReady() else {
+            await MainActor.run { lastError = "Voice needs a real device (App Attest not available here)" }
             return
         }
 
@@ -117,8 +128,11 @@ class ElevenLabsVoiceService: NSObject, ObservableObject, AVAudioPlayerDelegate 
         do {
             let audioData = try await fetchSpeech(text: text)
 
-            // Cache for reuse (cooking instructions repeat a lot!)
+            // Save for reuse (cooking instructions repeat a lot!)
             cacheAudio(text: text, data: audioData)
+            #if DEBUG
+            print("[ElevenLabs] fetched + saved: \(text.prefix(40))")
+            #endif
 
             await playAudio(audioData)
 
@@ -230,17 +244,60 @@ class ElevenLabsVoiceService: NSObject, ObservableObject, AVAudioPlayerDelegate 
     // only the first time costs money. Over thousands of users, this
     // saves hundreds of dollars per month.
     //
-    // We use a simple in-memory dictionary with a size limit.
-    // For production, you'd use disk caching (FileManager) so cached
-    // audio survives app restarts.
+    // The cache lives on disk (Library/Caches), so a line is fetched once
+    // per device, not once per launch. The file name is a SHA-256 of the
+    // voice + model + settings + text: change Pip's voice and every line
+    // is fetched fresh instead of playing the old voice. iOS may empty
+    // Caches when storage is low; then lines are simply fetched again.
     //
 
+    private func cacheURL(for text: String) -> URL {
+        let key = "\(pipVoiceID)|\(modelID)|\(stability)|\(similarityBoost)|\(text)"
+        let name = SHA256.hash(data: Data(key.utf8)).map { String(format: "%02x", $0) }.joined()
+        return cacheDirectory.appendingPathComponent("\(name).mp3")
+    }
+
+    private func cachedAudio(for text: String) -> Data? {
+        let url = cacheURL(for: text)
+        guard let data = try? Data(contentsOf: url) else { return nil }
+        // Mark as recently played, so trimming deletes lines nobody hears anymore
+        try? FileManager.default.setAttributes([.modificationDate: Date()], ofItemAtPath: url.path)
+        return data
+    }
+
     private func cacheAudio(text: String, data: Data) {
-        // Evict oldest if at limit
-        if audioCache.count >= cacheLimit {
-            audioCache.removeValue(forKey: audioCache.keys.first ?? "")
+        do {
+            try FileManager.default.createDirectory(at: cacheDirectory, withIntermediateDirectories: true)
+            try data.write(to: cacheURL(for: text), options: .atomic)
+        } catch {
+            print("[ElevenLabs] Couldn't save voice cache: \(error)")
+            return
         }
-        audioCache[text] = data
+        trimCache()
+    }
+
+    /// Delete the least recently played lines once the folder passes `cacheByteLimit`.
+    private func trimCache() {
+        let keys: [URLResourceKey] = [.fileSizeKey, .contentModificationDateKey]
+        guard let files = try? FileManager.default.contentsOfDirectory(
+            at: cacheDirectory, includingPropertiesForKeys: keys) else { return }
+
+        let entries = files.compactMap { url -> (url: URL, size: Int, date: Date)? in
+            guard let values = try? url.resourceValues(forKeys: Set(keys)) else { return nil }
+            return (url, values.fileSize ?? 0, values.contentModificationDate ?? .distantPast)
+        }
+        var total = entries.reduce(0) { $0 + $1.size }
+        guard total > cacheByteLimit else { return }
+
+        for entry in entries.sorted(by: { $0.date < $1.date }) {
+            guard total > cacheByteLimit else { break }
+            do {
+                try FileManager.default.removeItem(at: entry.url)
+                total -= entry.size
+            } catch {
+                print("[ElevenLabs] Couldn't trim voice cache: \(error)")
+            }
+        }
     }
 
     /// Pre-cache common phrases to reduce API calls during gameplay
@@ -258,7 +315,7 @@ class ElevenLabsVoiceService: NSObject, ObservableObject, AVAudioPlayerDelegate 
 
         Task {
             for phrase in phrases {
-                guard audioCache[phrase] == nil else { continue }
+                guard cachedAudio(for: phrase) == nil else { continue }
                 do {
                     let data = try await fetchSpeech(text: phrase)
                     cacheAudio(text: phrase, data: data)
