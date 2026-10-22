@@ -247,7 +247,8 @@ class GameCenterService: ObservableObject {
     func checkAchievements(gameState: GameState) {
         guard isAuthenticated else { return }
 
-        let totalHarvested = gameState.harvestedIngredients.reduce(0) { $0 + $1.quantity }
+        // Pantry + wheelbarrow: a harvest counts before it's brought in
+        let totalHarvested = (gameState.harvestedIngredients + gameState.wheelbarrow).reduce(0) { $0 + $1.quantity }
         let recipesCooked = gameState.recipeStars.count
         let threeStarCount = gameState.recipeStars.values.filter { $0 >= 3 }.count
 

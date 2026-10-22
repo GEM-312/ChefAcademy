@@ -628,6 +628,9 @@ struct GardenView: View {
     @State private var smartPipTip: String? = nil
     @State private var isLoadingTip = false
 
+    // The wheelbarrow's card ("Bring it to the pantry"), opened by tapping it
+    @State private var showHarvestCard = false
+
     // Falling veggie animation
     @State private var fallingVeggie: VegetableType? = nil
     @State private var fallingOffset: CGFloat = -200
@@ -710,6 +713,18 @@ struct GardenView: View {
             .navigationBarHidden(true)
         }
         .navigationViewStyle(.stack)
+        // The wheelbarrow's card: what's in it and "Bring it to the pantry"
+        .overlay {
+            if showHarvestCard {
+                HarvestCartCard(
+                    items: gameState.wheelbarrow,
+                    onBring: bringHarvestToPantry,
+                    onClose: { showHarvestCard = false }
+                )
+                .transition(.opacity)
+            }
+        }
+        .animation(AnimationConstants.fadeMedium, value: showHarvestCard)
         // Planting sheet slides up when player taps an empty plot
         .sheet(item: $selectedPlotIndex) { selected in
             PlantingSheet(
@@ -1278,57 +1293,83 @@ struct GardenView: View {
                 .foregroundColor(Color.AppTheme.darkBrown)
                 .padding(.horizontal, isIPad ? AppSpacing.lg : AppSpacing.md)
 
-            if gameState.harvestedIngredients.isEmpty {
-                // Empty basket + hint text
+            if gameState.wheelbarrow.isEmpty {
+                // Empty wheelbarrow + hint text
+                let s = Self.wheelbarrowScale
                 GeometryReader { geo in
                     VStack(spacing: isIPad ? AppSpacing.md : AppSpacing.sm) {
                         Image("harvest_wheelbarrow")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: geo.size.width * 0.9)
+                            .frame(width: geo.size.width * 0.9 * s)
                             .opacity(0.3)
 
-                        Text("Nothing harvested yet. Grow some veggies!")
+                        Text(gameState.harvestedIngredients.isEmpty
+                             ? "Nothing harvested yet. Grow some veggies!"
+                             : "All in the pantry! Grow some more veggies!")
                             .font(isIPad ? .AppTheme.headline : .AppTheme.body)
                             .foregroundColor(Color.AppTheme.sepia)
                     }
-                    .frame(width: geo.size.width, height: geo.size.width * 0.7)
+                    .frame(width: geo.size.width, height: geo.size.width * 0.7 * s)
                 }
-                .frame(height: width * 0.7)
+                .frame(height: width * 0.7 * s)
                 .padding(.vertical, isIPad ? AppSpacing.md : AppSpacing.sm)
             } else {
-                // Basket with veggies + falling animation
-                ZStack {
-                    BasketWithVeggiesView(
-                        harvestedIngredients: gameState.harvestedIngredients,
-                        basketSize: width * 0.85
-                    )
-                    .opacity(0.75)
+                // Wheelbarrow with veggies + falling animation; a tap opens the
+                // harvest card (HarvestCartCard) to bring them to the pantry
+                Button {
+                    showHarvestCard = true
+                } label: {
+                    VStack(spacing: AppSpacing.xs) {
+                        ZStack {
+                            BasketWithVeggiesView(
+                                harvestedIngredients: gameState.wheelbarrow,
+                                basketSize: width * 0.85 * Self.wheelbarrowScale
+                            )
+                            .opacity(0.75)
 
-                    // Falling veggie animation overlay
-                    if let veggie = fallingVeggie {
-                        let sz = width * 0.17
-                        Image(veggie.imageName)
-                            .resizable()
-                            .aspectRatio(contentMode: .fit)
-                            .frame(width: sz, height: sz)
-                            .offset(y: fallingOffset)
-                            .opacity(fallingOpacity)
-                    }
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, isIPad ? AppSpacing.sm : AppSpacing.xs)
+                            // Falling veggie animation overlay
+                            if let veggie = fallingVeggie {
+                                let sz = width * 0.17 * Self.wheelbarrowScale
+                                Image(veggie.imageName)
+                                    .resizable()
+                                    .aspectRatio(contentMode: .fit)
+                                    .frame(width: sz, height: sz)
+                                    .offset(y: fallingOffset)
+                                    .opacity(fallingOpacity)
+                            }
+                        }
 
-                // Ingredient badges grid below basket
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: isIPad ? AppSpacing.md : AppSpacing.sm) {
-                        ForEach(gameState.harvestedIngredients) { ingredient in
-                            IngredientBadge(ingredient: ingredient, isIPad: isIPad)
+                        if !isVisiting {
+                            Text("Tap to bring them to the pantry!")
+                                .font(isIPad ? .AppTheme.headline : .AppTheme.caption)
+                                .foregroundColor(Color.AppTheme.sage)
+                                .padding(.horizontal, AppSpacing.sm)
+                                .padding(.vertical, AppSpacing.xxs)
+                                .background(Color.AppTheme.warmCream.opacity(0.9))
+                                .cornerRadius(AppSpacing.pillCornerRadius)
                         }
                     }
-                    .padding(.horizontal, isIPad ? AppSpacing.lg : AppSpacing.md)
                 }
+                .buttonStyle(BouncyButtonStyle())
+                .disabled(isVisiting)   // a visitor can't empty a sibling's wheelbarrow
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, isIPad ? AppSpacing.sm : AppSpacing.xs)
             }
+        }
+    }
+
+    /// The wheelbarrow is drawn 25% smaller than it was (Marina, Oct 22)
+    private static let wheelbarrowScale: CGFloat = 0.75
+
+    /// "Bring it to the pantry": the veggies become cookable. Pip offers a
+    /// recipe they now make, or just says where they went.
+    private func bringHarvestToPantry() {
+        gameState.bringWheelbarrowToPantry()
+        showHarvestCard = false
+        if !suggestRecipeIfReady() {
+            smartPipTip = "Your veggies are in the pantry! Let's cook in the Kitchen!"
+            showPipTip = true
         }
     }
 
@@ -1608,8 +1649,14 @@ struct GardenView: View {
 
         // Award XP
         gameState.addXP(10)
+        // (Recipe suggestions wait until the harvest is in the pantry:
+        // bringHarvestToPantry, since wheelbarrow veggies can't be cooked yet)
+    }
 
-        // Check if any recipe can now be cooked — prefer recipes using MOST harvested veggies
+    /// Pip offers a recipe the pantry can make now, preferring the one that
+    /// uses the most harvested veggies. Returns whether he offered one.
+    @discardableResult
+    private func suggestRecipeIfReady() -> Bool {
         let harvested = gameState.harvestedIngredients
         let pantry = gameState.pantryInventory
         let fullMatch = GardenRecipes.fullyAvailableRecipes(
@@ -1622,15 +1669,15 @@ struct GardenView: View {
         // Sort by most garden ingredients used — suggest the recipe that uses the most of what you grew
         let availableRecipes = (fullMatch.isEmpty ? gardenMatch : fullMatch)
             .sorted { $0.gardenIngredients.count > $1.gardenIngredients.count }
-        if let recipe = availableRecipes.first {
-            suggestedRecipe = recipe
-            // Small delay so harvest animation plays first
-            Task { @MainActor in
-                try? await Task.sleep(for: .seconds(0.8))
-                guard !Task.isCancelled else { return }
-                showRecipeSuggestion = true
-            }
+        guard let recipe = availableRecipes.first else { return false }
+        suggestedRecipe = recipe
+        // Small delay so the harvest card has closed first
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(0.8))
+            guard !Task.isCancelled else { return }
+            showRecipeSuggestion = true
         }
+        return true
     }
 
     /// Dynamic hint text based on garden state
@@ -1821,6 +1868,10 @@ struct GardenView: View {
         }
         if let plot = ready.first, let veg = plot.vegetable {
             return "\(namePrefix)your \(veg.displayName.lowercased()) \(ready.count == 1 ? "is" : "are") ready to pick! Take the shovel and dig \(ready.count == 1 ? "it" : "them") up!"
+        }
+        // Harvest still in the wheelbarrow can't be cooked yet
+        if !isVisiting && !gameState.wheelbarrow.isEmpty {
+            return "\(namePrefix)your veggies are waiting in the wheelbarrow! Tap it and bring them to the pantry."
         }
 
         // Non-urgent: ROTATE between growing info, empty plots, and fun facts

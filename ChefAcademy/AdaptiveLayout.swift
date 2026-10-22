@@ -206,6 +206,16 @@ struct AdaptiveCardSize {
         sizeClass == .compact ? 30 : 48
     }
 
+    /// Widest the garden wheelbarrow's harvest card gets (HarvestCartCard)
+    static func harvestCardWidth(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 340 : 480
+    }
+
+    /// Veggie picture in the harvest card's grid
+    static func harvestCardVeggie(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 56 : 80
+    }
+
     // Cooking on iPad (Marina, Oct 22): the screens are designed at iPhone
     // size, and the iPad zooms each one to fit its space (zoomedToFit). Games
     // scale content to a design canvas this way; a fixed 1.5× still left the

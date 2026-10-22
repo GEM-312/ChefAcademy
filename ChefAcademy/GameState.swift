@@ -87,8 +87,13 @@ class GameState: ObservableObject {
     /// The seeds you own and can plant
     @Published var seeds: [Seed] = Seed.starterSeeds
 
-    /// Vegetables you've harvested from the garden
+    /// Vegetables you've harvested from the garden and brought to the pantry:
+    /// the ones you can cook with
     @Published var harvestedIngredients: [HarvestedIngredient] = []
+
+    /// Just-harvested vegetables waiting in the garden wheelbarrow; they can be
+    /// cooked once the kid brings them to the pantry (bringWheelbarrowToPantry)
+    @Published var wheelbarrow: [HarvestedIngredient] = []
 
     /// The 4 garden plots (2x2 grid)
     @Published var gardenPlots: [GardenPlot] = GardenPlot.createStarterPlots()
@@ -110,6 +115,7 @@ class GameState: ObservableObject {
     // version never deletes items a kid bought or grew on a newer one.
     private var unknownSeedsData: [SeedData] = []
     private var unknownHarvestedData: [HarvestedData] = []
+    private var unknownWheelbarrowData: [HarvestedData] = []
     private var unknownPantryData: [PantryData] = []
 
     // ============================================
@@ -233,19 +239,35 @@ class GameState: ObservableObject {
         }
     }
 
-    /// Add harvested ingredient to inventory
+    /// A harvest goes into the wheelbarrow; it's cookable once the kid brings
+    /// it to the pantry (bringWheelbarrowToPantry)
     func addHarvestedIngredient(_ type: VegetableType, quantity: Int = 1) {
-        if let index = harvestedIngredients.firstIndex(where: { $0.type == type }) {
-            harvestedIngredients[index].quantity += quantity
-        } else {
-            harvestedIngredients.append(HarvestedIngredient(type: type, quantity: quantity))
-        }
+        Self.add(type, quantity: quantity, to: &wheelbarrow)
         saveToStore()
 
         // Report harvest to Game Center (leaderboard + achievements)
-        let totalHarvested = harvestedIngredients.reduce(0) { $0 + $1.quantity }
+        let totalHarvested = (harvestedIngredients + wheelbarrow).reduce(0) { $0 + $1.quantity }
         GameCenterService.shared.reportScore(totalHarvested, leaderboardID: LeaderboardID.totalHarvested)
         GameCenterService.shared.checkAchievements(gameState: self)
+    }
+
+    /// "Bring it to the pantry": everything in the wheelbarrow becomes cookable
+    func bringWheelbarrowToPantry() {
+        guard !wheelbarrow.isEmpty else { return }
+        for item in wheelbarrow {
+            Self.add(item.type, quantity: item.quantity, to: &harvestedIngredients)
+        }
+        wheelbarrow = []
+        saveToStore()
+    }
+
+    /// Adds to a veggie's pile in `list`, or starts a new pile
+    private static func add(_ type: VegetableType, quantity: Int, to list: inout [HarvestedIngredient]) {
+        if let index = list.firstIndex(where: { $0.type == type }) {
+            list[index].quantity += quantity
+        } else {
+            list.append(HarvestedIngredient(type: type, quantity: quantity))
+        }
     }
 
     /// Check if player has enough of an ingredient
@@ -436,6 +458,13 @@ class GameState: ObservableObject {
         }
         unknownHarvestedData = saved.harvestedData.filter { VegetableType(rawValue: $0.vegetableRawValue) == nil }
 
+        // Wheelbarrow (empty for saves from before it existed)
+        wheelbarrow = saved.wheelbarrowData.compactMap { data in
+            guard let veg = VegetableType(rawValue: data.vegetableRawValue) else { return nil }
+            return HarvestedIngredient(type: veg, quantity: data.quantity)
+        }
+        unknownWheelbarrowData = saved.wheelbarrowData.filter { VegetableType(rawValue: $0.vegetableRawValue) == nil }
+
         // Plots
         gardenPlots = saved.plotsData.map { data in
             var plot = GardenPlot(id: data.id)
@@ -564,6 +593,11 @@ class GameState: ObservableObject {
             HarvestedData(vegetableRawValue: $0.type.rawValue, quantity: $0.quantity)
         } + unknownHarvestedData
 
+        // Wheelbarrow
+        saved.wheelbarrowData = wheelbarrow.map {
+            HarvestedData(vegetableRawValue: $0.type.rawValue, quantity: $0.quantity)
+        } + unknownWheelbarrowData
+
         // Plots
         // Spot identity is the array POSITION (row * 3 + slot), kept by map() on save
         // and load. Never sort/filter/dedupe gardenPlots before saving.
@@ -636,10 +670,12 @@ class GameState: ObservableObject {
         playerLevel = 1
         seeds = Seed.starterSeeds
         harvestedIngredients = []
+        wheelbarrow = []
         gardenPlots = GardenPlot.createStarterPlots()
         pantryInventory = []
         unknownSeedsData = []
         unknownHarvestedData = []
+        unknownWheelbarrowData = []
         unknownPantryData = []
         unlockedRecipeIDs = ["veggie-wrap", "garden-salad"]
         recipeStars = [:]

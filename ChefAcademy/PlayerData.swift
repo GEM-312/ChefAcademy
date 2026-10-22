@@ -112,6 +112,9 @@ class PlayerData {
     // Garden — stored as Codable arrays
     var seedsData: [SeedData] = []
     var harvestedData: [HarvestedData] = []
+    // Harvested veggies still in the garden wheelbarrow (Oct 22 2026); they
+    // move to harvestedData (the pantry, cookable) when the kid brings them in
+    var wheelbarrowData: [HarvestedData] = []
     var plotsData: [PlotData] = []
 
     // Pantry

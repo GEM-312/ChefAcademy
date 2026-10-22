@@ -219,6 +219,10 @@ enum AnimationConstants {
     static let canPumpsToFill = 3
     // Garden — how long the kid pours once the can lands on a thirsty plant
     static let plantWaterDuration: TimeInterval = 1.5
+    // Garden — "Bring it to the pantry": the veggies fly up out of the
+    // harvest card, then the wheelbarrow empties
+    static let pantryFlyDuration: TimeInterval = 0.6
+    static let pantryFly = Animation.easeIn(duration: pantryFlyDuration)
     // Garden tools — the needed tool glows and grows this long / this much
     // when the kid tries a job without it
     static let toolHintDuration: TimeInterval = 2.0

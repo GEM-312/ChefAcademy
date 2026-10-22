@@ -169,7 +169,8 @@ struct ProfileView: View {
     }
 
     private var totalVeggiesGrown: Int {
-        gameState.harvestedIngredients.map(\.quantity).reduce(0, +)
+        // Pantry + wheelbarrow: veggies count as grown before they're brought in
+        (gameState.harvestedIngredients + gameState.wheelbarrow).map(\.quantity).reduce(0, +)
     }
 }
 

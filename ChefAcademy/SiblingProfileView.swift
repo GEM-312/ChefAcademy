@@ -136,7 +136,8 @@ struct SiblingProfileView: View {
                             StatCard(title: "Coins", value: "\(data.coins)", icon: "circle.fill", color: Color.AppTheme.goldenWheat)
                             StatCard(title: "XP", value: "\(data.xp)", icon: "bolt.fill", color: Color.AppTheme.sage)
                             StatCard(title: "Recipes", value: "\(data.recipeStars.count)", icon: "fork.knife", color: Color.AppTheme.terracotta)
-                            StatCard(title: "Veggies", value: "\(data.harvestedData.map(\.quantity).reduce(0, +))", icon: "leaf.fill", color: Color.AppTheme.sage)
+                            // Pantry + wheelbarrow: veggies count as grown before they're brought in
+                            StatCard(title: "Veggies", value: "\((data.harvestedData + data.wheelbarrowData).map(\.quantity).reduce(0, +))", icon: "leaf.fill", color: Color.AppTheme.sage)
                         }
                         .padding(.horizontal, AppSpacing.md)
 

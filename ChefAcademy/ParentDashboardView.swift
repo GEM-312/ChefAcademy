@@ -86,7 +86,8 @@ struct ParentDashboardView: View {
                             StatCard(title: "XP", value: "\(data.xp)", icon: "bolt.fill", color: Color.AppTheme.sage)
                             StatCard(title: "Recipes", value: "\(data.recipeStars.count)", icon: "fork.knife", color: Color.AppTheme.terracotta)
                             StatCard(title: "Stars", value: "\(data.recipeStars.reduce(0) { $0 + $1.stars })", icon: "star.fill", color: Color.AppTheme.goldenWheat)
-                            StatCard(title: "Veggies", value: "\(data.harvestedData.map(\.quantity).reduce(0, +))", icon: "leaf.fill", color: Color.AppTheme.sage)
+                            // Pantry + wheelbarrow: veggies count as grown before they're brought in
+                            StatCard(title: "Veggies", value: "\((data.harvestedData + data.wheelbarrowData).map(\.quantity).reduce(0, +))", icon: "leaf.fill", color: Color.AppTheme.sage)
                         }
 
                         // Time played
