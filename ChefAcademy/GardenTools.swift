@@ -9,7 +9,8 @@
 //  Jobs need their tool: fork = loosen an empty spot's hard soil, shovel =
 //  plant (in loosened soil) + harvest, a full can = water (one fill waters one
 //  plant). Weeds and bugs are by hand. Trying a job without its tool makes
-//  that tool glow on the rack (GardenView.showToolHint).
+//  that tool glow on the rack (GardenView.showToolHint) and the job is
+//  remembered: taking that tool flies it to the spot and finishes the job.
 //
 //  The tools are cut out of the garden art (Oct 22 2026) and drawn exactly
 //  where they were painted; garden_map_background is the plate without them.
@@ -173,6 +174,33 @@ struct GardenToolRack: View {
             }
             Haptic.notify(.success)
         }
+    }
+}
+
+// MARK: - Flying Tool (fence → spot)
+
+/// A tool flying from its place on the fence to a garden spot, tilting into
+/// the soil as it lands. A fresh view per flight (GardenView gives it an .id),
+/// so onAppear always starts it at the fence.
+struct GardenToolFlight: View {
+    let tool: GardenTool
+    let size: CGSize
+    let from: CGPoint
+    let to: CGPoint
+
+    @State private var arrived = false
+
+    var body: some View {
+        Image(tool.imageName)
+            .resizable()
+            .aspectRatio(contentMode: .fit)
+            .frame(width: size.width, height: size.height)
+            .rotationEffect(.degrees(arrived ? AnimationConstants.toolDigAngle : 0), anchor: .bottom)
+            .position(arrived ? to : from)
+            .allowsHitTesting(false)
+            .onAppear {
+                withAnimation(AnimationConstants.springFly) { arrived = true }
+            }
     }
 }
 

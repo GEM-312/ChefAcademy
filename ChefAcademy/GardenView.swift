@@ -596,6 +596,11 @@ struct GardenView: View {
     // The tool the kid needs right now; it glows on the rack for a moment
     @State private var hintTool: GardenTool?
     @State private var hintTask: Task<Void, Never>?
+    // A spot job tried without its tool; taking that tool finishes it
+    @State private var pendingJob: ToolJob?
+    // The tool flying from the fence to its spot (the job runs when it lands)
+    @State private var toolFlight: ToolJob?
+    @State private var flightTask: Task<Void, Never>?
 
     // Visitor greeting
     @State private var showVisitorGreeting = false
@@ -741,15 +746,21 @@ struct GardenView: View {
         .onChange(of: weatherService.currentWeather) { _, newWeather in
             AmbientAudioPlayer.shared.play(ambientTrackForWeather(newWeather))
         }
-        // Picking up the glowing tool ends its hint right away
+        // Picking up the glowing tool ends its hint and finishes the job that
+        // was waiting for it; any other tool forgets the job
         .onChange(of: heldTool) { _, tool in
             if tool != nil && tool == hintTool {
                 hintTask?.cancel()
                 withAnimation(AnimationConstants.fadeMedium) { hintTool = nil }
             }
+            if let job = pendingJob {
+                pendingJob = nil
+                if tool == job.tool { requestJob(job) }
+            }
         }
         .onDisappear {
             hintTask?.cancel()
+            flightTask?.cancel()
             // Garden tab gone → fade out ambient. Other tabs may have their
             // own ambient (kitchen hum, farm bell) wired later.
             AmbientAudioPlayer.shared.stop()
@@ -875,6 +886,21 @@ struct GardenView: View {
                         GardenToolRack(mapWidth: w, mapHeight: h, heldTool: $heldTool,
                                        canFill: $canFill, hintTool: hintTool)
 
+                        // A tool flying to its spot to dig, loosen or harvest
+                        if let job = toolFlight {
+                            let r = job.tool.rackFrame
+                            let size = CGSize(width: r.width * w, height: r.height * h)
+                            let spot = spotCenter(job.plotIndex, w: w, h: h)
+                            GardenToolFlight(
+                                tool: job.tool,
+                                size: size,
+                                from: CGPoint(x: r.midX * w, y: r.midY * h),
+                                to: CGPoint(x: spot.x, y: spot.y - size.height / 2)
+                            )
+                            .id(job)
+                            .transition(.opacity)
+                        }
+
                         // Signpost — the way to the other places. The scene point is
                         // where the post meets the ground, so it's lifted by half its height.
                         if !isVisiting {
@@ -932,8 +958,8 @@ struct GardenView: View {
                         handlePlotTap(index: index)
                     },
                     onHarvest: {
-                        guard !isVisiting, hasTool(.shovel) else { return }
-                        harvestPlot(index: index)
+                        guard !isVisiting else { return }
+                        requestJob(ToolJob(tool: .shovel, plotIndex: index))
                     },
                     onCareComplete: {
                         // Care interaction handled inside PlotView — just apply state changes
@@ -1008,11 +1034,25 @@ struct GardenView: View {
         gardenSceneItems.first { $0.id == "row\(row)" }?.yPercent ?? Self.nearY
     }
 
+    /// How much a row is scaled: full width near the gate, smaller toward the back.
+    private func rowScale(_ row: Int, mapWidth: CGFloat) -> CGFloat {
+        let depth = min(1, max(0, (Self.nearY - rowY(row)) / (Self.nearY - Self.farY)))
+        return (mapWidth * Self.rowWidthFraction) / (Self.spotWidth * CGFloat(GardenPlot.spotsPerRow))
+            * (Self.nearScale + (Self.farScale - Self.nearScale) * depth)
+    }
+
+    /// Center of one planting spot on the map (spots sit side by side in their row).
+    private func spotCenter(_ index: Int, w: CGFloat, h: CGFloat) -> CGPoint {
+        let perRow = GardenPlot.spotsPerRow
+        let row = index / perRow
+        let slot = CGFloat(index % perRow) - CGFloat(perRow - 1) / 2
+        let center = plotPos(for: "row\(row)", w: w, h: h)
+        return CGPoint(x: center.x + slot * Self.spotWidth * rowScale(row, mapWidth: w), y: center.y)
+    }
+
     private func gardenRow(_ row: Int, mapWidth: CGFloat) -> some View {
         let perRow = GardenPlot.spotsPerRow
-        let depth = min(1, max(0, (Self.nearY - rowY(row)) / (Self.nearY - Self.farY)))
-        let scale = (mapWidth * Self.rowWidthFraction) / (Self.spotWidth * CGFloat(perRow))
-            * (Self.nearScale + (Self.farScale - Self.nearScale) * depth)
+        let scale = rowScale(row, mapWidth: mapWidth)
         let unlocked = row < GardenPlot.unlockedRows(forLevel: gameState.playerLevel)
 
         // No soil picture: the raised bed is painted into the background.
@@ -1253,14 +1293,7 @@ struct GardenView: View {
         case .empty:
             guard !isVisiting else { return }  // Can't plant in sibling's garden
             // Hard soil: the fork loosens it first. Loosened soil: the shovel plants.
-            if !plot.soilLoosened {
-                guard hasTool(.fork) else { return }
-                gameState.gardenPlots[index].soilLoosened = true
-                Haptic.impact(.medium)
-                return
-            }
-            guard hasTool(.shovel) else { return }
-            selectedPlotIndex = SelectedPlot(index: index)
+            requestJob(ToolJob(tool: plot.soilLoosened ? .shovel : .fork, plotIndex: index))
 
         case .growing:
             break
@@ -1275,11 +1308,53 @@ struct GardenView: View {
         }
     }
 
-    /// True when the kid holds `tool`. Otherwise that tool glows on the rack.
-    private func hasTool(_ tool: GardenTool) -> Bool {
-        if heldTool == tool { return true }
-        showToolHint(tool)
-        return false
+    /// A job on one spot: fork loosens, shovel plants or harvests.
+    struct ToolJob: Hashable {
+        let tool: GardenTool
+        let plotIndex: Int
+    }
+
+    /// With the tool in hand, it flies to the spot and does the job. Without
+    /// it, the tool glows and the job waits: taking that tool finishes it, so
+    /// the kid never has to tap the plant a second time.
+    private func requestJob(_ job: ToolJob) {
+        guard toolFlight == nil else { return }   // one flight at a time
+        if heldTool == job.tool {
+            flyTool(for: job)
+        } else {
+            pendingJob = job
+            showToolHint(job.tool)
+        }
+    }
+
+    private func flyTool(for job: ToolJob) {
+        withAnimation(AnimationConstants.fadeFast) { toolFlight = job }
+        flightTask?.cancel()
+        flightTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(AnimationConstants.toolFlyDelay))
+            guard !Task.isCancelled else { return }
+            finish(job)
+            withAnimation(AnimationConstants.fadeFast) { toolFlight = nil }
+        }
+    }
+
+    /// The tool has landed. Re-check the spot: it may have changed meanwhile.
+    private func finish(_ job: ToolJob) {
+        let plot = gameState.gardenPlots[job.plotIndex]
+        switch job.tool {
+        case .fork:
+            guard plot.state == .empty, !plot.soilLoosened else { return }
+            gameState.gardenPlots[job.plotIndex].soilLoosened = true
+            Haptic.impact(.medium)
+        case .shovel:
+            if plot.state == .ready {
+                harvestPlot(index: job.plotIndex)
+            } else if plot.state == .empty && plot.soilLoosened {
+                selectedPlotIndex = SelectedPlot(index: job.plotIndex)
+            }
+        case .wateringCan:
+            break   // watering is hold-to-pour on the plant, not a flight
+        }
     }
 
     /// The kid tried a job without its tool: buzz, and make the tool glow for a moment.

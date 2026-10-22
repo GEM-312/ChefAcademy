@@ -219,6 +219,10 @@ enum AnimationConstants {
     static let toolHintScale: CGFloat = 1.12
     // Garden — an empty spot hops this big when the fork loosens its soil
     static let soilLoosenScale: CGFloat = 1.2
+    // Garden tools — a tool flies from the fence to its spot, tilts into the
+    // soil (degrees), and the job happens this long after it starts flying
+    static let toolFlyDelay: TimeInterval = 0.55
+    static let toolDigAngle: Double = -25
 
     // Springs tuned for ingredient-fly animations (slightly slower than springMedium)
     static let springFly = Animation.spring(response: 0.6, dampingFraction: 0.7)
