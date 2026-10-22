@@ -1404,7 +1404,6 @@ struct GardenView: View {
 
         // Build EXACT state — the model must ONLY reference what's here
         var state = "EXACT GARDEN STATE (do NOT invent veggies not listed here):\n"
-        var hasAnything = false
         for (i, plot) in plots.enumerated() {
             switch plot.state {
             case .empty:
@@ -1413,23 +1412,18 @@ struct GardenView: View {
                 let name = plot.vegetable?.displayName ?? "plant"
                 let pct = Int(plot.growthProgress * 100)
                 state += "- Plot \(i+1): \(name) growing (\(pct)%)\n"
-                hasAnything = true
             case .ready:
                 let name = plot.vegetable?.displayName ?? "plant"
                 state += "- Plot \(i+1): \(name) READY to harvest\n"
-                hasAnything = true
             case .needsWater:
                 let name = plot.vegetable?.displayName ?? "plant"
                 state += "- Plot \(i+1): \(name) NEEDS WATER\n"
-                hasAnything = true
             case .needsWeeding:
                 let name = plot.vegetable?.displayName ?? "plant"
                 state += "- Plot \(i+1): \(name) HAS WEEDS\n"
-                hasAnything = true
             case .hasBugs:
                 let name = plot.vegetable?.displayName ?? "plant"
                 state += "- Plot \(i+1): \(name) HAS BUGS\n"
-                hasAnything = true
             }
         }
         state += "Weather: \(weather.currentWeather.displayName), \(weather.temperature)°F\n"
