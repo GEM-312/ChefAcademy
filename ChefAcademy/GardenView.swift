@@ -601,6 +601,8 @@ struct GardenView: View {
     // The tool flying from the fence to its spot (the job runs when it lands)
     @State private var toolFlight: ToolJob?
     @State private var flightTask: Task<Void, Never>?
+    // The spot the landed can is pouring on (its PlotView plays the pour)
+    @State private var wateringPlot: Int?
     // "+N" coins floating up from just-harvested spots
     @State private var coinPops: [CoinPop] = []
 
@@ -786,14 +788,26 @@ struct GardenView: View {
             if tool != nil && tool == pipToolLesson { pipToolLesson = nil }
             pipGoHomeIfFree()
             if let job = pendingJob {
-                pendingJob = nil
-                if tool == job.tool { requestJob(job) }
+                if tool == job.tool && !isReady(job.tool) {
+                    // The can is in hand but still filling: the job waits for it
+                } else {
+                    pendingJob = nil
+                    if tool == job.tool { requestJob(job) }
+                }
             }
+        }
+        // The can just got full with a thirsty plant waiting: it flies over and
+        // waters it, so the kid never taps the plant a second time
+        .onChange(of: canFill) { _, fill in
+            guard fill >= 1, let job = pendingJob, job.tool == .wateringCan else { return }
+            pendingJob = nil
+            requestJob(job)
         }
         .onDisappear {
             hintTask?.cancel()
             flightTask?.cancel()
             pipReturnTask?.cancel()
+            wateringPlot = nil   // a pour cut short by leaving must not block the next one
             // Garden tab gone → fade out ambient. Other tabs may have their
             // own ambient (kitchen hum, farm bell) wired later.
             AmbientAudioPlayer.shared.stop()
@@ -1047,6 +1061,7 @@ struct GardenView: View {
                             gameState.addXP(2)
                             careAction = .water
                             canFill = 0   // one fill waters one plant
+                            wateringPlot = nil
                         case .needsWeeding:
                             gameState.gardenPlots[index].weed()
                             gameState.addXP(2)
@@ -1074,9 +1089,8 @@ struct GardenView: View {
                         }
                     },
                     showsGuide: !isLearned(gameState.gardenPlots[index]),
-                    heldTool: heldTool,
-                    canIsFull: canFill >= 1,
-                    onNeedTool: { showToolHint($0) }
+                    onNeedTool: { requestJob(ToolJob(tool: $0, plotIndex: index)) },
+                    waterNow: wateringPlot == index
                 )
                 .frame(width: Self.spotWidth, height: Self.spotWidth)
             }
@@ -1356,7 +1370,7 @@ struct GardenView: View {
     /// the kid never has to tap the plant a second time.
     private func requestJob(_ job: ToolJob) {
         guard toolFlight == nil else { return }   // one flight at a time
-        if heldTool == job.tool {
+        if isReady(job.tool) {
             flyTool(for: job)
         } else {
             pendingJob = job
@@ -1391,8 +1405,16 @@ struct GardenView: View {
                 selectedPlotIndex = SelectedPlot(index: job.plotIndex)
             }
         case .wateringCan:
-            break   // watering is hold-to-pour on the plant, not a flight
+            // The spot pours (its PlotView), then onCareComplete empties the can
+            guard plot.state == .needsWater, canFill >= 1 else { return }
+            wateringPlot = job.plotIndex
         }
+    }
+
+    /// The tool is in hand and can do its job: the can must also be full, and
+    /// not already pouring on another spot.
+    private func isReady(_ tool: GardenTool) -> Bool {
+        heldTool == tool && (tool != .wateringCan || (canFill >= 1 && wateringPlot == nil))
     }
 
     /// The kid tried a job without its tool: buzz, make the tool glow, and Pip
@@ -1785,7 +1807,7 @@ struct GardenView: View {
 
         // Urgent care tips always come first (no rotation)
         if let plot = thirsty.first, let veg = plot.vegetable {
-            return "\(namePrefix)your \(veg.displayName.lowercased()) is thirsty! Fill the watering can, then hold the plant to water it!"
+            return "\(namePrefix)your \(veg.displayName.lowercased()) is thirsty! Fill the watering can, then tap the plant to water it!"
         }
         if let plot = buggy.first, let veg = plot.vegetable {
             return "Oh no \(namePrefix)bugs are munching on your \(veg.displayName.lowercased())! Tap to call the ladybugs!"

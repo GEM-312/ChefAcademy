@@ -6,7 +6,7 @@
 //  - Empty: tap to plant
 //  - Growing: progress bar + small veggie
 //  - Ready: full veggie + harvest badge
-//  - Needs Water: HOLD to water (watering can animates)
+//  - Needs Water: TAP; the full can flies over and the kid pours
 //  - Needs Weeding: SWIPE UP to pull weeds
 //  - Has Bugs: TAP bugs, ladybugs fly in
 //
@@ -31,12 +31,11 @@ struct PlotView: View {
     /// Show the job label ("Loosen!", "Water me!"…): only until the kid has
     /// done this job once (PipTutorial.gardenGuide).
     var showsGuide: Bool = true
-    /// Garden tools: watering needs a full can (weeds and bugs are by hand).
-    /// Loosening, planting and harvest taps are checked by GardenView.
-    var heldTool: GardenTool? = nil
-    var canIsFull: Bool = false
-    /// The kid tried to water without a full can.
+    /// The kid tapped a thirsty plant: GardenView flies a full can over, or
+    /// makes the can glow and waters once it's full (weeds and bugs are by hand).
     var onNeedTool: (GardenTool) -> Void = { _ in }
+    /// The can has landed here: play the pour, then finish the watering.
+    var waterNow: Bool = false
 
     @State private var isAnimating = false
 
@@ -46,7 +45,6 @@ struct PlotView: View {
     @State private var waterTimer: Timer?
     @State private var showWateringCan = false
     @State private var waterDropY: CGFloat = -20
-    @State private var askedForTool = false   // one "need the can" per press
     @State private var soilBounce = false      // the spot hops when the fork loosens it
 
     // Soil effects (GardenEffects.swift). After a harvest the plot no longer
@@ -303,7 +301,7 @@ struct PlotView: View {
             .cornerRadius(AppSpacing.pillCornerRadius)
     }
 
-    // MARK: - Watering Plot (HOLD to water)
+    // MARK: - Watering Plot (TAP to water)
 
     var wateringPlot: some View {
         VStack(spacing: 4) {
@@ -317,7 +315,7 @@ struct PlotView: View {
                         .scaleEffect(0.7 + (waterProgress * 0.3))   // grows as it drinks
                 }
 
-                // Watering can appears when holding
+                // Watering can appears while pouring
                 if showWateringCan {
                     Text("🚿")
                         .font(.AppTheme.rounded(size: 24))
@@ -366,22 +364,17 @@ struct PlotView: View {
             }
         }
         .animation(AnimationConstants.springQuick, value: isWatering)
-        .gesture(
-            DragGesture(minimumDistance: 0)
-                .onChanged { _ in
-                    guard !isWatering, !askedForTool else { return }
-                    if heldTool == .wateringCan && canIsFull {
-                        startWatering()
-                    } else {
-                        askedForTool = true
-                        onNeedTool(.wateringCan)
-                    }
-                }
-                .onEnded { _ in
-                    askedForTool = false
-                    stopWatering()
-                }
-        )
+        // A tap, not a hold: in the scrolling map a held finger drifts and the
+        // ScrollView steals it. The whole spot takes the tap.
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            guard !isWatering else { return }
+            onNeedTool(.wateringCan)
+        }
+        .onChange(of: waterNow) { _, now in
+            if now && !isWatering { startWatering() }
+        }
     }
 
     // MARK: - Weeding Plot (SWIPE UP to pull)
@@ -522,27 +515,15 @@ struct PlotView: View {
             waterDropY = 10
         }
 
-        waterTimer = Timer.scheduledTimer(withTimeInterval: 0.05, repeats: true) { _ in
+        let tick = 0.05
+        waterTimer = Timer.scheduledTimer(withTimeInterval: tick, repeats: true) { _ in
             Task { @MainActor in
-                waterProgress += 0.015
+                // A tick queued before the timer stopped must not finish it twice
+                guard isWatering else { return }
+                waterProgress += tick / AnimationConstants.plantWaterDuration
                 if waterProgress >= 1.0 {
                     completeWatering()
                 }
-            }
-        }
-    }
-
-    private func stopWatering() {
-        isWatering = false
-        waterTimer?.invalidate()
-        waterTimer = nil
-        withAnimation(AnimationConstants.springQuick) {
-            showWateringCan = false
-        }
-        // Drain a bit if not complete
-        if waterProgress < 1.0 {
-            withAnimation(AnimationConstants.fadeMedium) {
-                waterProgress = max(0, waterProgress - 0.05)
             }
         }
     }

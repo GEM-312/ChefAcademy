@@ -217,6 +217,8 @@ enum AnimationConstants {
 
     // Garden tools — taps on the watering can (on the rack) to pump it full
     static let canPumpsToFill = 3
+    // Garden — how long the kid pours once the can lands on a thirsty plant
+    static let plantWaterDuration: TimeInterval = 1.5
     // Garden tools — the needed tool glows and grows this long / this much
     // when the kid tries a job without it
     static let toolHintDuration: TimeInterval = 2.0

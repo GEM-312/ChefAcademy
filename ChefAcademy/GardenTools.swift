@@ -44,7 +44,7 @@ enum GardenTool: CaseIterable {
         switch self {
         case .fork:        return "This soil is hard! Take the fork and loosen it, so seeds can grow."
         case .shovel:      return "Take the shovel! It plants seeds, and digs up veggies when they're ready."
-        case .wateringCan: return "A thirsty plant! Tap the watering can to fill it, then hold the plant to water it."
+        case .wateringCan: return "A thirsty plant! Tap the watering can to fill it, then tap the plant to water it."
         }
     }
 
