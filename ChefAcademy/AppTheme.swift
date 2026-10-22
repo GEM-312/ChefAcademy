@@ -238,6 +238,11 @@ enum AnimationConstants {
     static let seedDropHeight: CGFloat = 40                      // the seed falls from this high
     static let seedLandDelay: TimeInterval = 0.2                 // dirt puffs this long after the drop starts
 
+    // Garden Pip — walks to the fence faster than the kitchen Pip (points/sec),
+    // and keeps pointing at the needed tool this long after he arrives
+    static let gardenPipWalkSpeed: CGFloat = 110
+    static let gardenPipPointDuration: TimeInterval = 4.0
+
     // Springs tuned for ingredient-fly animations (slightly slower than springMedium)
     static let springFly = Animation.spring(response: 0.6, dampingFraction: 0.7)
 

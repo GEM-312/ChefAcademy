@@ -188,9 +188,10 @@ struct AdaptiveCardSize {
         sizeClass == .compact ? 1.2 : 1.0
     }
 
-    /// Pip beside his message in the Garden's bottom panel
-    static func pipGardenMessage(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
-        sizeClass == .compact ? 135 : 270
+    /// Walking Pip's frame on the Garden map. The walk art fills 62% of it, so
+    /// he stands ~116 / 232 pt tall: the size of the old panel Pip (Marina, Oct 22).
+    static func pipGardenWalking(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 185 : 370
     }
 
     /// Height of the tool picture in the Garden's "in hand" badge (map corner)

@@ -604,6 +604,15 @@ struct GardenView: View {
     // "+N" coins floating up from just-harvested spots
     @State private var coinPops: [CoinPop] = []
 
+    // Pip on the map. Plain @State (not @StateObject): GardenView doesn't
+    // redraw on every walk step, only GardenMapPip (it observes the engine).
+    @State private var pipEngine = WalkEngine(frameSet: .pipWalking, speed: AnimationConstants.gardenPipWalkSpeed)
+    @State private var pipPointing = false          // at the fence, pointing at a tool
+    @State private var pipReturnTask: Task<Void, Never>?
+    @State private var pipToolLesson: GardenTool?   // first-time tool lesson in his bubble
+    @State private var mapSize: CGSize = .zero
+    @State private var visitorGreeting = ""
+
     // Visitor greeting
     @State private var showVisitorGreeting = false
 
@@ -643,7 +652,13 @@ struct GardenView: View {
         SceneItem(id: "row7", label: "Row 8", icon: "🌱", xPercent: 0.699, yPercent: 0.390),
         SceneItem(id: "row8", label: "Row 9", icon: "🌱", xPercent: 0.321, yPercent: 0.330),
         SceneItem(id: "row9", label: "Row 10", icon: "🌱", xPercent: 0.681, yPercent: 0.329),
-        SceneItem(id: "pip", label: "Pip Idle", icon: "🦔", xPercent: 0.50, yPercent: 0.90),
+        // Pip's spots are where his FEET stand (Oct 22 2026): home on the path
+        // between the gate and the signpost, and just right of each tool so he
+        // points up-left at the one the kid needs.
+        SceneItem(id: "pip", label: "Pip Home", icon: "🦔", xPercent: 0.60, yPercent: 0.93),
+        SceneItem(id: "pipShovel", label: "Pip Shovel", icon: "👉", xPercent: 0.24, yPercent: 0.94),
+        SceneItem(id: "pipFork", label: "Pip Fork", icon: "👉", xPercent: 0.31, yPercent: 0.94),
+        SceneItem(id: "pipCan", label: "Pip Can", icon: "👉", xPercent: 0.47, yPercent: 0.93),
         SceneItem(id: "walk0", label: "Walk 0", icon: "👣", xPercent: 0.25, yPercent: 0.88),
         SceneItem(id: "walk1", label: "Walk 1", icon: "👣", xPercent: 0.38, yPercent: 0.72),
         SceneItem(id: "walk2", label: "Walk 2", icon: "👣", xPercent: 0.60, yPercent: 0.65),
@@ -725,13 +740,18 @@ struct GardenView: View {
                 }
             }
         }
-        // Recipe suggestion is now handled inline by PipGardenMessage in bottomPanel
-        // Visitor greeting is now handled inline by PipGardenMessage in bottomPanel
+        // Recipe suggestion and visitor greeting open Pip's map bubble (pipBubble)
         .onAppear {
             if isVisiting {
                 Task { @MainActor in
                     try? await Task.sleep(for: .seconds(0.5))
                     guard !Task.isCancelled else { return }
+                    // Picked once, so the bubble doesn't reshuffle (and re-speak) on redraw
+                    visitorGreeting = [
+                        "Welcome to \(visitingName)'s garden! Look around and see what they're growing!",
+                        "Glad to see you here! \(visitingName) has been working hard in the garden!",
+                        "Hey there! Take a look at \(visitingName)'s awesome garden!",
+                    ].randomElement() ?? ""
                     showVisitorGreeting = true
                 }
             }
@@ -755,6 +775,9 @@ struct GardenView: View {
                 hintTask?.cancel()
                 withAnimation(AnimationConstants.fadeMedium) { hintTool = nil }
             }
+            // Taking the tool Pip was explaining ends the lesson; he walks back
+            if tool != nil && tool == pipToolLesson { pipToolLesson = nil }
+            pipGoHomeIfFree()
             if let job = pendingJob {
                 pendingJob = nil
                 if tool == job.tool { requestJob(job) }
@@ -763,6 +786,7 @@ struct GardenView: View {
         .onDisappear {
             hintTask?.cancel()
             flightTask?.cancel()
+            pipReturnTask?.cancel()
             // Garden tab gone → fade out ambient. Other tabs may have their
             // own ambient (kitchen hum, farm bell) wired later.
             AmbientAudioPlayer.shared.stop()
@@ -918,8 +942,31 @@ struct GardenView: View {
                                 .position(x: postFoot.x, y: postFoot.y - postHeight / 2)
                         }
 
-                        // Pip removed from map — one Pip only, shown in PipGardenMessage below
-                        // Walking/draggable Pip will return once speaking animation is ready
+                        // Pip — the one Garden Pip, on the path by the gate
+                        GardenMapPip(
+                            engine: pipEngine,
+                            frameSize: AdaptiveCardSize.pipGardenWalking(for: sizeClass),
+                            sceneWidth: w,
+                            isPointing: pipPointing,
+                            bubble: pipBubble,
+                            onTap: {
+                                // Tap Pip → the next tip, in his bubble
+                                fetchSmartPipTip()
+                                showPipTip = true
+                            },
+                            onCloseBubble: closePipBubble
+                        )
+                        // The first layout pass is smaller than the final one, so
+                        // re-place Pip at home whenever the size changes while idle
+                        .onChange(of: CGSize(width: w, height: h), initial: true) { _, size in
+                            mapSize = size
+                            if !pipEngine.isMoving && !pipPointing {
+                                pipEngine.position = pipCenter(at: "pip")
+                            }
+                            // Arriving at the fence starts his pointing time. The engine
+                            // calls this mid-frame, so hop to the next main-actor turn.
+                            pipEngine.onCompleted = { Task { @MainActor in pipArrived() } }
+                        }
                     }
                 }
             )
@@ -1096,85 +1143,7 @@ struct GardenView: View {
 
     func bottomPanel(width: CGFloat) -> some View {
         VStack(spacing: AppSpacing.md) {
-            // Pip's message — shows recipe suggestion with buttons, or a random tip
-            if showRecipeSuggestion, let recipe = suggestedRecipe {
-                let missing = recipe.missingPantryItems(from: gameState.pantryInventory)
-                let isFullMatch = missing.isEmpty
-                let message = isFullMatch
-                    ? "You have everything for \(recipe.title)! Want to cook it now?"
-                    : "You can almost make \(recipe.title)! Just need \(missing.map(\.displayName).joined(separator: ", ")) from the Farm Shop."
-
-                PipGardenMessage(
-                    recipeMessage: message,
-                    choices: isFullMatch
-                        ? [
-                            PipDialogChoice(label: "Yes, let's cook!", style: .primary) {
-                                showRecipeSuggestion = false
-                                selectedTab = .kitchen
-                            },
-                            PipDialogChoice(label: "Not yet", style: .secondary) {
-                                showRecipeSuggestion = false
-                            },
-                            PipDialogChoice(label: "Keep gardening", style: .subtle) {
-                                showRecipeSuggestion = false
-                            },
-                        ]
-                        : [
-                            PipDialogChoice(label: "Go to Farm Shop!", style: .primary) {
-                                showRecipeSuggestion = false
-                                onShowFarmShop?()
-                            },
-                            PipDialogChoice(label: "Go to Kitchen", style: .secondary) {
-                                showRecipeSuggestion = false
-                                selectedTab = .kitchen
-                            },
-                            PipDialogChoice(label: "Keep gardening", style: .subtle) {
-                                showRecipeSuggestion = false
-                            },
-                        ],
-                    onClose: { showRecipeSuggestion = false }
-                )
-            } else if isVisiting && showVisitorGreeting {
-                PipGardenMessage(
-                    recipeMessage: [
-                        "Welcome to \(visitingName)'s garden! Look around and see what they're growing!",
-                        "Glad to see you here! \(visitingName) has been working hard in the garden!",
-                        "Hey there! Take a look at \(visitingName)'s awesome garden!",
-                    ].randomElement(),
-                    choices: [
-                        PipDialogChoice(label: "Cool garden!", style: .primary) {
-                            onLikeGarden?()
-                            showVisitorGreeting = false
-                        },
-                        PipDialogChoice(label: "Let me look around", style: .secondary) {
-                            showVisitorGreeting = false
-                        },
-                    ],
-                    onClose: { showVisitorGreeting = false }
-                )
-            } else {
-                let tip = smartPipTip
-                let isQuestion = tip?.hasSuffix("?") ?? false
-                PipGardenMessage(
-                    recipeMessage: tip,
-                    choices: isQuestion ? [
-                        PipDialogChoice(label: "Tell me!", style: .primary) {
-                            showAskPip = true
-                        },
-                        PipDialogChoice(label: "Maybe later", style: .subtle) {
-                            fetchSmartPipTip()
-                        }
-                    ] : [],
-                    gardenPlots: gameState.gardenPlots,
-                    onPipTap: {
-                        // Tap Pip → get the next tip and open it
-                        fetchSmartPipTip()
-                        showPipTip = true
-                    },
-                    showsMessage: showPipTip,
-                    onClose: { showPipTip = false }
-                )
-            }
+            // (Pip lives on the map now: see GardenMapPip / pipBubble)
 
             // Seed inventory
             seedInventorySection(width: width)
@@ -1372,15 +1341,140 @@ struct GardenView: View {
         }
     }
 
-    /// The kid tried a job without its tool: buzz, and make the tool glow for a moment.
+    /// The kid tried a job without its tool: buzz, make the tool glow, and Pip
+    /// walks to the fence to point at it. The first time for each tool his
+    /// bubble opens with a one-line lesson; after that the pointing is the hint.
     private func showToolHint(_ tool: GardenTool) {
         Haptic.notify(.warning)
         withAnimation(AnimationConstants.springBouncy) { hintTool = tool }
+        sendPip(to: tool)
+        if !tool.tutorial.isDone(for: gameState.activeProfileID) {
+            tool.tutorial.markDone(for: gameState.activeProfileID)
+            pipToolLesson = tool
+        }
         hintTask?.cancel()
         hintTask = Task { @MainActor in
             try? await Task.sleep(for: .seconds(AnimationConstants.toolHintDuration))
             guard !Task.isCancelled else { return }
             withAnimation(AnimationConstants.fadeMedium) { hintTool = nil }
+        }
+    }
+
+    // MARK: - Pip on the Map
+
+    /// The engine position (walk-frame center) for Pip's feet on a scene spot.
+    private func pipCenter(at spot: String) -> CGPoint {
+        GardenMapPip.center(
+            feet: plotPos(for: spot, w: mapSize.width, h: mapSize.height),
+            frameSize: AdaptiveCardSize.pipGardenWalking(for: sizeClass)
+        )
+    }
+
+    /// Pip walks next to `tool` and points at it, or back to the gate (nil).
+    private func sendPip(to tool: GardenTool?) {
+        guard mapSize != .zero else { return }
+        pipReturnTask?.cancel()
+        let target = pipCenter(at: tool?.pipSpotID ?? "pip")
+        pipPointing = tool != nil
+        if target == pipEngine.position {
+            if tool != nil { pipArrived() }   // already there: point for longer
+            return
+        }
+        pipEngine.start(waypoints: [pipEngine.position, target], loop: false)
+    }
+
+    /// He reached the fence: keep pointing for a while, then walk back
+    /// (unless the kid takes the tool or closes the lesson first).
+    private func pipArrived() {
+        guard pipPointing else { return }
+        pipReturnTask?.cancel()
+        pipReturnTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(AnimationConstants.gardenPipPointDuration))
+            guard !Task.isCancelled else { return }
+            pipGoHomeIfFree()
+        }
+    }
+
+    /// Back to the gate once nothing needs him at the fence.
+    private func pipGoHomeIfFree() {
+        guard pipPointing, pipToolLesson == nil else { return }
+        sendPip(to: nil)
+    }
+
+    /// What Pip's bubble says now. Event prompts (recipe suggestion, visitor
+    /// greeting) and a tool's first lesson open by themselves; tips wait for a tap.
+    private var pipBubble: GardenPipBubble? {
+        if showRecipeSuggestion, let recipe = suggestedRecipe {
+            let missing = recipe.missingPantryItems(from: gameState.pantryInventory)
+            if missing.isEmpty {
+                return GardenPipBubble(
+                    message: "You have everything for \(recipe.title)! Want to cook it now?",
+                    choices: [
+                        PipDialogChoice(label: "Yes, let's cook!", style: .primary) {
+                            showRecipeSuggestion = false
+                            selectedTab = .kitchen
+                        },
+                        PipDialogChoice(label: "Not yet", style: .secondary) {
+                            showRecipeSuggestion = false
+                        },
+                    ]
+                )
+            }
+            return GardenPipBubble(
+                message: "You can almost make \(recipe.title)! Just need \(missing.map(\.displayName).joined(separator: ", ")) from the Farm Shop.",
+                choices: [
+                    PipDialogChoice(label: "Go to Farm Shop!", style: .primary) {
+                        showRecipeSuggestion = false
+                        onShowFarmShop?()
+                    },
+                    PipDialogChoice(label: "Go to Kitchen", style: .secondary) {
+                        showRecipeSuggestion = false
+                        selectedTab = .kitchen
+                    },
+                ]
+            )
+        }
+        if isVisiting && showVisitorGreeting {
+            return GardenPipBubble(
+                message: visitorGreeting,
+                choices: [
+                    PipDialogChoice(label: "Cool garden!", style: .primary) {
+                        onLikeGarden?()
+                        showVisitorGreeting = false
+                    },
+                    PipDialogChoice(label: "Let me look around", style: .secondary) {
+                        showVisitorGreeting = false
+                    },
+                ]
+            )
+        }
+        if let tool = pipToolLesson {
+            return GardenPipBubble(message: tool.pipLesson)
+        }
+        if showPipTip {
+            let tip = smartPipTip ?? "Happy gardening!"
+            return GardenPipBubble(
+                message: tip,
+                choices: tip.hasSuffix("?") ? [
+                    PipDialogChoice(label: "Tell me!", style: .primary) { showAskPip = true },
+                    PipDialogChoice(label: "Maybe later", style: .subtle) { fetchSmartPipTip() },
+                ] : []
+            )
+        }
+        return nil
+    }
+
+    /// The ✕ closes whatever the bubble is showing.
+    private func closePipBubble() {
+        if showRecipeSuggestion {
+            showRecipeSuggestion = false
+        } else if isVisiting && showVisitorGreeting {
+            showVisitorGreeting = false
+        } else if pipToolLesson != nil {
+            pipToolLesson = nil
+            pipGoHomeIfFree()
+        } else {
+            showPipTip = false
         }
     }
 
@@ -1525,7 +1619,7 @@ struct GardenView: View {
     // generic "Harvest veggies to use in recipes!"
     //
     // If Foundation Models isn't available (older device), we fall back to
-    // the context-aware static tips in PipGardenMessage.gardeningTips.
+    // the context-aware static tips in generateStaticTip().
 
     // TEACHING MOMENT: State Hashing for Change Detection
     // Instead of re-calling the AI every 5 seconds (wasteful), we compute
@@ -1602,6 +1696,8 @@ struct GardenView: View {
         ONLY mention veggies that are actually listed. If all plots are empty, \
         encourage the kid to plant something. Be fun and encouraging. One emoji max.
         Do NOT say "Hello" or greet — you already know each other.
+        Garden tools: fork loosens hard soil, shovel plants and harvests, \
+        fill the watering can before watering. Weeds and bugs are by hand.
         \(nameNote)
         \(state)
         """
@@ -1634,7 +1730,7 @@ struct GardenView: View {
 
         // Urgent care tips always come first (no rotation)
         if let plot = thirsty.first, let veg = plot.vegetable {
-            return "\(namePrefix)your \(veg.displayName.lowercased()) is thirsty! Hold on the plot to water it!"
+            return "\(namePrefix)your \(veg.displayName.lowercased()) is thirsty! Fill the watering can, then hold the plant to water it!"
         }
         if let plot = buggy.first, let veg = plot.vegetable {
             return "Oh no \(namePrefix)bugs are munching on your \(veg.displayName.lowercased())! Tap to call the ladybugs!"
@@ -1643,7 +1739,7 @@ struct GardenView: View {
             return "\(namePrefix)weeds are crowding your \(veg.displayName.lowercased())! Swipe up to pull them out!"
         }
         if let plot = ready.first, let veg = plot.vegetable {
-            return "\(namePrefix)your \(veg.displayName.lowercased()) \(ready.count == 1 ? "is" : "are") ready to pick! Tap the glowing plot to harvest!"
+            return "\(namePrefix)your \(veg.displayName.lowercased()) \(ready.count == 1 ? "is" : "are") ready to pick! Take the shovel and dig \(ready.count == 1 ? "it" : "them") up!"
         }
 
         // Non-urgent: ROTATE between growing info, empty plots, and fun facts
@@ -1662,7 +1758,7 @@ struct GardenView: View {
 
         // Empty plot reminders
         if !empty.isEmpty {
-            pool.append("\(namePrefix)you have \(empty.count) empty plot\(empty.count == 1 ? "" : "s") — tap one to plant something new!")
+            pool.append("\(namePrefix)you have \(empty.count) empty spot\(empty.count == 1 ? "" : "s") — loosen the soil with the fork, then plant with the shovel!")
             pool.append("Your garden has room for more! Try planting different veggies to unlock new recipes!")
         }
 
@@ -1697,163 +1793,6 @@ struct GardenView: View {
         case .blueberry: return "Blueberries are one of the only naturally blue foods in the world! They boost your brain power!"
         default:         return nil
         }
-    }
-}
-
-// MARK: - Pip Garden Message
-
-struct PipGardenMessage: View {
-    var recipeMessage: String? = nil
-    var choices: [PipDialogChoice] = []
-    var gardenPlots: [GardenPlot] = []
-    var onPipTap: (() -> Void)? = nil
-    /// false = only Pip shows, with his "Tap me!" tag; the card opens on tap.
-    var showsMessage: Bool = true
-    /// Shows an ✕ on the card that closes it.
-    var onClose: (() -> Void)? = nil
-    @Environment(\.horizontalSizeClass) private var sizeClass
-    private var isIPad: Bool { sizeClass == .regular }
-
-    // Resolved random tip — captured once per appearance so the displayed
-    // and spoken text always match (and the tip doesn't reshuffle on every
-    // re-render of this view).
-    @State private var resolvedTip: String = ""
-
-    private var displayedMessage: String {
-        recipeMessage ?? (resolvedTip.isEmpty ? "Happy gardening!" : resolvedTip)
-    }
-
-    var body: some View {
-        HStack(alignment: .top, spacing: AppSpacing.md) {
-            // Static Pip (transparent bg) — will switch to speaking animation once ready
-            let pipSize = AdaptiveCardSize.pipGardenMessage(for: sizeClass)
-            Image("pip_waving_frame_01")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(width: pipSize, height: pipSize)
-                .pipTapMeTag(isShown: onPipTap != nil && !showsMessage)
-                .onTapGesture { onPipTap?() }
-
-            // Message bubble — compact, doesn't fill full width
-            if showsMessage {
-                VStack(alignment: .leading, spacing: AppSpacing.xs) {
-                    HStack(alignment: .top, spacing: AppSpacing.xs) {
-                        Text(displayedMessage)
-                            .font(isIPad ? .AppTheme.body : .AppTheme.subheadline)
-                            .foregroundColor(Color.AppTheme.darkBrown)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-
-                        if let onClose {
-                            PipBubbleCloseButton(action: onClose)
-                        }
-                    }
-
-                    // Action buttons (shown for recipe suggestions)
-                    if !choices.isEmpty {
-                        let actionChoices = choices.filter { $0.style != .subtle }
-                        let subtleChoices = choices.filter { $0.style == .subtle }
-
-                        // Primary + secondary side by side with wood texture
-                        HStack(spacing: AppSpacing.xs) {
-                            ForEach(actionChoices.indices, id: \.self) { index in
-                                let choice = actionChoices[index]
-                                Button(choice.label, action: choice.action)
-                                    .buttonStyle(TexturedButtonStyle(
-                                        tint: choice.style == .primary ? Color.AppTheme.sage : Color.AppTheme.warmKhaki,
-                                        height: 38,
-                                        font: .AppTheme.caption
-                                    ))
-                            }
-                        }
-                        .padding(.top, AppSpacing.xs)
-
-                        // "Keep gardening" as plain text link below
-                        ForEach(subtleChoices.indices, id: \.self) { index in
-                            let choice = subtleChoices[index]
-                            Button(action: choice.action) {
-                                Text(choice.label)
-                                    .font(.AppTheme.caption)
-                                    .foregroundColor(Color.AppTheme.sepia)
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
-                .padding(isIPad ? AppSpacing.md : AppSpacing.sm)
-                .background(Color.AppTheme.warmCream)
-                .cornerRadius(AppSpacing.cardCornerRadius)
-            }
-        }
-        // Leading, so a closed message leaves Pip on the left instead of centered.
-        .frame(maxWidth: isIPad ? 500 : .infinity, alignment: .leading)
-        .padding(.horizontal, AppSpacing.md)
-        .onAppear {
-            // Pick the random fallback tip exactly once per appearance.
-            if resolvedTip.isEmpty {
-                resolvedTip = gardeningTips.randomElement() ?? "Happy gardening!"
-            }
-            if showsMessage { PipVoice.shared.speak(displayedMessage) }
-        }
-        .onChange(of: recipeMessage) { _, _ in
-            // Smart-tip updates (Apple Intelligence regen on Pip tap) flow
-            // through `recipeMessage`. Re-speak whenever it changes.
-            if showsMessage { PipVoice.shared.speak(displayedMessage) }
-        }
-        .onChange(of: showsMessage) { _, isShown in
-            if isShown { PipVoice.shared.speak(displayedMessage) }
-        }
-    }
-
-    // TEACHING MOMENT: Context-Aware Tips
-    // Instead of always showing "Tap an empty plot" (even when no plots are empty),
-    // Pip's tips now change based on what's actually happening in the garden.
-    // This makes Pip feel like a real companion who SEES what you're doing.
-    var gardeningTips: [String] {
-        let weather = GardenWeatherService.shared.currentWeather
-        var tips: [String] = []
-
-        let emptyPlots = gardenPlots.filter { $0.state == .empty }
-        let growingPlots = gardenPlots.filter { $0.state == .growing }
-        let readyPlots = gardenPlots.filter { $0.state == .ready }
-        let thirstyPlots = gardenPlots.filter { $0.state == .needsWater }
-        let weedyPlots = gardenPlots.filter { $0.state == .needsWeeding }
-        let buggyPlots = gardenPlots.filter { $0.state == .hasBugs }
-
-        // Context-specific tips based on actual garden state
-        if !readyPlots.isEmpty {
-            let vegName = readyPlots.first?.vegetable?.displayName ?? "veggies"
-            tips.append("Your \(vegName) \(readyPlots.count == 1 ? "is" : "are") ready to harvest! Tap the glowing plot to pick!")
-        }
-        if !thirstyPlots.isEmpty {
-            tips.append("Some plants are thirsty! Hold on a plot to water it!")
-        }
-        if !weedyPlots.isEmpty {
-            tips.append("I see weeds! Swipe up on the plot to pull them!")
-        }
-        if !buggyPlots.isEmpty {
-            tips.append("Bugs are munching on your plants! Tap to rescue them!")
-        }
-        if !emptyPlots.isEmpty {
-            tips.append("You have \(emptyPlots.count) empty plot\(emptyPlots.count == 1 ? "" : "s") — tap to plant seeds!")
-        }
-        if !growingPlots.isEmpty && emptyPlots.isEmpty {
-            let vegNames = growingPlots.compactMap { $0.vegetable?.displayName }
-            let unique = Array(Set(vegNames))
-            if unique.count <= 2 {
-                tips.append("Your \(unique.joined(separator: " and ")) \(unique.count == 1 ? "is" : "are") growing nicely!")
-            } else {
-                tips.append("All \(growingPlots.count) plots are growing — garden is full!")
-            }
-        }
-
-        // General tips (always available)
-        tips.append("Different veggies take different times to grow.")
-        tips.append("Lettuce grows the fastest!")
-        tips.append("Harvest veggies to use in recipes!")
-
-        // Weather-specific tips
-        tips.append(contentsOf: weather.pipMessages)
-        return tips
     }
 }
 

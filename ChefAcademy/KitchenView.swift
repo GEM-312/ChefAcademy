@@ -1189,6 +1189,9 @@ struct PipFloatingBubble: View {
     /// When true, `anchor.y` is the bubble's bottom edge (Pip's feet) and the
     /// bubble grows upward, so it stays inside a scene where Pip walks the floor.
     var bottomAligned: Bool = false
+    /// Answer buttons for an event prompt (Garden recipe suggestion, visitor
+    /// greeting). Stacked, so they fit the narrow iPhone bubble.
+    var choices: [PipDialogChoice] = []
 
     // The token width, narrowed when the space beside Pip is smaller (iPhone).
     // softCard adds AppSpacing.md padding on the outer edge, so leave room for it.
@@ -1220,6 +1223,25 @@ struct PipFloatingBubble: View {
 
                 if let onClose {
                     PipBubbleCloseButton(action: onClose)
+                }
+            }
+
+            ForEach(choices.indices, id: \.self) { i in
+                let choice = choices[i]
+                if choice.style == .subtle {
+                    Button(action: choice.action) {
+                        Text(choice.label)
+                            .font(.AppTheme.caption)
+                            .foregroundColor(Color.AppTheme.sepia)
+                    }
+                    .buttonStyle(BouncyButtonStyle())
+                } else {
+                    Button(choice.label, action: choice.action)
+                        .buttonStyle(TexturedButtonStyle(
+                            tint: choice.style == .primary ? Color.AppTheme.sage : Color.AppTheme.warmKhaki,
+                            height: AdaptiveCardSize.pipBubbleButtonHeight(for: sizeClass),
+                            font: .AppTheme.subheadline
+                        ))
                 }
             }
 

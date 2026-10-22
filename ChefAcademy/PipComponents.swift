@@ -174,6 +174,8 @@ enum PipTutorial: String {
     // Learned when the kid finishes that mini-game once (CookingSessionView).
     case cookHeatPan, cookAddToPan, cookWash, cookPeel, cookChop
     case cookCrack, cookStir, cookSeason, cookTimer, cookAssemble
+    // Garden tools: the first time a kid needs each tool, Pip explains it.
+    case gardenFork, gardenShovel, gardenWateringCan
 
     private func key(for profileID: UUID?) -> String {
         "pipTutorial_\(rawValue)_\(profileID?.uuidString ?? "legacy")"

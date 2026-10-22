@@ -39,6 +39,33 @@ enum GardenTool: CaseIterable {
         }
     }
 
+    /// What Pip says the first time the kid needs this tool.
+    var pipLesson: String {
+        switch self {
+        case .fork:        return "This soil is hard! Take the fork and loosen it, so seeds can grow."
+        case .shovel:      return "Take the shovel! It plants seeds, and digs up veggies when they're ready."
+        case .wateringCan: return "A thirsty plant! Hold the watering can to fill it, then hold the plant to water it."
+        }
+    }
+
+    /// Garden scene spot where Pip stands (feet) to point at this tool.
+    var pipSpotID: String {
+        switch self {
+        case .shovel:      return "pipShovel"
+        case .fork:        return "pipFork"
+        case .wateringCan: return "pipCan"
+        }
+    }
+
+    /// Pip explains each tool once per player.
+    var tutorial: PipTutorial {
+        switch self {
+        case .fork:        return .gardenFork
+        case .shovel:      return .gardenShovel
+        case .wateringCan: return .gardenWateringCan
+        }
+    }
+
     /// Where the tool hangs on the fence, as a fraction of the garden map.
     /// Measured from the cut-out art on the 1296×2304 canvas.
     var rackFrame: CGRect {
