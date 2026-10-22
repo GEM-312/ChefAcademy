@@ -601,6 +601,8 @@ struct GardenView: View {
     // The tool flying from the fence to its spot (the job runs when it lands)
     @State private var toolFlight: ToolJob?
     @State private var flightTask: Task<Void, Never>?
+    // "+N" coins floating up from just-harvested spots
+    @State private var coinPops: [CoinPop] = []
 
     // Visitor greeting
     @State private var showVisitorGreeting = false
@@ -899,6 +901,12 @@ struct GardenView: View {
                             )
                             .id(job)
                             .transition(.opacity)
+                        }
+
+                        // Coins earned by a harvest, rising from its spot
+                        ForEach(coinPops) { pop in
+                            GardenCoinPop(amount: pop.amount)
+                                .position(spotCenter(pop.plotIndex, w: w, h: h))
                         }
 
                         // Signpost — the way to the other places. The scene point is
@@ -1314,6 +1322,13 @@ struct GardenView: View {
         let plotIndex: Int
     }
 
+    /// One "+N" coin label over a harvested spot.
+    struct CoinPop: Identifiable {
+        let id = UUID()
+        let plotIndex: Int
+        let amount: Int
+    }
+
     /// With the tool in hand, it flies to the spot and does the job. Without
     /// it, the tool glows and the job waits: taking that tool finishes it, so
     /// the kid never has to tap the plant a second time.
@@ -1407,6 +1422,14 @@ struct GardenView: View {
         // Award coins!
         let coinsEarned = vegType.harvestValue * yield
         gameState.addCoins(coinsEarned)
+
+        // Show them rising from the spot, then drop the label
+        let pop = CoinPop(plotIndex: index, amount: coinsEarned)
+        coinPops.append(pop)
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(AnimationConstants.harvestPopDuration))
+            coinPops.removeAll { $0.id == pop.id }
+        }
 
         // Award XP
         gameState.addXP(10)

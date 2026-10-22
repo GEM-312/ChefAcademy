@@ -224,6 +224,20 @@ enum AnimationConstants {
     static let toolFlyDelay: TimeInterval = 0.55
     static let toolDigAngle: Double = -25
 
+    // Garden soil effects (GardenEffects.swift)
+    static let dirtPuff = Animation.easeOut(duration: 0.5)       // specks burst out and fade
+    static let dirtPuffDuration: TimeInterval = 0.5
+    static let dirtPuffRadius: CGFloat = 40
+    static let harvestPop = Animation.easeOut(duration: 0.8)     // veggie jumps out of the soil
+    static let harvestPopDuration: TimeInterval = 0.8
+    static let harvestPopRise: CGFloat = 60
+    static let harvestPopScale: CGFloat = 1.3
+    static let harvestPopSpin: Double = 15                       // degrees
+    static let coinPopRise: CGFloat = 50                         // "+N" coins float up this far
+    static let seedDropDelay: TimeInterval = 0.4                 // wait for the planting sheet to close
+    static let seedDropHeight: CGFloat = 40                      // the seed falls from this high
+    static let seedLandDelay: TimeInterval = 0.2                 // dirt puffs this long after the drop starts
+
     // Springs tuned for ingredient-fly animations (slightly slower than springMedium)
     static let springFly = Animation.spring(response: 0.6, dampingFraction: 0.7)
 

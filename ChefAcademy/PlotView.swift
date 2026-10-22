@@ -46,6 +46,15 @@ struct PlotView: View {
     @State private var askedForTool = false   // one "need the can" per press
     @State private var soilBounce = false      // the spot hops when the fork loosens it
 
+    // Soil effects (GardenEffects.swift). After a harvest the plot no longer
+    // knows its veggie, so the last one is remembered for the pop.
+    @State private var lastVegetable: VegetableType?
+    @State private var showPuff = false
+    @State private var puffID = 0
+    @State private var harvestPopVeg: VegetableType?
+    @State private var harvestPopID = 0
+    @State private var seedDropping = false    // the new seed starts above the soil
+
     // Weeding state
     @State private var weedOffsets: [CGFloat] = [0, 0, 0]
     @State private var weedsRemoved: [Bool] = [false, false, false]
@@ -86,6 +95,15 @@ struct PlotView: View {
                 }
                 .animation(AnimationConstants.springQuick, value: careAction)
 
+            // Soil effects: dirt puff (loosen / plant / harvest) and the
+            // harvested veggie jumping out of the soil
+            if showPuff {
+                DirtPuffView().id(puffID)
+            }
+            if let veg = harvestPopVeg {
+                VeggiePopView(imageName: veg.imageName, size: 65).id(harvestPopID)
+            }
+
             // XP reward floating text
             if xpRewardVisible {
                 Text(rewardLabel)
@@ -96,13 +114,19 @@ struct PlotView: View {
             }
         }
         .onAppear {
+            lastVegetable = plot.vegetable
             if plot.state == .ready {
                 withAnimation(AnimationConstants.revealSlow.repeatForever(autoreverses: true)) {
                     isAnimating = true
                 }
             }
         }
-        .onChange(of: plot.state) { _, newState in
+        .onChange(of: plot.vegetable) { _, veg in
+            if let veg { lastVegetable = veg }
+        }
+        .onChange(of: plot.state) { oldState, newState in
+            if oldState == .ready && newState == .empty { playHarvestPop() }
+            if oldState == .empty && newState == .growing { playSeedDrop() }
             if newState == .ready {
                 withAnimation(AnimationConstants.revealSlow.repeatForever(autoreverses: true)) {
                     isAnimating = true
@@ -164,6 +188,7 @@ struct PlotView: View {
         .scaleEffect(soilBounce ? AnimationConstants.soilLoosenScale : 1)
         .onChange(of: plot.soilLoosened) { _, loosened in
             guard loosened else { return }
+            puff()
             withAnimation(AnimationConstants.springBouncy) { soilBounce = true }
             Task { @MainActor in
                 try? await Task.sleep(for: .seconds(0.3))
@@ -224,6 +249,9 @@ struct PlotView: View {
             .aspectRatio(contentMode: .fit)
             .frame(height: height)
             .offset(y: -height / 2)   // stand on the soil row instead of centring on it
+            // Just planted: the seed falls into the soil (playSeedDrop)
+            .offset(y: seedDropping ? -AnimationConstants.seedDropHeight : 0)
+            .opacity(seedDropping ? 0 : 1)
     }
 
     // MARK: - Ready Plot
@@ -568,6 +596,48 @@ struct PlotView: View {
             try? await Task.sleep(for: .seconds(GardenCareCharacterView.playDuration + 0.4))
             guard !Task.isCancelled else { return }
             careAction = nil
+        }
+    }
+
+    // MARK: - Soil Effects
+
+    /// A fresh dirt puff (a new id restarts its animation), hidden when done.
+    private func puff() {
+        puffID += 1
+        showPuff = true
+        let id = puffID
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(AnimationConstants.dirtPuffDuration))
+            guard !Task.isCancelled, puffID == id else { return }
+            showPuff = false
+        }
+    }
+
+    /// Harvest: the veggie jumps out of the soil with a dirt puff.
+    private func playHarvestPop() {
+        guard let veg = lastVegetable else { return }
+        harvestPopID += 1
+        harvestPopVeg = veg
+        puff()
+        let id = harvestPopID
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(AnimationConstants.harvestPopDuration))
+            guard !Task.isCancelled, harvestPopID == id else { return }
+            harvestPopVeg = nil
+        }
+    }
+
+    /// Planting: once the planting sheet has closed, the seed drops into the
+    /// soil and dirt puffs where it lands.
+    private func playSeedDrop() {
+        seedDropping = true
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(AnimationConstants.seedDropDelay))
+            guard !Task.isCancelled else { return }
+            withAnimation(AnimationConstants.springBouncy) { seedDropping = false }
+            try? await Task.sleep(for: .seconds(AnimationConstants.seedLandDelay))
+            guard !Task.isCancelled else { return }
+            puff()
         }
     }
 
