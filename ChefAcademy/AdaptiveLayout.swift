@@ -193,6 +193,11 @@ struct AdaptiveCardSize {
         sizeClass == .compact ? 135 : 270
     }
 
+    /// Height of the tool picture in the Garden's "in hand" badge (map corner)
+    static func gardenToolBadge(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        sizeClass == .compact ? 40 : 60
+    }
+
     /// Floating speech bubble width beside walking Pip
     static func pipBubbleWidth(for sizeClass: UserInterfaceSizeClass?) -> CGFloat {
         sizeClass == .compact ? 200 : 280

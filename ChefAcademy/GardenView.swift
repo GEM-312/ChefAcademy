@@ -590,6 +590,10 @@ struct GardenView: View {
     // The spot whose care kid is showing; drawn above its row neighbours
     @State private var plotShowingKid: Int?
 
+    // Garden tools on the fence: the one in the kid's hand, and the can's water (0...1)
+    @State private var heldTool: GardenTool?
+    @State private var canFill: Double = 0
+
     // Visitor greeting
     @State private var showVisitorGreeting = false
 
@@ -856,6 +860,9 @@ struct GardenView: View {
                                 .position(plotPos(for: "row\(row)", w: w, h: h))
                         }
 
+                        // Tools on the fence by the gate, in front of the beds
+                        GardenToolRack(mapWidth: w, mapHeight: h, heldTool: $heldTool, canFill: $canFill)
+
                         // Signpost — the way to the other places. The scene point is
                         // where the post meets the ground, so it's lifted by half its height.
                         if !isVisiting {
@@ -890,6 +897,16 @@ struct GardenView: View {
                     )
                 }
             )
+            // The tool in the kid's hand, above the weather; tap to put it back
+            .overlay(alignment: .topLeading) {
+                if !editMode, let tool = heldTool {
+                    GardenHeldToolBadge(tool: tool, canFill: canFill) {
+                        withAnimation(AnimationConstants.springQuick) { heldTool = nil }
+                    }
+                    .padding(AppSpacing.sm)
+                    .transition(.scale.combined(with: .opacity))
+                }
+            }
     }
 
     // MARK: - Individual Garden Plot Spot

@@ -211,6 +211,9 @@ enum AnimationConstants {
     static let itemFlyCleanup: TimeInterval = 0.7   // total step length before advancing
     static let stovePreRoll: TimeInterval = 1.2     // stove ignition delay before mini-game
 
+    // Garden tools — how long the kid holds the watering can on the rack to fill it
+    static let canFillDuration: TimeInterval = 1.0
+
     // Springs tuned for ingredient-fly animations (slightly slower than springMedium)
     static let springFly = Animation.spring(response: 0.6, dampingFraction: 0.7)
 
