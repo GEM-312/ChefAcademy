@@ -593,6 +593,9 @@ struct GardenView: View {
     // Garden tools on the fence: the one in the kid's hand, and the can's water (0...1)
     @State private var heldTool: GardenTool?
     @State private var canFill: Double = 0
+    // The tool the kid needs right now; it glows on the rack for a moment
+    @State private var hintTool: GardenTool?
+    @State private var hintTask: Task<Void, Never>?
 
     // Visitor greeting
     @State private var showVisitorGreeting = false
@@ -738,7 +741,15 @@ struct GardenView: View {
         .onChange(of: weatherService.currentWeather) { _, newWeather in
             AmbientAudioPlayer.shared.play(ambientTrackForWeather(newWeather))
         }
+        // Picking up the glowing tool ends its hint right away
+        .onChange(of: heldTool) { _, tool in
+            if tool != nil && tool == hintTool {
+                hintTask?.cancel()
+                withAnimation(AnimationConstants.fadeMedium) { hintTool = nil }
+            }
+        }
         .onDisappear {
+            hintTask?.cancel()
             // Garden tab gone → fade out ambient. Other tabs may have their
             // own ambient (kitchen hum, farm bell) wired later.
             AmbientAudioPlayer.shared.stop()
@@ -861,7 +872,8 @@ struct GardenView: View {
                         }
 
                         // Tools on the fence by the gate, in front of the beds
-                        GardenToolRack(mapWidth: w, mapHeight: h, heldTool: $heldTool, canFill: $canFill)
+                        GardenToolRack(mapWidth: w, mapHeight: h, heldTool: $heldTool,
+                                       canFill: $canFill, hintTool: hintTool)
 
                         // Signpost — the way to the other places. The scene point is
                         // where the post meets the ground, so it's lifted by half its height.
@@ -920,6 +932,7 @@ struct GardenView: View {
                         handlePlotTap(index: index)
                     },
                     onHarvest: {
+                        guard !isVisiting, hasTool(.shovel) else { return }
                         harvestPlot(index: index)
                     },
                     onCareComplete: {
@@ -932,6 +945,7 @@ struct GardenView: View {
                             gameState.gardenPlots[index].hasWatered = true
                             gameState.addXP(2)
                             careAction = .water
+                            canFill = 0   // one fill waters one plant
                         case .needsWeeding:
                             gameState.gardenPlots[index].weed()
                             gameState.addXP(2)
@@ -957,7 +971,10 @@ struct GardenView: View {
                         } else if plotShowingKid == index {
                             plotShowingKid = nil   // another spot's kid may have taken over
                         }
-                    }
+                    },
+                    heldTool: heldTool,
+                    canIsFull: canFill >= 1,
+                    onNeedTool: { showToolHint($0) }
                 )
                 .frame(width: Self.spotWidth, height: Self.spotWidth)
             }
@@ -1235,6 +1252,14 @@ struct GardenView: View {
         switch plot.state {
         case .empty:
             guard !isVisiting else { return }  // Can't plant in sibling's garden
+            // Hard soil: the fork loosens it first. Loosened soil: the shovel plants.
+            if !plot.soilLoosened {
+                guard hasTool(.fork) else { return }
+                gameState.gardenPlots[index].soilLoosened = true
+                Haptic.impact(.medium)
+                return
+            }
+            guard hasTool(.shovel) else { return }
             selectedPlotIndex = SelectedPlot(index: index)
 
         case .growing:
@@ -1247,6 +1272,25 @@ struct GardenView: View {
         case .needsWater, .needsWeeding, .hasBugs:
             // Allowed for visitors! PlotView's built-in gestures handle it
             break
+        }
+    }
+
+    /// True when the kid holds `tool`. Otherwise that tool glows on the rack.
+    private func hasTool(_ tool: GardenTool) -> Bool {
+        if heldTool == tool { return true }
+        showToolHint(tool)
+        return false
+    }
+
+    /// The kid tried a job without its tool: buzz, and make the tool glow for a moment.
+    private func showToolHint(_ tool: GardenTool) {
+        Haptic.notify(.warning)
+        withAnimation(AnimationConstants.springBouncy) { hintTool = tool }
+        hintTask?.cancel()
+        hintTask = Task { @MainActor in
+            try? await Task.sleep(for: .seconds(AnimationConstants.toolHintDuration))
+            guard !Task.isCancelled else { return }
+            withAnimation(AnimationConstants.fadeMedium) { hintTool = nil }
         }
     }
 
@@ -1320,13 +1364,19 @@ struct GardenView: View {
     var gardenHint: String {
         let hasReady = gameState.gardenPlots.contains(where: { $0.state == .ready })
         let hasGrowing = gameState.gardenPlots.contains(where: { $0.state == .growing })
+        let openSpots = GardenPlot.unlockedRows(forLevel: gameState.playerLevel) * GardenPlot.spotsPerRow
+        let emptySpots = gameState.gardenPlots.prefix(openSpots).filter { $0.state == .empty }
 
         if hasReady {
-            return "Tap a glowing plot to harvest!"
+            return "Take the shovel to harvest!"
+        } else if emptySpots.contains(where: \.soilLoosened) {
+            return "Take the shovel to plant seeds!"
+        } else if !emptySpots.isEmpty {
+            return "Take the fork to loosen the soil!"
         } else if hasGrowing {
             return "Pip is patrolling the garden while your plants grow!"
         } else {
-            return "Tap a plot to plant seeds!"
+            return "Take the shovel to plant seeds!"
         }
     }
 

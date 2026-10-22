@@ -28,6 +28,12 @@ struct PlotView: View {
     /// Called when the care kid appears (true) or leaves (false), so the
     /// garden can draw this spot above its row neighbours while he's here.
     var onKidVisibleChange: (Bool) -> Void = { _ in }
+    /// Garden tools: watering needs a full can (weeds and bugs are by hand).
+    /// Loosening, planting and harvest taps are checked by GardenView.
+    var heldTool: GardenTool? = nil
+    var canIsFull: Bool = false
+    /// The kid tried to water without a full can.
+    var onNeedTool: (GardenTool) -> Void = { _ in }
 
     @State private var isAnimating = false
 
@@ -37,6 +43,8 @@ struct PlotView: View {
     @State private var waterTimer: Timer?
     @State private var showWateringCan = false
     @State private var waterDropY: CGFloat = -20
+    @State private var askedForTool = false   // one "need the can" per press
+    @State private var soilBounce = false      // the spot hops when the fork loosens it
 
     // Weeding state
     @State private var weedOffsets: [CGFloat] = [0, 0, 0]
@@ -140,6 +148,7 @@ struct PlotView: View {
 
     // MARK: - Empty Plot
 
+    /// Hard soil says "Loosen!" (fork first); loosened soil says "Plant" (shovel).
     var emptyPlot: some View {
         VStack(spacing: 6) {
             ZStack {
@@ -148,9 +157,19 @@ struct PlotView: View {
                     .foregroundColor(Color.AppTheme.sage)
             }
 
-            Text("Plant")
+            Text(plot.soilLoosened ? "Plant" : "Loosen!")
                 .font(.AppTheme.rounded(size: 11, weight: .medium))
                 .foregroundColor(Color.AppTheme.sepia)
+        }
+        .scaleEffect(soilBounce ? AnimationConstants.soilLoosenScale : 1)
+        .onChange(of: plot.soilLoosened) { _, loosened in
+            guard loosened else { return }
+            withAnimation(AnimationConstants.springBouncy) { soilBounce = true }
+            Task { @MainActor in
+                try? await Task.sleep(for: .seconds(0.3))
+                guard !Task.isCancelled else { return }
+                withAnimation(AnimationConstants.springBouncy) { soilBounce = false }
+            }
         }
     }
 
@@ -308,9 +327,16 @@ struct PlotView: View {
         .gesture(
             DragGesture(minimumDistance: 0)
                 .onChanged { _ in
-                    if !isWatering { startWatering() }
+                    guard !isWatering, !askedForTool else { return }
+                    if heldTool == .wateringCan && canIsFull {
+                        startWatering()
+                    } else {
+                        askedForTool = true
+                        onNeedTool(.wateringCan)
+                    }
                 }
                 .onEnded { _ in
+                    askedForTool = false
                     stopWatering()
                 }
         )

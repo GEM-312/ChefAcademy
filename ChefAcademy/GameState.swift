@@ -452,6 +452,7 @@ class GameState: ObservableObject {
             plot.hasSung = data.hasSung
             plot.weedTriggered = data.weedTriggered
             plot.bugTriggered = data.bugTriggered
+            plot.soilLoosened = data.soilLoosened
             return plot
         }
         // If saved plots is empty (first launch after migration), keep starter plots
@@ -578,7 +579,8 @@ class GameState: ObservableObject {
                 hasDebugged: plot.hasDebugged,
                 hasSung: plot.hasSung,
                 weedTriggered: plot.weedTriggered,
-                bugTriggered: plot.bugTriggered
+                bugTriggered: plot.bugTriggered,
+                soilLoosened: plot.soilLoosened
             )
         }
 
@@ -1371,6 +1373,10 @@ struct GardenPlot: Identifiable {
     var weedTriggered: Bool = false   // Weed event already fired this cycle
     var bugTriggered: Bool = false    // Bug event already fired this cycle
 
+    /// An empty spot's soil is hard until the fork loosens it; then the
+    /// shovel can plant. Harvest makes it hard again.
+    var soilLoosened: Bool = false
+
     /// Care score: 0-4 based on how many care actions were performed
     var careScore: Int {
         [hasWatered, hasWeeded, hasDebugged, hasSung].filter { $0 }.count
@@ -1456,6 +1462,7 @@ struct GardenPlot: Identifiable {
         hasSung = false
         weedTriggered = false
         bugTriggered = false
+        soilLoosened = false
 
         return yield
     }

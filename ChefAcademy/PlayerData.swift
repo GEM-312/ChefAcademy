@@ -37,6 +37,10 @@ struct PlotData: Codable {
     var weedTriggered: Bool = false
     var bugTriggered: Bool = false
 
+    // Garden tools (Oct 22 2026): an empty spot's soil must be loosened with
+    // the fork before the shovel can plant. Reset by harvest.
+    var soilLoosened: Bool = false
+
     // Custom decoder so old saved data (without care fields) doesn't crash
     init(from decoder: Decoder) throws {
         let c = try decoder.container(keyedBy: CodingKeys.self)
@@ -51,12 +55,14 @@ struct PlotData: Codable {
         hasSung = try c.decodeIfPresent(Bool.self, forKey: .hasSung) ?? false
         weedTriggered = try c.decodeIfPresent(Bool.self, forKey: .weedTriggered) ?? false
         bugTriggered = try c.decodeIfPresent(Bool.self, forKey: .bugTriggered) ?? false
+        soilLoosened = try c.decodeIfPresent(Bool.self, forKey: .soilLoosened) ?? false
     }
 
     // Regular init for creating new PlotData in code
     init(id: Int, stateRaw: String, vegetableRaw: String? = nil, plantedDate: Date? = nil, pausedDate: Date? = nil,
          hasWatered: Bool = false, hasWeeded: Bool = false, hasDebugged: Bool = false,
-         hasSung: Bool = false, weedTriggered: Bool = false, bugTriggered: Bool = false) {
+         hasSung: Bool = false, weedTriggered: Bool = false, bugTriggered: Bool = false,
+         soilLoosened: Bool = false) {
         self.id = id
         self.stateRaw = stateRaw
         self.vegetableRaw = vegetableRaw
@@ -68,6 +74,7 @@ struct PlotData: Codable {
         self.hasSung = hasSung
         self.weedTriggered = weedTriggered
         self.bugTriggered = bugTriggered
+        self.soilLoosened = soilLoosened
     }
 }
 

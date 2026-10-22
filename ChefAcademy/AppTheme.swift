@@ -213,6 +213,12 @@ enum AnimationConstants {
 
     // Garden tools — how long the kid holds the watering can on the rack to fill it
     static let canFillDuration: TimeInterval = 1.0
+    // Garden tools — the needed tool glows and grows this long / this much
+    // when the kid tries a job without it
+    static let toolHintDuration: TimeInterval = 2.0
+    static let toolHintScale: CGFloat = 1.12
+    // Garden — an empty spot hops this big when the fork loosens its soil
+    static let soilLoosenScale: CGFloat = 1.2
 
     // Springs tuned for ingredient-fly animations (slightly slower than springMedium)
     static let springFly = Animation.spring(response: 0.6, dampingFraction: 0.7)

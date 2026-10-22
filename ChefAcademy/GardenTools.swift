@@ -6,6 +6,11 @@
 //  Tap a tool to pick it up, tap it again (or the "in hand" badge) to put it
 //  back. The watering can is filled by holding it on the rack.
 //
+//  Jobs need their tool: fork = loosen an empty spot's hard soil, shovel =
+//  plant (in loosened soil) + harvest, a full can = water (one fill waters one
+//  plant). Weeds and bugs are by hand. Trying a job without its tool makes
+//  that tool glow on the rack (GardenView.showToolHint).
+//
 //  The tools are cut out of the garden art (Oct 22 2026) and drawn exactly
 //  where they were painted; garden_map_background is the plate without them.
 //
@@ -52,6 +57,8 @@ struct GardenToolRack: View {
     let mapHeight: CGFloat
     @Binding var heldTool: GardenTool?
     @Binding var canFill: Double
+    /// The tool the kid needs right now (they tried a job without it); it glows.
+    var hintTool: GardenTool? = nil
 
     @State private var isPressingCan = false
     @State private var fillTask: Task<Void, Never>?
@@ -85,18 +92,26 @@ struct GardenToolRack: View {
             .frame(width: f.width, height: f.height)
             // While it's in the kid's hand, a faint ghost marks where it goes back
             .opacity(heldTool == tool ? 0.25 : 1)
+            .scaleEffect(hintTool == tool ? AnimationConstants.toolHintScale : 1)
+            .shadow(color: Color.AppTheme.goldenWheat.opacity(hintTool == tool ? 0.9 : 0),
+                    radius: AppSpacing.xs)
             .contentShape(Rectangle())
             .accessibilityLabel(tool.displayName)
             .accessibilityAddTraits(.isButton)
 
         if tool == .wateringCan {
             // Press = pick up (if needed) and fill while held; a full can in
-            // hand goes back with a tap. onChanged fires on every finger move,
-            // so isPressingCan makes it run once per press.
-            picture.gesture(
-                DragGesture(minimumDistance: 0)
-                    .onChanged { _ in pressCan() }
-                    .onEnded { _ in releaseCan() }
+            // hand goes back with a tap. A long press (not a DragGesture)
+            // because the map scrolls: when the ScrollView takes a touch, a
+            // drag never gets .onEnded, but onPressingChanged still reports
+            // false, so a press can never get stuck "on".
+            picture.onLongPressGesture(
+                minimumDuration: AnimationConstants.canFillDuration,
+                maximumDistance: AppSpacing.minTapTarget,
+                perform: {},
+                onPressingChanged: { pressing in
+                    if pressing { pressCan() } else { releaseCan() }
+                }
             )
         } else {
             picture.onTapGesture { toggle(tool) }
