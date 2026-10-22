@@ -433,5 +433,4 @@ struct QuickActionCardWithImage: View {
         model.currentStreak = 5
         return model
     }())
-    .previewDevice(PreviewDevice(rawValue: "iPad Pro (11-inch)"))
 }

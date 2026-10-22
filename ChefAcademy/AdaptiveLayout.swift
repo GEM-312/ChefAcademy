@@ -462,5 +462,4 @@ struct AdaptiveGrid<Content: View>: View {
         .padding()
     }
     .background(Color.gray.opacity(0.1))
-    .previewDevice(PreviewDevice(rawValue: "iPad Pro (11-inch)"))
 }
