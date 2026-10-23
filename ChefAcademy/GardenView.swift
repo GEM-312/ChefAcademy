@@ -626,6 +626,8 @@ struct GardenView: View {
 
     // AI-generated Pip garden tip (Foundation Models on-device)
     @State private var smartPipTip: String? = nil
+    /// The tip being written; a new tap cancels it so two tips can't race
+    @State private var tipTask: Task<Void, Never>?
     @State private var isLoadingTip = false
 
     // The wheelbarrow's card ("Bring it to the pantry"), opened by tapping it
@@ -997,9 +999,9 @@ struct GardenView: View {
                             isPointing: pipPointing,
                             bubble: pipBubble,
                             onTap: {
-                                // Tap Pip → the next tip, in his bubble
+                                // Tap Pip → the next tip; his bubble opens when it's ready
+                                showPipTip = false
                                 fetchSmartPipTip()
-                                showPipTip = true
                             },
                             onCloseBubble: closePipBubble
                         )
@@ -1368,7 +1370,7 @@ struct GardenView: View {
         gameState.bringWheelbarrowToPantry()
         showHarvestCard = false
         if !suggestRecipeIfReady() {
-            smartPipTip = "Your veggies are in the pantry! Let's cook in the Kitchen!"
+            smartPipTip = "Your veggies are in the pantry — let's cook!"
             showPipTip = true
         }
     }
@@ -1766,26 +1768,38 @@ struct GardenView: View {
     //
     // If FM isn't available, we fall back to static tips (also data-driven).
 
+    /// The next tip, then open the bubble. Opening it first showed (and spoke)
+    /// the previous tip, and the new one cut it off a second later.
     private func fetchSmartPipTip() {
+        let previous = smartPipTip
+        tipTask?.cancel()
         #if canImport(FoundationModels)
         if #available(iOS 26, macOS 26, *), PipFoundationModelService.isModelAvailable {
-            Task {
-                let tip = await generateAITip()
-                if let tip {
-                    await MainActor.run { smartPipTip = tip }
-                } else {
-                    await MainActor.run { smartPipTip = generateStaticTip() }
+            tipTask = Task {
+                let tip = await generateAITip(avoiding: previous)
+                guard !Task.isCancelled else { return }
+                await MainActor.run {
+                    smartPipTip = tip ?? generateStaticTip()
+                    showPipTip = true
                 }
             }
             return
         }
         #endif
         smartPipTip = generateStaticTip()
+        showPipTip = true
+    }
+
+    /// The on-device model doesn't always keep to one sentence: keep the first.
+    /// Pip's bubble is one short sentence (Marina, Oct 23 2026).
+    private static func firstSentence(_ text: String) -> String {
+        guard let end = text.range(of: #"[.!?](\s|$)"#, options: .regularExpression) else { return text }
+        return String(text[...end.lowerBound])
     }
 
     #if canImport(FoundationModels)
     @available(iOS 26, macOS 26, *)
-    private func generateAITip() async -> String? {
+    private func generateAITip(avoiding previous: String?) async -> String? {
         let plots = gameState.gardenPlots
         let weather = GardenWeatherService.shared
 
@@ -1817,24 +1831,26 @@ struct GardenView: View {
 
         let playerName = await MainActor.run { sessionManager.activeProfile?.name ?? "" }
         let nameNote = playerName.isEmpty ? "" : "The kid's name is \(playerName) — use it sometimes.\n"
+        let repeatNote = previous.map { "Don't repeat your last tip: \"\($0)\"\n" } ?? ""
 
         let prompt = """
         You are Pip, a cheerful hedgehog gardener talking to a 6-year-old.
-        Give ONE tip (2 sentences max) based ONLY on the garden state below.
+        Give ONE short sentence (12 words max) based ONLY on the garden state below.
         ONLY mention veggies that are actually listed. If all plots are empty, \
         encourage the kid to plant something. Be fun and encouraging. One emoji max.
         Do NOT say "Hello" or greet — you already know each other.
         Garden tools: fork loosens hard soil, shovel plants and harvests, \
         fill the watering can before watering. Weeds and bugs are by hand.
-        \(nameNote)
+        \(nameNote)\(repeatNote)
         \(state)
         """
 
-        let session = LanguageModelSession(instructions: "You are Pip, a friendly hedgehog chef for kids aged 6+. Keep responses to 2 sentences max.")
+        let session = LanguageModelSession(instructions: "You are Pip, a friendly hedgehog chef for kids aged 6+. Answer in one short sentence.")
         do {
             let response = try await session.respond(to: prompt)
-            let text = response.content.trimmingCharacters(in: .whitespacesAndNewlines)
-            return text.isEmpty ? nil : text
+            let text = Self.firstSentence(response.content.trimmingCharacters(in: .whitespacesAndNewlines))
+            // Empty, or the same tip again → the caller uses a built-in tip
+            return text.isEmpty || text == previous ? nil : text
         } catch {
             return nil
         }
@@ -1858,20 +1874,20 @@ struct GardenView: View {
 
         // Urgent care tips always come first (no rotation)
         if let plot = thirsty.first, let veg = plot.vegetable {
-            return "\(namePrefix)your \(veg.displayName.lowercased()) is thirsty! Fill the watering can, then tap the plant to water it!"
+            return "\(namePrefix)your \(veg.displayName.lowercased()) is thirsty — fill the can and water it!"
         }
         if let plot = buggy.first, let veg = plot.vegetable {
-            return "Oh no \(namePrefix)bugs are munching on your \(veg.displayName.lowercased())! Tap to call the ladybugs!"
+            return "Oh no \(namePrefix)bugs are munching your \(veg.displayName.lowercased()) — tap to call the ladybugs!"
         }
         if let plot = weedy.first, let veg = plot.vegetable {
-            return "\(namePrefix)weeds are crowding your \(veg.displayName.lowercased())! Swipe up to pull them out!"
+            return "\(namePrefix)weeds are crowding your \(veg.displayName.lowercased()) — swipe up to pull them!"
         }
         if let plot = ready.first, let veg = plot.vegetable {
-            return "\(namePrefix)your \(veg.displayName.lowercased()) \(ready.count == 1 ? "is" : "are") ready to pick! Take the shovel and dig \(ready.count == 1 ? "it" : "them") up!"
+            return "\(namePrefix)your \(veg.displayName.lowercased()) \(ready.count == 1 ? "is" : "are") ready — dig \(ready.count == 1 ? "it" : "them") up with the shovel!"
         }
         // Harvest still in the wheelbarrow can't be cooked yet
         if !isVisiting && !gameState.wheelbarrow.isEmpty {
-            return "\(namePrefix)your veggies are waiting in the wheelbarrow! Tap it and bring them to the pantry."
+            return "\(namePrefix)tap the wheelbarrow to bring your veggies to the pantry!"
         }
 
         // Non-urgent: ROTATE between growing info, empty plots, and fun facts
@@ -1881,7 +1897,7 @@ struct GardenView: View {
         for plot in growing {
             if let veg = plot.vegetable {
                 let pct = Int(plot.growthProgress * 100)
-                pool.append("\(namePrefix)your \(veg.displayName.lowercased()) is \(pct)% grown! \(pct > 70 ? "Almost there!" : "Keep watching — good things take time!")")
+                pool.append("\(namePrefix)your \(veg.displayName.lowercased()) is \(pct)% grown\(pct > 70 ? " — almost there!" : "!")")
                 if let fact = veggieGardenFact(veg) {
                     pool.append(fact)
                 }
@@ -1890,16 +1906,16 @@ struct GardenView: View {
 
         // Empty plot reminders
         if !empty.isEmpty {
-            pool.append("\(namePrefix)you have \(empty.count) empty spot\(empty.count == 1 ? "" : "s") — loosen the soil with the fork, then plant with the shovel!")
-            pool.append("Your garden has room for more! Try planting different veggies to unlock new recipes!")
+            pool.append("\(namePrefix)loosen an empty spot with the fork, then plant with the shovel!")
+            pool.append("Plant different veggies to unlock new recipes!")
         }
 
         // General tips (no greetings — kid already knows Pip)
-        pool.append("Different veggies take different times to grow. Lettuce is the fastest!")
-        pool.append("Harvest veggies and take them to the kitchen to cook yummy recipes!")
+        pool.append("Lettuce grows the fastest of all the veggies!")
+        pool.append("Harvest your veggies and cook them in the Kitchen!")
 
         if pool.isEmpty {
-            return "\(namePrefix)your garden is looking great! Tap me for more tips!"
+            return "\(namePrefix)your garden looks great!"
         }
 
         tipRotation += 1
@@ -1909,20 +1925,20 @@ struct GardenView: View {
     /// Fun garden facts about specific veggies — makes Pip feel knowledgeable
     private func veggieGardenFact(_ veg: VegetableType) -> String? {
         switch veg {
-        case .carrot:    return "Did you know carrots were originally purple? Want to know what makes them good for your eyes?"
-        case .tomato:    return "Tomatoes are actually berries! They're packed with lycopene — a superpower for your heart!"
-        case .pumpkin:   return "Pumpkins can grow up to 2,000 pounds! Yours is getting bigger every minute!"
-        case .broccoli:  return "Broccoli is actually a flower that hasn't bloomed yet! It's full of vitamins!"
-        case .lettuce:   return "Lettuce is part of the sunflower family! It grows super fast!"
-        case .cucumber:  return "Cucumbers are 95% water — they're nature's water bottle!"
-        case .zucchini:  return "The biggest zucchini ever was over 8 feet long! How big will yours get?"
-        case .onion:     return "Onions make you cry because they release a tiny gas. But they're so tasty in recipes!"
-        case .spinach:   return "Spinach makes your muscles strong — just like Popeye says!"
-        case .corn:      return "An ear of corn has about 800 tiny kernels! Want to know what's inside each one?"
-        case .sweetPotato: return "Sweet potatoes aren't related to regular potatoes at all! They're packed with vitamin A!"
-        case .strawberry: return "Strawberries are the only fruit with seeds on the outside — about 200 per berry!"
-        case .avocado:   return "Avocados are actually berries! They have healthy fats that are great for your brain!"
-        case .blueberry: return "Blueberries are one of the only naturally blue foods in the world! They boost your brain power!"
+        case .carrot:    return "Did you know carrots used to be purple?"
+        case .tomato:    return "Tomatoes are berries full of lycopene for your heart!"
+        case .pumpkin:   return "Pumpkins can grow up to 2,000 pounds!"
+        case .broccoli:  return "Broccoli is a flower that hasn't bloomed yet!"
+        case .lettuce:   return "Lettuce is part of the sunflower family!"
+        case .cucumber:  return "Cucumbers are 95% water — nature's water bottle!"
+        case .zucchini:  return "The biggest zucchini ever was over 8 feet long!"
+        case .onion:     return "Onions make you cry with a tiny gas they let out!"
+        case .spinach:   return "Spinach helps make your muscles strong!"
+        case .corn:      return "Want to know what's inside a corn kernel?"
+        case .sweetPotato: return "Sweet potatoes aren't related to regular potatoes at all!"
+        case .strawberry: return "A strawberry has about 200 seeds on the outside!"
+        case .avocado:   return "Avocados are berries with healthy fats for your brain!"
+        case .blueberry: return "Blueberries are one of the few naturally blue foods!"
         default:         return nil
         }
     }
