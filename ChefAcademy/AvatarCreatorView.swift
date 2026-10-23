@@ -108,10 +108,25 @@ struct AvatarCreatorView: View {
 // MARK: - Avatar Preview (uses actual character image from gender selection)
 struct AvatarPreviewView: View {
     @ObservedObject var avatarModel: AvatarModel
+    /// The signed-in profile: its picture (`profilePoseImage`, mom / dad for
+    /// parents) and whether to zoom. AvatarModel only knows the gender, so
+    /// without this a parent shows as the kid card.
+    var profile: UserProfile? = nil
+
+    private enum Layout {
+        // Grown-ups are drawn taller and narrower than kids; zoom toward the
+        // head so a parent's face is about the size of a kid's in the circle.
+        static let parentZoom: CGFloat = 1.5
+        static let parentZoomAnchor = UnitPoint(x: 0.5, y: 0.05)   // keeps the whole head of hair inside
+    }
 
     /// Last frame of the chosen gender's animation — the final pose
     private var characterImage: String {
-        avatarModel.gender == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06"
+        profile?.profilePoseImage ?? (avatarModel.gender == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06")
+    }
+
+    private var zoom: CGFloat {
+        profile?.isParent == true ? Layout.parentZoom : 1
     }
 
     var body: some View {
@@ -126,6 +141,7 @@ struct AvatarPreviewView: View {
                 .resizable()
                 .aspectRatio(contentMode: .fit)
                 .frame(width: 200, height: 200)
+                .scaleEffect(zoom, anchor: Layout.parentZoomAnchor)
                 .clipShape(Circle())
         }
     }

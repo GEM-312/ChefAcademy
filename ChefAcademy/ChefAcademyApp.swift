@@ -590,7 +590,8 @@ struct HomeView: View {
                             Circle()
                                 .fill(Color.AppTheme.parchment)
                                 .frame(width: 96, height: 96)
-                            AvatarPreviewView(avatarModel: avatarModel)
+                            AvatarPreviewView(avatarModel: avatarModel,
+                                              profile: sessionManager.activeProfile)
                                 .scaleEffect(0.36)
                                 .frame(width: 96, height: 96)
                                 .clipped()

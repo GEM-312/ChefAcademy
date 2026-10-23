@@ -22,7 +22,8 @@ struct ProfileView: View {
             VStack(spacing: AppSpacing.lg) {
                 // Avatar + Name header
                 VStack(spacing: AppSpacing.sm) {
-                    AvatarPreviewView(avatarModel: avatarModel)
+                    AvatarPreviewView(avatarModel: avatarModel,
+                                      profile: sessionManager.activeProfile)
                         .frame(height: 180)
 
                     Text(avatarModel.name.isEmpty ? "Little Chef" : avatarModel.name)
