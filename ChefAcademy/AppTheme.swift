@@ -29,6 +29,17 @@ extension Color {
         static let mediumLevel = Color("AppColors/goldenWheat")   // Medium recipes
         static let hardLevel = Color("AppColors/terracotta")      // Hard recipes (needs adult help)
 
+        // Button roles — one color per job, the same on every screen, so kids
+        // learn "green moves me forward" before they can read the label.
+        // Call sites use the role, never the raw color.
+        static let buttonGo = leafGreen          // Next, Let's Go!, Start Game! — green = go
+        static let buttonReward = sunflowerYellow // Play Again!, Awesome!, Plate it up! — joy, stars
+        static let buttonRetry = carrotOrange    // Try Again! — keeps energy up without red's "you failed"
+        static let buttonLearn = brightBlue      // Next: Inside Your Cells!, quiz — calm, think
+        static let buttonBack = warmKhaki        // Back, Done, Not yet — quiet, steps back
+        static let buttonSpend = goldenWheat     // Buy, Unlock — the coin color
+        static let buttonDanger = terracotta     // parent-only: Delete, Remove, Sign Out
+
         // Specialty colors — hex-backed until asset-cataloged for Dark Mode.
         // Use these instead of inline hex / raw system colors at call sites.
         static let pureWhite = Color(hex: "F7FAFC")               // chef hat white, near-white surfaces
@@ -207,7 +218,6 @@ enum AnimationConstants {
     static let mapWalkDuration: Double = 1.5  // seconds for Pip's Home-map walk, whatever the path length
 
     // Button press scales
-    static let buttonPressScale: CGFloat = 0.97   // subtle squeeze (PrimaryButtonStyle)
     static let bouncyPressScale: CGFloat = 0.9     // bigger bounce (BouncyButtonStyle)
 
     // Kitchen cooking-flow timings — the fly/cleanup rhythm for pantry→counter→stove
@@ -323,37 +333,19 @@ struct SoftCardStyle: ViewModifier {
     }
 }
 
-// Primary Button Style
+// Primary Button Style — wood grain in the "go" color ("Next", "Let's Go!")
 struct PrimaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.AppTheme.headline)
-            .foregroundColor(Color.AppTheme.cream)
-            .frame(maxWidth: .infinity)
-            .frame(height: AppSpacing.buttonHeight)
-            .background(Color.AppTheme.goldenWheat)
-            .cornerRadius(AppSpacing.cardCornerRadius)
-            .scaleEffect(configuration.isPressed ? AnimationConstants.buttonPressScale : 1.0)
-            .animation(AnimationConstants.fadeQuick, value: configuration.isPressed)
+        TexturedButtonStyle(tint: Color.AppTheme.buttonGo)
+            .makeBody(configuration: configuration)
     }
 }
 
-// Secondary Button Style
+// Secondary Button Style — wood grain in the quiet "back" color ("Back", "Not yet")
 struct SecondaryButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .font(.AppTheme.headline)
-            .foregroundColor(Color.AppTheme.darkBrown)
-            .frame(maxWidth: .infinity)
-            .frame(height: AppSpacing.buttonHeight)
-            .background(Color.AppTheme.parchment)
-            .cornerRadius(AppSpacing.cardCornerRadius)
-            .overlay(
-                RoundedRectangle(cornerRadius: AppSpacing.cardCornerRadius)
-                    .stroke(Color.AppTheme.sepia.opacity(0.3), lineWidth: 1.5)
-            )
-            .scaleEffect(configuration.isPressed ? AnimationConstants.buttonPressScale : 1.0)
-            .animation(AnimationConstants.fadeQuick, value: configuration.isPressed)
+        TexturedButtonStyle(tint: Color.AppTheme.buttonBack)
+            .makeBody(configuration: configuration)
     }
 }
 
@@ -560,6 +552,29 @@ struct DifficultyBadge: View {
                 }
             }
             .cardStyle()
+        }
+        .padding(AppSpacing.md)
+    }
+    .background(Color.AppTheme.cream)
+}
+
+// The button roles on the wood button — one color per job
+#Preview("Button Roles") {
+    let tints: [(name: String, color: Color)] = [
+        ("Go — Next, Let's Go!", Color.AppTheme.buttonGo),
+        ("Reward — Play Again!", Color.AppTheme.buttonReward),
+        ("Retry — Try Again!", Color.AppTheme.buttonRetry),
+        ("Learn — Snack Quiz!", Color.AppTheme.buttonLearn),
+        ("Back — Done, Not yet", Color.AppTheme.buttonBack),
+        ("Spend — Buy, Unlock", Color.AppTheme.buttonSpend),
+        ("Danger — Delete (parents)", Color.AppTheme.buttonDanger),
+    ]
+    ScrollView {
+        VStack(spacing: AppSpacing.sm) {
+            ForEach(tints, id: \.name) { tint in
+                Button(tint.name) {}
+                    .texturedButton(tint: tint.color)
+            }
         }
         .padding(AppSpacing.md)
     }

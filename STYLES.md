@@ -39,6 +39,21 @@ For selective use on age-6+ visibility moments. Use sparingly — the sage / gol
 | Bright Blue | `#2196F3` | `Color.AppTheme.brightBlue` | Informational / secondary CTA |
 | Sunflower Yellow | `#FFD600` | `Color.AppTheme.sunflowerYellow` | Reward / celebration accents |
 
+### Button Roles (Oct 23 2026)
+One color per button job, the same on every screen. Tint wood buttons with the role (`.texturedButton(tint: Color.AppTheme.buttonGo)`), never the raw color. Color is never the only signal: keep the label and arrow (red–green color blindness).
+
+| Role | Color | Buttons |
+|------|-------|---------|
+| `buttonGo` | leafGreen | Next, Let's Go!, Start Game!, Let's Cook! (= `PrimaryButtonStyle`) |
+| `buttonReward` | sunflowerYellow | Play Again!, Awesome!, Plate it up!, Rematch! |
+| `buttonRetry` | carrotOrange | Try Again! (after a miss; never red) |
+| `buttonLearn` | brightBlue | Next: Inside Your Cells!, snack quiz, Find a Player |
+| `buttonBack` | warmKhaki | Back, Done, Not yet (= `SecondaryButtonStyle`) |
+| `buttonSpend` | goldenWheat | Buy, Unlock |
+| `buttonDanger` | terracotta | Parent-only: Delete, Remove Profile, Sign Out |
+
+brightGreen and sage are kept off buttons: on the wood, brightGreen reads the same as leafGreen.
+
 ### Specialty Surface Colors
 | Name | Hex | SwiftUI | Use For |
 |------|-----|---------|---------|

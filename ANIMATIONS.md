@@ -90,8 +90,7 @@ Defined in `AppTheme.swift`. Use these instead of inline values.
 ### Button Scales
 | Constant | Value | Use For |
 |----------|-------|---------|
-| `.buttonPressScale` | 0.97 | Subtle squeeze (Primary/Secondary/Textured) |
-| `.bouncyPressScale` | 0.9 | Bigger bounce (BouncyButtonStyle) |
+| `.bouncyPressScale` | 0.9 | Press bounce (BouncyButtonStyle, TexturedButtonStyle and the Primary/Secondary styles built on it) |
 
 ---
 
@@ -175,8 +174,8 @@ Shared `Haptic` enum in `AppTheme.swift`. Always use these wrappers.
 |-------|-----------|---------|
 | `TexturedButtonStyle` | Wooden botanical image + tint | **Default for primary CTAs** ("Let's Cook!", "Visit Garden", "Start Trial"). Pass `tint:` for per-call color. |
 | `BouncyButtonStyle` | Custom (per-use) | Game CTAs, interactive cards, mini-game buttons |
-| `SecondaryButtonStyle` | Parchment + border | Alternative actions (less common) |
-| `PrimaryButtonStyle` | Solid goldenWheat | DEAD CODE — only used in its own preview. Don't add new usages. Prefer Textured. |
+| `PrimaryButtonStyle` | Textured, `buttonGo` (leafGreen) | Main "go" choice in setup / onboarding ("Next", "Let's Go!") |
+| `SecondaryButtonStyle` | Textured, `buttonBack` (warmKhaki) | The quieter choice beside it ("Back", "Restore Purchases") |
 | `PlotButtonStyle` | Custom spring bounce | DEPRECATED — exact duplicate of BouncyButtonStyle. Planned deletion. |
 
 ---
