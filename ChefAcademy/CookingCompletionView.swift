@@ -121,30 +121,12 @@ struct CookingCompletionView: View {
                                     Image(systemName: "waveform.path.ecg")
                                     Text("See how your food helps!")
                                 }
-                                .font(.AppTheme.headline)
-                                .foregroundColor(Color.AppTheme.cream)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, AppSpacing.md)
-                                .background(Color.AppTheme.goldenWheat)
-                                .cornerRadius(AppSpacing.cardCornerRadius)
                             }
-                            .buttonStyle(BouncyButtonStyle())
+                            .texturedButton(tint: Color.AppTheme.buttonReward)
 
                             // Back to Kitchen button
-                            Button(action: onDismiss) {
-                                Text("Back to Kitchen")
-                                    .font(.AppTheme.headline)
-                                    .foregroundColor(Color.AppTheme.darkBrown)
-                                    .frame(maxWidth: .infinity)
-                                    .padding(.vertical, AppSpacing.md)
-                                    .background(Color.AppTheme.parchment)
-                                    .cornerRadius(AppSpacing.cardCornerRadius)
-                                    .overlay(
-                                        RoundedRectangle(cornerRadius: AppSpacing.cardCornerRadius)
-                                            .stroke(Color.AppTheme.sepia.opacity(0.3), lineWidth: 1.5)
-                                    )
-                            }
-                            .buttonStyle(BouncyButtonStyle())
+                            Button("Back to Kitchen", action: onDismiss)
+                                .secondaryButton()
                         }
                         .padding(.horizontal, AppSpacing.lg)
                         .transition(.move(edge: .bottom).combined(with: .opacity))
