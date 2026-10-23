@@ -22,6 +22,17 @@ Zero hardcoded colors / fonts / spacing / animation curves / stroke widths in an
 
 **Pre-commit enforcement:** the `design-guard.py` hook (`.claude/hooks/`) auto-blocks `git commit` when the staged diff's added lines contain hardcoded values (`Color.black/white`, `Color(hex:`, `.system(size:`, inline spring/easing, numeric corner radius, `DispatchQueue.main.asyncAfter`) in non-AppTheme files. Still audit your own diff — the hook only catches unambiguous literals, not wrong-token misuse. Any hit in non-AppTheme files = not done. If a needed token doesn't exist, **add it to `AppTheme.swift` / `AppSpacing` / `AnimationConstants` / `AdaptiveLayout`** with a comment explaining what it's for. Never inline as a one-off.
 
+**Where a size lives (decided Oct 23 2026):**
+- Used on 2+ screens, or must match the design system → `AppTheme` / `AppSpacing`.
+- Has an iPad and an iPhone value → `AdaptiveCardSize`.
+- One screen only (art sizes, a game piece) → a named `private enum Layout` at the top of that screen's file:
+  ```swift
+  private enum Layout {
+      static let recipeCircle: CGFloat = 140   // completion: the dish photo
+  }
+  ```
+  The name is the point: a raw `.frame(width: 140)` is still banned. Don't merge two Layout values (or promote one to AppTheme) only because the numbers match — same number, different meaning.
+
 ## Component reuse (§4)
 
 - **Buttons:** Primary CTAs → `.texturedButton(tint:)` (wood-grain capsule); secondary → `.buttonStyle(BouncyButtonStyle())`. Never `.buttonStyle(.plain)` with a custom-styled label; never hand-roll `.background() + .cornerRadius() + .shadow()` on a `Button`.

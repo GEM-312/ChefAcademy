@@ -163,7 +163,7 @@ Full rules → **`.claude/rules/swiftdata-persistence.md`** (path-scoped; loads 
 
 ### 3. Design System — No Hardcoded Values
 
-Full token tables + `design-guard.py` pre-commit enforcement → **`.claude/rules/swiftui-views.md`** (path-scoped; loads when you edit a `*View.swift`). One line to remember: zero hardcoded colors / fonts / spacing / animation / stroke widths — use `Color.AppTheme` / `Font.AppTheme` / `AppSpacing` / `AdaptiveCardSize` / `AnimationConstants` tokens. The commit hook blocks unambiguous literals regardless of whether the rule loaded.
+Full token tables + `design-guard.py` pre-commit enforcement → **`.claude/rules/swiftui-views.md`** (path-scoped; loads when you edit a `*View.swift`). One line to remember: zero hardcoded colors / fonts / spacing / animation / stroke widths — use `Color.AppTheme` / `Font.AppTheme` / `AppSpacing` / `AdaptiveCardSize` / `AnimationConstants` tokens. The commit hook blocks unambiguous literals regardless of whether the rule loaded. **Where a size lives (decided Oct 23 2026):** used on 2+ screens or must match the design → `AppTheme` / `AppSpacing`; has iPad + iPhone values → `AdaptiveCardSize`; one screen only → a named `private enum Layout` at the top of that screen's file. Don't move Layout values into AppTheme just because two numbers happen to match.
 
 ### 4. UI Components — Reuse Mandatory
 
