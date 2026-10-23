@@ -101,7 +101,12 @@ class PipVoice: ObservableObject {
     // synthesized character voice via the Cloudflare-proxied ElevenLabs API.
 
     func speak(_ text: String) {
-        guard isEnabled, !text.isEmpty else { return }
+        guard isEnabled, !text.isEmpty else {
+            #if DEBUG
+            if !isEnabled { print("[PipVoice] quiet: voice is switched off (Home 🔊 chip)") }
+            #endif
+            return
+        }
 
         switch effectiveVoiceMode {
         case .readText:
