@@ -407,6 +407,41 @@ struct TexturedButtonStyle: ButtonStyle {
     }
 }
 
+// Choice Card Style — a card the kid taps to answer or pick (quiz answers,
+// hairstyles, allergens). Not a wood button: those are for actions, these are
+// choices. Resting = light tint + faint border; picked = stronger tint + full border.
+//
+// Usage:
+//   Button { Text("Lots of sugar") } .choiceCard(tint: Color.AppTheme.terracotta)
+//   Button { hairTile } .choiceCard(isSelected: picked == style, cornerRadius: AppSpacing.smallCornerRadius)
+//
+struct ChoiceCardStyle: ButtonStyle {
+    var tint: Color = Color.AppTheme.goldenWheat
+    var isSelected: Bool = false
+    var cornerRadius: CGFloat = AppSpacing.cardCornerRadius
+    var padding: CGFloat = AppSpacing.md
+
+    private static let restFill = 0.1        // tint behind a card nobody picked yet
+    private static let selectedFill = 0.3    // tint behind the picked card
+    private static let restBorder = 0.3      // border strength before it's picked
+
+    func makeBody(configuration: Configuration) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius)
+        return configuration.label
+            .foregroundStyle(Color.AppTheme.darkBrown)   // default; a label's own color wins
+            .frame(maxWidth: .infinity)
+            .padding(padding)
+            .background(tint.opacity(isSelected ? Self.selectedFill : Self.restFill))
+            .clipShape(shape)
+            .overlay(
+                shape.stroke(tint.opacity(isSelected ? 1 : Self.restBorder), lineWidth: AppSpacing.strokeMedium)
+            )
+            .scaleEffect(configuration.isPressed ? AnimationConstants.bouncyPressScale : 1.0)
+            .animation(AnimationConstants.springQuick, value: configuration.isPressed)
+            .animation(AnimationConstants.springQuick, value: isSelected)
+    }
+}
+
 // MARK: - View Extensions
 extension View {
     func cardStyle() -> some View {
@@ -437,6 +472,15 @@ extension View {
 
     func texturedButton(tint: Color) -> some View {
         self.buttonStyle(TexturedButtonStyle(tint: tint))
+    }
+
+    func choiceCard(
+        tint: Color = Color.AppTheme.goldenWheat,
+        isSelected: Bool = false,
+        cornerRadius: CGFloat = AppSpacing.cardCornerRadius,
+        padding: CGFloat = AppSpacing.md
+    ) -> some View {
+        self.buttonStyle(ChoiceCardStyle(tint: tint, isSelected: isSelected, cornerRadius: cornerRadius, padding: padding))
     }
 }
 
@@ -578,5 +622,49 @@ struct DifficultyBadge: View {
         }
         .padding(AppSpacing.md)
     }
+    .background(Color.AppTheme.cream)
+}
+
+// Tappable choice cards — quiz answers (top) and pick-one tiles (bottom)
+#Preview("Choice Cards") {
+    VStack(spacing: AppSpacing.lg) {
+        VStack(spacing: AppSpacing.sm) {
+            Button {} label: {
+                Text("Lots of sugar")
+                    .font(.AppTheme.bodyBold)
+                    .foregroundColor(Color.AppTheme.terracotta)
+            }
+            .choiceCard(tint: Color.AppTheme.terracotta)
+
+            Button {} label: {
+                Text("A little sugar")
+                    .font(.AppTheme.bodyBold)
+                    .foregroundColor(Color.AppTheme.goldenWheat)
+            }
+            .choiceCard(tint: Color.AppTheme.goldenWheat)
+
+            Button {} label: {
+                Text("Healthy & balanced")
+                    .font(.AppTheme.bodyBold)
+                    .foregroundColor(Color.AppTheme.sage)
+            }
+            .choiceCard(tint: Color.AppTheme.sage)
+        }
+
+        HStack(spacing: AppSpacing.sm) {
+            ForEach(["Curly", "Braids", "Short"], id: \.self) { name in
+                Button {} label: {
+                    VStack(spacing: AppSpacing.xs) {
+                        Image(systemName: "person.crop.circle")
+                            .font(.AppTheme.title)
+                        Text(name)
+                            .font(.AppTheme.caption)
+                    }
+                }
+                .choiceCard(isSelected: name == "Braids", cornerRadius: AppSpacing.smallCornerRadius, padding: AppSpacing.sm)
+            }
+        }
+    }
+    .padding(AppSpacing.md)
     .background(Color.AppTheme.cream)
 }
