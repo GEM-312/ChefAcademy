@@ -95,6 +95,25 @@ Newest first. Each entry: **Symptom → Cause → Solution → How it works → 
 
 **Where.** `FamilySetupView.swift` (`FamilySetupView.finishSetup`, `FamilyMeetPipStep`).
 
+### 8. The new Mom and Dad failed the art matcher, then would have flickered
+
+**Symptom.** The new parent cards (GPT Image edits of the kid cards) failed `tools/art_match.py`: darkest lines L26 against the target L16. Matched to the kid cards instead, they still came out lighter than the kids (darkest L10 vs L1), and a second pass changed nothing.
+
+**Cause.** Three separate things.
+1. The matcher always aimed at the Home *stations*, but the kid cards were never station-matched: they're much darker (darkest L0–3, mid L47–55). Characters have to match the characters.
+2. rembg leaves a near-invisible fringe (alpha 1–20, 3.7% of pixels) whose stored colour is near-black. `match()` measured the darkest ink over every pixel, fringe included, so it thought the lines were already black; `evaluate()` only looks at alpha > 20, where they were L10.
+3. rembg also leaves hair strands semi-transparent; `match()` used their raw colour while the screen (and `evaluate()`) shows them over cream, a few L lighter.
+
+And for the dress-up animations: each frame has different content (an apron appearing adds light area), so per-frame matching swung the mid-tones by ~10 L between frames.
+
+**Solution.** `art_match.py --ref a.png,b.png` matches to any reference (here the kid cards); `match()` now measures what's seen (over cream, alpha > 20), the same as `evaluate()`. New `tools/match_sequence.py` takes one character's sequences together (outfit + hat): one pooled tone curve, one shared crop box, one scale matched to the static card. Parents pass 6/6. Old station-matched art gives identical results before and after.
+
+**How it works.** A checker and the thing it checks must measure the same pixels the same way, or the fix can never pass. An animation is one picture spread over time: match it as one, or it flickers and jumps.
+
+**Where.** `tools/art_match.py`, `tools/match_sequence.py`; art in `AvatarCards/{mom,dad}_card_clean`, `mom_apron_clean`, `mom_wear_hat_clean`, `dad_chef_coat_clean`, `dad_wear_hat_clean` (24 frames at 12 fps each, ~14 MB per set).
+
+**Open.** The colour reveal has never worked: all 20 colored-outfit imagesets (`girl_apron_colored_*`, `boy_coat_colored_*`, `*_hat_colored_*`) are empty, so picking a colour leaves the chef grey, for kids and parents. Needs one colored final frame per colour (40 with parents).
+
 ---
 
 ## 2026-10-18

@@ -18,6 +18,8 @@ Usage:
   art_match.py FILE [FILE ...]       match files; outputs go to OUT_DIR
   art_match.py --inbox               process every image in INBOX (the watcher)
   art_match.py --report FILE         print contrast/sepia numbers only
+  art_match.py --ref A.png,B.png FILE...   match to these images instead of the
+                                     stations (e.g. a new character -> the kid cards)
 
 Every matched file is then evaluated against the stations (see TOLERANCES).
 PASS -> matched/, ready for /add-asset.  FAIL -> matched/failed/, with the
@@ -81,10 +83,13 @@ def contrast_points(L):
     ink = L[L < PAPER_L]
     return np.percentile(ink, [2, 25, 50, 75]) if ink.size > 500 else None
 
-def reference():
-    files = sorted(glob.glob(str(STATIONS / "home_loc_*.imageset/*.png")))
-    if len(files) < 6:
-        sys.exit(f"art_match: expected 6 station PNGs in {STATIONS}, found {len(files)}")
+def reference(files=None):
+    """The look to match: the 6 Home stations, or the given reference images
+    (--ref), e.g. the kid avatar cards when matching a new character."""
+    if files is None:
+        files = sorted(glob.glob(str(STATIONS / "home_loc_*.imageset/*.png")))
+        if len(files) < 6:
+            sys.exit(f"art_match: expected 6 station PNGs in {STATIONS}, found {len(files)}")
     L, a, b = lab(np.concatenate([on_cream(load(f)[1]) for f in files]))
     C, H = np.hypot(a, b), np.arctan2(b, a)
     grid = np.arange(0, 101, 2.5); cC, cH = [], []
@@ -114,7 +119,9 @@ def tone_curve(L, src, dst):
         return L                              # degenerate art (almost no ink): leave contrast alone
     return np.interp(L, xs, ys)
 
-def match(path, ref):
+def match(path, ref, src=None):
+    """src: contrast points measured elsewhere (match_sequence.py pools them over
+    every frame of an animation, so all frames get the same curve)."""
     size, x = load(path)
     vis = x[:, 3] > 0
     al = x[vis, 3:4] / 255
@@ -123,7 +130,13 @@ def match(path, ref):
     # Work on the on-screen colour for cut-out art, the pixel's own colour otherwise.
     work = x[vis, :3] * al + CREAM * (1 - al) if cutout else x[vis, :3]
     L, _, _ = lab(work)
-    src = contrast_points(L)
+    # Measure what's actually seen: composited over cream, alpha > 20 (on_cream's
+    # rule, which evaluate() also uses). rembg cut-outs keep a near-invisible,
+    # near-black fringe that would otherwise pass for the darkest ink, and their
+    # soft hair edges look lighter on cream than their raw colour says.
+    if src is None:
+        seen_L, _, _ = lab(x[vis, :3] * al + CREAM * (1 - al))
+        src = contrast_points(seen_L[x[vis, 3] > 20])
     if src is not None:
         L = tone_curve(L, src, ref["contrast"])
     C = np.interp(L, ref["grid"], ref["C"]); H = np.interp(L, ref["grid"], ref["H"])
@@ -244,7 +257,10 @@ def notify(msg):
 def main(argv):
     if not argv:
         sys.exit(__doc__)
-    ref = reference()
+    ref_files = None
+    if argv[0] == "--ref":                        # --ref a.png,b.png  match to these instead of the stations
+        ref_files = argv[1].split(","); argv = argv[2:]
+    ref = reference(ref_files)
     if argv[0] == "--report":
         for p in argv[1:]:
             print(f"{Path(p).name}: {fmt(summary(on_cream(load(p)[1])), ref)}")
