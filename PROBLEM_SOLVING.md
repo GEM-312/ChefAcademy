@@ -5,6 +5,72 @@ Newest first. Each entry: **Symptom → Cause → Solution → How it works → 
 
 ---
 
+## 2026-10-23
+
+### 1. Pip stuttered and stopped mid-sentence in chat
+
+**Symptom.** In Ask Pip, Pip restarted the same sentence over and over ("shattering") and often stopped before the end. The console showed many `fetched + saved: Carrots are orange because they are pack…`, `Too many concurrent requests… maximum of 6`, `401`, and `Could not sign request… devicecheck error 0`.
+
+**Cause.** The chat shows Pip's reply while it streams in. That live bubble is a `PipSpeechBubble`, which speaks every time its text changes, so every few words a new ElevenLabs request went out with a partial sentence. Each clip that came back replaced the one playing; the last to finish was often partial. More than 6 at once hit ElevenLabs' limit, and the burst of App Attest signatures failed (401).
+
+**Solution.** The streaming bubble is quiet (`pipBubble(_, speaks: false)`); the finished reply's own bubble speaks once. The voice service also keeps the line in flight in `speakTask`, and a new line cancels it ("newest wins").
+
+**How it works.** A view that re-renders many times a second must not trigger a side effect (a paid network call) on every render. And a `Task` you never store can never be cancelled: keeping one handle makes "cancel the old one" a single `cancel()`.
+
+**Where.** `AskPipView.swift`, `ElevenLabsVoiceService.swift`, commit `03cf714`.
+
+### 2. Garden Pip said half of one tip, then another
+
+**Symptom.** Tapping Pip in the garden: he started one sentence, got cut off, then said a different one.
+
+**Cause.** The tap asked the AI for a new tip (about 1 s) and opened the bubble at the same moment, still showing the previous tip, so Pip started reading the old one; when the new tip arrived, the bubble changed and spoke again, cutting the first.
+
+**Solution.** The bubble opens only when the new tip is ready; extra taps while it's coming are ignored (plus a haptic, so the kid feels the tap). Every tip is one short sentence.
+
+**How it works.** Show state only once it's the state you mean. Ignoring taps while loading also fixed a second bug: kids tap again when nothing happens, which cancelled the first request (`-999 cancelled` in the log).
+
+**Where.** `GardenView.swift`, commits `4119003`, `a6dd0f6`.
+
+### 3. Pip said "plant broccoli" while broccoli was ready to harvest
+
+**Symptom.** The garden tip AI suggested planting a veggie that was already grown and ready.
+
+**Cause.** The tip came from Apple's small on-device model with the garden state pasted into the prompt. The data was there; the small model ignored it. (Giving it tools had been tried before and was worse.)
+
+**Solution.** `VeggieJourney`: one source of truth for each veggie (seeds → spots → wheelbarrow → pantry → cooked), with the next step decided in code. Pip Plus players get Claude Haiku, which only words that step (facts in the message, no tool: the tip always needs the whole garden). Free players and visitors get the built-in lines. A safety review then caught that Pip could suggest a recipe with the child's allergen; `VeggieJourney` now skips those. The child's name is added in code, never sent.
+
+**How it works.** Code decides, the model words it. A model handed a decided action can phrase it freely but can't choose the wrong one. A tool earns its place only when the model decides what to look up.
+
+**Where.** `VeggieJourney.swift`, `GardenTipAI.swift`, `GardenView.swift`, commits `fb7d3a3`, `a6dd0f6`.
+
+### 4. Silent mode muted Pip, depending on which screen opened first
+
+**Symptom.** With the phone in silent mode, Pip sometimes didn't speak.
+
+**Cause.** Pip's voice service set the shared audio session to `.playback` (ignores silent mode) and the ambient-sound player set it to `.ambient` (obeys it). Whichever started last won.
+
+**Solution.** One owner, `AppAudioSession.configure()` at launch: `.playback` + mix with others (Marina: Pip talks through silent mode, like a media app). Later "Pip is silent in a kid profile" turned out to be the Home 🔊 chip switched off (one switch for the whole device), not silent mode.
+
+**How it works.** A shared resource needs exactly one owner. To tell the cases apart, read the log: no `[ElevenLabs]` line at all means `speak()` returned at its first guard.
+
+**Where.** `AppAudioSession.swift`, commit `fa29a66`.
+
+**Open.** The "AVAudioSession Hang Risk" warning still fires once per player start: `AVAudioPlayer.play()` checks the session on the main thread. Moving `play()` off the main thread is on board #10 (voice tier card); `fa29a66`'s message overstates this fix.
+
+### 5. The design guard missed most hardcoded values
+
+**Symptom.** A scan found ~985 hardcoded sizes, spacing, strokes and hand-made buttons that the commit hook never blocked.
+
+**Cause.** `design-guard.py` only checked 8 patterns, and only on Claude's own commits.
+
+**Solution.** It now blocks every category (zero allowed; `// design-guard: allow — <reason>` for real exceptions), and a GitHub Action runs `--ratchet` on every push: it fails if the whole-app count rises above `.design-guard-baseline`.
+
+**How it works.** A ratchet doesn't demand zero today; it only forbids going backwards, and the baseline drops as each screen is fixed.
+
+**Where.** `.claude/hooks/design-guard.py`, `.github/workflows/design-guard.yml`, commits `6111747`, `980f6d7`.
+
+---
+
 ## 2026-10-18
 
 ### 1. Switching players could overwrite a sibling's whole game
