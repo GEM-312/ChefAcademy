@@ -23,7 +23,6 @@ import SwiftUI
 struct VeggieJourney {
     /// One planting spot holding this veggie
     struct Spot {
-        let number: Int          // 1-based, for the AI's reasoning only; kids never see numbers
         let state: PlotState
         let progress: Double     // 0...1
     }
@@ -73,7 +72,8 @@ struct VeggieJourney {
     // MARK: - Tool text
 
     /// One compact line for an AI tool, e.g.
-    /// "Broccoli: 2 seeds · spot 3 READY to harvest · wheelbarrow 0 · pantry 0 · cooked: not yet · next: dig it up with the shovel"
+    /// "Broccoli: 2 seeds · READY to harvest · wheelbarrow 0 · pantry 0 · cooked: not yet · next: dig it up with the shovel"
+    /// No spot numbers: kids never see them, so an AI must not repeat them.
     var toolLine: String {
         let location = spots.isEmpty ? "not planted" : spots.map { Self.describe($0) }.joined(separator: ", ")
         let cooked = cookedIn.isEmpty
@@ -85,12 +85,12 @@ struct VeggieJourney {
 
     private static func describe(_ spot: Spot) -> String {
         switch spot.state {
-        case .ready:        return "spot \(spot.number) READY to harvest"
-        case .needsWater:   return "spot \(spot.number) needs water"
-        case .needsWeeding: return "spot \(spot.number) has weeds"
-        case .hasBugs:      return "spot \(spot.number) has bugs"
-        case .growing:      return "spot \(spot.number) growing \(Int(spot.progress * 100))%"
-        case .empty:        return "spot \(spot.number) empty"
+        case .ready:        return "READY to harvest"
+        case .needsWater:   return "needs water"
+        case .needsWeeding: return "has weeds"
+        case .hasBugs:      return "has bugs"
+        case .growing:      return "growing \(Int(spot.progress * 100))%"
+        case .empty:        return "empty"
         }
     }
 }
@@ -103,13 +103,16 @@ extension VeggieJourney {
     static func all(from game: GameState) -> [VeggieJourney] {
         let openSpots = GardenPlot.unlockedRows(forLevel: game.playerLevel) * GardenPlot.spotsPerRow
         let hasEmptySpot = game.gardenPlots.prefix(openSpots).contains { $0.state == .empty }
-        let unlocked = GardenRecipes.all.filter { game.unlockedRecipeIDs.contains($0.id) }
+        // Pip never suggests a recipe with the child's allergens, strict mode or not
+        let unlocked = GardenRecipes.all.filter {
+            game.unlockedRecipeIDs.contains($0.id) && !$0.containsAllergens(game.activeAllergens)
+        }
 
         return VegetableType.allCases.compactMap { veg in
             let spots = game.gardenPlots.filter { $0.vegetable == veg && $0.state != .empty }.map { plot in
                 // A plot can reach full growth before its state flips to .ready
                 let state: PlotState = plot.state == .growing && plot.isReadyToHarvest ? .ready : plot.state
-                return Spot(number: plot.id + 1, state: state, progress: plot.growthProgress)
+                return Spot(state: state, progress: plot.growthProgress)
             }
             let cookedIn = GardenRecipes.all.compactMap { recipe -> (title: String, stars: Int)? in
                 guard recipe.gardenIngredients.contains(veg),

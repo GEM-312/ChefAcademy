@@ -10,9 +10,6 @@
 
 import SwiftUI
 import Combine  // NotificationCenter publisher → .onReceive
-#if canImport(FoundationModels)
-import FoundationModels
-#endif
 
 // MARK: - Selected Plot (for sheet(item:))
 
@@ -561,6 +558,7 @@ struct GardenView: View {
     // Access the shared game state (coins, seeds, plots, etc.)
     @EnvironmentObject var gameState: GameState
     @EnvironmentObject var sessionManager: SessionManager
+    @EnvironmentObject var subscriptionManager: SubscriptionManager
     @Environment(\.horizontalSizeClass) var sizeClass
 
     // Weather service — real weather affects plant growth!
@@ -999,7 +997,11 @@ struct GardenView: View {
                             isPointing: pipPointing,
                             bubble: pipBubble,
                             onTap: {
-                                // Tap Pip → the next tip; his bubble opens when it's ready
+                                // Tap Pip → the next tip; his bubble opens when it's ready.
+                                // Extra taps while it's coming are ignored (a kid taps
+                                // again when nothing shows; that cancelled the first one).
+                                guard tipTask == nil else { return }
+                                Haptic.selection()
                                 showPipTip = false
                                 fetchSmartPipTip()
                             },
@@ -1740,122 +1742,54 @@ struct GardenView: View {
         // No auto-update — Pip only speaks when tapped
     }
 
-    // MARK: - Smart Pip Tip (Foundation Models)
+    // MARK: - Pip's Garden Tip
     //
-    // TEACHING MOMENT: On-Device AI for Dynamic UI
-    // Instead of picking from a static list, we ask the on-device model to
-    // generate a tip based on the ACTUAL garden state. This makes Pip feel
-    // alive — "Your carrots are 70% grown, almost ready!" instead of
-    // generic "Harvest veggies to use in recipes!"
-    //
-    // If Foundation Models isn't available (older device), we fall back to
-    // the context-aware static tips in generateStaticTip().
-
-    // TEACHING MOMENT: State Hashing for Change Detection
-    // Instead of re-calling the AI every 5 seconds (wasteful), we compute
-    // a simple "hash" of all plot states. If the hash is the same as last
-    // time, nothing changed — skip the update. If it changed (a plant grew
-    // to ready, or needs water now), THEN we refresh the tip.
-    // This is the same principle behind SwiftUI's own diffing engine.
-
-    // TEACHING MOMENT: Grounding AI with Real Data
-    //
-    // The first attempt hallucinated because we used tools (async context
-    // that wasn't populated yet). The fix: embed the garden state DIRECTLY
-    // in the prompt text. The model can't ignore data that's literally in
-    // its input. We also add "ONLY mention veggies listed above" as a
-    // hard constraint to prevent hallucination.
-    //
-    // If FM isn't available, we fall back to static tips (also data-driven).
+    // Pip Plus: Claude Haiku words the tip from the VeggieJourney facts
+    // (GardenTipAI). Free and offline: the built-in lines below, which follow
+    // the same priorities (care first, then harvest, wheelbarrow, planting).
 
     /// The next tip, then open the bubble. Opening it first showed (and spoke)
     /// the previous tip, and the new one cut it off a second later.
     private func fetchSmartPipTip() {
         let previous = smartPipTip
-        tipTask?.cancel()
-        #if canImport(FoundationModels)
-        if #available(iOS 26, macOS 26, *), PipFoundationModelService.isModelAvailable {
-            tipTask = Task {
-                let tip = await generateAITip(avoiding: previous)
-                guard !Task.isCancelled else { return }
-                await MainActor.run {
-                    smartPipTip = tip ?? generateStaticTip()
-                    showPipTip = true
-                }
-            }
+        // Visitors can't do the garden jobs, so they get the built-in tip
+        guard subscriptionManager.isPremium, !isVisiting else {
+            smartPipTip = generateStaticTip()
+            showPipTip = true
             return
         }
-        #endif
-        smartPipTip = generateStaticTip()
-        showPipTip = true
+        let journeys = VeggieJourney.all(from: gameState)
+        let focus = VeggieJourney.focus(from: gameState).map { "\($0.journey.veggie.displayName): \($0.step)" }
+        let name = sessionManager.activeProfile?.name ?? ""
+        tipTask = Task {
+            // Remember the tip without the name, so "don't repeat" compares like with like
+            let tip = await GardenTipAI.tip(journeys: journeys, focus: focus, previous: previous.map { Self.withoutName($0, name: name) })
+            tipTask = nil
+            guard !Task.isCancelled else { return }
+            smartPipTip = tip.map { Self.withName(Self.firstSentence($0), name: name) } ?? generateStaticTip()
+            showPipTip = true
+        }
     }
 
-    /// The on-device model doesn't always keep to one sentence: keep the first.
-    /// Pip's bubble is one short sentence (Marina, Oct 23 2026).
+    /// "Your carrot is thirsty!" → "Alexander, your carrot is thirsty!" The
+    /// name is added here, never sent to the AI (privacy + no prompt injection).
+    private static func withName(_ tip: String, name: String) -> String {
+        guard !name.isEmpty, let first = tip.first else { return tip }
+        let rest = tip.hasPrefix("I ") ? tip : first.lowercased() + tip.dropFirst()
+        return "\(name), \(rest)"
+    }
+
+    private static func withoutName(_ tip: String, name: String) -> String {
+        guard !name.isEmpty, tip.hasPrefix("\(name), ") else { return tip }
+        return String(tip.dropFirst(name.count + 2))
+    }
+
+    /// Pip's bubble is one short sentence (Marina, Oct 23 2026); if the
+    /// model writes more, keep the first.
     private static func firstSentence(_ text: String) -> String {
         guard let end = text.range(of: #"[.!?](\s|$)"#, options: .regularExpression) else { return text }
         return String(text[...end.lowerBound])
     }
-
-    #if canImport(FoundationModels)
-    @available(iOS 26, macOS 26, *)
-    private func generateAITip(avoiding previous: String?) async -> String? {
-        let plots = gameState.gardenPlots
-        let weather = GardenWeatherService.shared
-
-        // Build EXACT state — the model must ONLY reference what's here
-        var state = "EXACT GARDEN STATE (do NOT invent veggies not listed here):\n"
-        for (i, plot) in plots.enumerated() {
-            switch plot.state {
-            case .empty:
-                state += "- Plot \(i+1): EMPTY (nothing planted)\n"
-            case .growing:
-                let name = plot.vegetable?.displayName ?? "plant"
-                let pct = Int(plot.growthProgress * 100)
-                state += "- Plot \(i+1): \(name) growing (\(pct)%)\n"
-            case .ready:
-                let name = plot.vegetable?.displayName ?? "plant"
-                state += "- Plot \(i+1): \(name) READY to harvest\n"
-            case .needsWater:
-                let name = plot.vegetable?.displayName ?? "plant"
-                state += "- Plot \(i+1): \(name) NEEDS WATER\n"
-            case .needsWeeding:
-                let name = plot.vegetable?.displayName ?? "plant"
-                state += "- Plot \(i+1): \(name) HAS WEEDS\n"
-            case .hasBugs:
-                let name = plot.vegetable?.displayName ?? "plant"
-                state += "- Plot \(i+1): \(name) HAS BUGS\n"
-            }
-        }
-        state += "Weather: \(weather.currentWeather.displayName), \(weather.temperature)°F\n"
-
-        let playerName = await MainActor.run { sessionManager.activeProfile?.name ?? "" }
-        let nameNote = playerName.isEmpty ? "" : "The kid's name is \(playerName) — use it sometimes.\n"
-        let repeatNote = previous.map { "Don't repeat your last tip: \"\($0)\"\n" } ?? ""
-
-        let prompt = """
-        You are Pip, a cheerful hedgehog gardener talking to a 6-year-old.
-        Give ONE short sentence (12 words max) based ONLY on the garden state below.
-        ONLY mention veggies that are actually listed. If all plots are empty, \
-        encourage the kid to plant something. Be fun and encouraging. One emoji max.
-        Do NOT say "Hello" or greet — you already know each other.
-        Garden tools: fork loosens hard soil, shovel plants and harvests, \
-        fill the watering can before watering. Weeds and bugs are by hand.
-        \(nameNote)\(repeatNote)
-        \(state)
-        """
-
-        let session = LanguageModelSession(instructions: "You are Pip, a friendly hedgehog chef for kids aged 6+. Answer in one short sentence.")
-        do {
-            let response = try await session.respond(to: prompt)
-            let text = Self.firstSentence(response.content.trimmingCharacters(in: .whitespacesAndNewlines))
-            // Empty, or the same tip again → the caller uses a built-in tip
-            return text.isEmpty || text == previous ? nil : text
-        } catch {
-            return nil
-        }
-    }
-    #endif
 
     /// Generate a context-aware tip without AI — reads actual plot states.
     /// Rotates through different tip types so Pip doesn't repeat himself.
