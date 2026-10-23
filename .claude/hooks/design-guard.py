@@ -34,6 +34,7 @@ Any error → exit 0 (fail open: never break a normal commit).
 Modes:
   (hook)        reads the PreToolUse JSON on stdin
   --all         report every hit in the whole source tree (the sweep backlog)
+  --ratchet     --all, then exit 1 if the total rose above .design-guard-baseline (CI)
   --selftest    run the built-in good/bad examples; exit 1 if any is wrong
 """
 import sys
@@ -320,12 +321,36 @@ def report_all(src_dir):
     totals = collections.Counter()
     for c in per_file.values():
         totals.update(c)
-    print(f"design-guard --all: {sum(totals.values())} hits in {len(per_file)} files")
+    total = sum(totals.values())
+    print(f"design-guard --all: {total} hits in {len(per_file)} files")
     for cat, n in totals.most_common():
         print(f"  {cat:12} {n}")
     print()
     for name, c in sorted(per_file.items(), key=lambda kv: -sum(kv[1].values())):
         print(f"  {sum(c.values()):4}  {name:38} " + " ".join(f"{k}={v}" for k, v in c.most_common()))
+    return total
+
+
+def ratchet(src_dir, baseline_path):
+    """--ratchet: fail (exit 1) if the whole-tree total rose above the saved baseline.
+
+    The baseline only goes down: after a sweep commit lowers the total, lower the
+    number in the baseline file in the same commit.
+    """
+    with open(baseline_path) as f:
+        baseline = int(f.read().strip())
+    total = report_all(src_dir)
+    print()
+    if total > baseline:
+        print(f"RATCHET FAILED: {total} hits, baseline is {baseline} (+{total - baseline}). "
+              "New hardcoded values or hand-made buttons got in; fix them (see the list above).")
+        sys.exit(1)
+    if total < baseline:
+        print(f"Ratchet OK: {total} hits, below the baseline of {baseline}. "
+              f"Lower .design-guard-baseline to {total} to lock in the progress.")
+    else:
+        print(f"Ratchet OK: {total} hits, same as the baseline.")
+    sys.exit(0)
 
 
 def selftest():
@@ -438,8 +463,11 @@ VStack(spacing: 6) { // design-guard: allow
 if __name__ == "__main__":
     if len(sys.argv) > 1 and sys.argv[1] == "--selftest":
         selftest()
+    here = os.path.dirname(os.path.abspath(__file__))
+    src = os.path.join(here, "..", "..", "ChefAcademy")
     if len(sys.argv) > 1 and sys.argv[1] == "--all":
-        here = os.path.dirname(os.path.abspath(__file__))
-        report_all(os.path.join(here, "..", "..", "ChefAcademy"))
+        report_all(src)
         sys.exit(0)
+    if len(sys.argv) > 1 and sys.argv[1] == "--ratchet":
+        ratchet(src, os.path.join(here, "..", "..", ".design-guard-baseline"))
     main()

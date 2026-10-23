@@ -1,0 +1,26 @@
+name: Design Guard Ratchet
+
+# Whole-app check for hardcoded design values and hand-made buttons.
+# The Claude Code hook only checks Claude's own commits; this runs on every
+# push, so commits made from Xcode or a terminal are checked too.
+# Fails if the total rises above .design-guard-baseline. The number only goes
+# down: lower it in the same commit that fixes a screen.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  ratchet:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Self-test the guard
+        run: python3 .claude/hooks/design-guard.py --selftest
+
+      - name: Ratchet
+        run: python3 .claude/hooks/design-guard.py --ratchet
