@@ -133,7 +133,7 @@ struct AskPipView: View {
                         // makes the response feel instant even though the model
                         // is still generating. It's the same trick ChatGPT uses.
                         if let streamingText = aiService.streamingText {
-                            pipBubble(streamingText)
+                            pipBubble(streamingText, speaks: false)
                                 .id("streaming")
                         } else if aiService.isLoading {
                             // Fallback: bouncing dots for cloud mode (no streaming)
@@ -288,9 +288,12 @@ struct AskPipView: View {
 
     // MARK: - Pip Bubble
 
-    private func pipBubble(_ text: String) -> some View {
+    /// `speaks: false` for the live streaming bubble: its text changes every few
+    /// words, and speaking each change sends a voice request per chunk. The
+    /// finished reply arrives as its own message bubble and speaks once.
+    private func pipBubble(_ text: String, speaks: Bool = true) -> some View {
         HStack {
-            PipSpeechBubble(message: text, hasTail: true)
+            PipSpeechBubble(message: text, hasTail: true, speakOnAppear: speaks)
             Spacer(minLength: 40)
         }
     }

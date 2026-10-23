@@ -66,6 +66,10 @@ class ElevenLabsVoiceService: NSObject, ObservableObject, AVAudioPlayerDelegate 
 
     private var audioPlayer: AVAudioPlayer?
 
+    /// The line being fetched or played. A new line cancels it ("newest wins"),
+    /// so lines can't pile up into parallel requests that cut each other off.
+    private var speakTask: Task<Void, Never>?
+
     /// On-device voice cache: Library/Caches/pip_voice/<sha256>.mp3
     private let cacheDirectory: URL = FileManager.default
         .urls(for: .cachesDirectory, in: .userDomainMask)[0]
@@ -111,6 +115,7 @@ class ElevenLabsVoiceService: NSObject, ObservableObject, AVAudioPlayerDelegate 
             #if DEBUG
             print("[ElevenLabs] cache hit: \(text.prefix(40))")
             #endif
+            guard !Task.isCancelled else { return }
             await playAudio(cached)
             return
         }
@@ -134,9 +139,17 @@ class ElevenLabsVoiceService: NSObject, ObservableObject, AVAudioPlayerDelegate 
             print("[ElevenLabs] fetched + saved: \(text.prefix(40))")
             #endif
 
+            // A newer line replaced this one while it downloaded: keep the
+            // saved audio for next time, but don't play over the newer line
+            guard !Task.isCancelled else { return }
             await playAudio(audioData)
 
         } catch {
+            if Task.isCancelled {
+                // Replaced by a newer line, not a real failure
+                await MainActor.run { self.isLoading = false }
+                return
+            }
             print("[ElevenLabs] Error: \(error)")
             await MainActor.run {
                 self.lastError = error.localizedDescription
@@ -145,14 +158,18 @@ class ElevenLabsVoiceService: NSObject, ObservableObject, AVAudioPlayerDelegate 
         }
     }
 
-    /// Synchronous speak wrapper for compatibility with existing PipVoice interface
+    /// Synchronous speak wrapper for compatibility with existing PipVoice interface.
+    /// Newest wins: cancels the line still downloading and stops the one playing.
     func speakSync(_ text: String) {
-        Task { await speak(text) }
+        stop()
+        speakTask = Task { await speak(text) }
     }
 
     // MARK: - Stop
 
     func stop() {
+        speakTask?.cancel()
+        speakTask = nil
         audioPlayer?.stop()
         audioPlayer = nil
         Task { @MainActor in
@@ -222,6 +239,7 @@ class ElevenLabsVoiceService: NSObject, ObservableObject, AVAudioPlayerDelegate 
         do {
             let player = try AVAudioPlayer(data: data)
             player.delegate = self
+            self.audioPlayer?.stop()
             self.audioPlayer = player
 
             await MainActor.run { isSpeaking = true }
