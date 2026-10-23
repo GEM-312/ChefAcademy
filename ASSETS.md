@@ -1,8 +1,8 @@
 # ASSETS.md — Full Asset Inventory & Needs
 
-## Current Inventory: ~722 imagesets total (May 12, 2026)
+## Current Inventory: ~623 imagesets total (Oct 23, 2026)
 
-`find ChefAcademy/Assets.xcassets -name "*.imageset" -type d | wc -l` → 722.
+`find ChefAcademy/Assets.xcassets -name "*.imageset" -type d | wc -l` → 623 (Oct 23 2026: old mom/dad avatar frames removed, all dress-up animations 24 frames).
 
 | Category | Count | Status |
 |----------|-------|--------|

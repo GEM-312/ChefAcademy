@@ -49,6 +49,9 @@ Defined in `AppTheme.swift`. Use these instead of inline values.
 | `.fadeFast` | 0.2s easeInOut | Snappy toggles, subtle reveals |
 | `.fadeMedium` | 0.3s easeInOut | Content appear/disappear |
 | `.fadeFlyOut` | 0.15s easeOut | Pop flying ingredient image after it reaches its target |
+| `.progressTick` | 0.05s linear | Hold-to-heat ring fills in step with its 0.05 s timer (cooking mini-games) |
+| `.particleFall` | 0.6s easeIn | Seasoning grains fall into the bowl (cooking mini-games) |
+| `.sparkleFade` | 1.0s easeOut | Plating sparkles fade out (cooking mini-games) |
 | `.revealSlow` | 0.5s easeInOut | Large element reveals |
 | `.pipTransition` | 0.8s easeInOut | Pip pose / dialog transitions |
 | `.weatherTransition` | 1.0s easeInOut | WeatherOverlayView weather swap |
@@ -174,7 +177,7 @@ Shared `Haptic` enum in `AppTheme.swift`. Always use these wrappers.
 |-------|-----------|---------|
 | `TexturedButtonStyle` | Wooden botanical image + tint | **Default for primary CTAs** ("Let's Cook!", "Visit Garden", "Start Trial"). Pass `tint:` for per-call color. |
 | `BouncyButtonStyle` | Custom (per-use) | Game CTAs, interactive cards, mini-game buttons |
-| `PrimaryButtonStyle` | Textured, `buttonGo` (leafGreen) | Main "go" choice in setup / onboarding ("Next", "Let's Go!") |
+| `PrimaryButtonStyle` | Textured, `buttonGo` (sage) | Main "go" choice in setup / onboarding ("Next", "Let's Go!") |
 | `SecondaryButtonStyle` | Textured, `buttonBack` (warmKhaki) | The quieter choice beside it ("Back", "Restore Purchases") |
 | `PlotButtonStyle` | Custom spring bounce | DEPRECATED — exact duplicate of BouncyButtonStyle. Planned deletion. |
 

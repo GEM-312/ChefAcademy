@@ -31,8 +31,9 @@ extension Color {
 
         // Button roles — one color per job, the same on every screen, so kids
         // learn "green moves me forward" before they can read the label.
+        // Go is the calm botanical sage (Marina, Oct 23 2026): leafGreen read too bright on the wood.
         // Call sites use the role, never the raw color.
-        static let buttonGo = leafGreen          // Next, Let's Go!, Start Game! — green = go
+        static let buttonGo = sage               // Next, Let's Go!, Start Game! — green = go
         static let buttonReward = sunflowerYellow // Play Again!, Awesome!, Plate it up! — joy, stars
         static let buttonRetry = carrotOrange    // Try Again! — keeps energy up without red's "you failed"
         static let buttonLearn = brightBlue      // Next: Inside Your Cells!, quiz — calm, think
@@ -270,6 +271,11 @@ enum AnimationConstants {
 
     // Quick fade used to pop the flying image after it reaches its target
     static let fadeFlyOut = Animation.easeOut(duration: 0.15)
+
+    // Cooking mini-games (CookingMiniGames.swift)
+    static let progressTick = Animation.linear(duration: 0.05)   // hold-to-heat ring fills in step with its 0.05 s timer
+    static let particleFall = Animation.easeIn(duration: 0.6)    // seasoning grains fall into the bowl
+    static let sparkleFade = Animation.easeOut(duration: 1.0)    // plating sparkles fade out
 
     // Float loop family — idle/breathing animations that run forever.
     // Pick by feel: fast for snappy bounces, default for breathing, slow for ambient.

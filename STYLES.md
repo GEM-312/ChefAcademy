@@ -44,7 +44,7 @@ One color per button job, the same on every screen. Tint wood buttons with the r
 
 | Role | Color | Buttons |
 |------|-------|---------|
-| `buttonGo` | leafGreen | Next, Let's Go!, Start Game!, Let's Cook! (= `PrimaryButtonStyle`) |
+| `buttonGo` | sage | Next, Let's Go!, Start Game!, Let's Cook! (= `PrimaryButtonStyle`) |
 | `buttonReward` | sunflowerYellow | Play Again!, Awesome!, Plate it up!, Rematch! |
 | `buttonRetry` | carrotOrange | Try Again! (after a miss; never red) |
 | `buttonLearn` | brightBlue | Next: Inside Your Cells!, snack quiz, Find a Player |
@@ -52,7 +52,7 @@ One color per button job, the same on every screen. Tint wood buttons with the r
 | `buttonSpend` | goldenWheat | Buy, Unlock |
 | `buttonDanger` | terracotta | Parent-only: Delete, Remove Profile, Sign Out |
 
-brightGreen and sage are kept off buttons: on the wood, brightGreen reads the same as leafGreen.
+brightGreen and leafGreen are kept off buttons: on the wood they read too bright (Oct 23 2026: Go moved from leafGreen to sage).
 
 ### Specialty Surface Colors
 | Name | Hex | SwiftUI | Use For |
