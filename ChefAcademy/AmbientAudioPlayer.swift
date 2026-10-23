@@ -11,8 +11,8 @@
 //  PipVoice handles SHORT, ON-DEMAND speech (one utterance at a time,
 //  triggered by events). Ambient sound is the OPPOSITE: it loops
 //  continuously, runs in the background, lives at a much lower volume.
-//  Two different players means we can tune them independently — Pip's
-//  voice ducks the ambient track automatically via AVAudioSession.
+//  Two different players means we can tune them independently; both
+//  share the one audio session set up in AppAudioSession.
 //
 //  TEACHING MOMENT: Why crossfade vs stop+start?
 //  ─────────────────────────────────────────────────────────────
@@ -85,14 +85,7 @@ final class AmbientAudioPlayer: ObservableObject {
 
     private init() {
         self.isEnabled = UserDefaults.standard.object(forKey: Self.enabledKey) as? Bool ?? true
-        // Use the same audio session category as PipVoice so the two
-        // backends coexist cleanly. .duckOthers means external audio
-        // (Apple Music, podcasts) gets quieted while we play.
-        try? AVAudioSession.sharedInstance().setCategory(
-            .ambient,
-            mode: .default,
-            options: [.mixWithOthers]
-        )
+        // The audio session category is set once in AppAudioSession, shared with Pip's voice
     }
 
     // MARK: - Public API

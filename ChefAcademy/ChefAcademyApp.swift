@@ -30,6 +30,9 @@ struct ChefAcademyApp: App {
     private let showPipTest = false
 
     init() {
+        // Audio session: set up once for Pip's voice + ambient sounds, off the main thread
+        AppAudioSession.configure()
+
         // Create SwiftData container with auto-recovery.
         // If the store is corrupted or has an old schema, delete and retry.
         // On real devices CloudKit sync is enabled; on Simulator it's local only.

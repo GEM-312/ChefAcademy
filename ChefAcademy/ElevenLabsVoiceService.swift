@@ -76,23 +76,6 @@ class ElevenLabsVoiceService: NSObject, ObservableObject, AVAudioPlayerDelegate 
         .appendingPathComponent("pip_voice", isDirectory: true)
     private let cacheByteLimit = 30 * 1024 * 1024  // ~600 short lines
 
-    // MARK: - Init
-
-    override init() {
-        super.init()
-        setupAudioSession()
-    }
-
-    // MARK: - Audio Session
-
-    private func setupAudioSession() {
-        try? AVAudioSession.sharedInstance().setCategory(
-            .playback,
-            mode: .default,
-            options: [.duckOthers]
-        )
-    }
-
     // MARK: - Speak (Streaming)
     //
     // TEACHING MOMENT: We download the full audio first, then play it.
@@ -241,6 +224,9 @@ class ElevenLabsVoiceService: NSObject, ObservableObject, AVAudioPlayerDelegate 
             player.delegate = self
             self.audioPlayer?.stop()
             self.audioPlayer = player
+            #if DEBUG
+            print("[ElevenLabs] playing with audio category: \(AVAudioSession.sharedInstance().category.rawValue)")
+            #endif
 
             await MainActor.run { isSpeaking = true }
             player.play()
