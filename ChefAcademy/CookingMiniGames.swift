@@ -8,6 +8,60 @@
 
 import SwiftUI
 
+/// Game-piece sizes used only by the cooking mini-games in this file.
+private enum Layout {
+    // Shared by several games
+    static let pan: CGFloat = 180                  // frying pan image (heat, add-to-pan)
+    static let progressBar: CGFloat = 12           // thin progress capsule under a game
+    static let bigEmoji: CGFloat = 50              // salad in the bowl, egg in the pan
+    static let smallEmoji: CGFloat = 40            // spoon, seasoning shakers
+    static let propShadowOpacity = 0.3             // pans sit on the counter
+    static let propShadowRadius: CGFloat = 8
+    static let propShadowY: CGFloat = 4
+    // Heat pan
+    static let burner: CGFloat = 160               // glowing stove circle under the pan
+    static let ring: CGFloat = 80                  // hold-to-heat progress ring
+    static let ringStroke: CGFloat = 8
+    // Add to pan
+    static let dropGap: CGFloat = 60               // space between pan and the item to drag
+    static let dragEmoji: CGFloat = 60
+    static let dragItem: CGFloat = 80
+    // Stir
+    static let bowlWidth: CGFloat = 200
+    static let bowlHeight: CGFloat = 140
+    // Season
+    static let seasonBowlWidth: CGFloat = 160
+    static let seasonBowlHeight: CGFloat = 100
+    static let seasonGrain: CGFloat = 4            // one falling grain
+    static let tapDot: CGFloat = 8                 // sprinkles-left dots on a shaker
+    // Peel
+    static let peelStripWidth: CGFloat = 16
+    static let peelStripHeight: CGFloat = 90
+    static let peelStripCorner: CGFloat = 4
+    static let veggie: CGFloat = 120
+    // Cook timer
+    static let flameEmoji: CGFloat = 24
+    static let cookPanWidth: CGFloat = 150
+    static let cookPanHeight: CGFloat = 100
+    static let timerBar: CGFloat = 20
+    static let timerKnob: CGFloat = 16             // the dot riding along the timer bar
+    static let knobShadowRadius: CGFloat = 2
+    // Wash
+    static let sinkWidth: CGFloat = 300
+    static let sinkHeight: CGFloat = 240
+    static let washVeggie: CGFloat = 90
+    static let washDirt: CGFloat = 85              // brown "dirt" circle over the veggie
+    // Crack egg
+    static let crackedEgg: CGFloat = 200
+    static let egg: CGFloat = 150
+    static let crackLineWidth: CGFloat = 2
+    static let crackLineLength: CGFloat = 25
+    static let eggTapDot: CGFloat = 12
+    // Assemble
+    static let plate: CGFloat = 220
+    static let plateShadowOpacity = 0.15
+}
+
 // Haptic enum is now shared in AppTheme.swift — see ANIMATIONS.md for conventions.
 //
 // Quick reference:
@@ -53,14 +107,14 @@ struct HeatPanMiniGame: View {
                             endRadius: 80
                         )
                     )
-                    .frame(width: 160, height: 160)
+                    .frame(width: Layout.burner, height: Layout.burner)
 
                 // Pan image
                 Image("frying_pan")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(width: 180, height: 180)
-                    .shadow(color: Color.AppTheme.sepia.opacity(0.3), radius: 8, y: 4)
+                    .frame(width: Layout.pan, height: Layout.pan)
+                    .shadow(color: Color.AppTheme.sepia.opacity(Layout.propShadowOpacity), radius: Layout.propShadowRadius, y: Layout.propShadowY)
 
                 // Heat shimmer when warm
                 if panGlow > 0.3 {
@@ -77,15 +131,15 @@ struct HeatPanMiniGame: View {
             // Progress ring
             ZStack {
                 Circle()
-                    .stroke(Color.AppTheme.parchment, lineWidth: 8)
-                    .frame(width: 80, height: 80)
+                    .stroke(Color.AppTheme.parchment, lineWidth: Layout.ringStroke)
+                    .frame(width: Layout.ring, height: Layout.ring)
 
                 Circle()
                     .trim(from: 0, to: progress)
-                    .stroke(Color.AppTheme.sage, style: StrokeStyle(lineWidth: 8, lineCap: .round))
-                    .frame(width: 80, height: 80)
+                    .stroke(Color.AppTheme.sage, style: StrokeStyle(lineWidth: Layout.ringStroke, lineCap: .round))
+                    .frame(width: Layout.ring, height: Layout.ring)
                     .rotationEffect(.degrees(-90))
-                    .animation(.linear(duration: 0.05), value: progress)
+                    .animation(AnimationConstants.progressTick, value: progress)
 
                 Image(systemName: isHolding ? "flame.fill" : "flame")
                     .font(.AppTheme.title)
@@ -175,8 +229,8 @@ struct AddToPanMiniGame: View {
                 Image("frying_pan")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(width: 180, height: 180)
-                    .shadow(color: Color.AppTheme.sepia.opacity(0.3), radius: 8, y: 4)
+                    .frame(width: Layout.pan, height: Layout.pan)
+                    .shadow(color: Color.AppTheme.sepia.opacity(Layout.propShadowOpacity), radius: Layout.propShadowRadius, y: Layout.propShadowY)
 
                 if dropped {
                     Text("Sizzle!")
@@ -186,19 +240,19 @@ struct AddToPanMiniGame: View {
                 }
             }
 
-            Spacer().frame(height: 60)
+            Spacer().frame(height: Layout.dropGap)
 
             // Draggable item
             if !dropped {
                 Group {
                     if useEmoji {
                         Text(emoji)
-                            .font(.AppTheme.rounded(size: 60))
+                            .font(.AppTheme.rounded(size: Layout.dragEmoji))
                     } else {
                         Image(itemImage)
                             .resizable()
                             .scaledToFit()
-                            .frame(width: 80, height: 80)
+                            .frame(width: Layout.dragItem, height: Layout.dragItem)
                     }
                 }
                 .scaleEffect(itemScale)
@@ -280,16 +334,16 @@ struct StirMiniGame: View {
                             endPoint: .bottom
                         )
                     )
-                    .frame(width: 200, height: 140)
+                    .frame(width: Layout.bowlWidth, height: Layout.bowlHeight)
 
                 // Ingredients in bowl
                 Text("🥗")
-                    .font(.AppTheme.rounded(size: 50))
+                    .font(.AppTheme.rounded(size: Layout.bigEmoji))
                     .rotationEffect(.degrees(Double(spoonAngle) * 2))
 
                 // Spoon
                 Text("🥄")
-                    .font(.AppTheme.rounded(size: 40))
+                    .font(.AppTheme.rounded(size: Layout.smallEmoji))
                     .offset(x: cos(spoonAngle) * 50, y: sin(spoonAngle) * 30)
             }
             .contentShape(Circle().size(width: 250, height: 250))
@@ -324,7 +378,7 @@ struct StirMiniGame: View {
                             .frame(width: geo.size.width * min(rotations / targetRotations, 1.0))
                     }
                 }
-                .frame(height: 12)
+                .frame(height: Layout.progressBar)
 
                 Text("\(Int(min(rotations / targetRotations, 1.0) * 100))% stirred")
                     .font(.AppTheme.body)
@@ -373,13 +427,13 @@ struct SeasonMiniGame: View {
             ZStack {
                 Ellipse()
                     .fill(Color.AppTheme.sepia)
-                    .frame(width: 160, height: 100)
+                    .frame(width: Layout.seasonBowlWidth, height: Layout.seasonBowlHeight)
 
                 // Falling particles
                 ForEach(particles) { particle in
                     Circle()
                         .fill(particle.color)
-                        .frame(width: 4, height: 4)
+                        .frame(width: Layout.seasonGrain, height: Layout.seasonGrain)
                         .offset(x: particle.x, y: particle.y)
                 }
             }
@@ -417,9 +471,9 @@ struct SeasonMiniGame: View {
             spawnParticle(for: item)
             checkCompletion()
         } label: {
-            VStack(spacing: 4) {
+            VStack(spacing: AppSpacing.xxs) {
                 Text(item.emoji)
-                    .font(.AppTheme.rounded(size: 40))
+                    .font(.AppTheme.rounded(size: Layout.smallEmoji))
                     .scaleEffect(done ? 0.8 : 1.0)
                     .opacity(done ? 0.5 : 1.0)
 
@@ -428,19 +482,18 @@ struct SeasonMiniGame: View {
                     .foregroundColor(Color.AppTheme.sepia)
 
                 // Tap dots
-                HStack(spacing: 3) {
+                HStack(spacing: AppSpacing.xxs) {
                     ForEach(0..<tapsPerItem, id: \.self) { i in
                         Circle()
                             .fill(i < count ? Color.AppTheme.sage : Color.AppTheme.parchment)
-                            .frame(width: 8, height: 8)
+                            .frame(width: Layout.tapDot, height: Layout.tapDot)
                     }
                 }
             }
-            .padding(AppSpacing.sm)
-            .background(Color.AppTheme.warmCream)
-            .cornerRadius(AppSpacing.smallCornerRadius)
         }
-        .buttonStyle(.plain)
+        // Shared pick-card look; a shaker turns "picked" once its sprinkles are done
+        .choiceCard(tint: Color.AppTheme.sage, isSelected: done,
+                    cornerRadius: AppSpacing.smallCornerRadius, padding: AppSpacing.sm)
         .disabled(done)
     }
 
@@ -468,7 +521,7 @@ struct SeasonMiniGame: View {
         }
 
         // Animate particles down
-        withAnimation(.easeIn(duration: 0.6)) {
+        withAnimation(AnimationConstants.particleFall) {
             for i in max(0, particles.count - 5)..<particles.count {
                 particles[i].y = CGFloat.random(in: -10...20)
             }
@@ -517,9 +570,9 @@ struct PeelMiniGame: View {
                 // Peel layers (strips that disappear)
                 ForEach(0..<5, id: \.self) { i in
                     if peelLayers[i] {
-                        RoundedRectangle(cornerRadius: 4)
+                        RoundedRectangle(cornerRadius: Layout.peelStripCorner)
                             .fill(Color.AppTheme.goldenWheat.opacity(0.6))
-                            .frame(width: 16, height: 90)
+                            .frame(width: Layout.peelStripWidth, height: Layout.peelStripHeight)
                             .offset(x: CGFloat(i * 18 - 36))
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                     }
@@ -529,7 +582,7 @@ struct PeelMiniGame: View {
                 Image(vegetable.imageName)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: 120, height: 120)
+                    .frame(width: Layout.veggie, height: Layout.veggie)
             }
             .contentShape(Rectangle())
             .gesture(
@@ -557,7 +610,7 @@ struct PeelMiniGame: View {
                             .frame(width: geo.size.width * CGFloat(swipeCount) / CGFloat(targetSwipes))
                     }
                 }
-                .frame(height: 12)
+                .frame(height: Layout.progressBar)
 
                 Text("\(swipeCount)/\(targetSwipes) peels")
                     .font(.AppTheme.body)
@@ -576,7 +629,7 @@ struct PeelMiniGame: View {
     private func handleSwipe(accuracy: CGFloat) {
         Haptic.impact(.medium) // peel strip ripping off
         if swipeCount < peelLayers.count {
-            withAnimation(.easeOut(duration: 0.3)) {
+            withAnimation(AnimationConstants.fadeMedium) {
                 peelLayers[swipeCount] = false
             }
         }
@@ -621,10 +674,10 @@ struct CookTimerMiniGame: View {
             // Pan on stove
             ZStack {
                 // Flames
-                HStack(spacing: 8) {
+                HStack(spacing: AppSpacing.xs) {
                     ForEach(0..<3, id: \.self) { _ in
                         Text("🔥")
-                            .font(.AppTheme.rounded(size: 24))
+                            .font(.AppTheme.rounded(size: Layout.flameEmoji))
                             .scaleEffect(flameScale)
                     }
                 }
@@ -633,10 +686,10 @@ struct CookTimerMiniGame: View {
                 // Pan
                 Ellipse()
                     .fill(Color.AppTheme.sepia)
-                    .frame(width: 150, height: 100)
+                    .frame(width: Layout.cookPanWidth, height: Layout.cookPanHeight)
 
                 Text("🍳")
-                    .font(.AppTheme.rounded(size: 50))
+                    .font(.AppTheme.rounded(size: Layout.bigEmoji))
             }
 
             // Timer bar
@@ -666,12 +719,12 @@ struct CookTimerMiniGame: View {
                         // Indicator
                         Circle()
                             .fill(Color.AppTheme.cream)
-                            .frame(width: 16, height: 16)
-                            .shadow(radius: 2)
-                            .offset(x: geo.size.width * fraction - 8)
+                            .frame(width: Layout.timerKnob, height: Layout.timerKnob)
+                            .shadow(color: Color.AppTheme.sepia.opacity(Layout.propShadowOpacity), radius: Layout.knobShadowRadius)
+                            .offset(x: geo.size.width * fraction - Layout.timerKnob / 2)
                     }
                 }
-                .frame(height: 20)
+                .frame(height: Layout.timerBar)
 
                 Text(timerText)
                     .font(.AppTheme.body)
@@ -701,14 +754,11 @@ struct CookTimerMiniGame: View {
                     }
                 } label: {
                     Text("Done!")
-                        .font(.AppTheme.headline)
-                        .foregroundColor(Color.AppTheme.cream)
-                        .frame(width: 120)
-                        .padding(.vertical, AppSpacing.sm)
-                        .background(elapsed >= greenStart ? Color.AppTheme.sage : Color.AppTheme.sepia.opacity(0.3))
-                        .cornerRadius(AppSpacing.cardCornerRadius)
                 }
-                .buttonStyle(BouncyButtonStyle())
+                // Quiet before the green zone, "go" once it's time to tap
+                .buttonStyle(TexturedButtonStyle(
+                    tint: elapsed >= greenStart ? Color.AppTheme.buttonGo : Color.AppTheme.buttonBack,
+                    fullWidth: false))
             }
 
             Text("Tap Done when the timer reaches the green zone!")
@@ -833,7 +883,7 @@ struct WashMiniGame: View {
                 Image(String(format: "kitchen_sink_%02d", sinkFrame))
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(width: 300, height: 240)
+                    .frame(width: Layout.sinkWidth, height: Layout.sinkHeight)
 
                 // Veggie in the sink — gets cleaner with each tap
                 ZStack {
@@ -841,14 +891,14 @@ struct WashMiniGame: View {
                     Image(vegetable.imageName)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 90, height: 90)
+                        .frame(width: Layout.washVeggie, height: Layout.washVeggie)
                         .scaleEffect(vegScale)
                         .rotationEffect(.degrees(vegRotation))
 
                     // Dirt overlay (brown tint that fades as you wash)
                     Circle()
                         .fill(Color.AppTheme.warmKhaki.opacity(dirtOpacity))
-                        .frame(width: 85, height: 85)
+                        .frame(width: Layout.washDirt, height: Layout.washDirt)
                         .blendMode(.multiply)
 
                     // Clean sparkle (appears as veggie gets cleaner)
@@ -898,7 +948,7 @@ struct WashMiniGame: View {
                             .animation(AnimationConstants.springQuick, value: cleanProgress)
                     }
                 }
-                .frame(height: 12)
+                .frame(height: Layout.progressBar)
 
                 HStack {
                     Text("🧽")
@@ -957,12 +1007,12 @@ struct WashMiniGame: View {
         }
 
         // Dirt fades away with each tap
-        withAnimation(.easeOut(duration: 0.3)) {
+        withAnimation(AnimationConstants.fadeMedium) {
             dirtOpacity = max(0, 0.5 - (Double(tapCount) / Double(targetTaps)) * 0.5)
         }
 
         // Shine appears as veggie gets cleaner
-        withAnimation(.easeIn(duration: 0.3)) {
+        withAnimation(AnimationConstants.fadeMedium) {
             shineOpacity = Double(tapCount) / Double(targetTaps) * 0.8
         }
 
@@ -976,7 +1026,7 @@ struct WashMiniGame: View {
         splashes.append(splash)
 
         // Fade and remove splash
-        withAnimation(.easeOut(duration: 0.4)) {
+        withAnimation(AnimationConstants.fadeMedium) {
             if let idx = splashes.firstIndex(where: { $0.id == splash.id }) {
                 splashes[idx].y -= 30
                 splashes[idx].opacity = 0
@@ -1054,7 +1104,7 @@ struct CrackEggMiniGame: View {
                     Image("cracked_egg_yolk")
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .frame(width: 200, height: 200)
+                        .frame(width: Layout.crackedEgg, height: Layout.crackedEgg)
                         .transition(.scale.combined(with: .opacity))
                 } else {
                     // Whole egg (using farm_eggs asset)
@@ -1062,14 +1112,14 @@ struct CrackEggMiniGame: View {
                         Image("farm_eggs")
                             .resizable()
                             .aspectRatio(contentMode: .fit)
-                            .frame(width: 150, height: 150)
+                            .frame(width: Layout.egg, height: Layout.egg)
 
                         // Crack lines appear with each tap
                         if tapCount > 0 {
                             ForEach(0..<tapCount, id: \.self) { i in
                                 Rectangle()
                                     .fill(Color.AppTheme.sepia.opacity(0.6))
-                                    .frame(width: 2, height: 25)
+                                    .frame(width: Layout.crackLineWidth, height: Layout.crackLineLength)
                                     .rotationEffect(.degrees(Double(i) * 30 - 15))
                                     .offset(y: -5)
                             }
@@ -1084,11 +1134,11 @@ struct CrackEggMiniGame: View {
             }
 
             // Progress
-            HStack(spacing: 4) {
+            HStack(spacing: AppSpacing.xxs) {
                 ForEach(0..<targetTaps, id: \.self) { i in
                     Circle()
                         .fill(i < tapCount ? Color.AppTheme.sage : Color.AppTheme.parchment)
-                        .frame(width: 12, height: 12)
+                        .frame(width: Layout.eggTapDot, height: Layout.eggTapDot)
                 }
             }
 
@@ -1138,8 +1188,8 @@ struct AssembleMiniGame: View {
                 Image("empty_plate")
                     .resizable()
                     .aspectRatio(contentMode: .fit)
-                    .frame(width: 220, height: 220)
-                    .shadow(color: Color.AppTheme.sepia.opacity(0.15), radius: 8, y: 4)
+                    .frame(width: Layout.plate, height: Layout.plate)
+                    .shadow(color: Color.AppTheme.sepia.opacity(Layout.plateShadowOpacity), radius: Layout.propShadowRadius, y: Layout.propShadowY)
 
                 // Sparkles
                 ForEach(sparkles) { sparkle in
@@ -1158,10 +1208,10 @@ struct AssembleMiniGame: View {
                     Capsule()
                         .fill(Color.AppTheme.goldenWheat)
                         .frame(width: geo.size.width * progress)
-                        .animation(.easeOut(duration: 0.2), value: progress)
+                        .animation(AnimationConstants.fadeFast, value: progress)
                 }
             }
-            .frame(height: 12)
+            .frame(height: Layout.progressBar)
             .padding(.horizontal, AppSpacing.lg)
 
             if !isDone {
@@ -1169,14 +1219,8 @@ struct AssembleMiniGame: View {
                     handleTap()
                 } label: {
                     Text("Plate it up!")
-                        .font(.AppTheme.headline)
-                        .foregroundColor(Color.AppTheme.cream)
-                        .padding(.horizontal, AppSpacing.xl)
-                        .padding(.vertical, AppSpacing.md)
-                        .background(Color.AppTheme.sage)
-                        .cornerRadius(AppSpacing.cardCornerRadius)
                 }
-                .buttonStyle(BouncyButtonStyle())
+                .buttonStyle(TexturedButtonStyle(tint: Color.AppTheme.buttonReward, fullWidth: false))
             } else {
                 Text("Beautiful!")
                     .font(.AppTheme.title3)
@@ -1217,7 +1261,7 @@ struct AssembleMiniGame: View {
         )
         sparkles.append(sparkle)
         // Fade out
-        withAnimation(.easeOut(duration: 1.0)) {
+        withAnimation(AnimationConstants.sparkleFade) {
             if let idx = sparkles.firstIndex(where: { $0.id == sparkle.id }) {
                 sparkles[idx].opacity = 0
             }
