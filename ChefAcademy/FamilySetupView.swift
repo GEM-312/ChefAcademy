@@ -10,6 +10,15 @@ import SwiftData
 import Combine
 import AVFoundation
 
+/// Sizes used only on the setup screens in this file.
+private enum Layout {
+    static let outfitSwatch: CGFloat = 50        // avatar step: apron / coat color circle (5 fit a row)
+    static let hatSwatch: CGFloat = 44           // avatar step: hat color circle (6 fit a row, still a full tap target)
+    static let noHatIcon: CGFloat = 16           // avatar step: the ✕ inside the "no hat" circle
+    static let pickedSwatchScale: CGFloat = 1.15 // a picked color circle grows this much
+    static let pipLineMinHeight: CGFloat = 80    // Meet Pip: his text box keeps one height across lines
+}
+
 // MARK: - Family Setup Manager
 
 class FamilySetupManager: ObservableObject {
@@ -259,7 +268,7 @@ struct FamilyWelcomeStep: View {
             Spacer().frame(height: AppSpacing.xxl)
         }
         .onAppear {
-            withAnimation(.easeOut(duration: 0.8)) {
+            withAnimation(AnimationConstants.pipTransition) {
                 showContent = true
             }
         }
@@ -296,7 +305,7 @@ struct FamilyNameStep: View {
                 .cornerRadius(AppSpacing.cardCornerRadius)
                 .overlay(
                     RoundedRectangle(cornerRadius: AppSpacing.cardCornerRadius)
-                        .stroke(Color.AppTheme.sepia.opacity(0.3), lineWidth: 1)
+                        .stroke(Color.AppTheme.sepia.opacity(0.3), lineWidth: AppSpacing.strokeThin)
                 )
                 .padding(.horizontal, AppSpacing.xl)
                 .focused($isFocused)
@@ -436,7 +445,7 @@ struct FamilyAvatarStep: View {
                                         playOutfitAnimation()
                                     }
                                 }) {
-                                    VStack(spacing: 6) {
+                                    VStack(spacing: AppSpacing.xs) {
                                         let img = g == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06"
                                         Image(img)
                                             .resizable()
@@ -449,14 +458,14 @@ struct FamilyAvatarStep: View {
                                             .foregroundColor(Color.AppTheme.darkBrown)
                                     }
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(BouncyButtonStyle())
                             }
                             Spacer()
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else {
                         // Phases 2-5: Chosen avatar with color reveal
-                        VStack(spacing: 6) {
+                        VStack(spacing: AppSpacing.xs) {
                             ZStack {
                                 // Base: grayscale frame (animation or held last frame)
                                 Image(currentDisplayFrame)
@@ -502,7 +511,7 @@ struct FamilyAvatarStep: View {
                                 }
                             }
                             .frame(width: bigSize, height: bigSize)
-                            .clipShape(RoundedRectangle(cornerRadius: 24))
+                            .clipShape(RoundedRectangle(cornerRadius: AppSpacing.largeCornerRadius))
 
                             HStack(spacing: AppSpacing.sm) {
                                 Text(gender.rawValue)
@@ -522,7 +531,7 @@ struct FamilyAvatarStep: View {
                                         .foregroundColor(Color.AppTheme.sage)
                                         .underline()
                                 }
-                                .buttonStyle(.plain)
+                                .buttonStyle(BouncyButtonStyle())
                             }
                         }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -751,14 +760,14 @@ struct OutfitColorPicker: View {
                                 .fill(option.color)
                                 .overlay(
                                     Circle()
-                                        .stroke(Color.AppTheme.darkBrown, lineWidth: selectedOutfit == option ? 3 : 0)
+                                        .stroke(Color.AppTheme.darkBrown, lineWidth: selectedOutfit == option ? AppSpacing.strokeBold : 0)
                                 )
-                                .scaleEffect(selectedOutfit == option ? 1.15 : 1.0)
+                                .scaleEffect(selectedOutfit == option ? Layout.pickedSwatchScale : 1.0)
                                 .animation(AnimationConstants.springQuick, value: selectedOutfit)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(BouncyButtonStyle())
                     }
-                    .frame(width: 50, height: 50)
+                    .frame(width: Layout.outfitSwatch, height: Layout.outfitSwatch)
                 }
             }
         }
@@ -792,17 +801,17 @@ struct HatColorPicker: View {
                             Circle()
                                 .fill(Color.AppTheme.parchment)
                             Image(systemName: "xmark")
-                                .font(.AppTheme.rounded(size: 16, weight: .medium))
+                                .font(.AppTheme.rounded(size: Layout.noHatIcon, weight: .medium))
                                 .foregroundColor(Color.AppTheme.sepia)
                         }
                         .overlay(
                             Circle()
-                                .stroke(Color.AppTheme.darkBrown, lineWidth: selectedCovering == .none ? 3 : 0)
+                                .stroke(Color.AppTheme.darkBrown, lineWidth: selectedCovering == .none ? AppSpacing.strokeBold : 0)
                         )
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(BouncyButtonStyle())
                 }
-                .frame(width: 44, height: 44)
+                .frame(width: Layout.hatSwatch, height: Layout.hatSwatch)
 
                 ForEach(colorOptions) { option in
                     GeometryReader { geo in
@@ -816,14 +825,14 @@ struct HatColorPicker: View {
                                 .fill(option.color)
                                 .overlay(
                                     Circle()
-                                        .stroke(Color.AppTheme.darkBrown, lineWidth: selectedCovering == option ? 3 : 0)
+                                        .stroke(Color.AppTheme.darkBrown, lineWidth: selectedCovering == option ? AppSpacing.strokeBold : 0)
                                 )
-                                .scaleEffect(selectedCovering == option ? 1.15 : 1.0)
+                                .scaleEffect(selectedCovering == option ? Layout.pickedSwatchScale : 1.0)
                                 .animation(AnimationConstants.springQuick, value: selectedCovering)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(BouncyButtonStyle())
                     }
-                    .frame(width: 44, height: 44)
+                    .frame(width: Layout.hatSwatch, height: Layout.hatSwatch)
                 }
             }
         }
@@ -854,12 +863,12 @@ struct FamilyPINSetupStep: View {
             )
 
             // PIN dots
-            HStack(spacing: 16) {
+            HStack(spacing: AppSpacing.md) {
                 ForEach(0..<4, id: \.self) { index in
                     Circle()
                         .fill(index < currentPIN.count ? Color.AppTheme.goldenWheat : Color.AppTheme.parchment)
-                        .frame(width: 20, height: 20)
-                        .overlay(Circle().stroke(Color.AppTheme.sepia.opacity(0.3), lineWidth: 1))
+                        .frame(width: AppSpacing.pinDotSize, height: AppSpacing.pinDotSize)
+                        .overlay(Circle().stroke(Color.AppTheme.sepia.opacity(0.3), lineWidth: AppSpacing.strokeThin))
                 }
             }
             .offset(x: shake ? -10 : 0)
@@ -949,7 +958,7 @@ struct FamilyMeetPipStep: View {
         [
             "Hi \(childName)! 🦔 I'm Pip, your kitchen garden buddy!",
             "Grow veggies → cook recipes → Feed Your Body!",
-            "Tap seeds to start growing. Ready?"
+            "Let's plant your first seed. Ready?"
         ]
     }
 
@@ -977,7 +986,7 @@ struct FamilyMeetPipStep: View {
                         .font(.AppTheme.title3)
                         .foregroundColor(Color.AppTheme.darkBrown)
                         .multilineTextAlignment(.center)
-                        .frame(minHeight: 80)
+                        .frame(minHeight: Layout.pipLineMinHeight)
                         .padding(AppSpacing.lg)
                         .background(Color.AppTheme.warmCream)
                         .cornerRadius(AppSpacing.cardCornerRadius)
@@ -1082,7 +1091,7 @@ struct FamilyReadyStep: View {
         }
         .background(Color.AppTheme.cream)
         .onAppear {
-            withAnimation(.easeOut(duration: 0.8)) { showContent = true }
+            withAnimation(AnimationConstants.pipTransition) { showContent = true }
         }
     }
 }
@@ -1107,7 +1116,7 @@ struct FamilyVoiceStep: View {
             // Back button
             HStack {
                 Button(action: onBack) {
-                    HStack(spacing: 4) {
+                    HStack(spacing: AppSpacing.xxs) {
                         Image(systemName: "chevron.left")
                         Text("Back")
                     }
@@ -1173,7 +1182,7 @@ struct FamilyVoiceStep: View {
                             .font(.AppTheme.subheadline)
                             .foregroundColor(Color.AppTheme.goldenWheat)
                         }
-                        .buttonStyle(.plain)
+                        .buttonStyle(BouncyButtonStyle())
                     }
                     .opacity(showContent ? 1 : 0)
 
@@ -1194,7 +1203,7 @@ struct FamilyVoiceStep: View {
             }
         }
         .onAppear {
-            withAnimation(.easeOut(duration: 0.6)) {
+            withAnimation(AnimationConstants.revealSlow) {
                 showContent = true
             }
         }

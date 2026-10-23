@@ -177,6 +177,8 @@ struct AppSpacing {
     // Three files each re-implemented this. Centralizing here.
     static let pinButtonWidth: CGFloat = 75
     static let pinButtonHeight: CGFloat = 55
+    // PIN entry dots (one per digit typed) — same three screens
+    static let pinDotSize: CGFloat = 20
 
     // Tab bar safe-area padding — keeps content above the floating tab bar.
     // Used by main-tab views (PlayLearnView, ProfileView, RecipeCardExample, etc.).
