@@ -18,15 +18,16 @@ class FamilySetupManager: ObservableObject {
     // Parent data
     @Published var parentName: String = ""
     @Published var parentGender: Gender = .girl
-    @Published var parentOutfit: Outfit = .chefWhite
-    @Published var parentHeadCovering: HeadCovering = .chefHatWhite
+    // Outfit + hat start as .none: nothing is "picked" until the player picks it
+    @Published var parentOutfit: Outfit = .none
+    @Published var parentHeadCovering: HeadCovering = .none
     @Published var parentPIN: String = ""
 
     // Child data
     @Published var childName: String = ""
     @Published var childGender: Gender = .girl
-    @Published var childOutfit: Outfit = .apronRed
-    @Published var childHeadCovering: HeadCovering = .chefHatWhite
+    @Published var childOutfit: Outfit = .none
+    @Published var childHeadCovering: HeadCovering = .none
     @Published var childAllergens: [FoodAllergen] = []
 
     enum SetupStep: Int, CaseIterable {
@@ -552,7 +553,7 @@ struct FamilyAvatarStep: View {
                         }
 
                         // Hat color picker — appears after outfit color is chosen
-                        if outfit.isChosen {
+                        if genderChosen && outfit.isChosen {
                             HatColorPicker(
                                 selectedCovering: $headCovering,
                                 onColorPicked: { origin in
@@ -588,11 +589,14 @@ struct FamilyAvatarStep: View {
                         }
                     }
                     .buttonStyle(PrimaryButtonStyle())
+                    .disabled(!canContinue)
+                    .opacity(canContinue ? 1 : 0.6)
                 }
                 .padding(AppSpacing.md)
                 .background(Color.AppTheme.cream)
             }
         }
+        .onAppear(perform: restorePickedLook)
         .onDisappear {
             stopAnim()
             stopRipple()
@@ -682,6 +686,23 @@ struct FamilyAvatarStep: View {
         rippleTime = 0
     }
 
+    /// Gender + outfit color are required; the hat is optional (✕ = no hat).
+    private var canContinue: Bool {
+        genderChosen && outfit.isChosen
+    }
+
+    /// Coming back with Back: the bindings still hold the earlier picks, but
+    /// this view's @State starts fresh. Show the finished, colored chef again
+    /// instead of the Boy / Girl choice.
+    private func restorePickedLook() {
+        guard outfit.isChosen else { return }
+        genderChosen = true
+        outfitAnimFinished = true
+        showColoredOutfit = true
+        hatAnimFinished = headCovering != .none
+        showColoredHat = headCovering != .none
+    }
+
     // MARK: - Reset
 
     private func resetAllState() {
@@ -712,7 +733,7 @@ struct OutfitColorPicker: View {
 
     var body: some View {
         VStack(spacing: AppSpacing.sm) {
-            Text("Pick a color!")
+            Text(gender == .girl ? "Apron color!" : "Coat color!")
                 .font(.AppTheme.headline)
                 .foregroundColor(Color.AppTheme.darkBrown)
 

@@ -20,8 +20,9 @@ struct AddChildFlowView: View {
     @State private var step: Int = 0
     @State private var childName: String = ""
     @State private var childGender: Gender = .girl
-    @State private var childOutfit: Outfit = .apronRed
-    @State private var childHeadCovering: HeadCovering = .chefHatWhite
+    // Outfit + hat start as .none: nothing is "picked" until the kid picks it
+    @State private var childOutfit: Outfit = .none
+    @State private var childHeadCovering: HeadCovering = .none
     @State private var childAllergens: [FoodAllergen] = []
     @State private var showDuplicateWarning: Bool = false
 

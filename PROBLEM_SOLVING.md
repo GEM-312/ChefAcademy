@@ -69,6 +69,20 @@ Newest first. Each entry: **Symptom → Cause → Solution → How it works → 
 
 **Where.** `.claude/hooks/design-guard.py`, `.github/workflows/design-guard.yml`, commits `6111747`, `980f6d7`.
 
+### 6. "Create their chef!" asked for the hat color before Boy/Girl, then again
+
+**Symptom.** Marina's iPhone test (Add Little Chef): the hat colors showed before a gender was picked, with white already circled. After tapping Girl they vanished, then came back after the outfit color ("pick hat color again"). The outfit label just said "Pick a color!" without saying of what, and Next worked with nothing picked.
+
+**Cause.** Both flows started every child already dressed: `.apronRed` and `.chefHatWhite` (`AddChildFlowView`, `FamilySetupManager`). The hat picker shows when `outfit.isChosen`, which was true before the kid chose anything. Picking a gender resets the outfit to `.none`, which hid the picker until an apron color turned it back on.
+
+**Solution.** Outfit and hat start at `.none`, which is what `AvatarModel.defaultOutfit()` already promised. The hat picker needs `genderChosen && outfit.isChosen`. The label says "Apron color!" or "Coat color!". Next is faded until a gender and an outfit color are picked; the hat stays optional (✕ = no hat). `restorePickedLook()` shows the dressed chef again after Back.
+
+**How it works.** A default value is a choice made for the player: every "has she picked?" check downstream trusts it, so use the explicit "none" case and require the pick. And `@State` starts fresh each time the step's `switch` case re-creates the view, while the `@Binding` values in the parent survive, so after Back the view has to rebuild its look from the bindings.
+
+**Where.** `FamilySetupView.swift` (`FamilySetupManager`, `FamilyAvatarStep`, `OutfitColorPicker`), `AddChildFlowView.swift`.
+
+**Open.** Parents dress up a *kid* card in setup, then appear as the separate mom/dad art, which looks like grandparents next to the kids. That needs new art: board #10 card "Art: parent avatars (mom/dad) redrawn in the kids' style + dress-up frames".
+
 ---
 
 ## 2026-10-18
