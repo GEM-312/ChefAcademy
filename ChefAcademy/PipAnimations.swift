@@ -131,7 +131,7 @@ enum AvatarAnimation {
     case boyCoat, girlApron
     case boyWearHat, girlWearHat
     // Parents (Oct 23 2026): dad puts on a chef jacket, mom an apron, then both a hat
-    // (24 frames each, picked evenly from the 5 s video; tools/match_sequence.py)
+    // (picked evenly from the 5 s video; tools/match_sequence.py)
     case dadCoat, momApron
     case dadWearHat, momWearHat
 
@@ -142,13 +142,13 @@ enum AvatarAnimation {
         case .girlCard:
             return (1...6).map { String(format: "girl_card_clean_frame_%02d", $0) }
         case .boyCoat:
-            return (1...38).map { String(format: "boy_coat_frame_%02d", $0) }
+            return (1...24).map { String(format: "boy_coat_frame_%02d", $0) }
         case .girlApron:
-            return (1...50).map { String(format: "girl_apron_frame_%02d", $0) }
+            return (1...24).map { String(format: "girl_apron_frame_%02d", $0) }
         case .boyWearHat:
-            return (1...51).map { String(format: "boy_wear_hat_frame_%02d", $0) }
+            return (1...24).map { String(format: "boy_wear_hat_frame_%02d", $0) }
         case .girlWearHat:
-            return (1...51).map { String(format: "girl_wear_hat_frame_%02d", $0) }
+            return (1...24).map { String(format: "girl_wear_hat_frame_%02d", $0) }
         case .dadCoat:
             return (1...24).map { String(format: "dad_coat_frame_%02d", $0) }
         case .momApron:
@@ -163,10 +163,10 @@ enum AvatarAnimation {
     var fps: Double {
         switch self {
         case .boyCard, .girlCard: return 10.0
-        case .boyCoat, .girlApron: return 24.0
-        case .boyWearHat, .girlWearHat: return 24.0
-        // Parents: 24 frames at 12 fps — same ~2 s as the kids, half the app size (Marina, Oct 23)
-        case .dadCoat, .momApron, .dadWearHat, .momWearHat: return 12.0
+        // Every dress-up animation: 24 frames at 12 fps, ~2 s (Marina, Oct 23 2026;
+        // kids trimmed from 38–51 frames at 24 fps to match the parents, half the size)
+        case .boyCoat, .girlApron, .dadCoat, .momApron: return 12.0
+        case .boyWearHat, .girlWearHat, .dadWearHat, .momWearHat: return 12.0
         }
     }
 }
