@@ -43,7 +43,7 @@ struct AllergenPickerStep: View {
                     .font(.AppTheme.caption)
                     .foregroundColor(Color.AppTheme.lightSepia)
                     .multilineTextAlignment(.center)
-                    .padding(.top, 2)
+                    .padding(.top, AppSpacing.xxs)
             }
             .padding(.horizontal, AppSpacing.lg)
 
@@ -69,41 +69,31 @@ struct AllergenPickerStep: View {
                         .font(.AppTheme.body)
                         .foregroundColor(Color.AppTheme.sage)
                 }
-                .buttonStyle(.plain)
+                .buttonStyle(BouncyButtonStyle())
                 .padding(.top, AppSpacing.md)
             }
 
-            // Navigation buttons
+            // Navigation buttons — same wood buttons as the other setup steps
             HStack(spacing: AppSpacing.md) {
                 if let onBack = onBack {
                     Button(action: onBack) {
-                        Text("Back")
-                            .font(.AppTheme.headline)
-                            .foregroundColor(Color.AppTheme.sepia)
-                            .padding(.horizontal, AppSpacing.lg)
-                            .padding(.vertical, AppSpacing.sm)
-                            .background(Color.AppTheme.warmCream)
-                            .cornerRadius(AppSpacing.cardCornerRadius)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: AppSpacing.cardCornerRadius)
-                                    .stroke(Color.AppTheme.sepia.opacity(0.3), lineWidth: 1.5)
-                            )
+                        HStack {
+                            Image(systemName: "arrow.left")
+                            Text("Back")
+                        }
                     }
-                    .buttonStyle(.plain)
+                    .secondaryButton()
                 }
 
                 Button(action: onNext) {
-                    Text("Next")
-                        .font(.AppTheme.headline)
-                        .foregroundColor(Color.AppTheme.cream)
-                        .padding(.horizontal, AppSpacing.xl)
-                        .padding(.vertical, AppSpacing.sm)
-                        .background(Color.AppTheme.sage)
-                        .cornerRadius(AppSpacing.cardCornerRadius)
+                    HStack {
+                        Text("Next")
+                        Image(systemName: "arrow.right")
+                    }
                 }
-                .buttonStyle(.plain)
+                .primaryButton()
             }
-            .padding(.bottom, AppSpacing.lg)
+            .padding(AppSpacing.md)
         }
     }
 
@@ -125,38 +115,24 @@ struct AllergenToggleButton: View {
 
     var body: some View {
         Button(action: onTap) {
-            VStack(spacing: 6) {
+            VStack(spacing: AppSpacing.xs) {
                 Text(allergen.emoji)
                     .font(.AppTheme.title)
 
                 Text(allergen.displayName)
-                    .font(.AppTheme.rounded(size: 11, weight: .medium))
-                    .foregroundColor(isSelected ? .white : Color.AppTheme.sepia)
+                    .font(.AppTheme.microLarge.weight(.medium))
+                    .foregroundColor(isSelected ? Color.AppTheme.darkBrown : Color.AppTheme.sepia)
                     .lineLimit(2)
                     .multilineTextAlignment(.center)
                     .minimumScaleFactor(0.8)
 
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(.AppTheme.captionLarge)
-                        .foregroundColor(.white)
-                } else {
-                    Image(systemName: "circle")
-                        .font(.AppTheme.captionLarge)
-                        .foregroundColor(Color.AppTheme.lightSepia)
-                }
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
+                    .font(.AppTheme.captionLarge)
+                    .foregroundColor(isSelected ? Color.AppTheme.terracotta : Color.AppTheme.lightSepia)
             }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, AppSpacing.sm)
-            .background(isSelected ? Color.AppTheme.terracotta : Color.AppTheme.warmCream)
-            .cornerRadius(AppSpacing.cardCornerRadius)
-            .overlay(
-                RoundedRectangle(cornerRadius: AppSpacing.cardCornerRadius)
-                    .stroke(isSelected ? Color.AppTheme.terracotta : Color.AppTheme.sepia.opacity(0.2), lineWidth: 1.5)
-            )
         }
-        .buttonStyle(.plain)
-        .animation(AnimationConstants.springQuick, value: isSelected)
+        // Shared pick-card look: terracotta = "careful" (an allergen to avoid)
+        .choiceCard(tint: Color.AppTheme.terracotta, isSelected: isSelected, padding: AppSpacing.sm)
     }
 }
 
