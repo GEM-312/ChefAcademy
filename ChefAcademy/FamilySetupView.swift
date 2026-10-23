@@ -113,6 +113,7 @@ struct FamilySetupView: View {
                     headCovering: $setupManager.parentHeadCovering,
                     onNext: { setupManager.nextStep() },
                     onBack: { setupManager.previousStep() },
+                    isParent: true
                 )
 
             case .setPIN:
@@ -343,6 +344,8 @@ struct FamilyAvatarStep: View {
     @Binding var headCovering: HeadCovering
     let onNext: () -> Void
     let onBack: () -> Void
+    /// Parent setup: Mom / Dad cards and the grown-up dress-up animations.
+    var isParent = false
 
     // MARK: - State
 
@@ -366,17 +369,43 @@ struct FamilyAvatarStep: View {
 
     /// Frame animation for the outfit
     private var outfitAnimation: AvatarAnimation {
-        gender == .boy ? .boyCoat : .girlApron
+        switch (isParent, gender) {
+        case (true, .boy):   return .dadCoat
+        case (true, .girl):  return .momApron
+        case (false, .boy):  return .boyCoat
+        case (false, .girl): return .girlApron
+        }
     }
 
     /// Frame animation for the hat
     private var hatAnimation: AvatarAnimation {
-        gender == .boy ? .boyWearHat : .girlWearHat
+        switch (isParent, gender) {
+        case (true, .boy):   return .dadWearHat
+        case (true, .girl):  return .momWearHat
+        case (false, .boy):  return .boyWearHat
+        case (false, .girl): return .girlWearHat
+        }
+    }
+
+    /// The undressed card for a gender — kid or parent (same art as profilePoseImage)
+    private func baseCard(for g: Gender) -> String {
+        switch (isParent, g) {
+        case (true, .boy):   return "dad_card_clean"
+        case (true, .girl):  return "mom_card_clean"
+        case (false, .boy):  return "boy_card_clean_frame_11"
+        case (false, .girl): return "girl_card_clean_frame_06"
+        }
+    }
+
+    /// "Mom" / "Dad" for parents, "Boy" / "Girl" for kids
+    private func label(for g: Gender) -> String {
+        guard isParent else { return g.rawValue }
+        return g == .boy ? "Dad" : "Mom"
     }
 
     /// Grayscale last frame name (held after animation finishes)
     private var grayscaleLastFrame: String {
-        outfitAnimation.frameNames.last ?? (gender == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06")
+        outfitAnimation.frameNames.last ?? baseCard(for: gender)
     }
 
     /// Grayscale last frame for the hat animation
@@ -399,7 +428,7 @@ struct FamilyAvatarStep: View {
             return grayscaleLastFrame
         }
         // Default: static gender card
-        return gender == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06"
+        return baseCard(for: gender)
     }
 
     var body: some View {
@@ -442,14 +471,13 @@ struct FamilyAvatarStep: View {
                                     }
                                 }) {
                                     VStack(spacing: AppSpacing.xs) {
-                                        let img = g == .boy ? "boy_card_clean_frame_11" : "girl_card_clean_frame_06"
-                                        Image(img)
+                                        Image(baseCard(for: g))
                                             .resizable()
                                             .aspectRatio(contentMode: .fit)
                                             .frame(width: smallSize, height: smallSize)
                                             .clipShape(RoundedRectangle(cornerRadius: AppSpacing.largeCornerRadius))
 
-                                        Text(g.rawValue)
+                                        Text(label(for: g))
                                             .font(.AppTheme.body)
                                             .foregroundColor(Color.AppTheme.darkBrown)
                                     }
@@ -469,7 +497,7 @@ struct FamilyAvatarStep: View {
                                     .aspectRatio(contentMode: .fit)
 
                                 // Colored outfit frame — appears with ripple when color picked
-                                if showColoredOutfit, let coloredName = outfit.coloredFrameName(for: gender) {
+                                if showColoredOutfit, !isParent, let coloredName = outfit.coloredFrameName(for: gender) {
                                     Image(coloredName)
                                         .resizable()
                                         .aspectRatio(contentMode: .fit)
@@ -488,7 +516,7 @@ struct FamilyAvatarStep: View {
                                 }
 
                                 // Colored hat frame — appears with ripple when hat color picked
-                                if showColoredHat, let hatName = headCovering.coloredHatFrameName(for: gender) {
+                                if showColoredHat, !isParent, let hatName = headCovering.coloredHatFrameName(for: gender) {
                                     Image(hatName)
                                         .resizable()
                                         .aspectRatio(contentMode: .fit)
@@ -510,7 +538,7 @@ struct FamilyAvatarStep: View {
                             .clipShape(RoundedRectangle(cornerRadius: AppSpacing.largeCornerRadius))
 
                             HStack(spacing: AppSpacing.sm) {
-                                Text(gender.rawValue)
+                                Text(label(for: gender))
                                     .font(.AppTheme.body)
                                     .foregroundColor(Color.AppTheme.darkBrown)
 

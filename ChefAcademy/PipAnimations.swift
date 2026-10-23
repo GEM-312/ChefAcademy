@@ -130,6 +130,10 @@ enum AvatarAnimation {
     case boyCard, girlCard
     case boyCoat, girlApron
     case boyWearHat, girlWearHat
+    // Parents (Oct 23 2026): dad puts on a chef jacket, mom an apron, then both a hat
+    // (24 frames each, picked evenly from the 5 s video; tools/match_sequence.py)
+    case dadCoat, momApron
+    case dadWearHat, momWearHat
 
     var frameNames: [String] {
         switch self {
@@ -145,6 +149,14 @@ enum AvatarAnimation {
             return (1...51).map { String(format: "boy_wear_hat_frame_%02d", $0) }
         case .girlWearHat:
             return (1...51).map { String(format: "girl_wear_hat_frame_%02d", $0) }
+        case .dadCoat:
+            return (1...24).map { String(format: "dad_coat_frame_%02d", $0) }
+        case .momApron:
+            return (1...24).map { String(format: "mom_apron_frame_%02d", $0) }
+        case .dadWearHat:
+            return (1...24).map { String(format: "dad_wear_hat_frame_%02d", $0) }
+        case .momWearHat:
+            return (1...24).map { String(format: "mom_wear_hat_frame_%02d", $0) }
         }
     }
 
@@ -153,6 +165,8 @@ enum AvatarAnimation {
         case .boyCard, .girlCard: return 10.0
         case .boyCoat, .girlApron: return 24.0
         case .boyWearHat, .girlWearHat: return 24.0
+        // Parents: 24 frames at 12 fps — same ~2 s as the kids, half the app size (Marina, Oct 23)
+        case .dadCoat, .momApron, .dadWearHat, .momWearHat: return 12.0
         }
     }
 }

@@ -81,8 +81,8 @@ class UserProfile {
     /// "this is the adult" — too subtle for the 6+ audience).
     var profilePoseImage: String {
         switch (isParent, gender) {
-        case (true, .girl):  return "mom_avatar_frame_15"
-        case (true, .boy):   return "dad_avatar_frame_15"
+        case (true, .girl):  return "mom_card_clean"   // Oct 23 2026: redrawn in the kids' style
+        case (true, .boy):   return "dad_card_clean"
         case (false, .girl): return "girl_card_clean_frame_06"
         case (false, .boy):  return "boy_card_clean_frame_11"
         }
