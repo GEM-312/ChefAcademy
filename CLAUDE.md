@@ -266,7 +266,7 @@ Define success criteria, then loop until verified.
 
 ## Teaching System (PROACTIVE)
 
-Marina learns as we build — teach **while** coding, not after. **Proactively invoke the `teach` skill** (`.claude/skills/teach/`) whenever you introduce a pattern, avoid a pitfall, fix a non-obvious bug, or write non-trivial logic — don't wait for `/teach`. Skip trivial wins (font bumps, one-line patches); aim for 3–7 real moments per session. The skill holds the full format (green in-chat title + the 4-field `TEACHING.md` append) so it stays out of every-session context.
+Marina learns as we build — teach **while** coding, not after. **Proactively invoke the `teach` skill** (`.claude/skills/teach/`) whenever you introduce a pattern, avoid a pitfall, fix a non-obvious bug, or write non-trivial logic — don't wait for `/teach`. Skip trivial wins (font bumps, one-line patches); aim for 3–7 real moments per session. The skill holds the full format (green in-chat title; real problems go to `PROBLEM_SOLVING.md`, Symptom → Cause → Solution → How it works → Where). **`TEACHING.md` is retired (Oct 2026) — never append to it.**
 
 ## Tech Stack
 
