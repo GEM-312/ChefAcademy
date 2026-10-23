@@ -83,6 +83,18 @@ Newest first. Each entry: **Symptom → Cause → Solution → How it works → 
 
 **Open.** Parents dress up a *kid* card in setup, then appear as the separate mom/dad art, which looks like grandparents next to the kids. That needs new art: board #10 card "Art: parent avatars (mom/dad) redrawn in the kids' style + dress-up frames".
 
+### 7. A fast double tap at the end of setup could create two families
+
+**Symptom.** None seen yet. Found while tracing Marina's change that sends "Let's grow!" on Meet Pip straight to the game, which removes the "You're All Set!" screen.
+
+**Cause.** `finishSetup()` inserts a family, a parent and a child, saves, then switches to the game. The screen only changes after that, so a second tap in between ran the whole function again. The old "Let's Go!" button had the same gap.
+
+**Solution.** `@State isFinishing`: the first tap sets it, and `finishSetup()` returns at once when it's already set.
+
+**How it works.** Any button that creates records must be safe to press twice: a kid taps again whenever nothing seems to happen. A one-way flag on the view is enough when the view goes away right after.
+
+**Where.** `FamilySetupView.swift` (`FamilySetupView.finishSetup`, `FamilyMeetPipStep`).
+
 ---
 
 ## 2026-10-18

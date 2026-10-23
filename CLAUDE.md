@@ -29,7 +29,7 @@ ChefAcademy/
 │   └── Allergen.swift                # FoodAllergen enum + filtering
 ├── Profiles / family / PIN / auth
 │   ├── ProfilePickerView.swift       # "Who's playing today?"
-│   ├── FamilySetupView.swift         # 8-step first-launch wizard
+│   ├── FamilySetupView.swift         # 9-step first-launch wizard
 │   ├── AddChildFlowView.swift        # add child (3 steps + dup-name check)
 │   ├── MigrationPINSetupView.swift   # legacy single-user upgrade
 │   ├── ParentDashboardView.swift     # child stats, play time, allergen edit
@@ -291,8 +291,9 @@ Multiple players per device via a family profile system.
 App Launch → SessionManager.bootstrap() sets an AppRoute (9 states):
   .loading           → loading screen (waving Pip) while bootstrap runs
   .signIn            → SignInView (Sign in with Apple) → on success find/create family
-  .familySetup       → FamilySetupView (8-step: Welcome→Parent Name→Parent Avatar→
-                       PIN→Child Name→Child Avatar→Meet Pip→Ready)
+  .familySetup       → FamilySetupView (9-step: Welcome→Parent Name→Parent Avatar→
+                       PIN→Child Name→Child Avatar→Allergies→Pip's Voice→Meet Pip;
+                       "Let's grow!" on Meet Pip finishes setup → .mainApp)
   .migrationPINSetup → MigrationPINSetupView (legacy single-user upgrade)
   .profilePicker     → ProfilePickerView ("Who's playing today?")
   .parentPINEntry(p) → ParentPINEntryView → success/cancel → .profilePicker

@@ -48,8 +48,7 @@ class FamilySetupManager: ObservableObject {
         case childAvatar = 5
         case childAllergens = 6
         case choosePipVoice = 7
-        case meetPip = 8
-        case ready = 9
+        case meetPip = 8   // last step: "Let's grow!" finishes setup and opens the game
     }
 
     func nextStep() {
@@ -79,6 +78,9 @@ struct FamilySetupView: View {
     @EnvironmentObject var avatarModel: AvatarModel
     @EnvironmentObject var authManager: AuthManager
     @StateObject private var setupManager = FamilySetupManager()
+    /// Set on the first "Let's grow!" tap — a fast second tap must not
+    /// create a second family / parent / child before the screen changes.
+    @State private var isFinishing = false
 
     var body: some View {
         ZStack {
@@ -163,21 +165,15 @@ struct FamilySetupView: View {
             case .meetPip:
                 FamilyMeetPipStep(
                     childName: setupManager.childName,
-                    onNext: { setupManager.nextStep() }
-                )
-
-            case .ready:
-                FamilyReadyStep(
-                    childName: setupManager.childName,
-                    childGender: setupManager.childGender,
-                    onStart: { finishSetup() }
+                    onNext: { finishSetup() }
                 )
             }
         }
     }
 
     private func finishSetup() {
-        guard let context = sessionManager.modelContext else { return }
+        guard !isFinishing, let context = sessionManager.modelContext else { return }
+        isFinishing = true
 
         // Create family — PIN goes to Keychain, not SwiftData (security)
         // Link to the parent's Apple ID so this family syncs across their devices
@@ -952,13 +948,12 @@ struct FamilyMeetPipStep: View {
     @State private var showDialogue = false
     @State private var dialogueIndex = 0
 
-    // 3-dialog flow per UX audit (was 6). CTA "Let's grow!" surfaces on
-    // dialog index 2 — the kid reaches the action in 3 taps, not 6.
+    // 2 lines (Marina, Oct 23 — was 3, and 6 before the UX audit). The
+    // "Let's grow!" CTA shows on the last line and goes straight to the game.
     private var dialogues: [String] {
         [
             "Hi \(childName)! 🦔 I'm Pip, your kitchen garden buddy!",
-            "Grow veggies → cook recipes → Feed Your Body!",
-            "Let's plant your first seed. Ready?"
+            "Let's plant our first seed!"
         ]
     }
 
@@ -1035,63 +1030,6 @@ struct FamilyMeetPipStep: View {
                 guard !Task.isCancelled else { return }
                 withAnimation(AnimationConstants.fadeMedium) { showDialogue = true }
             }
-        }
-    }
-}
-
-struct FamilyReadyStep: View {
-    let childName: String
-    let childGender: Gender
-    let onStart: () -> Void
-    @State private var showContent = false
-
-    var body: some View {
-        VStack(spacing: AppSpacing.xl) {
-            Spacer()
-
-            Text("You're All Set!")
-                .font(.AppTheme.largeTitle)
-                .foregroundColor(Color.AppTheme.darkBrown)
-                .opacity(showContent ? 1 : 0)
-
-            Text("Welcome, Chef \(childName)!")
-                .font(.AppTheme.title)
-                .foregroundColor(Color.AppTheme.goldenWheat)
-                .opacity(showContent ? 1 : 0)
-
-            PipWavingAnimatedView(size: .custom(140))
-                .scaleEffect(showContent ? 1 : 0.5)
-                .opacity(showContent ? 1 : 0)
-
-            VStack(alignment: .leading, spacing: AppSpacing.md) {
-                FeatureRow(icon: "leaf.fill", text: "Grow vegetables in Pip's garden", systemIcon: true)
-                FeatureRow(icon: "fork.knife", text: "Cook yummy healthy recipes", systemIcon: true)
-                FeatureRow(icon: "figure.child", text: "Feed Your Body", systemIcon: true)
-                FeatureRow(icon: "star.fill", text: "Earn badges and rewards", systemIcon: true)
-            }
-            .padding(AppSpacing.lg)
-            .background(Color.AppTheme.warmCream)
-            .cornerRadius(AppSpacing.cardCornerRadius)
-            .padding(.horizontal, AppSpacing.lg)
-            .opacity(showContent ? 1 : 0)
-
-            Spacer()
-
-            Button(action: onStart) {
-                HStack {
-                    Text("Let's Go!")
-                    Image(systemName: "arrow.right.circle.fill")
-                }
-            }
-            .buttonStyle(PrimaryButtonStyle())
-            .padding(.horizontal, AppSpacing.xl)
-            .opacity(showContent ? 1 : 0)
-
-            Spacer().frame(height: AppSpacing.xxl)
-        }
-        .background(Color.AppTheme.cream)
-        .onAppear {
-            withAnimation(AnimationConstants.pipTransition) { showContent = true }
         }
     }
 }
