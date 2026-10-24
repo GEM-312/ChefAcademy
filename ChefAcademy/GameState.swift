@@ -58,7 +58,12 @@ class GameState: ObservableObject {
     /// Auto-save subscription — saves whenever any @Published property changes
     private var autoSaveCancellable: AnyCancellable?
 
-    /// Set up auto-save: debounce 0.5s so rapid changes batch into one write
+    /// Set up auto-save: debounce 0.5s so rapid changes batch into one write.
+    /// This is THE save for in-game changes — the helpers below (addCoins,
+    /// spendCoins, addXP, harvest/pantry/cooking) don't save themselves. They
+    /// used to, so one harvest wrote 4 times and each write scheduled an
+    /// iCloud upload (Oct 24). Switch Player and going to the background
+    /// still save right away (SessionManager).
     func startAutoSave() {
         autoSaveCancellable = objectWillChange
             .debounce(for: .seconds(0.5), scheduler: RunLoop.main)
@@ -188,7 +193,6 @@ class GameState: ObservableObject {
         withAnimation(.spring()) {
             coins += amount
         }
-        saveToStore()
     }
 
     /// Spend coins (returns false if not enough)
@@ -197,7 +201,6 @@ class GameState: ObservableObject {
         withAnimation(.spring()) {
             coins -= amount
         }
-        saveToStore()
         return true
     }
 
@@ -219,7 +222,6 @@ class GameState: ObservableObject {
     func addXP(_ amount: Int) {
         xp += amount
         checkLevelUp()
-        saveToStore()
     }
 
     /// Check if player should level up
@@ -243,7 +245,6 @@ class GameState: ObservableObject {
     /// it to the pantry (bringWheelbarrowToPantry)
     func addHarvestedIngredient(_ type: VegetableType, quantity: Int = 1) {
         Self.add(type, quantity: quantity, to: &wheelbarrow)
-        saveToStore()
 
         // Report harvest to Game Center (leaderboard + achievements)
         let totalHarvested = (harvestedIngredients + wheelbarrow).reduce(0) { $0 + $1.quantity }
@@ -258,7 +259,6 @@ class GameState: ObservableObject {
             Self.add(item.type, quantity: item.quantity, to: &harvestedIngredients)
         }
         wheelbarrow = []
-        saveToStore()
     }
 
     /// Adds to a veggie's pile in `list`, or starts a new pile
@@ -288,7 +288,6 @@ class GameState: ObservableObject {
         if harvestedIngredients[index].quantity <= 0 {
             harvestedIngredients.remove(at: index)
         }
-        saveToStore()
         return true
     }
 
@@ -328,7 +327,6 @@ class GameState: ObservableObject {
 
         // Award XP for shopping!
         addXP(3 * quantity)
-        // saveToStore() already called by addXP and spendCoins
         return true
     }
 
@@ -350,7 +348,6 @@ class GameState: ObservableObject {
         if pantryInventory[index].quantity <= 0 {
             pantryInventory.remove(at: index)
         }
-        saveToStore()
         return true
     }
 
@@ -373,8 +370,6 @@ class GameState: ObservableObject {
         if let recipe = GardenRecipes.all.first(where: { $0.id == recipeID }) {
             applyRecipeNutrients(recipe, starMultiplier: stars)
         }
-
-        saveToStore()
     }
 
     /// Calculate nutrient impact from a cooked recipe and boost organ health.

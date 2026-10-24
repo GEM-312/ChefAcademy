@@ -1235,8 +1235,11 @@ struct GardenView: View {
         VStack(spacing: AppSpacing.md) {
             // (Pip lives on the map now: see GardenMapPip / pipBubble)
 
-            // Seed inventory
-            seedInventorySection(width: width)
+            // Seed inventory — not on a visit: everyone has the same seed cards,
+            // and a visitor's tap claimed the sibling's one-time learning reward
+            if !isVisiting {
+                seedInventorySection(width: width)
+            }
 
             // Harvested veggies
             harvestedSection(width: width)

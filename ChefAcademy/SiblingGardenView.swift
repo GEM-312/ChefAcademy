@@ -156,7 +156,8 @@ struct SiblingGardenView: View {
             }
 
             // Update visitor's in-memory GameState to stay in sync with autoSave.
-            // Set properties directly (don't call addCoins/addXP which trigger saveToStore).
+            // Set properties directly, mirroring what was just written to visitorData;
+            // the autosave then writes the same values.
             visitorGameState.coins += 5
             visitorGameState.xp += 3
             visitorGameState.helpGivenCount += 1

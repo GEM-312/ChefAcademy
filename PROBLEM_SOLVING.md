@@ -7,6 +7,26 @@ Newest first. Each entry: **Symptom → Cause → Solution → How it works → 
 
 ## 2026-10-24
 
+### 2. Every action saved 2–10 times
+
+**Symptom.** The console showed ~150 `[GameState] Saved:` lines in a short session, plus a flood of iCloud `updateTaskRequest … Code=3` lines. Coins were fine. A coin log added every coin up exactly, so no data was wrong.
+
+**Cause.** Two save systems did the same job. Each small helper (`addCoins`, `spendCoins`, `addXP`, harvest, pantry, cooking) saved immediately. `startAutoSave()` also saved 0.5 s after *any* change. One harvest = addCoins + addXP + addHarvestedIngredient + autosave = 4 writes. Cooking a recipe ≈ 10. Each write is a real database write plus a scheduled iCloud upload.
+
+**How it was found.** A temporary `file:line` on every save log line (Swift's `#fileID` / `#line` as default arguments) showed which caller made each save.
+
+**Solution.** The autosave is now the only save for in-game changes, and the 8 helper saves were removed. Immediate saves stay where they protect data: Switch Player, going to the background, selecting a player, sibling visits. Result: one save per action.
+
+**Caught in review.** The `persistence-safety-reviewer` agent found one path that relied on a helper's own save. A visitor could open the *sibling's* seed cards, and a learning tap claimed the sibling's one-time reward on a copy of the game that has no autosave. Marina's call: visitors don't need the seed panel (everyone has the same cards), so it's hidden during a visit. That also fixes the older wrong-kid reward.
+
+**How it works.** Debouncing turns a burst of changes into one write. Let one mechanism own saving, keep explicit saves only at the moments where losing data matters, and list every second copy of the state before removing a save (here, the sibling's GameState).
+
+**Trade-off.** A crash (not going to the background) within 0.5 s of an action loses that action. Coins and items are saved together, so it can't be half-saved.
+
+**Where.** `GameState.swift` (`startAutoSave` + 8 helpers), `GardenView.swift` (`bottomPanel`), `SiblingGardenView.swift` (comment).
+
+---
+
 ### 1. Switch Player needed two taps
 
 **Symptom.** On Home, Switch Player → Switch cleared the player (Lana and Parent Dashboard vanished) but stayed on Home. A second Switch opened "Who's playing today?". It didn't happen every time; it showed up most after visiting the Garden first. Caught on a screen recording.
