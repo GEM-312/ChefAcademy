@@ -116,37 +116,57 @@ extension Color {
 }
 
 // MARK: - Typography
+// Nunito for everything, Gaegu Bold (hand-lettered) for the three big title sizes only —
+// handwriting is hard for early readers in sentences. Files live in ChefAcademy/Fonts/
+// (SIL Open Font License, Gaegu trimmed to Latin) and are listed under UIAppFonts in Info.plist.
+// fixedSize keeps the old behavior: text doesn't follow the phone's text-size setting.
 extension Font {
     struct AppTheme {
-        // Using system fonts with rounded design for friendly feel
-        // You can replace with custom fonts like "Quicksand" or "Nunito" later
-        
-        static let largeTitle = Font.system(size: 34, weight: .bold, design: .rounded)
-        static let title = Font.system(size: 28, weight: .semibold, design: .rounded)
-        static let title2 = Font.system(size: 22, weight: .semibold, design: .rounded)
-        static let title3 = Font.system(size: 20, weight: .medium, design: .rounded)
-        
-        static let headline = Font.system(size: 17, weight: .semibold, design: .rounded)
-        static let body = Font.system(size: 17, weight: .regular, design: .rounded)
-        static let bodyBold = Font.system(size: 17, weight: .semibold, design: .rounded)
-        
-        static let callout = Font.system(size: 16, weight: .regular, design: .rounded)
-        static let subheadline = Font.system(size: 15, weight: .regular, design: .rounded)
-        static let captionLarge = Font.system(size: 14, weight: .regular, design: .rounded)
-        static let footnote = Font.system(size: 13, weight: .regular, design: .rounded)
-        static let caption = Font.system(size: 12, weight: .regular, design: .rounded)
-        static let microLarge = Font.system(size: 11, weight: .regular, design: .rounded)
-        static let micro = Font.system(size: 10, weight: .regular, design: .rounded)
+        static let largeTitle = gaegu(size: 34)
+        static let title = gaegu(size: 28)
+        static let title2 = gaegu(size: 22)
+        static let title3 = nunito(size: 20, weight: .medium)
+
+        static let headline = nunito(size: 17, weight: .semibold)
+        static let body = nunito(size: 17)
+        static let bodyBold = nunito(size: 17, weight: .semibold)
+
+        static let callout = nunito(size: 16)
+        static let subheadline = nunito(size: 15)
+        static let captionLarge = nunito(size: 14)
+        static let footnote = nunito(size: 13)
+        static let caption = nunito(size: 12)
+        static let microLarge = nunito(size: 11)
+        static let micro = nunito(size: 10)
 
         // Special styles
-        static let recipeStep = Font.system(size: 18, weight: .medium, design: .rounded)
-        static let ingredientItem = Font.system(size: 16, weight: .regular, design: .rounded)
-        static let timerDisplay = Font.system(size: 48, weight: .light, design: .rounded)
+        static let recipeStep = nunito(size: 18, weight: .medium)
+        static let ingredientItem = nunito(size: 16)
+        static let timerDisplay = nunito(size: 48, weight: .light)
 
         // Escape hatch for one-off sizes/weights not covered by named tokens.
-        // Always rounded — enforces design-system consistency.
+        // Always Nunito — enforces design-system consistency.
         static func rounded(size: CGFloat, weight: Font.Weight = .regular) -> Font {
-            Font.system(size: size, weight: weight, design: .rounded)
+            nunito(size: size, weight: weight)
+        }
+
+        // Gaegu's capitals are ~25% shorter than Nunito's at the same point size,
+        // so titles are drawn bigger to read at the size the tokens name. 1.0 = no boost.
+        private static let gaeguScale: CGFloat = 1.25
+
+        private static func gaegu(size: CGFloat) -> Font {
+            Font.custom("Gaegu-Bold", fixedSize: size * gaeguScale)
+        }
+
+        // One bundled file per weight (PostScript names).
+        private static let nunitoFaces: [Font.Weight: String] = [
+            .ultraLight: "Nunito-Light", .thin: "Nunito-Light", .light: "Nunito-Light",
+            .regular: "Nunito-Regular", .medium: "Nunito-Medium", .semibold: "Nunito-SemiBold",
+            .bold: "Nunito-Bold", .heavy: "Nunito-ExtraBold", .black: "Nunito-Black",
+        ]
+
+        private static func nunito(size: CGFloat, weight: Font.Weight = .regular) -> Font {
+            Font.custom(nunitoFaces[weight] ?? "Nunito-Regular", fixedSize: size)
         }
     }
 }

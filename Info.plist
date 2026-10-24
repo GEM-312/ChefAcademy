@@ -34,6 +34,17 @@
 	<string>Pip needs local network access to play Healthy Picks with nearby friends!</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Pip uses your location to show real weather in your garden!</string>
+	<key>UIAppFonts</key>
+	<array>
+		<string>Gaegu-Bold.ttf</string>
+		<string>Nunito-Light.ttf</string>
+		<string>Nunito-Regular.ttf</string>
+		<string>Nunito-Medium.ttf</string>
+		<string>Nunito-SemiBold.ttf</string>
+		<string>Nunito-Bold.ttf</string>
+		<string>Nunito-ExtraBold.ttf</string>
+		<string>Nunito-Black.ttf</string>
+	</array>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

@@ -136,11 +136,13 @@ Exempt categories (raw colors intentionally permitted):
 
 ## Typography (Font.AppTheme)
 
+**Fonts (Oct 24 2026):** Nunito for everything; Gaegu Bold (hand-lettered) for `.largeTitle` / `.title` / `.title2` only. Bundled in `ChefAcademy/Fonts/` (SIL OFL; Gaegu trimmed to Latin), registered under `UIAppFonts` in `Info.plist`. Gaegu is drawn at size × `gaeguScale` (1.25) because its capitals are shorter. Fixed sizes: text doesn't follow the phone's text-size setting. `.rounded(size:weight:)` is Nunito too.
+
 | Name | Size | Weight | Use For |
 |------|------|--------|---------|
-| `.largeTitle` | 34 | Bold | Screen titles, welcome messages |
-| `.title` | 28 | Semibold | Section headers, recipe names |
-| `.title2` | 22 | Semibold | Sub-headers |
+| `.largeTitle` | 34 | Gaegu Bold | Screen titles, welcome messages |
+| `.title` | 28 | Gaegu Bold | Section headers, recipe names |
+| `.title2` | 22 | Gaegu Bold | Sub-headers |
 | `.title3` | 20 | Medium | Card titles, dialog headers |
 | `.headline` | 17 | Semibold | Button text, emphasis |
 | `.body` | 17 | Regular | Body text, descriptions |
