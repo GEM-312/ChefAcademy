@@ -286,14 +286,8 @@ struct GlucoseJourneyView: View {
 
                 Button(action: { dismiss() }) {
                     Text("Back to Kitchen")
-                        .font(.AppTheme.headline)
-                        .foregroundColor(Color.AppTheme.cream)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, AppSpacing.md)
-                        .background(Color.AppTheme.sage)
-                        .cornerRadius(AppSpacing.cardCornerRadius)
                 }
-                .buttonStyle(BouncyButtonStyle())
+                .backButton()
                 .padding(.horizontal, AppSpacing.lg)
 
                 Spacer().frame(height: 100)

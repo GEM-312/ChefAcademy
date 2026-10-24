@@ -51,18 +51,9 @@ struct SiblingGardenView: View {
                 onBack()
                 dismiss()
             }) {
-                HStack(spacing: 4) {
-                    Image(systemName: "arrow.left")
-                    Text("Back")
-                }
-                .font(.AppTheme.headline)
-                .foregroundColor(Color.AppTheme.cream)
-                .padding(.horizontal, AppSpacing.md)
-                .padding(.vertical, AppSpacing.xs)
-                .background(Color.AppTheme.sage)
-                .cornerRadius(AppSpacing.largeCornerRadius)
+                Text("Back")
             }
-            .buttonStyle(.plain)
+            .backButton()
             .padding(.leading, AppSpacing.md)
             .padding(.top, 60)
 

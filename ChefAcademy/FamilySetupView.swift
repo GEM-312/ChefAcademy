@@ -311,12 +311,9 @@ struct FamilyNameStep: View {
 
             HStack(spacing: AppSpacing.md) {
                 Button(action: onBack) {
-                    HStack {
-                        Image(systemName: "arrow.left")
-                        Text("Back")
-                    }
+                    Text("Back")
                 }
-                .buttonStyle(SecondaryButtonStyle())
+                .backButton()
 
                 Button(action: {
                     isFocused = false
@@ -608,12 +605,9 @@ struct FamilyAvatarStep: View {
                 // MARK: - Navigation
                 HStack(spacing: AppSpacing.md) {
                     Button(action: onBack) {
-                        HStack {
-                            Image(systemName: "arrow.left")
-                            Text("Back")
-                        }
+                        Text("Back")
                     }
-                    .buttonStyle(SecondaryButtonStyle())
+                    .backButton()
 
                     Button(action: onNext) {
                         HStack {
@@ -1082,13 +1076,9 @@ struct FamilyVoiceStep: View {
             // Back button
             HStack {
                 Button(action: onBack) {
-                    HStack(spacing: AppSpacing.xxs) {
-                        Image(systemName: "chevron.left")
-                        Text("Back")
-                    }
-                    .font(.AppTheme.body)
-                    .foregroundColor(Color.AppTheme.sage)
+                    Text("Back")
                 }
+                .backButton()
                 Spacer()
             }
             .padding(.horizontal, AppSpacing.md)

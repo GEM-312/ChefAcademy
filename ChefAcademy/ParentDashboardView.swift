@@ -297,12 +297,9 @@ struct ParentDashboardView: View {
                         sessionManager.route = .profilePicker
                     }
                 }) {
-                    HStack {
-                        Image(systemName: "arrow.left")
-                        Text("Back to Game")
-                    }
+                    Text("Back to Game")
                 }
-                .buttonStyle(SecondaryButtonStyle())
+                .backButton()
                 .padding(.horizontal, AppSpacing.md)
 
                 Spacer().frame(height: 40)

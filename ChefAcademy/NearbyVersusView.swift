@@ -121,10 +121,8 @@ struct NearbyVersusView: View {
 
             Button(action: { dismiss() }) {
                 Text("Back")
-                    .font(.AppTheme.body)
-                    .foregroundColor(Color.AppTheme.sepia)
             }
-            .buttonStyle(.plain)
+            .backButton()
 
             Spacer()
         }
@@ -165,10 +163,8 @@ struct NearbyVersusView: View {
                 manager.matchPhase = .idle
             }) {
                 Text("Cancel")
-                    .font(.AppTheme.body)
-                    .foregroundColor(Color.AppTheme.sepia)
             }
-            .buttonStyle(.plain)
+            .backButton()
 
             Spacer()
         }
@@ -463,18 +459,8 @@ struct NearbyVersusView: View {
                         dismiss()
                     }) {
                         Text("Done")
-                            .font(.AppTheme.headline)
-                            .foregroundColor(Color.AppTheme.sepia)
-                            .padding(.horizontal, AppSpacing.lg)
-                            .padding(.vertical, AppSpacing.sm)
-                            .background(Color.AppTheme.warmCream)
-                            .cornerRadius(AppSpacing.cardCornerRadius)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: AppSpacing.cardCornerRadius)
-                                    .stroke(Color.AppTheme.sepia.opacity(0.3), lineWidth: 1.5)
-                            )
                     }
-                    .buttonStyle(.plain)
+                    .backButton()
                 }
 
                 Spacer().frame(height: 100)
@@ -512,9 +498,9 @@ struct NearbyVersusView: View {
             }
             .buttonStyle(BouncyButtonStyle())
             Button(action: { dismiss() }) {
-                Text("Back").font(.AppTheme.body).foregroundColor(Color.AppTheme.sepia)
+                Text("Back")
             }
-            .buttonStyle(.plain)
+            .backButton()
             Spacer()
         }
     }

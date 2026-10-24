@@ -36,14 +36,9 @@ struct SiblingProfileView: View {
                     // Header with back button
                     HStack {
                         Button(action: onBack) {
-                            HStack(spacing: 4) {
-                                Image(systemName: "arrow.left")
-                                Text("Back")
-                            }
-                            .font(.AppTheme.body)
-                            .foregroundColor(Color.AppTheme.sage)
+                            Text("Back")
                         }
-                        .buttonStyle(.plain)
+                        .backButton()
                         Spacer()
                     }
                     .padding(.horizontal, AppSpacing.md)

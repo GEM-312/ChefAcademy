@@ -40,6 +40,10 @@ extension Color {
         static let buttonBack = warmKhaki        // Back, Done, Not yet — quiet, steps back
         static let buttonSpend = goldenWheat     // Buy, Unlock — the coin color
         static let buttonDanger = terracotta     // parent-only: Delete, Remove, Sign Out
+        // Healthy Picks game modes: three ways to play, told apart by color (Marina, Oct 23)
+        static let gameModeSplitScreen = sage
+        static let gameModeTakeTurns = goldenWheat
+        static let gameModeOnline = terracotta
 
         // Specialty colors — hex-backed until asset-cataloged for Dark Mode.
         // Use these instead of inline hex / raw system colors at call sites.
@@ -378,18 +382,20 @@ struct TexturedButtonStyle: ButtonStyle {
     var height: CGFloat = AppSpacing.buttonHeight
     var fullWidth: Bool = true
     var font: Font = .AppTheme.headline
+    /// SF Symbol drawn before the label (BackButtonStyle's ← arrow)
+    var leadingIcon: String? = nil
 
     func makeBody(configuration: Configuration) -> some View {
         // Label drives the layout; texture fills behind via .background
         ZStack {
             // Label with overlay blend — text looks embossed into the wood
-            configuration.label
+            label(configuration)
                 .font(font)
                 .foregroundColor(textColor)
                 .blendMode(.overlay)
 
             // Second pass for readability (overlay alone can lose contrast)
-            configuration.label
+            label(configuration)
                 .font(font)
                 .foregroundColor(textColor.opacity(0.7))
         }
@@ -412,6 +418,29 @@ struct TexturedButtonStyle: ButtonStyle {
         .shadow(color: Color.AppTheme.sepia.opacity(0.15), radius: 4, x: 0, y: 2)
         .scaleEffect(configuration.isPressed ? AnimationConstants.bouncyPressScale : 1.0)
         .animation(AnimationConstants.fadeQuick, value: configuration.isPressed)
+    }
+
+    @ViewBuilder
+    private func label(_ configuration: Configuration) -> some View {
+        if let leadingIcon {
+            HStack(spacing: AppSpacing.xs) {
+                Image(systemName: leadingIcon)
+                configuration.label
+            }
+        } else {
+            configuration.label
+        }
+    }
+}
+
+// Back Button Style — the ONE look for leaving a screen, app-wide (Marina,
+// Oct 23 2026): Back, Back to Games, Done, Cancel. Quiet khaki wood, ← arrow
+// built in, sized to its label. Call sites pass only the text:
+//   Button(action: dismiss) { Text("Back") }.backButton()
+struct BackButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        TexturedButtonStyle(tint: Color.AppTheme.buttonBack, fullWidth: false, leadingIcon: "arrow.left")
+            .makeBody(configuration: configuration)
     }
 }
 
@@ -480,6 +509,11 @@ extension View {
 
     func texturedButton(tint: Color) -> some View {
         self.buttonStyle(TexturedButtonStyle(tint: tint))
+    }
+
+    /// Every Back / Done / Cancel that leaves a screen — see BackButtonStyle.
+    func backButton() -> some View {
+        self.buttonStyle(BackButtonStyle())
     }
 
     func choiceCard(

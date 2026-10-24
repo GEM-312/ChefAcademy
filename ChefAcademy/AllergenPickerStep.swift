@@ -77,12 +77,9 @@ struct AllergenPickerStep: View {
             HStack(spacing: AppSpacing.md) {
                 if let onBack = onBack {
                     Button(action: onBack) {
-                        HStack {
-                            Image(systemName: "arrow.left")
-                            Text("Back")
-                        }
+                        Text("Back")
                     }
-                    .secondaryButton()
+                    .backButton()
                 }
 
                 Button(action: onNext) {
