@@ -318,7 +318,7 @@ private struct HomeImageMap: View {
     private static let pipSizeFraction: CGFloat = 0.23   // Pip's width as a fraction of map width
 
     /// Pip waits here, at the Home cottage door.
-    private static let homeDoor = CGPoint(x: 0.45, y: 0.31)
+    private static let homeDoor = CGPoint(x: 0.57, y: 0.31)   // moved with the cottage (+0.12, Oct 23)
 
     private static let greeting = "Welcome back! What would you like to do today?"
 
@@ -334,7 +334,7 @@ private struct HomeImageMap: View {
     // Station names (Marina, Oct 23 2026): every name sits just UNDER its
     // station's ground, so names in a row line up whatever each picture's height.
     private static let homeLabelNudge: CGFloat = 30      // points right, for the Home name only (Marina)
-    private static let stationSizeBoost: CGFloat = 1.1   // every station 10% bigger (Marina, Oct 23 2026)
+    private static let stationSizeBoost: CGFloat = 1.2   // every station 20% bigger (Marina, Oct 23 2026)
 
     // Shared stepping stones down the middle of the map, top to bottom.
     private static let spine: [CGPoint] = [
@@ -346,7 +346,7 @@ private struct HomeImageMap: View {
 
     private static let locations: [Location] = [
         Location(tab: nil, title: "Home", imageName: "home_loc_home",
-                 centerX: 0.48, baseY: 0.29, widthFraction: 0.36, path: []),
+                 centerX: 0.60, baseY: 0.29, widthFraction: 0.36, path: []),   // Marina: ~50 pt right (Oct 23)
         // Positions set in the Home scene editor (Oct 18, re-set by Marina Oct 23
         // after the flower beds came out). Each path's last point keeps its old
         // offset from the station's ground point.
