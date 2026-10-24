@@ -9,15 +9,22 @@ Newest first. Each entry: **Symptom → Cause → Solution → How it works → 
 
 ### 1. Switch Player needed two taps
 
-**Symptom.** On Home, Switch Player → Switch cleared the player (Lana and Parent Dashboard vanished) but stayed on Home. A second Switch opened "Who's playing today?". Caught on a screen recording.
+**Symptom.** On Home, Switch Player → Switch cleared the player (Lana and Parent Dashboard vanished) but stayed on Home. A second Switch opened "Who's playing today?". It didn't happen every time; it showed up most after visiting the Garden first. Caught on a screen recording.
 
-**Cause.** Two temporary log lines showed the first tap *did* set the route to the picker (`mainApp → profilePicker`), and the second only set the same value again (`profilePicker → profilePicker`). So the data was right and the redraw was lost. The route changed inside the alert's button while the alert was still closing, and swapping the whole screen under a closing alert dropped that update. The second tap forced a fresh redraw.
+**Cause.** `switchToProfilePicker` cleared `activeProfile` and then set the route inside `withAnimation { }`. `withAnimation` first draws any change still waiting, so only the code inside it animates. That drew the cleared player as its own redraw (Home without Lana or the Dashboard), and the route change right after it was never drawn. On the second tap the player was already cleared, nothing was waiting, and the switch went through.
 
-**Solution.** The Switch button now waits for the alert to close (`AnimationConstants.alertDismissDelay`, 0.35 s), then saves and switches, using the project's `Task { @MainActor in … Task.sleep }` pattern. The temporary logs were removed.
+**Wrong first fix.** The first guess was the alert: the switch ran inside the alert's button while it was closing. A 0.35 s delay after the alert closed (`28e9de3`) seemed to work once, but the bug came back, so the delay was removed. It worked by luck, not because of the delay.
 
-**How it works.** When reading the code finds no bug, log the state change itself. "The value changed but the screen didn't" and "the value never changed" need different fixes, and two print lines told them apart. Then keep big navigation changes out of a dismissing alert's action.
+**How it was found.** Temporary log lines, in three rounds:
+1. The route *did* change on the first tap (`mainApp → profilePicker`). So the data was right and the screen wasn't.
+2. The screen switcher's body never redrew after that change.
+3. Millisecond timestamps showed the switcher redrawing *inside* the switch function, before the route changed, then 4.8 s of nothing until the next touch. The three saves took 13 ms, so they weren't the problem. The iCloud "updateTaskRequest failed" lines in between were a coincidence.
 
-**Where.** `ChefAcademyApp.swift` (HomeView alert), `AppTheme.swift` (`alertDismissDelay`). `ProfileView.swift` has the same code but no screen opens it.
+**Solution.** Set the route without `withAnimation`. `RootRouterView` already fades every route change with `.animation(..., value: route)`, so the wrapper did the same job twice. After the fix, the switcher redraws 2–3 ms after the route changes, and the picker is on screen in about 10 ms.
+
+**How it works.** `withAnimation` isn't free. It ends the current batch of changes before starting its own. If a change made just before it, and one made inside it, both have to show up in the same frame, put them in the same batch or let one `.animation(value:)` handle it. And when a guessed fix "works once" on a bug that comes and goes, measure before believing it.
+
+**Where.** `SessionManager.swift` (`switchToProfilePicker`). `selectProfile` uses the same pattern (changes, then `withAnimation { route = … }`) but has never shown the bug, so it was left alone. If picking a player ever needs two taps, look there first.
 
 ---
 

@@ -298,9 +298,10 @@ class SessionManager: ObservableObject {
         activeProfile = nil
         gameState.activeProfileID = nil
 
-        withAnimation(AnimationConstants.fadeMedium) {
-            route = .profilePicker
-        }
+        // No withAnimation here: it first flushes the pending activeProfile change
+        // as its own redraw, and the route change right after it was never drawn
+        // (Home stuck until a second tap). RootRouterView already fades route changes.
+        route = .profilePicker
     }
 
     // MARK: - Add Child Profile
