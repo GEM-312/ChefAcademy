@@ -334,6 +334,7 @@ private struct HomeImageMap: View {
     // Station names (Marina, Oct 23 2026): every name sits just UNDER its
     // station's ground, so names in a row line up whatever each picture's height.
     private static let homeLabelNudge: CGFloat = 30      // points right, for the Home name only (Marina)
+    private static let stationSizeBoost: CGFloat = 1.1   // every station 10% bigger (Marina, Oct 23 2026)
 
     // Shared stepping stones down the middle of the map, top to bottom.
     private static let spine: [CGPoint] = [
@@ -415,7 +416,8 @@ private struct HomeImageMap: View {
 
     @ViewBuilder
     private func locationView(_ place: Location, w: CGFloat, h: CGFloat) -> some View {
-        let spriteWidth = w * place.widthFraction * AdaptiveCardSize.homeStationScale(for: sizeClass)
+        let spriteWidth = w * place.widthFraction * Self.stationSizeBoost
+            * AdaptiveCardSize.homeStationScale(for: sizeClass)
         // The scene editor's spot wins, so a dragged station moves live.
         let spot = stationSpots.first { $0.id == place.title }
         let centerX = spot?.xPercent ?? place.centerX
