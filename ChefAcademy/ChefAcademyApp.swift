@@ -331,6 +331,10 @@ private struct HomeImageMap: View {
     private static let waveArtFill: CGFloat = 0.86
     private static let waveArtFoot: CGFloat = 0.02
 
+    // Station names (Marina, Oct 23 2026): every name sits just UNDER its
+    // station's ground, so names in a row line up whatever each picture's height.
+    private static let homeLabelNudge: CGFloat = 30      // points right, for the Home name only (Marina)
+
     // Shared stepping stones down the middle of the map, top to bottom.
     private static let spine: [CGPoint] = [
         homeDoor, CGPoint(x: 0.51, y: 0.355), CGPoint(x: 0.54, y: 0.40),
@@ -342,20 +346,21 @@ private struct HomeImageMap: View {
     private static let locations: [Location] = [
         Location(tab: nil, title: "Home", imageName: "home_loc_home",
                  centerX: 0.48, baseY: 0.29, widthFraction: 0.36, path: []),
-        // Positions set in the Home scene editor (Oct 18). Each path's last point
-        // keeps its old offset from the station's ground point.
+        // Positions set in the Home scene editor (Oct 18, re-set by Marina Oct 23
+        // after the flower beds came out). Each path's last point keeps its old
+        // offset from the station's ground point.
         Location(tab: .bodyBuddy, title: "Body", imageName: "home_loc_body",
-                 centerX: 0.29, baseY: 0.46, widthFraction: 0.24,
-                 path: Array(spine[0...4]) + [CGPoint(x: 0.34, y: 0.48)]),
+                 centerX: 0.26, baseY: 0.45, widthFraction: 0.24,
+                 path: Array(spine[0...4]) + [CGPoint(x: 0.31, y: 0.47)]),
         Location(tab: .playLearn, title: "Play", imageName: "home_loc_play",
-                 centerX: 0.73, baseY: 0.59, widthFraction: 0.34,
-                 path: Array(spine[0...6]) + [CGPoint(x: 0.64, y: 0.61)]),
+                 centerX: 0.70, baseY: 0.59, widthFraction: 0.34,
+                 path: Array(spine[0...6]) + [CGPoint(x: 0.61, y: 0.61)]),
         Location(tab: .kitchen, title: "Kitchen", imageName: "home_loc_kitchen",
-                 centerX: 0.31, baseY: 0.74, widthFraction: 0.324,
-                 path: Array(spine[0...8]) + [CGPoint(x: 0.33, y: 0.76)]),
+                 centerX: 0.21, baseY: 0.73, widthFraction: 0.324,
+                 path: Array(spine[0...8]) + [CGPoint(x: 0.23, y: 0.75)]),
         Location(tab: .garden, title: "Garden", imageName: "home_loc_garden",
-                 centerX: 0.21, baseY: 0.93, widthFraction: 0.36,
-                 path: Array(spine[0...9]) + [CGPoint(x: 0.27, y: 0.90)]),
+                 centerX: 0.23, baseY: 0.98, widthFraction: 0.36,
+                 path: Array(spine[0...9]) + [CGPoint(x: 0.29, y: 0.95)]),
         Location(tab: .shop, title: "Shop", imageName: "home_loc_shop",
                  centerX: 0.83, baseY: 0.93, widthFraction: 0.36,
                  path: Array(spine[0...10]) + [CGPoint(x: 0.74, y: 0.90)])
@@ -420,8 +425,7 @@ private struct HomeImageMap: View {
             .scaledToFit()
             .frame(width: spriteWidth)
 
-        VStack(spacing: AppSpacing.xxs) {
-            MapLabel(text: place.title, style: place.tab == nil ? .youAreHere : .destination)
+        Group {
             if let tab = place.tab {
                 Button { go(to: tab) } label: { art }
                     .buttonStyle(BouncyButtonStyle())
@@ -433,9 +437,17 @@ private struct HomeImageMap: View {
         // Anchor the sprite's bottom (its ground) on baseY: a full-width,
         // bottom-aligned frame ending at baseY, shifted to centerX. (.position
         // would centre the sprite on the point instead.) Empty frame space
-        // doesn't take taps — only the label and art do.
+        // doesn't take taps — only the art does.
         .frame(width: w, height: h * baseY, alignment: .bottom)
         .offset(x: w * (centerX - 0.5))
+
+        // The name: just under the ground line (pictures differ in height, the
+        // ground is the one thing every station shares). Centered on centerX.
+        MapLabel(text: place.title, style: place.tab == nil ? .youAreHere : .destination)
+            .frame(width: w, alignment: .top)
+            .padding(.top, h * baseY + AppSpacing.xxs)
+            .offset(x: w * (centerX - 0.5) + (place.tab == nil ? Self.homeLabelNudge : 0))
+            .allowsHitTesting(false)
     }
 
     // MARK: - Pip
@@ -521,7 +533,13 @@ private struct MapLabel: View {
                   ? .AppTheme.title.weight(.bold)
                   : .AppTheme.subheadline.weight(.bold))
             .foregroundColor(style == .youAreHere ? Color.AppTheme.goldenWheat : Color.AppTheme.darkBrown)
+            // Soft cream pill: names can now sit over a roof or awning
+            .padding(.horizontal, AppSpacing.xs)
+            .padding(.vertical, AppSpacing.xxs)
+            .background(Color.AppTheme.cream.opacity(Self.pillOpacity), in: Capsule())
     }
+
+    private static let pillOpacity = 0.85
 }
 
 #Preview("Home Image Map") {
