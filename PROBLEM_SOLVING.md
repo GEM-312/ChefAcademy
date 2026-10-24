@@ -150,6 +150,18 @@ And for the dress-up animations: each frame has different content (an apron appe
 
 **Where.** `.claude/hooks/design-guard.py`. **Open:** teach the guard "Button label with `.background` + corner radius, whatever the style".
 
+### 12. The TestFlight upload came out as build 4, not 5
+
+**Symptom.** After bumping the build to 5, App Store Connect showed the new upload as 1.0 (4).
+
+**Cause.** The app uses its own `Info.plist` (Apr 27 asset-pack migration), and it had the build number typed in as a fixed `4`. Bumping `CURRENT_PROJECT_VERSION` only changed the AssetPackDownloader extension, whose plist is generated from the setting. The upload was app 4 + extension 5. Also, Claude had assumed 4 was already taken (the board card said "uploaded May 4"); the upload list shows it never was.
+
+**Solution.** `CFBundleVersion` = `$(CURRENT_PROJECT_VERSION)`, like the version string already was. Checked in the built app: app 5, extension 5. Re-uploaded as 1.0 (5); the stray 1.0 (4) stays unused.
+
+**How it works.** One number should live in one place. A value typed into a file stops following the setting everyone edits; read the result (the built app's plist, the upload list) rather than trusting the setting.
+
+**Where.** `Info.plist`, commit `8bf953f`.
+
 ---
 
 ## 2026-10-18
