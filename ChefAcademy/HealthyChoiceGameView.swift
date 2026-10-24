@@ -155,68 +155,46 @@ struct HealthyChoiceGameView: View {
 
             Button(action: { startGame(size: size) }) {
                 Text("Let's Go!")
-                    .font(.AppTheme.title)
-                    .foregroundColor(Color.AppTheme.cream)
-                    .padding(.horizontal, AppSpacing.xl)
-                    .padding(.vertical, AppSpacing.md)
-                    .background(Color.AppTheme.sage)
-                    .cornerRadius(AppSpacing.cardCornerRadius)
             }
-            .buttonStyle(BouncyButtonStyle())
+            .buttonStyle(TexturedButtonStyle(tint: Color.AppTheme.buttonGo, font: .AppTheme.title))
+            .padding(.horizontal, AppSpacing.xl)
 
             // Split Screen button (2 players, 1 device, simultaneous)
             Button(action: { showSplitScreen = true }) {
-                HStack(spacing: 8) {
+                HStack(spacing: AppSpacing.xs) {
                     Image(systemName: "rectangle.split.1x2.fill")
                     Text("Split Screen")
                 }
-                .font(.AppTheme.headline)
-                .foregroundColor(Color.AppTheme.cream)
-                .padding(.horizontal, AppSpacing.lg)
-                .padding(.vertical, AppSpacing.sm)
-                .background(Color.AppTheme.sage)
-                .cornerRadius(AppSpacing.cardCornerRadius)
             }
-            .buttonStyle(BouncyButtonStyle())
+            // Game modes: one size smaller than Let's Go!, each its own color
+            .buttonStyle(TexturedButtonStyle(tint: Color.AppTheme.gameModeSplitScreen, height: AppSpacing.minTapTarget, fullWidth: false))
 
             // VS Sibling button (take turns)
             Button(action: { showLocalVersus = true }) {
-                HStack(spacing: 8) {
+                HStack(spacing: AppSpacing.xs) {
                     Image(systemName: "person.2.fill")
                     Text("Take Turns")
                 }
-                .font(.AppTheme.headline)
-                .foregroundColor(Color.AppTheme.cream)
-                .padding(.horizontal, AppSpacing.lg)
-                .padding(.vertical, AppSpacing.sm)
-                .background(Color.AppTheme.goldenWheat)
-                .cornerRadius(AppSpacing.cardCornerRadius)
             }
-            .buttonStyle(BouncyButtonStyle())
+            // Game modes: one size smaller than Let's Go!, each its own color
+            .buttonStyle(TexturedButtonStyle(tint: Color.AppTheme.gameModeTakeTurns, height: AppSpacing.minTapTarget, fullWidth: false))
 
             // Online multiplayer button (Game Center — any player worldwide)
             if GameCenterService.shared.isAuthenticated {
                 Button(action: { showMultiplayer = true }) {
-                    HStack(spacing: 8) {
+                    HStack(spacing: AppSpacing.xs) {
                         Image(systemName: "globe")
                         Text("Online Battle")
                     }
-                    .font(.AppTheme.headline)
-                    .foregroundColor(Color.AppTheme.cream)
-                    .padding(.horizontal, AppSpacing.lg)
-                    .padding(.vertical, AppSpacing.sm)
-                    .background(Color.AppTheme.terracotta)
-                    .cornerRadius(AppSpacing.cardCornerRadius)
                 }
-                .buttonStyle(BouncyButtonStyle())
+                // Game modes: one size smaller than Let's Go!, each its own color
+                .buttonStyle(TexturedButtonStyle(tint: Color.AppTheme.gameModeOnline, height: AppSpacing.minTapTarget, fullWidth: false))
             }
 
             Button(action: { dismiss() }) {
                 Text("Back")
-                    .font(.AppTheme.body)
-                    .foregroundColor(Color.AppTheme.sepia)
             }
-            .buttonStyle(.plain)
+            .backButton()
 
             Spacer()
         }
@@ -279,7 +257,7 @@ struct HealthyChoiceGameView: View {
                             .frame(width: AppSpacing.minTapTarget, height: AppSpacing.minTapTarget)
                             .contentShape(Rectangle())
                     }
-                    .buttonStyle(.plain)
+                    .buttonStyle(BouncyButtonStyle())
 
                     Spacer()
 
@@ -423,29 +401,13 @@ struct HealthyChoiceGameView: View {
             HStack(spacing: AppSpacing.md) {
                 Button(action: { resetGame(size: size) }) {
                     Text("Try Again!")
-                        .font(.AppTheme.headline)
-                        .foregroundColor(Color.AppTheme.cream)
-                        .padding(.horizontal, AppSpacing.lg)
-                        .padding(.vertical, AppSpacing.sm)
-                        .background(Color.AppTheme.sage)
-                        .cornerRadius(AppSpacing.cardCornerRadius)
                 }
-                .buttonStyle(BouncyButtonStyle())
+                .buttonStyle(TexturedButtonStyle(tint: Color.AppTheme.buttonRetry, fullWidth: false))
 
                 Button(action: { dismiss() }) {
                     Text("Back")
-                        .font(.AppTheme.headline)
-                        .foregroundColor(Color.AppTheme.sepia)
-                        .padding(.horizontal, AppSpacing.lg)
-                        .padding(.vertical, AppSpacing.sm)
-                        .background(Color.AppTheme.warmCream)
-                        .cornerRadius(AppSpacing.cardCornerRadius)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: AppSpacing.cardCornerRadius)
-                                .stroke(Color.AppTheme.sepia.opacity(0.3), lineWidth: 1.5)
-                        )
                 }
-                .buttonStyle(.plain)
+                .backButton()
             }
 
             Spacer()
@@ -503,29 +465,13 @@ struct HealthyChoiceGameView: View {
                 HStack(spacing: AppSpacing.md) {
                     Button(action: { resetGame(size: size) }) {
                         Text("Play Again!")
-                            .font(.AppTheme.headline)
-                            .foregroundColor(Color.AppTheme.cream)
-                            .padding(.horizontal, AppSpacing.lg)
-                            .padding(.vertical, AppSpacing.sm)
-                            .background(Color.AppTheme.sage)
-                            .cornerRadius(AppSpacing.cardCornerRadius)
                     }
-                    .buttonStyle(BouncyButtonStyle())
+                    .buttonStyle(TexturedButtonStyle(tint: Color.AppTheme.buttonReward, fullWidth: false))
 
                     Button(action: { dismiss() }) {
                         Text("Done")
-                            .font(.AppTheme.headline)
-                            .foregroundColor(Color.AppTheme.sepia)
-                            .padding(.horizontal, AppSpacing.lg)
-                            .padding(.vertical, AppSpacing.sm)
-                            .background(Color.AppTheme.warmCream)
-                            .cornerRadius(AppSpacing.cardCornerRadius)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: AppSpacing.cardCornerRadius)
-                                    .stroke(Color.AppTheme.sepia.opacity(0.3), lineWidth: 1.5)
-                            )
                     }
-                    .buttonStyle(.plain)
+                    .backButton()
                 }
 
                 Spacer().frame(height: 100)

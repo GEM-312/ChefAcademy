@@ -44,7 +44,7 @@ struct PlayLearnView: View {
                                     .frame(width: AppSpacing.minTapTarget, height: AppSpacing.minTapTarget)
                                     .contentShape(Rectangle())
                             }
-                            .buttonStyle(.plain)
+                            .buttonStyle(BouncyButtonStyle())
                         }
 
                         // The way to the other places (there's no tab bar)
@@ -199,7 +199,7 @@ struct MiniGameCard: View {
             .softCard(showShadow: false)
             .opacity(isLocked ? 0.6 : 1.0)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(BouncyButtonStyle())
         .disabled(isLocked)
     }
 }
@@ -246,14 +246,8 @@ struct MiniGameRouterView: View {
 
                 Button(action: { dismiss() }) {
                     Text("Back to Games")
-                        .font(.AppTheme.headline)
-                        .foregroundColor(Color.AppTheme.cream)
-                        .padding(.horizontal, AppSpacing.xl)
-                        .padding(.vertical, AppSpacing.sm)
-                        .background(Color.AppTheme.sage)
-                        .cornerRadius(AppSpacing.cardCornerRadius)
                 }
-                .buttonStyle(.plain)
+                .backButton()
 
                 Spacer()
             }

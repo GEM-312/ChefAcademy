@@ -76,14 +76,8 @@ struct BodyBuddyView: View {
                             Image(systemName: "fork.knife")
                             Text(hasCookedSomething ? "Cook More!" : "Cook Something!")
                         }
-                        .font(.AppTheme.headline)
-                        .foregroundColor(Color.AppTheme.cream)
-                        .frame(maxWidth: .infinity)
-                        .padding(AppSpacing.md)
-                        .background(Color.AppTheme.sage)
-                        .cornerRadius(AppSpacing.cardCornerRadius)
                     }
-                    .buttonStyle(.plain)
+                    .primaryButton()
                     .padding(.horizontal, AppSpacing.md)
 
                     Spacer().frame(height: 80)

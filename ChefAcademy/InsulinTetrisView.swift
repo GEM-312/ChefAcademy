@@ -303,21 +303,14 @@ struct InsulinTetrisView: View {
                 // Start button
                 Button(action: { startGame(size: size) }) {
                     Text("Let's Go!")
-                        .font(.AppTheme.headline)
-                        .foregroundColor(Color.AppTheme.cream)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, AppSpacing.sm)
-                        .background(Color.AppTheme.sage)
-                        .cornerRadius(AppSpacing.cardCornerRadius)
                 }
-                .buttonStyle(BouncyButtonStyle())
+                .primaryButton()
                 .padding(.horizontal, AppSpacing.xl)
 
                 Button(action: { dismiss() }) {
                     Text("Back")
-                        .font(.AppTheme.body)
-                        .foregroundColor(Color.AppTheme.sepia)
                 }
+                .backButton()
 
                 Spacer().frame(height: AppSpacing.xl)
             }
@@ -626,28 +619,13 @@ struct InsulinTetrisView: View {
             HStack(spacing: AppSpacing.md) {
                 Button(action: { resetGame() }) {
                     Text("Try Again!")
-                        .font(.AppTheme.headline)
-                        .foregroundColor(Color.AppTheme.cream)
-                        .padding(.horizontal, AppSpacing.lg)
-                        .padding(.vertical, AppSpacing.sm)
-                        .background(Color.AppTheme.sage)
-                        .cornerRadius(AppSpacing.cardCornerRadius)
                 }
-                .buttonStyle(BouncyButtonStyle())
+                .buttonStyle(TexturedButtonStyle(tint: Color.AppTheme.buttonRetry, fullWidth: false))
 
                 Button(action: { dismiss() }) {
                     Text("Back")
-                        .font(.AppTheme.body)
-                        .foregroundColor(Color.AppTheme.sepia)
-                        .padding(.horizontal, AppSpacing.lg)
-                        .padding(.vertical, AppSpacing.sm)
-                        .background(Color.AppTheme.warmCream)
-                        .cornerRadius(AppSpacing.cardCornerRadius)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: AppSpacing.cardCornerRadius)
-                                .stroke(Color.AppTheme.sepia.opacity(0.2), lineWidth: 1)
-                        )
                 }
+                .backButton()
             }
 
             Spacer()
@@ -712,24 +690,13 @@ struct InsulinTetrisView: View {
                 HStack(spacing: AppSpacing.md) {
                     Button(action: { resetGame() }) {
                         Text("Play Again!")
-                            .font(.AppTheme.headline)
-                            .foregroundColor(Color.AppTheme.cream)
-                            .padding(.horizontal, AppSpacing.lg)
-                            .padding(.vertical, AppSpacing.sm)
-                            .background(Color.AppTheme.sage)
-                            .cornerRadius(AppSpacing.cardCornerRadius)
                     }
-                    .buttonStyle(BouncyButtonStyle())
+                    .buttonStyle(TexturedButtonStyle(tint: Color.AppTheme.buttonReward, fullWidth: false))
 
                     Button(action: { dismiss() }) {
                         Text("Done")
-                            .font(.AppTheme.body)
-                            .foregroundColor(Color.AppTheme.sepia)
-                            .padding(.horizontal, AppSpacing.lg)
-                            .padding(.vertical, AppSpacing.sm)
-                            .background(Color.AppTheme.warmCream)
-                            .cornerRadius(AppSpacing.cardCornerRadius)
                     }
+                    .backButton()
                 }
 
                 Spacer().frame(height: AppSpacing.xl)
