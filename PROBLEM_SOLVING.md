@@ -112,7 +112,43 @@ And for the dress-up animations: each frame has different content (an apron appe
 
 **Where.** `tools/art_match.py`, `tools/match_sequence.py`; art in `AvatarCards/{mom,dad}_card_clean`, `mom_apron_clean`, `mom_wear_hat_clean`, `dad_chef_coat_clean`, `dad_wear_hat_clean` (24 frames at 12 fps each, ~14 MB per set).
 
-**Open.** The colour reveal has never worked: all 20 colored-outfit imagesets (`girl_apron_colored_*`, `boy_coat_colored_*`, `*_hat_colored_*`) are empty, so picking a colour leaves the chef grey, for kids and parents. Needs one colored final frame per colour (40 with parents).
+**Open.** The colour reveal has never worked: all 20 colored-outfit imagesets (`girl_apron_colored_*`, `boy_coat_colored_*`, `*_hat_colored_*`) are empty, so picking a colour leaves the chef grey, for kids and parents. Needs one colored final frame per colour (40 with parents). Marina will colour them by hand; a Python tint test (terracotta apron) was rejected and reverted.
+
+### 9. Removing the flower beds from the Home map took four tries
+
+**Symptom.** Marina asked to keep only the stepping-stone path. The first automatic cut also deleted half the stones; the next left ghost speckles where the beds were; the next kept stray sprigs; the next dropped the widely spaced stones.
+
+**Cause.** Each rule was a proxy for "is this a stone". Joining nearby pixels merged stones into the beds; the beds' pencil texture breaks into thousands of tiny shapes that look like stones by size; and "has a neighbour" fails for the stones that are farther apart.
+
+**Solution.** Stop guessing: trace the path's route by hand from the picture as a band, keep everything inside it, subtract the six bed shapes (the six largest connected shapes), remove the rest. Checked with a red overlay before cutting.
+
+**How it works.** When the thing to keep is one known shape, drawing it once beats any rule that has to be right everywhere. Measure first, then pick the method: the six beds really were the only six big shapes, so that part could stay automatic.
+
+**Where.** `Backgrounds/home_map_background` (commit `ccfbef4`); old art in `~/Desktop/ChefAcademy_removed_assets/D_home_map_with_flower_beds`.
+
+### 10. rembg couldn't cut out a hill
+
+**Symptom.** The hill pictures came back fully transparent (alpha 255 on under 0.1% of pixels).
+
+**Cause.** rembg finds a subject (a person, an object). A low, pale hill on a cream page isn't one, so it treated it all as background.
+
+**Solution.** Flood-fill from the image edges: every cream pixel connected to the border becomes transparent, the hill keeps all its pixels solid. Every hill then passed `art_match`. (Marina later dropped the hills; the cut-out method stays useful for any flat-background art.)
+
+**How it works.** A subject detector answers "what's the main thing here"; a flood fill answers "what's connected to the edge". For art drawn on a flat page, the second question is the right one.
+
+**Where.** `~/Desktop/HomeMapArt/hills/` (not shipped).
+
+### 11. The design guard never caught most hand-made buttons
+
+**Symptom.** A whole-app scan found 79 hand-made buttons (flat sage blocks, warm-cream Back buttons) that design-guard had never flagged.
+
+**Cause.** The guard only flags `.buttonStyle(.plain)`. Almost all of these used `BouncyButtonStyle` and painted their own `.background` + corners inside the label, which slips past.
+
+**Solution.** So far by hand: one shared `.backButton()` for all 26 Back / Done / Cancel buttons, wood role styles for the CTAs, `.choiceCard` for answers and picks (commits `6955fbe`, `c209f59`, `4d53b2b`). 47 hand-made buttons remain (+11 in the stashed Glucose Journey change).
+
+**How it works.** A guard is only as good as the pattern it looks for; a style that hides the problem (here a press-bounce on a hand-painted label) needs its own check.
+
+**Where.** `.claude/hooks/design-guard.py`. **Open:** teach the guard "Button label with `.background` + corner radius, whatever the style".
 
 ---
 
