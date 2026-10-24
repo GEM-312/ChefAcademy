@@ -243,6 +243,9 @@ enum AnimationConstants {
     static let careFPS: Double = 12.0         // ~0.083s per frame (one-shot weed-pull / bug-rescue kid)
     static let walkSpeed: CGFloat = 54.0      // points per second (character movement)
     static let mapWalkDuration: Double = 1.5  // seconds for Pip's Home-map walk, whatever the path length
+    // Let a system alert finish closing before swapping the whole screen under it —
+    // a route change made inside the alert's button was dropped (Switch Player, Oct 24)
+    static let alertDismissDelay: TimeInterval = 0.35
 
     // Button press scales
     static let bouncyPressScale: CGFloat = 0.9     // bigger bounce (BouncyButtonStyle)

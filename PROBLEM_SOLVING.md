@@ -5,6 +5,22 @@ Newest first. Each entry: **Symptom → Cause → Solution → How it works → 
 
 ---
 
+## 2026-10-24
+
+### 1. Switch Player needed two taps
+
+**Symptom.** On Home, Switch Player → Switch cleared the player (Lana and Parent Dashboard vanished) but stayed on Home. A second Switch opened "Who's playing today?". Caught on a screen recording.
+
+**Cause.** Two temporary log lines showed the first tap *did* set the route to the picker (`mainApp → profilePicker`), and the second only set the same value again (`profilePicker → profilePicker`). So the data was right and the redraw was lost. The route changed inside the alert's button while the alert was still closing, and swapping the whole screen under a closing alert dropped that update. The second tap forced a fresh redraw.
+
+**Solution.** The Switch button now waits for the alert to close (`AnimationConstants.alertDismissDelay`, 0.35 s), then saves and switches, using the project's `Task { @MainActor in … Task.sleep }` pattern. The temporary logs were removed.
+
+**How it works.** When reading the code finds no bug, log the state change itself. "The value changed but the screen didn't" and "the value never changed" need different fixes, and two print lines told them apart. Then keep big navigation changes out of a dismissing alert's action.
+
+**Where.** `ChefAcademyApp.swift` (HomeView alert), `AppTheme.swift` (`alertDismissDelay`). `ProfileView.swift` has the same code but no screen opens it.
+
+---
+
 ## 2026-10-23
 
 ### 1. Pip stuttered and stopped mid-sentence in chat

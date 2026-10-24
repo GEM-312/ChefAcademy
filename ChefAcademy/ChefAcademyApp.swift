@@ -816,7 +816,12 @@ struct HomeView: View {
         .alert("Switch Player?", isPresented: $showSwitchConfirm) {
             Button("Cancel", role: .cancel) {}
             Button("Switch") {
-                sessionManager.switchToProfilePicker(gameState: gameState, avatarModel: avatarModel)
+                // Switch once the alert has closed — done inside its button, the
+                // route changed but the screen stayed on Home until a second tap
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(AnimationConstants.alertDismissDelay))
+                    sessionManager.switchToProfilePicker(gameState: gameState, avatarModel: avatarModel)
+                }
             }
         } message: {
             Text("Your progress will be saved.")
